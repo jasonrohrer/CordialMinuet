@@ -1,0 +1,75 @@
+All returns are whitespace-delimited.
+
+
+If the server detects that a request is incomplete (an incomplete HTTP/1.0
+request for GET requests, or a truncated request body that doesn't match the
+Content-Length header for POST requests), the server will sleep for 30 seconds
+before returning 'INCOMPLETE'.  The sleep allows clients to time out and retry
+without having to deal with the error message (the server lets them treat
+INCOMPLETE requests like server timeouts).  The server only performs this check
+for requests that include a ticket_hmac.
+
+
+
+Most calls can return 'DENIED' on failure
+
+Some calls can return 'SHUTDOWN' when the server has been switched into
+shutdown mode.  After this, subsequent calls to server may be unsafe in terms
+of houses being lost, etc.  Client should stop immediately (and a client that
+gets a SHUTDOWN response on startup should stop and tell user to try again
+later).  Immediately following the SHUTDOWN response, a plain text message
+from the server admin may be included.  Clients can display this message
+to the user before shutting down.
+
+
+
+=== Call:
+server.php?action=check_user&email=[signup email address]
+
+Returns:
+requiredVersionNumber
+userID
+sequenceNumber
+OK
+
+Where:
+requiredVersionNumber = client version number compatible with this server
+userID = unique user ID number
+sequenceNumber = sequence number for hmac-sha1 secure hashing of account keys
+                 to sign future transactions.  Any transactions using
+                 lower sequence numbers will be denied as stale replays. 
+
+
+
+== General Note:
+To verify the identity of the user making each transaction, a hash of
+that user's account key is included with the transaction call.
+That hash is constructed in the following way:
+
+  HMAC_SHA1( account_key, 
+             sequence_number . client_version_number )
+
+Where the two inputs are the ASCII account key (in all caps, with
+hyphens removed) and the ASCII, base-10 representation of the sequence number,
+and finally concatonated with the ASCII, base-10 representation of the version
+number.
+
+Each transaction updates the sequence number associated with the user on
+the server.  Each subsequent transaction must use a new sequence number to
+thwart replay attacks.
+
+Thus, the account key is never sent from the client to the server, yet the
+server can verify that the client making the transaction is indeed in 
+possession of the ticket ID (which only one person in the world should have),
+as well as the proper version number.
+
+
+
+
+
+=== Call:
+server.php?action=check_hmac&user_id=[id number]
+                            &sequence_number=[number]
+                            &ticket_hmac=[hmac-sha1, hex-encoded]
+Returns:
+OK

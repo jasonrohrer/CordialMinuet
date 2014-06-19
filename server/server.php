@@ -163,14 +163,7 @@ global $shutdownMode;
 
 if( $shutdownMode &&
     ( $action == "check_user" ||
-      $action == "check_hmac" ||
-      $action == "start_edit_house" ||
-      $action == "list_houses" ||
-      $action == "get_blueprint" ||
-      $action == "start_rob_house" ||
-      $action == "list_logged_robberies" ||
-      $action == "get_robbery_log" ||
-      $action == "get_self_test_log" ) ) {
+      $action == "check_hmac" ) {
 
     echo "SHUTDOWN";
     global $shutdownMessage;
@@ -186,11 +179,11 @@ else if( $action == "show_log" ) {
 else if( $action == "clear_log" ) {
     cm_clearLog();
     }
-else if( $action == "test_admin_call" ) {
-    cm_testAdminCall();
-    }
 else if( $action == "check_user" ) {
     cm_checkUser();
+    }
+else if( $action == "check_hmac" ) {
+    cm_checkHmac();
     }
 else if( $action == "show_data" ) {
     cm_showData();
@@ -202,7 +195,7 @@ else if( $action == "cm_setup" ) {
     global $setup_header, $setup_footer;
     echo $setup_header; 
 
-    echo "<H2>Castle Doctrine Server Web-based Setup</H2>";
+    echo "<H2>Cordial Minuet Server Web-based Setup</H2>";
 
     echo "Creating tables:<BR>";
 
