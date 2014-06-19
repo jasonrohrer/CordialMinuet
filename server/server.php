@@ -228,28 +228,12 @@ else if( preg_match( "/server\.php/", $_SERVER[ "SCRIPT_NAME" ] ) ) {
         cm_doesTableExist( $tableNamePrefix."server_globals" ) &&
         cm_doesTableExist( $tableNamePrefix."log" ) &&
         cm_doesTableExist( $tableNamePrefix."users" ) &&
-        cm_doesTableExist( $tableNamePrefix."maps" ) &&
-        cm_doesTableExist( $tableNamePrefix."houses" ) &&
-        cm_doesTableExist( $tableNamePrefix."ignore_houses" ) &&
-        cm_doesTableExist( $tableNamePrefix."chilling_houses" ) &&
-        cm_doesTableExist( $tableNamePrefix."vault_been_reached" ) &&
-        cm_doesTableExist( $tableNamePrefix."houses_owner_died" ) &&
-        cm_doesTableExist( $tableNamePrefix."robbery_logs" ) &&
-        cm_doesTableExist( $tableNamePrefix."scouting_counts" ) &&
-        cm_doesTableExist( $tableNamePrefix."prices" ) &&
-        cm_doesTableExist( $tableNamePrefix."auction" ) &&
-        cm_doesTableExist( $tableNamePrefix."last_names" ) &&
-        cm_doesTableExist( $tableNamePrefix."first_names" ) &&
-        cm_doesTableExist( $tableNamePrefix."wife_names" ) &&
-        cm_doesTableExist( $tableNamePrefix."son_names" ) &&
-        cm_doesTableExist( $tableNamePrefix."daughter_names" ) &&
         cm_doesTableExist( $tableNamePrefix."server_stats" ) &&
-        cm_doesTableExist( $tableNamePrefix."item_purchase_stats" ) &&
         cm_doesTableExist( $tableNamePrefix."user_stats" );
     
         
     if( $allExist  ) {
-        echo "Castle Doctrine Server database setup and ready";
+        echo "Cordial Minuet Server database setup and ready";
         }
     else {
         // start the setup procedure
@@ -257,7 +241,7 @@ else if( preg_match( "/server\.php/", $_SERVER[ "SCRIPT_NAME" ] ) ) {
         global $setup_header, $setup_footer;
         echo $setup_header; 
 
-        echo "<H2>Castle Doctrine Server Web-based Setup</H2>";
+        echo "<H2>Cordial Minuet Server Web-based Setup</H2>";
     
         echo "Server will walk you through a " .
             "brief setup process.<BR><BR>";
@@ -348,18 +332,13 @@ function cm_setupDatabase() {
         $query =
             "CREATE TABLE $tableName(" .
             "user_id INT NOT NULL PRIMARY KEY AUTO_INCREMENT," .
-            "ticket_id VARCHAR(255) NOT NULL," .
-            "INDEX( ticket_id )," .
+            "account_key VARCHAR(255) NOT NULL," .
+            "INDEX( account_key )," .
             "email VARCHAR(255) NOT NULL," .
             "INDEX( email ),".
-            "character_name_history LONGTEXT NOT NULL,".
-            "lives_left INT NOT NULL,".
-            "last_robbed_owner_id INT NOT NULL,".
-            "last_robbery_response LONGTEXT NOT NULL,".
-            "last_robbery_deadline DATETIME NOT NULL,".
-            "admin TINYINT NOT NULL,".
+            "dollar_balance DOUBLE NOT NULL,"
             "sequence_number INT NOT NULL," .
-            "last_price_list_number INT NOT NULL," .
+            "last_action DATETIME NOT NULL," .
             "blocked TINYINT NOT NULL ) ENGINE = INNODB;";
 
         $result = cm_queryDatabase( $query );
@@ -373,498 +352,6 @@ function cm_setupDatabase() {
 
 
     
-    $tableName = $tableNamePrefix . "maps";
-    if( ! cm_doesTableExist( $tableName ) ) {
-
-        // A cache of maps, indexed by sha1 hashes of maps
-        $query =
-            "CREATE TABLE $tableName(" .
-            "house_map_hash CHAR(40) NOT NULL PRIMARY KEY," .
-            "last_touch_date DATETIME NOT NULL," .
-            "INDEX( last_touch_date ),".
-            "delete_flag TINYINT NOT NULL," .
-            "INDEX( delete_flag ),".
-            "house_map LONGTEXT NOT NULL ) ENGINE = INNODB;";
-
-        $result = cm_queryDatabase( $query );
-
-        echo "<B>$tableName</B> table created<BR>";
-        }
-    else {
-        echo "<B>$tableName</B> table already exists<BR>";
-        }
-
-    
-    
-    $tableName = $tableNamePrefix . "houses";
-    // make shadow table for storing dead houses that are still being
-    // robbed one last time
-    $shadowTableName = $tableNamePrefix . "houses_owner_died";
-
-    if( ! cm_doesTableExist( $tableName ) ) {
-
-        // this table contains general info about each user's house
-        // EVERY user has EXACTLY ONE house
-        $query =
-            "CREATE TABLE $tableName(" .
-            "user_id INT NOT NULL PRIMARY KEY," .
-            "character_name VARCHAR(62) NOT NULL," .
-            "UNIQUE KEY( character_name )," .
-            "wife_name VARCHAR(20) NOT NULL," .
-            "son_name VARCHAR(20) NOT NULL," .
-            "daughter_name VARCHAR(20) NOT NULL," .
-            "house_map_hash CHAR(40) NOT NULL," .
-            "INDEX( house_map_hash ),".
-            "vault_contents LONGTEXT NOT NULL," .
-            "backpack_contents LONGTEXT NOT NULL," .
-            "gallery_contents LONGTEXT NOT NULL," .
-            "last_auction_price INT NOT NULL," .
-            "music_seed INT NOT NULL," .
-            // times edited since last successful robbery
-            // = 0 if never edited (and not robbable at all)
-            // > 0 if successfully edited and robbable
-            // < 0 if successfully robbed at least once and still robbable
-            "edit_count INT NOT NULL," .
-            "INDEX( edit_count ),".
-            "self_test_house_map_hash CHAR(40) NOT NULL," .
-            "INDEX( self_test_house_map_hash ),".
-            "self_test_move_list LONGTEXT NOT NULL," .
-            "loot_value INT NOT NULL," .
-            // portion of money held by wife
-            "wife_loot_value INT NOT NULL," .
-            // loot plus resale value of vault items, rounded
-            "value_estimate INT NOT NULL," .
-            "INDEX( value_estimate )," .
-            // resale value of backpack items, rounded
-            "backpack_value_estimate INT NOT NULL," .
-            "INDEX( backpack_value_estimate )," .
-            "wife_present TINYINT NOT NULL," . 
-            // loot carried back from latest robbery, not deposited in vault
-            // yet.  Deposited when house is next checked out for editing. 
-            "carried_loot_value INT NOT NULL," .
-            "carried_vault_contents LONGTEXT NOT NULL," .
-            "carried_gallery_contents LONGTEXT NOT NULL," .
-            "edit_checkout TINYINT NOT NULL,".
-            "self_test_running TINYINT NOT NULL,".
-            "rob_checkout TINYINT NOT NULL,".
-            // ignored if not checked out for robbery
-            "robbing_user_id INT NOT NULL," .
-            "rob_attempts INT NOT NULL,".
-            "robber_deaths INT NOT NULL,".
-            // used to count consecutive vault reaches
-            // now counts total vault reaches
-            // vault pay stops as soon as two vault reaches happen
-            "consecutive_rob_success_count INT NOT NULL,".
-            "creation_time DATETIME NOT NULL,".
-            "INDEX( creation_time ),".
-            "last_ping_time DATETIME NOT NULL,".
-            "INDEX( last_ping_time ),".
-            "last_owner_action_time DATETIME NOT NULL,".
-            "INDEX( last_owner_action_time ),".
-            "last_owner_visit_time DATETIME NOT NULL,".
-            "last_pay_check_time DATETIME NOT NULL,".
-            "INDEX( last_pay_check_time ),".
-            "payment_count INT NOT NULL,".
-            "you_paid_total INT NOT NULL,".
-            "wife_paid_total INT NOT NULL,".
-            "bounty INT NOT NULL,".
-            "blocked TINYINT NOT NULL ) ENGINE = INNODB;";
-
-        $result = cm_queryDatabase( $query );
-
-        echo "<B>$tableName</B> table created<BR>";
-
-        // table might not match structure of new houses table,
-        // delete it so it will be created below
-        if( cm_doesTableExist( $shadowTableName ) ) {
-            cm_queryDatabase( "DROP TABLE $shadowTableName;" );
-            }
-        }
-    else {
-        echo "<B>$tableName</B> table already exists<BR>";
-        }
-
-
-    
-    if( ! cm_doesTableExist( $shadowTableName ) ) {
-        $query = "CREATE TABLE $shadowTableName LIKE $tableName;";
-
-        $result = cm_queryDatabase( $query );
-
-        // change properties to allow more than one house in here per user_id
-        // since a user can die multiple times in a row, potentially leaving
-        // a trail of still-being-robbed-by-someone-else houses in their wake
-        cm_queryDatabase( "ALTER TABLE $shadowTableName DROP PRIMARY KEY;" );
-
-        // unique key is now robbing_user_id
-        // (and EVERY house in here has rob_checkout set)
-        cm_queryDatabase( "ALTER TABLE $shadowTableName ".
-                          "ADD PRIMARY KEY( robbing_user_id );" );
-        
-        // and owner's character name not necessarily unique anymore
-        cm_queryDatabase( "ALTER TABLE $shadowTableName ".
-                          "DROP INDEX character_name;" );
-        
-        
-        echo "<B>$shadowTableName</B> table created to shadow $tableName<BR>";
-        }
-    else {
-        echo "<B>$shadowTableName</B> table already exists<BR>";
-        }
-
-
-
-    $tableName = $tableNamePrefix . "ignore_houses";
-    if( ! cm_doesTableExist( $tableName ) ) {
-
-        // This maps a user ID to another user ID, where the second
-        // ID specifies a house that the first user is ignoring.
-        // Forced ignore status cannot be cleared by user and survives
-        // if the target house changes or if the owner of the target house
-        // starts a new life (ignore status carries over to their new life,
-        // until forced_end_time is reached).
-        $query =
-            "CREATE TABLE $tableName(" .
-            "user_id INT NOT NULL," .
-            "house_user_id INT NOT NULL," .
-            "PRIMARY KEY( user_id, house_user_id )," .
-            "started TINYINT NOT NULL DEFAULT 1,".
-            "forced TINYINT NOT NULL DEFAULT 0,".
-            "forced_pending TINYINT NOT NULL DEFAULT 0,".
-            "forced_start_time DATETIME NOT NULL ) ENGINE = INNODB;";
-
-        $result = cm_queryDatabase( $query );
-
-        echo "<B>$tableName</B> table created<BR>";
-        }
-    else {
-        echo "<B>$tableName</B> table already exists<BR>";
-        }
-
-
-
-    $tableName = $tableNamePrefix . "chilling_houses";
-    if( ! cm_doesTableExist( $tableName ) ) {
-
-        // This maps a user ID to another user ID, where the second
-        // ID specifies a house that the first user has developed a chill for.
-        $query =
-            "CREATE TABLE $tableName(" .
-            "user_id INT NOT NULL," .
-            "house_user_id INT NOT NULL," .
-            "PRIMARY KEY( user_id, house_user_id )," .
-            "chill_start_time DATETIME NOT NULL, ".
-            "INDEX( chill_start_time ), ".
-            // is the chill in effect yet?  If so, 1, else 0
-            // chill starts coming into effect when user dies somewhere
-            "chill TINYINT NOT NULL ) ENGINE = INNODB;";
-
-        $result = cm_queryDatabase( $query );
-
-        echo "<B>$tableName</B> table created<BR>";
-        }
-    else {
-        echo "<B>$tableName</B> table already exists<BR>";
-        }
-
-
-
-    $tableName = $tableNamePrefix . "vault_been_reached";
-    if( ! cm_doesTableExist( $tableName ) ) {
-
-        // an entry here for each player that has reached a given player's
-        // vault (in their current lives only)
-        // Used for computing vault-reach bounties (bounty only goes up
-        // the first time a player reaches a given vault in a given time
-        // period to prevent bounty inflation).
-        //
-        // last_bounty_time tracks the last time a bounty was paid
-        // for a vault reach.
-        // We can start paying bounties again for vault reach after a certain
-        // amount of time has passed (thus blocking the bounty-inflation
-        // exploit while still increasing bounties for most real theft).
-        $query =
-            "CREATE TABLE $tableName(" .
-            "user_id INT NOT NULL," .
-            "house_user_id INT NOT NULL, " .
-            "PRIMARY KEY( user_id, house_user_id ), ".
-            "last_bounty_time DATETIME NOT NULL ) ENGINE = INNODB;";
-
-        $result = cm_queryDatabase( $query );
-
-        echo "<B>$tableName</B> table created<BR>";
-        }
-    else {
-        echo "<B>$tableName</B> table already exists<BR>";
-        }
-
-
-
-    
-    
-
-    $tableName = $tableNamePrefix . "scouting_counts";
-    if( ! cm_doesTableExist( $tableName ) ) {
-
-        // how many time has a give user scouted a given house?
-        // may be useful for catching cheaters
-        $query =
-            "CREATE TABLE $tableName(" .
-            "robbing_user_id INT NOT NULL," .
-            "house_user_id INT NOT NULL," .
-            "count INT NOT NULL," .
-            "last_scout_time DATETIME NOT NULL,".
-            "PRIMARY KEY( robbing_user_id, house_user_id ) ) ENGINE = INNODB;";
-
-        $result = cm_queryDatabase( $query );
-
-        echo "<B>$tableName</B> table created<BR>";
-        }
-    else {
-        echo "<B>$tableName</B> table already exists<BR>";
-        }
-
-    
-
-    
-
-
-    
-    $tableName = $tableNamePrefix . "robbery_logs";
-    if( ! cm_doesTableExist( $tableName ) ) {
-
-        // contains move log for each robbery
-
-        $query =
-            "CREATE TABLE $tableName(" .
-            "log_id INT NOT NULL PRIMARY KEY AUTO_INCREMENT," .
-            "log_watched TINYINT NOT NULL," .
-            "user_id INT NOT NULL," .
-            "house_user_id INT NOT NULL," .
-            "INDEX( house_user_id ),".
-            "loot_value INT NOT NULL," .
-            "wife_money INT NOT NULL," .
-            // if robber died in house,
-            // value_estimate is bounty paid to house owner
-            "value_estimate INT NOT NULL," .
-            "robber_died TINYINT NOT NULL," .
-            "vault_contents LONGTEXT NOT NULL," .
-            "gallery_contents LONGTEXT NOT NULL," .
-            "music_seed INT NOT NULL," .
-            "rob_attempts INT NOT NULL,".
-            "robber_deaths INT NOT NULL,".
-            "robber_name VARCHAR(62) NOT NULL," .
-            "victim_name VARCHAR(62) NOT NULL," .
-            "wife_name VARCHAR(20) NOT NULL," .
-            "son_name VARCHAR(20) NOT NULL," .
-            "daughter_name VARCHAR(20) NOT NULL," .
-            // flag logs for which the owner is now dead (moved onto a new
-            // character/life) and can no longer see the log
-            // These area candidates for deletion after enough time has passed
-            // (admin should still have access to them for a while).
-            "owner_now_dead TINYINT NOT NULL," .
-            "rob_time DATETIME NOT NULL,".
-            "INDEX( rob_time ),".
-            "scouting_count INT NOT NULL,".
-            "last_scout_time DATETIME NOT NULL,".
-            "house_start_map_hash CHAR(40) NOT NULL," .
-            "INDEX( house_start_map_hash ),".
-            "loadout LONGTEXT NOT NULL," .
-            "move_list LONGTEXT NOT NULL," .
-            "num_moves INT NOT NULL ) ENGINE = INNODB;";
-
-        $result = cm_queryDatabase( $query );
-
-        echo "<B>$tableName</B> table created<BR>";
-        }
-    else {
-        echo "<B>$tableName</B> table already exists<BR>";
-        }    
-
-
-
-    $tableName = $tableNamePrefix . "prices";
-    $pricesCreated = false;
-    if( ! cm_doesTableExist( $tableName ) ) {
-
-        $query =
-            "CREATE TABLE $tableName(" .
-            "object_id INT NOT NULL PRIMARY KEY," .
-            "price INT NOT NULL, ".
-            "in_gallery TINYINT NOT NULL, ".
-            "order_number INT NOT NULL, ".
-            "note LONGTEXT NOT NULL ) ENGINE = INNODB;";
-
-        $result = cm_queryDatabase( $query );
-
-        echo "<B>$tableName</B> table created<BR>";
-        $pricesCreated = true;
-        }
-    else {
-        echo "<B>$tableName</B> table already exists<BR>";
-        }
-
-
-    
-    $tableName = $tableNamePrefix . "auction";
-    $auctionCreated = false;
-    if( ! cm_doesTableExist( $tableName ) ) {
-
-        $query =
-            "CREATE TABLE $tableName(" .
-            "object_id INT NOT NULL PRIMARY KEY," .
-            "order_number INT NOT NULL, ".
-            "start_price INT NOT NULL, ".
-            "start_time DATETIME NOT NULL, ".
-            "INDEX( start_time ) ) ENGINE = INNODB;";
-
-        $result = cm_queryDatabase( $query );
-
-        echo "<B>$tableName</B> table created<BR>";
-        $auctionCreated = true;
-        }
-    else {
-        echo "<B>$tableName</B> table already exists<BR>";
-        }
-
-
-    // wait until both tables exist before doing either of these
-    if( $pricesCreated ) {
-        cm_restoreDefaultPrices();
-        }
-    if( $auctionCreated ) {
-        cm_startInitialAuctions();
-        }
-    
-    
-    
-
-    $tableName = $tableNamePrefix . "last_names";
-    if( ! cm_doesTableExist( $tableName ) ) {
-
-        // a source list of character last names
-        // cumulative count is number of people in 1993 population
-        // who have this name or a more common name
-        // less common names have higher cumulative counts
-        $query =
-            "CREATE TABLE $tableName(" .
-            "cumulative_count INT NOT NULL PRIMARY KEY," .
-            "name VARCHAR(20) NOT NULL );";
-
-        $result = cm_queryDatabase( $query );
-
-        echo "<B>$tableName</B> table created<BR>";
-
-        cm_populateNameTable( "namesLast.txt", "last_names" );
-        }
-    else {
-        echo "<B>$tableName</B> table already exists<BR>";
-        }
-
-
-    $tableName = $tableNamePrefix . "first_names";
-    if( ! cm_doesTableExist( $tableName ) ) {
-
-
-        // a source list of character first names
-        // cumulative count is number of people in 1993 population
-        // who have this name or a more common name
-        // less common names have higher cumulative counts
-        $query =
-            "CREATE TABLE $tableName(" .
-            "cumulative_count INT NOT NULL PRIMARY KEY," .
-            "name VARCHAR(20) NOT NULL );";
-
-        $result = cm_queryDatabase( $query );
-
-        echo "<B>$tableName</B> table created<BR>";
-
-        cm_populateNameTable( "namesFirst.txt", "first_names" );
-        }
-    else {
-        echo "<B>$tableName</B> table already exists<BR>";
-        }
-
-
-
-    
-    $tableName = $tableNamePrefix . "wife_names";
-    if( ! cm_doesTableExist( $tableName ) ) {
-
-
-        // a source list of character first names
-        // cumulative count is number of people in 1993 population
-        // who have this name or a more common name
-        // less common names have higher cumulative counts
-        $query =
-            "CREATE TABLE $tableName(" .
-            "cumulative_count INT NOT NULL PRIMARY KEY," .
-            "name VARCHAR(20) NOT NULL );";
-
-        $result = cm_queryDatabase( $query );
-
-        echo "<B>$tableName</B> table created<BR>";
-
-        cm_populateNameTableSSA( "namesWife.txt", "wife_names" );
-        }
-    else {
-        echo "<B>$tableName</B> table already exists<BR>";
-        }
-
-
-    
-    $tableName = $tableNamePrefix . "son_names";
-    if( ! cm_doesTableExist( $tableName ) ) {
-
-
-        // a source list of character first names
-        // cumulative count is number of people in 1993 population
-        // who have this name or a more common name
-        // less common names have higher cumulative counts
-        $query =
-            "CREATE TABLE $tableName(" .
-            "cumulative_count INT NOT NULL PRIMARY KEY," .
-            "name VARCHAR(20) NOT NULL );";
-
-        $result = cm_queryDatabase( $query );
-
-        echo "<B>$tableName</B> table created<BR>";
-
-        cm_populateNameTableSSA( "namesSon.txt", "son_names" );
-        }
-    else {
-        echo "<B>$tableName</B> table already exists<BR>";
-        }
-
-
-
-    $tableName = $tableNamePrefix . "daughter_names";
-    if( ! cm_doesTableExist( $tableName ) ) {
-
-
-        // a source list of character first names
-        // cumulative count is number of people in 1993 population
-        // who have this name or a more common name
-        // less common names have higher cumulative counts
-        $query =
-            "CREATE TABLE $tableName(" .
-            "cumulative_count INT NOT NULL PRIMARY KEY," .
-            "name VARCHAR(20) NOT NULL );";
-
-        $result = cm_queryDatabase( $query );
-
-        echo "<B>$tableName</B> table created<BR>";
-
-        cm_populateNameTableSSA( "namesDaughter.txt", "daughter_names" );
-        }
-    else {
-        echo "<B>$tableName</B> table already exists<BR>";
-        }
-
-
-
-
-
     $tableName = $tableNamePrefix . "server_stats";
 
     if( ! cm_doesTableExist( $tableName ) ) {
@@ -877,54 +364,9 @@ function cm_setupDatabase() {
             "database_connections INT NOT NULL DEFAULT 0," .
             "max_concurrent_connections INT NOT NULL DEFAULT 0," .
 
-            "edit_count INT NOT NULL DEFAULT 0," .
-
-            "house_tiles_bought INT NOT NULL DEFAULT 0," .
-            "tools_bought INT NOT NULL DEFAULT 0," .
-            "paintings_bought INT NOT NULL DEFAULT 0," .
-
-            "money_spent_houses INT NOT NULL DEFAULT 0," .
-            "money_spent_tools INT NOT NULL DEFAULT 0," .
-            "money_spent_paintings INT NOT NULL DEFAULT 0," .
-
-            "tools_sold INT NOT NULL DEFAULT 0," .
-            "money_earned_tools INT NOT NULL DEFAULT 0," .
-            
-            "robbery_count INT NOT NULL DEFAULT 0," .
-
-            "leave_count INT NOT NULL DEFAULT 0," .
-            "vault_reaches INT NOT NULL DEFAULT 0," .
-            "wives_killed INT NOT NULL DEFAULT 0," .
-            "wives_robbed INT NOT NULL DEFAULT 0," .
-            "any_family_killed_count INT NOT NULL DEFAULT 0," .
-
-            "tools_used INT NOT NULL DEFAULT 0," .
-            "tools_dropped INT NOT NULL DEFAULT 0," .
-
-            "money_stolen INT NOT NULL DEFAULT 0," .
-            "tools_stolen_count INT NOT NULL DEFAULT 0," .
-            "tools_stolen_value INT NOT NULL DEFAULT 0," .
-            "paintings_stolen INT NOT NULL DEFAULT 0," .
-
-            "deaths INT NOT NULL DEFAULT 0," .
-
-            "robbery_deaths INT NOT NULL DEFAULT 0," .
-            "robbery_suicides INT NOT NULL DEFAULT 0," .
-
-            "bounties_accumulated INT NOT NULL DEFAULT 0," .
-            "bounties_paid INT NOT NULL DEFAULT 0," .
-
-            "max_total_house_value INT NOT NULL DEFAULT 0," .
-            
-            "self_test_deaths INT NOT NULL DEFAULT 0," .
-            "self_test_suicides INT NOT NULL DEFAULT 0," .
-            "home_suicides INT NOT NULL DEFAULT 0," .
-
-            "robbery_timeout_deaths INT NOT NULL DEFAULT 0," .
-            "self_test_timeout_deaths INT NOT NULL DEFAULT 0," .
-            "edit_timeouts INT NOT NULL DEFAULT 0," .
-
-            "tapes_watched INT NOT NULL DEFAULT 0 ) ENGINE = INNODB;";
+            "game_count INT NOT NULL DEFAULT 0,".
+            "total_buy_in DOUBLE NOT NULL DEFAULT 0 ".
+            ") ENGINE = INNODB;";
         
 
         $result = cm_queryDatabase( $query );
@@ -939,27 +381,6 @@ function cm_setupDatabase() {
 
 
     
-    $tableName = $tableNamePrefix . "item_purchase_stats";
-
-    if( ! cm_doesTableExist( $tableName ) ) {
-
-        $query =
-            "CREATE TABLE $tableName(" .
-            "stat_date DATE NOT NULL," .
-            "object_id INT NOT NULL DEFAULT 0," .
-            "price INT NOT NULL DEFAULT 0," .
-            "purchase_count INT NOT NULL DEFAULT 0, ".
-            "PRIMARY KEY( stat_date, object_id, price ) ) ENGINE = INNODB;";
-        
-
-        $result = cm_queryDatabase( $query );
-
-
-        echo "<B>$tableName</B> table created<BR>";       
-        }
-    else {
-        echo "<B>$tableName</B> table already exists<BR>";
-        }
 
 
 
@@ -2284,7 +1705,7 @@ function cm_connectToDatabase( $inTrackStats = true) {
     if( $numRows > $mysqlConnectionCountThreshold ) {
         cm_informAdmin(
             "This is a warning message generated by ".
-            "The Castle Doctrine server.  ".
+            "The Cordial Minuet server.  ".
             "The data base currently has $numRows connections. ".
             "The warning threshold is $mysqlConnectionCountThreshold ".
             "connections." );
@@ -2434,7 +1855,7 @@ function cm_queryDatabase( $inQueryString, $inDeadlockFatal=1 ) {
             global $adminEmail, $emailAdminOnFatalError;
 
             if( $emailAdminOnFatalError ) {    
-                cm_mail( $adminEmail, "Castle Doctrine lock wait timeout",
+                cm_mail( $adminEmail, "Cordial Minuet lock wait timeout",
                          $logMessage );
                 }
 
@@ -2578,7 +1999,7 @@ function cm_fatalError( $message ) {
     global $emailAdminOnFatalError, $adminEmail;
 
     if( $emailAdminOnFatalError ) {
-        cm_mail( $adminEmail, "Castle Doctrine fatal error",
+        cm_mail( $adminEmail, "Cordial Minuet fatal error",
                  $logMessage );
         }
     
@@ -2675,7 +2096,7 @@ function cm_noticeAndWarningHandler( $errno, $errstr, $errfile, $errline ) {
 
     if( $emailAdminOnFatalError ) {
 
-        cm_mail( $adminEmail, "Castle Doctrine $errorName",
+        cm_mail( $adminEmail, "Cordial Minuet $errorName",
                  $logMessage );
         
         }
@@ -3260,7 +2681,7 @@ function cm_informAdmin( $inMessage ) {
     if( $emailAdminOnFatalError ) {
         global $adminEmail;
         
-        cm_mail( $adminEmail, "Castle Doctrine server issue",
+        cm_mail( $adminEmail, "Cordial Minuet server issue",
                  $inMessage );
         }
     if( $callAdminInEmergency ) {

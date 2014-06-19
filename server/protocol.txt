@@ -47,7 +47,7 @@ that user's account key is included with the transaction call.
 That hash is constructed in the following way:
 
   HMAC_SHA1( account_key, 
-             sequence_number . client_version_number )
+             sequence_number . hash_version_number )
 
 Where the two inputs are the ASCII account key (in all caps, with
 hyphens removed) and the ASCII, base-10 representation of the sequence number,
