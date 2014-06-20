@@ -173,6 +173,15 @@ else if( $action == "version" ) {
     global $cm_version;
     echo "$cm_version";
     }
+else if( $action == "paypal_ipn" ) {
+    cm_paypalIPN();
+    }
+else if( $action == "paypal_cancel" ) {
+    cm_paypalCancel();
+    }
+else if( $action == "paypal_success" ) {
+    cm_paypalSuccess();
+    }
 else if( $action == "show_log" ) {
     cm_showLog();
     }
