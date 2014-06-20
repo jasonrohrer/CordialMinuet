@@ -163,7 +163,7 @@ global $shutdownMode;
 
 if( $shutdownMode &&
     ( $action == "check_user" ||
-      $action == "check_hmac" ) {
+      $action == "check_hmac" ) ) {
 
     echo "SHUTDOWN";
     global $shutdownMessage;
@@ -336,7 +336,7 @@ function cm_setupDatabase() {
             "INDEX( account_key )," .
             "email VARCHAR(255) NOT NULL," .
             "INDEX( email ),".
-            "dollar_balance DOUBLE NOT NULL,"
+            "dollar_balance DOUBLE NOT NULL,".
             "sequence_number INT NOT NULL," .
             "last_action DATETIME NOT NULL," .
             "blocked TINYINT NOT NULL ) ENGINE = INNODB;";
@@ -643,7 +643,7 @@ function cm_checkForFlush() {
 
 
 function cm_checkUser() {
-    global $tableNamePrefix, $ticketServerURL, $sharedEncryptionSecret;
+    global $tableNamePrefix;
 
     $email = cm_requestFilter( "email", "/[A-Z0-9._%+-]+@[A-Z0-9.-]+/i" );
 
@@ -2381,7 +2381,7 @@ function cm_countUsers() {
     global $tableNamePrefix;
 
     $query = "SELECT COUNT(*) ".
-        "FROM $tableNamePrefix"."houses;";
+        "FROM $tableNamePrefix"."users;";
     $result = cm_queryDatabase( $query );
 
     return mysql_result( $result, 0, 0 );
@@ -2394,8 +2394,8 @@ function cm_countUsersTime( $inInterval ) {
     global $tableNamePrefix;
 
     $query = "SELECT COUNT(*) ".
-        "FROM $tableNamePrefix"."houses ".
-        "WHERE last_owner_action_time > ".
+        "FROM $tableNamePrefix"."users ".
+        "WHERE last_action_time > ".
         "SUBTIME( CURRENT_TIMESTAMP, '$inInterval' );";
     $result = cm_queryDatabase( $query );
 
@@ -2404,18 +2404,6 @@ function cm_countUsersTime( $inInterval ) {
  
 
 
-function cm_countRobbableHouses() {
-    global $tableNamePrefix;
-
-    $query = "SELECT COUNT(*) ".
-        "FROM $tableNamePrefix"."houses ".
-        "WHERE ( edit_count > 0 OR ".
-        "        ( edit_count != 0 AND value_estimate > 0 ) )".
-        "AND blocked = 0;";
-    $result = cm_queryDatabase( $query );
-
-    return mysql_result( $result, 0, 0 );
-    }
 
 
 
