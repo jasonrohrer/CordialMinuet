@@ -165,7 +165,7 @@ $footer = "include( \"footer.php\" );";
 
 
 // for admin view
-$accountsPerPage = 50;
+$usersPerPage = 50;
 
 
 

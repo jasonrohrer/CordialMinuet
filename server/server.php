@@ -188,6 +188,15 @@ else if( $action == "check_hmac" ) {
 else if( $action == "show_data" ) {
     cm_showData();
     }
+else if( $action == "show_recent_user_emails" ) {
+    cm_showRecentUserEmails();
+    }
+else if( $action == "show_stats" ) {
+    cm_showStats();
+    }
+else if( $action == "block_user_id" ) {
+    cm_blockUserID();
+    }
 else if( $action == "logout" ) {
     cm_logout();
     }
@@ -338,7 +347,7 @@ function cm_setupDatabase() {
             "INDEX( email ),".
             "dollar_balance DOUBLE NOT NULL,".
             "sequence_number INT NOT NULL," .
-            "last_action DATETIME NOT NULL," .
+            "last_action_time DATETIME NOT NULL," .
             "blocked TINYINT NOT NULL ) ENGINE = INNODB;";
 
         $result = cm_queryDatabase( $query );
@@ -1124,7 +1133,7 @@ function orderLink( $inOrderBy, $inLinkText ) {
         }
 
 
-function cm_showDataHouseList( $inTableName ) {
+function cm_showDataUserList() {
     global $tableNamePrefix;
     
     // these are global so they work in embeded function call below
@@ -1132,17 +1141,17 @@ function cm_showDataHouseList( $inTableName ) {
 
     $skip = cm_requestFilter( "skip", "/\d+/", 0 );
 
-    global $housesPerPage;
+    global $usersPerPage;
     
     $search = cm_requestFilter( "search", "/[A-Z0-9_@. -]+/i" );
 
-    $order_by = cm_requestFilter( "order_by", "/[A-Z_]+/i", "last_ping_time" );
+    $order_by = cm_requestFilter( "order_by", "/[A-Z_]+/i",
+                                  "last_action_time" );
     
 
     $keywordClause = "";
     $searchDisplay = "";
 
-    $houseTable = "$tableNamePrefix"."$inTableName";
     $usersTable = "$tableNamePrefix"."users";
 
     
@@ -1150,12 +1159,9 @@ function cm_showDataHouseList( $inTableName ) {
 
         $search = preg_replace( "/ /", "%", $search );
 
-        $keywordClause = "WHERE ( $houseTable.user_id LIKE '%$search%' " .
-            "OR character_name LIKE '%$search%' ".
-            "OR loot_value LIKE '%$search%' ".
+        $keywordClause = "WHERE ( user_id LIKE '%$search%' " .
             "OR email LIKE '%$search%' ".
-            "OR character_name_history LIKE '%$search%' ".
-            "OR ticket_id LIKE '%$search%' ) ";
+            "OR account_key LIKE '%$search%' ) ";
 
         $searchDisplay = " matching <b>$search</b>";
         }
@@ -1166,33 +1172,31 @@ function cm_showDataHouseList( $inTableName ) {
 
     // first, count results
     $query = "SELECT COUNT(*) ".
-        "FROM $houseTable INNER JOIN $usersTable ".
-        "ON $houseTable.user_id = $usersTable.user_id $keywordClause;";
+        "FROM $usersTable ".
+        "$keywordClause;";
 
     $result = cm_queryDatabase( $query );
-    $totalHouses = mysql_result( $result, 0, 0 );
+    $totalUsers = mysql_result( $result, 0, 0 );
 
     
              
-    $query = "SELECT $houseTable.user_id, character_name, ".
-        "loot_value, wife_loot_value, value_estimate, edit_checkout, ".
-        "self_test_running, rob_checkout, robbing_user_id, rob_attempts, ".
-        "robber_deaths, edit_count, last_ping_time, last_owner_visit_time, ".
-        "$houseTable.blocked ".
-        "FROM $houseTable INNER JOIN $usersTable ".
-        "ON $houseTable.user_id = $usersTable.user_id $keywordClause ".
+    $query = "SELECT user_id, account_key, email, ".
+        "dollar_balance, last_action_time, ".
+        "blocked ".
+        "FROM $usersTable ".
+        "$keywordClause ".
         "ORDER BY $order_by DESC ".
-        "LIMIT $skip, $housesPerPage;";
+        "LIMIT $skip, $usersPerPage;";
     $result = cm_queryDatabase( $query );
     
     $numRows = mysql_numrows( $result );
 
     $startSkip = $skip + 1;
     
-    $endSkip = $startSkip + $housesPerPage - 1;
+    $endSkip = $startSkip + $usersPerPage - 1;
 
-    if( $endSkip > $totalHouses ) {
-        $endSkip = $totalHouses;
+    if( $endSkip > $totalUsers ) {
+        $endSkip = $totalUsers;
         }
 
 
@@ -1202,20 +1206,20 @@ function cm_showDataHouseList( $inTableName ) {
     
 
     
-    echo "$totalHouses active houses". $searchDisplay .
+    echo "$totalUsers active users". $searchDisplay .
         " (showing $startSkip - $endSkip):<br>\n";
 
     
-    $nextSkip = $skip + $housesPerPage;
+    $nextSkip = $skip + $usersPerPage;
 
-    $prevSkip = $skip - $housesPerPage;
+    $prevSkip = $skip - $usersPerPage;
     
     if( $prevSkip >= 0 ) {
         echo "[<a href=\"server.php?action=show_data" .
             "&skip=$prevSkip&search=$search&order_by=$order_by\">".
             "Previous Page</a>] ";
         }
-    if( $nextSkip < $totalHouses ) {
+    if( $nextSkip < $totalUsers ) {
         echo "[<a href=\"server.php?action=show_data" .
             "&skip=$nextSkip&search=$search&order_by=$order_by\">".
             "Next Page</a>]";
@@ -1231,37 +1235,20 @@ function cm_showDataHouseList( $inTableName ) {
     echo "<tr>\n";
     echo "<td>".orderLink( "user_id", "User ID" )."</td>\n";
     echo "<td>Blocked?</td>\n";
-    echo "<td>".orderLink( "character_name", "Character Name" )."</td>\n";
-    echo "<td>".orderLink( "loot_value", "Loot Value" )."</td>\n";
-    echo "<td>".orderLink( "wife_loot_value", "Wife Loot" )."</td>\n";
-    echo "<td>".orderLink( "value_estimate", "Value Est." )."</td>\n";
-    echo "<td>".orderLink( "rob_attempts", "Rob Attempts" )."</td>\n";
-    echo "<td>".orderLink( "robber_deaths", "Deaths" )."</td>\n";
-    echo "<td>".orderLink( "edit_count", "Edit Count" )."</td>\n";
-    echo "<td>Checkout?</td>\n";
-    echo "<td>Robbing User</td>\n";
-    echo "<td>".orderLink( "last_ping_time", "Ping" )."</td>\n";
-    echo "<td>".orderLink( "last_owner_visit_time", "Owner Visit" )."</td>\n";
+    echo "<td>".orderLink( "account_key", "Account Key" )."</td>\n";
+    echo "<td>".orderLink( "email", "Email" )."</td>\n";
+    echo "<td>".orderLink( "dollar_balance", "Balance" )."</td>\n";
+    echo "<td>".orderLink( "last_action_time", "Action" )."</td>\n";
 
     echo "</tr>\n";
     
 
     for( $i=0; $i<$numRows; $i++ ) {
         $user_id = mysql_result( $result, $i, "user_id" );
-        $character_name = mysql_result( $result, $i, "character_name" );
-        $loot_value = mysql_result( $result, $i, "loot_value" );
-        $wife_loot_value = mysql_result( $result, $i, "wife_loot_value" );
-        $value_estimate = mysql_result( $result, $i, "value_estimate" );
-        $edit_checkout = mysql_result( $result, $i, "edit_checkout" );
-        $self_test_running = mysql_result( $result, $i, "self_test_running" );
-        $rob_checkout = mysql_result( $result, $i, "rob_checkout" );
-        $robbing_user_id = mysql_result( $result, $i, "robbing_user_id" );
-        $rob_attempts = mysql_result( $result, $i, "rob_attempts" );
-        $robber_deaths = mysql_result( $result, $i, "robber_deaths" );
-        $edit_count = mysql_result( $result, $i, "edit_count" );
-        $last_ping_time = mysql_result( $result, $i, "last_ping_time" );
-        $last_owner_visit_time =
-            mysql_result( $result, $i, "last_owner_visit_time" );
+        $account_key = mysql_result( $result, $i, "account_key" );
+        $email = mysql_result( $result, $i, "email" );
+        $dollar_balance = mysql_result( $result, $i, "dollar_balance" );
+        $last_action_time = mysql_result( $result, $i, "last_action_time" );
         $blocked = mysql_result( $result, $i, "blocked" );
         
         $block_toggle = "";
@@ -1279,25 +1266,7 @@ function cm_showDataHouseList( $inTableName ) {
                 "blocked=1&user_id=$user_id".
                 "&search=$search&skip=$skip&order_by=$order_by\">block</a>";
             
-            }
-
-        $checkout = " ";
-
-        if( $edit_checkout ) {
-            if( $self_test_running ) {
-                $checkout = "edit (self-test)";
-                }
-            else {
-                $checkout = "edit";
-                }
-            }
-        if( $rob_checkout ) {
-            $checkout = "rob";
-            }
-        if( $edit_checkout && $rob_checkout ) {
-            $checkout = "BOTH!";
-            }
-        
+            }        
 
         
         echo "<tr>\n";
@@ -1306,19 +1275,10 @@ function cm_showDataHouseList( $inTableName ) {
         echo "[<a href=\"server.php?action=show_detail" .
             "&user_id=$user_id\">detail</a>]</td>\n";
         echo "<td align=right>$blocked [$block_toggle]</td>\n";
-        echo "<td>$character_name</td>\n";
-        echo "<td>$loot_value</td>\n";
-        echo "<td>$wife_loot_value</td>\n";
-        echo "<td>$value_estimate</td>\n";
-        echo "<td>$rob_attempts</td>\n";
-        echo "<td>$robber_deaths</td>\n";
-        echo "<td>$edit_count</td>\n";
-        echo "<td>$checkout</td>\n";
-        echo "<td>$robbing_user_id ";
-        echo "[<a href=\"server.php?action=show_detail" .
-            "&user_id=$robbing_user_id\">detail</a>]</td>\n";
-        echo "<td>$last_ping_time</td>\n";
-        echo "<td>$last_owner_visit_time</td>\n";
+        echo "<td>$account_key</td>\n";
+        echo "<td>$email</td>\n";
+        echo "<td>\$$dollar_balance</td>\n";
+        echo "<td>$last_action_time</td>\n";
         echo "</tr>\n";
         }
     echo "</table>";
@@ -1355,8 +1315,6 @@ function cm_generateHeader() {
 
     $userCount = cm_countUsers();
 
-    $houseCount = cm_countRobbableHouses();
-
     $result = cm_queryDatabase( "SHOW FULL PROCESSLIST;" );
     $connectionCount = mysql_numrows( $result );
 
@@ -1372,10 +1330,6 @@ function cm_generateHeader() {
         $perUserString = cm_formatBytes( $bytesUsed / $userCount );
         }
 
-    $houseWord = "houses";
-    if( $houseCount == 1 ) {
-        $houseWord = "house";
-        }
     $connectionWord = "connections";
     if( $connectionCount == 1 ) {
         $connectionWord = "connection";
@@ -1384,13 +1338,10 @@ function cm_generateHeader() {
     echo "<table width='100%' border=0><tr>".
         "<td valign=top width=25%>[<a href=\"server.php?action=show_data" .
             "\">Main</a>] ".
-            "[<a href=\"server.php?action=show_prices" .
-            "\">Prices</a>] ".
             "[<a href=\"server.php?action=show_stats" .
             "\">Stats</a>]</td>".
         "<td valign=top align=center width=50%>".
         "$sizeString ($perUserString per user)<br>".
-        "$houseCount robbable $houseWord<br>".
         "$connectionCount active MySQL $connectionWord<br>".
         "Users: $usersDay/d | $usersHour/h | $usersFiveMin/5m | ".
         "$usersMinute/m | $usersSecond/s</td>".
@@ -1413,9 +1364,10 @@ function cm_showData() {
     
     
     $search = cm_requestFilter( "search", "/[A-Z0-9_@. -]+/i" );
-    $order_by = cm_requestFilter( "order_by", "/[A-Z_]+/i", "last_ping_time" );
+    $order_by = cm_requestFilter( "order_by", "/[A-Z_]+/i",
+                                  "last_action_time" );
     
-    // form for searching houses
+    // form for searching users
 ?>
         <hr><table border=0 width = 100%><tr>
              <td>
@@ -1425,14 +1377,6 @@ function cm_showData() {
     <INPUT TYPE="text" MAXLENGTH=40 SIZE=20 NAME="search"
              VALUE="<?php echo $search;?>">
     <INPUT TYPE="Submit" VALUE="Search">
-    </FORM>
-             </td>
-             <td align=center>
-<FORM ACTION="server.php" METHOD="post">
-    <INPUT TYPE="hidden" NAME="action" VALUE="show_object_report">
-    <INPUT TYPE="text" MAXLENGTH=10 SIZE=10 NAME="limit"
-             VALUE="0">
-             <INPUT TYPE="Submit" VALUE="Object Report"><br>(0 for no limit)
     </FORM>
              </td>
              <td align=right>
@@ -1448,27 +1392,11 @@ function cm_showData() {
 <?php
 
              
-    cm_showDataHouseList( "houses" );
+    cm_showDataUserList();
     
 
 
 
-    echo "<hr>";
-
-
-    $query = "SELECT COUNT(*) ".
-        "FROM $tableNamePrefix"."houses_owner_died;";
-
-    $result = cm_queryDatabase( $query );
-    $totalShadowHouses = mysql_result( $result, 0, 0 );
-
-    if( $totalShadowHouses > 0 ) {
-        echo "<b>Shadow houses</b>:<br>";
-
-        cm_showDataHouseList( "houses_owner_died" );
-
-        echo "<hr>";
-        }
 
 
     echo "<hr>";
@@ -1485,6 +1413,43 @@ function cm_showData() {
     
     echo "Generated for $remoteIP\n";
     
+    }
+
+
+
+
+
+function cm_showRecentUserEmails() {
+    global $tableNamePrefix, $remoteIP;
+
+
+    cm_checkPassword( "show_recent_user_emails" );
+
+    cm_generateHeader();
+
+    $day_limit = cm_requestFilter( "day_limit", "/\d+/", 7 );
+    
+    $query = "set group_concat_max_len=100000;";
+
+    cm_queryDatabase( $query );
+    
+    
+    $query = "SELECT COUNT(*), GROUP_CONCAT( email separator ', ') ".
+        "FROM $tableNamePrefix"."users ".
+        "WHERE last_action_time > ".
+        "      SUBTIME( CURRENT_TIMESTAMP, '$day_limit 0:00:00' );";
+        
+    $result = cm_queryDatabase( $query );
+
+    $count = mysql_result( $result, 0, 0 );
+    $emailList = mysql_result( $result, 0, 1 );
+
+
+    echo "$count users played the game in the past $day_limit days:<br><br>";
+
+    echo "$emailList";
+
+    echo "<br><br>END";
     }
 
 
@@ -1540,99 +1505,90 @@ function cm_showStats() {
 
     echo "</table>\n";
 
-
-    echo "<br><br><hr><br><br>\n";
-
-    
-
-    // now item purchase stats
-
-    // first, get all possible column headers
-    $query = "SELECT COUNT(*), object_id, price ".
-        "FROM $tableNamePrefix"."item_purchase_stats ".
-        "GROUP BY object_id, price ".
-        "ORDER BY object_id, price;";
-
-    $result = cm_queryDatabase( $query );
-
-    $numRows = mysql_numrows( $result );
-
-    $columns = array();
-
-    echo "<table border = 1>\n";
-    echo "<tr><td><b>stat_date<b></td>";
-    
-    for( $i=0; $i<$numRows; $i++ ) {
-        $id = mysql_result( $result, $i, "object_id" );        
-        $price = mysql_result( $result, $i, "price" );
-        
-        $columns[$i] = "$id@$price";
-
-        $note = cm_getItemNote( $id );
-        
-        echo "<td><b>$note</b> (\$$price)</td>";
-        }
-
-    echo "</tr>";
-
-
-    // now get all stats an stick each on in appropriate column bin
-    
-    $query = "SELECT stat_date, object_id, price, purchase_count ".
-        "FROM $tableNamePrefix"."item_purchase_stats ".
-        "ORDER BY stat_date, object_id, price;";
-
-    $result = cm_queryDatabase( $query );
-
-    $numRows = mysql_numrows( $result );
-
-    $lastDate = "";
-    
-    if( $numRows > 0 ) {
-        $lastDate = mysql_result( $result, 0, "stat_date" );        
-        }
-
-    echo "<tr><td bgcolor=$bgColor>$lastDate</td>";
-
-    $columnNumber = 0;
-    
-    for( $i=0; $i<$numRows; $i++ ) {
-        $stat_date = mysql_result( $result, $i, "stat_date" );
-
-        if( $stat_date != $lastDate ) {
-            echo "</tr>\n";
-
-            $columnNumber = 0;
-            
-            $temp = $bgColor;
-            $bgColor = $altBGColor;
-            $altBGColor = $temp;
-
-            echo "<tr><td bgcolor=$bgColor>$stat_date</td>";
-            $lastDate = $stat_date;
-            }
-        
-        $id = mysql_result( $result, $i, "object_id" );
-        $price = mysql_result( $result, $i, "price" );
-        $purchase_count = mysql_result( $result, $i, "purchase_count" );
-
-        $columnName = "$id@$price";
-
-        // skip columns until we find one that matches
-        // (if we skip, those dates had no purchases of $id at $price)
-        while( $columns[$columnNumber] != $columnName ) {
-            echo "<td align=right bgcolor=$bgColor>0</td>";
-            $columnNumber ++;
-            }
-        echo "<td align=right bgcolor=$bgColor>$purchase_count</td>";
-        $columnNumber ++;
-        }
-
-    echo "</tr>\n";
-    
-
-    echo "</table>";
     }
+
+
+
+function cm_blockUserID() {
+    cm_checkPassword( "block_user_id" );
+
+
+    global $tableNamePrefix;
+        
+    $user_id = cm_getUserID();
+
+    $blocked = cm_requestFilter( "blocked", "/[01]/" );
+
+    // don't touch admin
+    if( cm_updateUser_internal( $user_id, $blocked, -1 ) ) {
+        cm_showData();
+        }
+    }
+
+
+
+function cd_updateUser() {
+    cd_checkPassword( "update_user" );
+
+
+    $user_id = cd_getUserID();
+
+    $blocked = cd_requestFilter( "blocked", "/[1]/", "0" );
+    $email = cd_requestFilter( "email", "/[A-Z0-9._%+-]+@[A-Z0-9.-]+/i" );
+
+    if( cd_updateUser_internal( $user_id, $blocked, $email ) ) {
+        cd_showDetail();
+        }
+    }
+
+
+
+// set any to -1 to leave unchanged
+// returns 1 on success
+function cd_updateUser_internal( $user_id, $blocked, $email ) {
+    
+    global $tableNamePrefix;
+        
+    
+    global $remoteIP;
+    
+
+    
+    $query = "SELECT user_id, blocked, email ".
+        "FROM $tableNamePrefix"."users ".
+        "WHERE user_id = '$user_id';";
+    $result = cd_queryDatabase( $query );
+
+    $numRows = mysql_numrows( $result );
+
+    if( $numRows == 1 ) {
+        $old_blocked = mysql_result( $result, 0, "blocked" );
+        $old_email = mysql_result( $result, 0, "email" );
+
+        if( $blocked == -1 ) {
+            $blocked = $old_blocked;
+            }
+        if( $email == -1 ) {
+            $email = $old_email;
+            }
+        
+        
+        $query = "UPDATE $tableNamePrefix"."users SET " .
+            "blocked = '$blocked', email = '$email' " .
+            "WHERE user_id = '$user_id';";
+        
+        $result = cd_queryDatabase( $query );
+        
+        return 1;
+        }
+    else {
+        cd_log( "$user_id not found for $remoteIP" );
+
+        echo "$user_id not found";
+        }
+    return 0;
+    }
+
 
 
 
