@@ -73,3 +73,68 @@ server.php?action=check_hmac&user_id=[id number]
                             &ticket_hmac=[hmac-sha1, hex-encoded]
 Returns:
 OK
+
+
+
+
+
+NOTE:
+server_public_key ships hard-coded in clients.  It is the server's 32-byte 
+curve25519 public key, hex-encoded as a 64-character string.  Shipping the
+server public key with the client prevents man-in-the-middle attacks.
+
+
+
+
+
+=== Call:
+server.php?action=make_deposit
+          &email=[email]
+          &client_public_key=[public key]
+		  &card_data=[encrypted card data]
+		  
+Returns:
+OK
+new_account
+encrypted_account_key
+encrypted_account_key
+
+
+
+Where:
+
+client_public_key  is the client's 32-byte curve25519 public key,
+hex-encoded as a 64-character string.
+
+
+
+FIXME:  must hash shared secret before using it.
+Need to generate enough bytes (sha1 only generates 20).
+Use HMAC_SHA1 several times with different counter values (0, 1, 2)
+until enough bytes have been generated.
+Continue incrementing counters to generate bytes to encrypt server's response
+back (3, 4, 5, etc.) so that key stream isn't reused in response).
+
+
+card_data is the ASCII representation of the credit card data in the format
+card_number#MMYY#CVC
+XOR'd with the decrypted .  MMYY is the 4-digit
+card epiration date.  For a 16-digit card number and a 3-digit CVC, the first
+25 bytes of the 32-byte shared secret key are used.
+
+The server can verify this format to thwart man-in-the-middle (verifying
+that the client_public_key has not been tampered with
+
+
+Returns DENIED on payment failure.
+
+new_account is 1 if no deposit has ever been made for this email address
+before.  In this case, an encrypted_account_key is returned for the new
+account.  No key is returned if the deposit is made into an existing account.
+
+encrypted_account_key is the ASCII representation of the account key, with
+hyphens removed, XOR with the necessary b
+
+user_id=[id number]
+                            &sequence_number=[number]
+                            &ticket_hmac=[hmac-sha1, hex-encoded]
