@@ -7,7 +7,7 @@ Content-Length header for POST requests), the server will sleep for 30 seconds
 before returning 'INCOMPLETE'.  The sleep allows clients to time out and retry
 without having to deal with the error message (the server lets them treat
 INCOMPLETE requests like server timeouts).  The server only performs this check
-for requests that include a ticket_hmac.
+for requests that include a account_hmac.
 
 
 
@@ -60,7 +60,7 @@ thwart replay attacks.
 
 Thus, the account key is never sent from the client to the server, yet the
 server can verify that the client making the transaction is indeed in 
-possession of the ticket ID (which only one person in the world should have),
+possession of the account key (which only one person in the world should have),
 as well as the proper version number.
 
 
@@ -70,9 +70,11 @@ as well as the proper version number.
 === Call:
 server.php?action=check_hmac&user_id=[id number]
                             &sequence_number=[number]
-                            &ticket_hmac=[hmac-sha1, hex-encoded]
+                            &account_hmac=[hmac-sha1, hex-encoded]
 Returns:
 OK
+
+
 
 
 
@@ -87,16 +89,24 @@ server public key with the client prevents man-in-the-middle attacks.
 
 
 
+
+
 === Call:
 server.php?action=make_deposit
           &email=[email]
-          &client_public_key=[public key]
-		  &card_data=[encrypted card data]
+          &client_public_key=[32-byte key, hex-encoded]
+          &email_hmac=[hmac-sha1, hex-encoded]
+		  &card_data_encrypted=[encrypted card data]
+		  &dollar_amount=[ASCII decimal value]
+          &dollar_amount_hmac=[hmac-sha1, hex-encoded]
+       For existing accounts:
+          &user_id=[id number]
+          &sequence_number=[number]
+          &account_hmac=[hmac-sha1, hex-encoded]  
 		  
 Returns:
 OK
 new_account
-encrypted_account_key
 encrypted_account_key
 
 
@@ -106,35 +116,79 @@ Where:
 client_public_key  is the client's 32-byte curve25519 public key,
 hex-encoded as a 64-character string.
 
+email_hmac is HMAC_SHA1( shared_secret_hex, email ), where shared_secret_hex is
+derived through curve25519 key exchange (using the hard-coded 
+server_public_key).
+
+card_data_encrypted is the ASCII credit card data in the format
+card_number#MM#YYYY#CVC
+XOR'd with sufficient bytes from 
+HMAC_SHA1( shared_secret_hex, 0 ) . HMAC_SHA1( shared_secret_hex, 1 )
+(two HMACs concatonated to make 40 bytes), where shared_secret is derived
+through curve25519 key exchange (using the hard-coded server_public_key).
+MM and YYYY are the 2- and 4-digit card epiration month and year.
+For a 16-digit card number and a 3-digit CVC, the first 28 bytes of the 
+40-byte HMAC concatonation are used.
+
+dollar_amount is the ASCII decimal dollar and cents value, with two figures
+to the right of the decimal point, like 543.21 or 23.00
+
+dollar_amount_hmac is HMAC_SHA1( shared_secret_hex, dollar_amount ), where 
+shared_secret_hex is derived through curve25519 key exchange (using the 
+hard-coded server_public_key).
+
+The server can verify this descrypted card data format to thwart
+man-in-the-middle attacks from capturing the server response (verifying that 
+the client_public_key has not been tampered with---that the person who supplied
+a valid, chargeable card number also supplied client_public_key, so it's
+safe to send new account details back encrypted against this key).
 
 
-FIXME:  must hash shared secret before using it.
-Need to generate enough bytes (sha1 only generates 20).
-Use HMAC_SHA1 several times with different counter values (0, 1, 2)
-until enough bytes have been generated.
-Continue incrementing counters to generate bytes to encrypt server's response
-back (3, 4, 5, etc.) so that key stream isn't reused in response).
-
-
-card_data is the ASCII representation of the credit card data in the format
-card_number#MMYY#CVC
-XOR'd with the decrypted .  MMYY is the 4-digit
-card epiration date.  For a 16-digit card number and a 3-digit CVC, the first
-25 bytes of the 32-byte shared secret key are used.
-
-The server can verify this format to thwart man-in-the-middle (verifying
-that the client_public_key has not been tampered with
 
 
 Returns DENIED on payment failure.
+Returns ACCOUNT_EXISTS if no existing account details were provided and
+an account already exists for this email address.
+
 
 new_account is 1 if no deposit has ever been made for this email address
 before.  In this case, an encrypted_account_key is returned for the new
 account.  No key is returned if the deposit is made into an existing account.
 
 encrypted_account_key is the ASCII representation of the account key, with
-hyphens removed, XOR with the necessary b
+hyphens removed, XOR'd with sufficient bytes from 
+HMAC_SHA1( shared_secret_hex, 2 ) . HMAC_SHA1( shared_secret_hex, 3 )
+(two HMACs concatonated to make 40 bytes), where shared_secret is derived
+through curve25519 key exchange.
 
-user_id=[id number]
-                            &sequence_number=[number]
-                            &ticket_hmac=[hmac-sha1, hex-encoded]
+Deposits into existing accounts MUST include user_id, sequence_number, and
+account_hmac.
+
+
+NOTE:
+The only way for someone to obtain their account number directly from the
+server is to make an initial deposit for an email address.
+A receipt will be emailed to them with their account_key for future reference.
+
+Subsequent deposits must be made using that account key (to generate valid
+account_hmacs) and will not return the account_key again.
+
+
+WEAKNESSES:
+
+An attacker with a valid credit card number can pre-hijack an email address
+by making a new account for it and depositing money into it.  The attacker
+will then have the account_key for this email address.  However, the email
+address owner will receive a receipt by email alerting them that this has
+happened.
+
+A man-in-the-middle attack can replace the email address for new account
+creation, but only by also replacing the client_public_key, and therefore also
+replacing card data with some other, valid card data.  Thus, the attacker
+can make deposites into a different, newly-created account, but only by
+using the attacker's own card (and not redirecting the target's funds
+into a different account).
+
+For existing accounts, an even stronger property holds.
+
+

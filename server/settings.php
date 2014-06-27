@@ -25,6 +25,17 @@ $serverSecretKey = "0aa02f4b4fb72740bf927ecdc94fffd21506a3a3";
 
 
 
+// these are default, non-secret key values
+// they should be replaced in live environments with values from
+// curve25519GenKeyPair
+$serverCurve25519SecretKey =
+"596187F726D13B9BDE01AC6AFE584763095E16F38EED52CA7643248F4258CBD1";
+// embed this in the client so that the server can be authenticated
+$serverCurve25519PublicKey = 
+"6A166C30A27C233F78786B651073737B1397865862FF2B3DDFA3DD86A21DCB79";
+
+
+
 // End Basic settings
 
 
@@ -38,6 +49,18 @@ $serverSecretKey = "0aa02f4b4fb72740bf927ecdc94fffd21506a3a3";
 // the same database).
 $tableNamePrefix = "minuetServer_";
 
+
+
+
+$curlPath = "/usr/bin/curl";
+
+
+// settings for stripe.com payment processor
+$stripeChargeURL = "https://api.stripe.come/v1/charges";
+
+$stripeSecretKey = "sk_test_BQokikJOvBiI2HlWgH4olfq2";
+
+$stripeChargeDescription = "Deposit for Jason Rohrer's Cordial Minuet game";
 
 
 
@@ -115,8 +138,6 @@ $twilioAcountID = "replace_me";
 
 $twilioAuthToken = "replace_me";
 
-$curlPath = "/usr/bin/curl";
-
 
 
 
@@ -182,6 +203,11 @@ $shutdownMessage =
 "The server is going to be rebooted to add a##".
 "third CPU core. Should be back online soon.##".
 "--Jason";
+
+
+
+$minDeposit = "2.00";
+
 
 
 ?>

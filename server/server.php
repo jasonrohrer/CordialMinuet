@@ -8,11 +8,11 @@ $cm_version = "1";
 
 
 // leave an older version here IF older clients can also connect safely
-// (newer clients must use this old version number in their ticket hash
+// (newer clients must use this old version number in their account hmac
 //  too).
 // NOTE that if old clients are incompatible, both numbers should be updated.
-global $cm_ticketHashVersion;
-$cm_ticketHashVersion = "1";
+global $cm_accountHmacVersion;
+$cm_accountHmacVersion = "1";
 
 
 
@@ -163,7 +163,8 @@ global $shutdownMode;
 
 if( $shutdownMode &&
     ( $action == "check_user" ||
-      $action == "check_hmac" ) ) {
+      $action == "check_hmac" ||
+      $action == "make_deposit" ) ) {
 
     echo "SHUTDOWN";
     global $shutdownMessage;
@@ -172,15 +173,6 @@ if( $shutdownMode &&
 else if( $action == "version" ) {
     global $cm_version;
     echo "$cm_version";
-    }
-else if( $action == "paypal_ipn" ) {
-    cm_paypalIPN();
-    }
-else if( $action == "paypal_cancel" ) {
-    cm_paypalCancel();
-    }
-else if( $action == "paypal_success" ) {
-    cm_paypalSuccess();
     }
 else if( $action == "show_log" ) {
     cm_showLog();
@@ -193,6 +185,9 @@ else if( $action == "check_user" ) {
     }
 else if( $action == "check_hmac" ) {
     cm_checkHmac();
+    }
+else if( $action == "make_deposit" ) {
+    cm_makeDeposit();
     }
 else if( $action == "show_data" ) {
     cm_showData();
@@ -343,7 +338,6 @@ function cm_setupDatabase() {
     if( ! cm_doesTableExist( $tableName ) ) {
 
         // this table contains general info about each user
-        // unique ID is ticket ID from ticket server
         //
         // sequence number used and incremented with each client request
         // to prevent replay attacks
@@ -667,7 +661,7 @@ function cm_checkUser() {
 
     // first, see if user already exists in local users table
 
-    $query = "SELECT ticket_id, user_id, lives_left, blocked ".
+    $query = "SELECT user_id, sequence_number, blocked ".
         "FROM $tableNamePrefix"."users ".
         "WHERE email = '$email';";
 
@@ -675,192 +669,34 @@ function cm_checkUser() {
     
     $numRows = mysql_numrows( $result );
 
-    $ticket_id;
     $blocked;
     
     if( $numRows > 0 ) {
 
         $row = mysql_fetch_array( $result, MYSQL_ASSOC );
     
-        $ticket_id = $row[ "ticket_id" ];
         $blocked = $row[ "blocked" ];
-        
-        $user_id = $row[ "user_id" ];
-        $lives_left = $row[ "lives_left" ];
-
-        if( $blocked ) {
-            echo "DENIED";
-
-            cm_log( "checkUser for $email DENIED, blocked locally" );
-            return;
-            }
-        if( $lives_left == 0 ) {
-            cm_permadead( $user_id );
-            }
-        }
-    else {
-        // check on ticket server
-        $encodedEmail = urlencode( $email );
-        
-        $result = file_get_contents(
-            "$ticketServerURL".
-            "?action=get_ticket_id".
-            "&email=$encodedEmail" );
-
-        // Run a regexp filter to remove non-base-32 characters.
-        $match = preg_match( "/[A-HJ-NP-Z2-9]+/", $result, $matches );
-        
-        if( $result == "DENIED" || $match != 1 ) {
-            echo "DENIED";
-
-            cm_log( "checkUser for $email DENIED, email not found ".
-                    "or blocked on ticket server" );
-            return;
-            }
-        else {
-            $ticket_id = $matches[0];
-
-            // decrypt it
-
-            $ticket_id_bits = cm_readableBase32DecodeToBitString( $ticket_id );
-
-            $ticketLengthBits = strlen( $ticket_id_bits );
-
-
-            // generate enough bits by hashing shared secret repeatedly
-            $hexToMixBits = "";
-
-            $runningSecret = cm_hmac_sha1( $sharedEncryptionSecret, $email );
-            while( strlen( $hexToMixBits ) < $ticketLengthBits ) {
-
-                $newBits = cm_hexDecodeToBitString( $runningSecret );
-
-                $hexToMixBits = $hexToMixBits . $newBits;
-
-                $runningSecret = cm_hmac_sha1( $sharedEncryptionSecret,
-                                               $runningSecret );
-                }
-
-            // trim down to bits that we need
-            $hexToMixBits = substr( $hexToMixBits, 0, $ticketLengthBits );
-
-            $mixBits = str_split( $hexToMixBits );
-            $ticketBits = str_split( $ticket_id_bits );
-
-            // bitwise xor
-            $i = 0;
-            foreach( $mixBits as $bit ) {
-                if( $bit == "1" ) {
-                    if( $ticket_id_bits[$i] == "1" ) {
-                
-                        $ticketBits[$i] = "0";
-                        }
-                    else {
-                        $ticketBits[$i] = "1";
-                        }
-                    }
-                $i++;
-                }
-
-            $ticket_id_bits = implode( $ticketBits );
-
-            $ticket_id =
-                cm_readableBase32EncodeFromBitString( $ticket_id_bits );
-            }
-        }
-
-
-    
-    cm_queryDatabase( "SET AUTOCOMMIT=0" );
-    
-    
-    $query = "SELECT user_id, blocked, sequence_number, admin ".
-        "FROM $tableNamePrefix"."users ".
-        "WHERE ticket_id = '$ticket_id' FOR UPDATE;";
-    $result = cm_queryDatabase( $query );
-    
-    $numRows = mysql_numrows( $result );
-
-    $user_id;
-    $sequence_number;
-    $admin;
-    
-    if( $numRows < 1 ) {
-        // new user, in ticket server but not here yet
-
-        // create
-        global $startingLifeLimit;
-
-        $lives_left = -1;
-
-        if( $startingLifeLimit > 0 ) {
-            $lives_left = $startingLifeLimit + 1;
-            }
-        
-        // user_id auto-assigned
-        $query = "INSERT INTO $tableNamePrefix"."users ".
-            "(ticket_id, email, character_name_history, lives_left, ".
-            " last_robbed_owner_id, last_robbery_response, ".
-            " last_robbery_deadline, ".
-            " admin, sequence_number, ".
-            " last_price_list_number, blocked) ".
-            "VALUES(" .
-            " '$ticket_id', '$email', '', $lives_left, ".
-            " 0, '', CURRENT_TIMESTAMP, 0, 0, 0, 0 );";
-        $result = cm_queryDatabase( $query );
-
-        $user_id = mysql_insert_id();
-        $sequence_number = 0;
-        $admin = 0;
-        
-        cm_queryDatabase( "COMMIT;" );
-        cm_queryDatabase( "SET AUTOCOMMIT=1" );
-        
-
-        cm_newHouseForUser( $user_id );
-        }
-    else {
-        $row = mysql_fetch_array( $result, MYSQL_ASSOC );
-    
-        $blocked = $row[ "blocked" ];
-
-        cm_queryDatabase( "COMMIT;" );
-        cm_queryDatabase( "SET AUTOCOMMIT=1" );
-        
-        
-        if( $blocked ) {
-            echo "DENIED";
-
-            
-
-            cm_log( "checkUser for $email DENIED, blocked on castle server" );
-
-            
-            return;
-            }
         
         $user_id = $row[ "user_id" ];
         $sequence_number = $row[ "sequence_number" ];
-        $admin = $row[ "admin" ];
 
-        
-        $query = "SELECT COUNT(*) ".
-            "FROM $tableNamePrefix"."houses ".
-            "WHERE user_id = '$user_id';";
-        $result = cm_queryDatabase( $query );
+        if( $blocked ) {
+            echo "DENIED";
 
-        $houseCount = mysql_result( $result, 0, 0 );
-
-        if( $houseCount < 1 ) {
-            cm_log( "Warning:  user $user_id present, ".
-                    "but had no house. Creating one." );
-            cm_newHouseForUser( $user_id );
+            cm_log( "checkUser for $email DENIED, blocked" );
+            return;
             }
-        }
 
-    global $cm_version;
+        global $cm_version;
     
-    echo "$cm_version $user_id $sequence_number $admin OK";
+        echo "$cm_version $user_id $sequence_number OK";
+        }
+    else {
+        echo "DENIED";
+
+        cm_log( "checkUser for $email DENIED, user not found" );
+        return;
+        }
     }
 
 
@@ -873,6 +709,191 @@ function cm_checkHmac() {
     echo "OK";
     }
 
+
+
+
+function cm_makeDeposit() {
+    $email = cm_requestFilter( "email", "/[A-Z0-9._%+-]+@[A-Z0-9.-]+/i" );
+
+
+    // does account for this email exist already?
+    $query = "SELECT user_id, blocked ".
+        "FROM $tableNamePrefix"."users ".
+        "WHERE email = '$email';";
+
+    $result = cm_queryDatabase( $query );
+    
+    $numRows = mysql_numrows( $result );
+
+    $user_id = "";
+    $dollar_balance = 0;
+    
+    if( $numRows > 0 ) {
+
+        $row = mysql_fetch_array( $result, MYSQL_ASSOC );
+
+        $blocked = $row[ "blocked" ];
+
+        if( $blocked ) {
+            echo "DENIED";
+
+            cm_log( "deposit for $email DENIED, blocked" );
+            return;
+            }
+        
+        
+        $user_id = $row[ "user_id" ];
+
+        if( cm_getUserID() != $user_id ) {
+            echo "ACCOUNT_EXISTS";
+
+            cm_log( "deposit for $email DENIED, existing account with " .
+                    "user_id mismatch" );
+            return;
+            }
+
+        // existing account with valid user_id supplied
+        // must have transaction credentials attached
+        if( ! cd_verifyTransaction() ) {
+            return;
+            }
+
+        $dollar_balance = $row[ "dollar_balance" ];
+        }
+    // else, no account exists for this email.
+    // Leave user_id and dollar_balance blank
+
+
+    $client_public_key = cm_requestFilter( "client_public_key",
+                                           "/[A-F0-9]+/i" );
+
+    if( strlen( $client_public_key ) != 64 ) {
+        echo "DENIED";
+
+        cm_log( "deposit for $email DENIED, ".
+                "bad client key $client_public_key" );
+        return;
+        }
+
+
+
+    global $serverCurve25519SecretKey;
+
+    exec( "./curve25519GenSharedKey ".
+          "$serverCurve25519SecretKey $client_public_key", $output );
+
+    if( count( $output ) != 1 ) {
+        echo "FAILED: Unexpected output from curve25519GenSharedKey:<br>\n" .
+            "$output";
+        return;
+        }
+    
+    $sharedSecretHex = $output[0];
+    
+
+    
+    $email_hmac = cm_requestFilter( "email_hmac",
+                                    "/[A-F0-9]+/i" );
+    if( $email_hmac != cm_hmac_sha1( $sharedSecretHex, $email ) ) {
+        echo "DENIED";
+
+        cm_log( "deposit for $email DENIED, ".
+                "bad email hmac" );
+        return;
+        }
+
+    $dollar_amount = cm_requestFilter(
+        "dollar_amount", "/[0-9]+[.][0-9][0-9]/i", 0.00 );
+
+    global $minDeposit;
+    if( $dollar_amount < $minDeposit ) {
+        echo "DENIED";
+
+        cm_log( "deposit for $email DENIED, ".
+                "bad dollar amount below $minDeposit, $dollar_amount" );
+        return;
+        }
+    
+    
+    
+    $dollar_amount_hmac = cm_requestFilter( "dollar_amount_hmac",
+                                            "/[A-F0-9]+/i" );
+    if( $dollar_amount_hmac != cm_hmac_sha1( $sharedSecretHex,
+                                             $dollar_amount ) ) {
+        echo "DENIED";
+
+        cm_log( "deposit for $email DENIED, ".
+                "bad dollar amount hmac" );
+        return;
+        }
+
+    
+    $card_data_encrypted = cm_requestFilter( "card_data_encrypted",
+                                             "/[A-F0-9]+/i" );
+
+    $encryptionKeyHex =
+        cm_hmac_sha1( $sharedSecretHex, 0 ) .
+        cm_hmac_sha1( $sharedSecretHex, 1 );
+
+
+    $encryptionKeyBin = sg_hex2bin( $encryptionKeyHex );    
+
+    
+    $cardDataBytes = array();
+
+    $length = strlen( $card_data_encrypted );
+
+    for( $i=0; $i<$length; $i++ ) {
+        $cardDataBytes[$i] =
+            $encryptionKeyHex[$i] ^ $card_data_encrypted[$i];
+        }
+
+
+    $cardData = implode( $cardDataBytes );
+
+    $dataParts = preg_split( "/#/", $cardData );
+
+    if( count( $dataParts ) != 4 ||
+        strlen( $dataParts[1] ) != 2 ||
+        strlen( $dataParts[2] ) != 4 ) {
+
+        echo "DENIED";
+
+        cm_log( "deposit for $email DENIED, ".
+                "badly formatted card data" );
+        return;
+        }
+
+    // card data came through okay
+    // if charge goes through, we are set to trust this client
+
+    $cardNumber = $dataParts[0];
+    $month = $dataParts[1];
+    $year = $dataParts[2];
+    $cvc = $dataParts[3];
+    
+    
+    global $curlPath, $stripeChargeURL, $stripeSecretKey;
+
+    $curlCallString =
+        "$curlPath ".
+        "'$stripeChargeURL' ".
+        "-u $stripeSecretKey".": ".
+        "-d 'amount=$dollar_amount'  ".
+        "-d 'currency=usd'  ".
+        "-d 'description=$stripeChargeDescription' ".
+        "-d 'card[number]=$cardNumber'  ".
+        "-d 'card[exp_month]=$month'  ".
+        "-d 'card[exp_year]=$year'  ".
+        "-d 'card[cvc]=$cvc' ";
+    
+    exec( $curlCallString, $output );
+
+    // FIXME:
+    // process result
+    
+    
+    }
 
 
 
@@ -980,14 +1001,14 @@ function cm_verifyTransaction() {
 
     $sequence_number = cm_requestFilter( "sequence_number", "/\d+/" );
 
-    $ticket_hmac = cm_requestFilter( "ticket_hmac", "/[A-F0-9]+/i" );
+    $account_hmac = cm_requestFilter( "account_hmac", "/[A-F0-9]+/i" );
     
 
     cm_queryDatabase( "SET AUTOCOMMIT=0" );
 
     // automatically ignore blocked users
     
-    $query = "SELECT sequence_number, lives_left, ticket_id ".
+    $query = "SELECT sequence_number, lives_left, account_key ".
         "FROM $tableNamePrefix"."users ".
         "WHERE user_id = '$user_id' AND blocked='0' FOR UPDATE;";
 
@@ -1024,19 +1045,19 @@ function cm_verifyTransaction() {
     
     
     
-    $ticket_id = $row[ "ticket_id" ];
+    $account_key = $row[ "account_key" ];
 
 
-    global $sharedClientSecret, $cm_ticketHashVersion;
+    global $sharedClientSecret, $cm_accountHmacVersion;
     
-    $correct_ticket_hmac = cm_hmac_sha1( $ticket_id,
+    $correct_account_hmac = cm_hmac_sha1( $account_key,
                                          "$sequence_number" .
-                                         "$cm_ticketHashVersion" .
+                                         "$cm_accountHmacVersion" .
                                          $sharedClientSecret );
 
 
-    if( strtoupper( $correct_ticket_hmac ) !=
-        strtoupper( $ticket_hmac ) ) {
+    if( strtoupper( $correct_account_hmac ) !=
+        strtoupper( $account_hmac ) ) {
         cm_transactionDeny();
         cm_log( "Transaction denied for user_id $user_id, ".
                 "hmac check failed" );
