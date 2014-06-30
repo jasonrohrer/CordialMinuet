@@ -1,0 +1,10 @@
+syntax: glob
+
+
+*.o
+*.dep
+*~
+*.orig
+
+gameSource/recordedGames/*
+gameSource/screenShots/*
