@@ -162,7 +162,8 @@ global $shutdownMode;
 
 
 if( $shutdownMode &&
-    ( $action == "check_user" ||
+    ( $action == "check_required_version" ||
+      $action == "check_user" ||
       $action == "check_hmac" ||
       $action == "make_deposit" ) ) {
 
@@ -179,6 +180,9 @@ else if( $action == "show_log" ) {
     }
 else if( $action == "clear_log" ) {
     cm_clearLog();
+    }
+else if( $action == "check_required_version" ) {
+    cm_checkRequiredVersion();
     }
 else if( $action == "check_user" ) {
     cm_checkUser();
@@ -654,6 +658,16 @@ function cm_checkForFlush() {
 
 
 
+function cm_checkRequiredVersion() {
+    global $cm_version, $upgradeURL;
+    
+    echo "$cm_version $upgradeURL OK";
+    }
+
+
+
+
+
 function cm_checkUser() {
     global $tableNamePrefix;
 
@@ -871,7 +885,8 @@ function cm_makeDeposit() {
     $month = $dataParts[1];
     $year = $dataParts[2];
     $cvc = $dataParts[3];
-    
+
+    $cents_amount = floor( $dollar_amount * 100 );
     
     global $curlPath, $stripeChargeURL, $stripeSecretKey;
 
@@ -879,7 +894,8 @@ function cm_makeDeposit() {
         "$curlPath ".
         "'$stripeChargeURL' ".
         "-u $stripeSecretKey".": ".
-        "-d 'amount=$dollar_amount'  ".
+        "-d 'receipt_email=$email'  ".
+        "-d 'amount=$cents_amount'  ".
         "-d 'currency=usd'  ".
         "-d 'description=$stripeChargeDescription' ".
         "-d 'card[number]=$cardNumber'  ".
@@ -891,6 +907,7 @@ function cm_makeDeposit() {
 
     // FIXME:
     // process result
+    cd_log( "Response from Square:<br>$output" );
     
     
     }

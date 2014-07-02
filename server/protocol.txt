@@ -23,17 +23,32 @@ to the user before shutting down.
 
 
 
+
+=== Call:
+server.php?action=check_required_version
+
+Returns:
+requiredVersionNumber
+newVersionDownloadURL
+OK
+
+
+
+Where:
+requiredVersionNumber is client version number compatible with this server
+newVersionDownloadURL is url reminder for users to fetch latest version
+
+
+
 === Call:
 server.php?action=check_user&email=[signup email address]
 
 Returns:
-requiredVersionNumber
 userID
 sequenceNumber
 OK
 
 Where:
-requiredVersionNumber = client version number compatible with this server
 userID = unique user ID number
 sequenceNumber = sequence number for hmac-sha1 secure hashing of account keys
                  to sign future transactions.  Any transactions using
@@ -105,9 +120,9 @@ server.php?action=make_deposit
           &account_hmac=[hmac-sha1, hex-encoded]  
 		  
 Returns:
-OK
 new_account
 encrypted_account_key
+OK
 
 
 
@@ -153,7 +168,8 @@ an account already exists for this email address.
 
 new_account is 1 if no deposit has ever been made for this email address
 before.  In this case, an encrypted_account_key is returned for the new
-account.  No key is returned if the deposit is made into an existing account.
+account.  No key is returned if the deposit is made into an existing account
+(the string # is returned in that spot instead).
 
 encrypted_account_key is the ASCII representation of the account key, with
 hyphens removed, XOR'd with sufficient bytes from 

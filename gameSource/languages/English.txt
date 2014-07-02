@@ -5,6 +5,10 @@ loading "Loading..."
 
 
 
+requestDenied "Request denied by server."
+
+
+
 
 
 pauseMessage1 "Press ENTER to resume"

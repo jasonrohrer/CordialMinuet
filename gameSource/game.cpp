@@ -304,7 +304,8 @@ void initFrameDrawer( int inWidth, int inHeight, int inTargetFrameRate,
                       char inPlayingBack ) {
 
 
-
+    // test clipboard copy
+    setClipboardText( "This is a test\n" );
     
 
 

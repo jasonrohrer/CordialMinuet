@@ -28,6 +28,7 @@ accountHmac.cpp \
 SpriteToggleButton.cpp \
 CheckboxButton.cpp \
 serialWebRequests.cpp \
+ServerActionPage.cpp \
 
 
 
