@@ -1,13 +1,23 @@
 #include "ServerActionPage.h"
 
+#include "minorGems/util/SimpleVector.h"
+#include "minorGems/util/stringUtils.h"
+
+
+#include "serialWebRequests.h"
+#include "accountHmac.h"
+
+extern char *serverURL;
+
+
 
 ServerActionPage::ServerActionPage( const char *inActionName,
                                     int inRequiredNumResponseParts,
                                     const char *inResponsePartNames[],
-                                    char inAttachAccountHmac = true )
+                                    char inAttachAccountHmac )
         : mActionName( stringDuplicate( inActionName ) ),
-          mNumResponseParts( inRequiredNumResponseParts ),
           mAttachAccountHmac( inAttachAccountHmac ),
+          mNumResponseParts( inRequiredNumResponseParts ),
           mWebRequest( -1 ), mResponseReady( false ) {
     
     for( int i=0; i<mNumResponseParts; i++ ) {
