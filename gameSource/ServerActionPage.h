@@ -9,7 +9,7 @@
 // base class for pages that execute a server action and step
 // to wait for and parse a response
 // consolidates server contact and response error-handling code
-class ServerActionPage : public GamePage, public ActionListener {
+class ServerActionPage : public GamePage {
     public:
         
         // inResponsePartNames copied internally, destroyed by caller

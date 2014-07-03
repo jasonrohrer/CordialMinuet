@@ -53,7 +53,7 @@ CustomRandomSource randSource( 34957197 );
 
 
 #include "FinalMessagePage.h"
-
+#include "ServerActionPage.h"
 
 
 #include "serialWebRequests.h"
@@ -66,6 +66,7 @@ GamePage *currentGamePage = NULL;
 
 
 FinalMessagePage *finalMessagePage;
+ServerActionPage *getServerURLPage;
 
 
 // position of view in world
@@ -161,7 +162,8 @@ Font *tinyFont;
 char *shutdownMessage = NULL;
 
 
-char *reflectorURL = NULL;
+// start at reflector URL
+// first step is replacing it with server URL after reflection
 char *serverURL = NULL;
 
 
@@ -422,10 +424,10 @@ void initFrameDrawer( int inWidth, int inHeight, int inTargetFrameRate,
     musicOff = musicOffSetting;
     webRetrySeconds = webRetrySecondsSetting;
 
-    reflectorURL = SettingsManager::getStringSetting( "reflectorURL" );
+    serverURL = SettingsManager::getStringSetting( "reflectorURL" );
 
-    if( reflectorURL == NULL ) {
-        reflectorURL = 
+    if( serverURL == NULL ) {
+        serverURL = 
             stringDuplicate( 
                 "http://localhost/jcr13/castleReflector/server.php" );
         }
@@ -435,10 +437,16 @@ void initFrameDrawer( int inWidth, int inHeight, int inTargetFrameRate,
 
     finalMessagePage = new FinalMessagePage();
     
-    finalMessagePage->setSubMessage( 
-        "A TEST MESSAGE##Test again##WAS VALLEY##L I F E##D E A T H" );
+    printf( "Starting fetching server URL from reflector %s\n",
+            serverURL );
 
-    currentGamePage = finalMessagePage;
+
+    const char *resultNames[1] = { "serverURL" };
+    
+    getServerURLPage = new ServerActionPage( "reflect", 
+                                             1, resultNames, false );
+    
+    currentGamePage = getServerURLPage;
 
     currentGamePage->base_makeActive( true );
 
@@ -462,6 +470,7 @@ void freeFrameDrawer() {
 
     currentGamePage = NULL;
     delete finalMessagePage;
+    delete getServerURLPage;
     
 
 
@@ -473,10 +482,6 @@ void freeFrameDrawer() {
     if( serverURL != NULL ) {
         delete [] serverURL;
         serverURL = NULL;
-        }
-    if( reflectorURL != NULL ) {
-        delete [] reflectorURL;
-        reflectorURL = NULL;
         }
 
     if( downloadCode != NULL ) {
@@ -935,7 +940,21 @@ void drawFrame( char inUpdate ) {
         currentGamePage->base_step();
 
         // branches to process states depending on which page is active
-
+        
+        if( currentGamePage == getServerURLPage ) {
+            
+            if( getServerURLPage->isResponseReady() ) {
+                
+                if( serverURL != NULL ) {
+                    delete [] serverURL;
+                    }
+                
+                serverURL = getServerURLPage->getResponse( "serverURL" );
+                
+                printf( "Got server URL: %s\n", serverURL );
+                }
+            }
+        
         }
 
 

@@ -1,0 +1,19 @@
+All returns are whitespace-delimited.
+
+
+
+Most calls can return 'DENIED' on failure
+
+
+
+
+=== Call:
+server.php?action=reflect
+
+Returns:
+serverURL
+OK
+
+Where:
+serverURL = full URL of Cordial Minuet server.php that this user should
+            connect to.

@@ -29,11 +29,16 @@ SpriteToggleButton.cpp \
 CheckboxButton.cpp \
 serialWebRequests.cpp \
 ServerActionPage.cpp \
+whiteSprites.cpp \
 
 
 
 GAME_GRAPHICS = \
 graphics/font_32_64.tga \
+graphics/loading.tga \
+graphics/loading2.tga \
+graphics/loading3.tga \
+graphics/responseWarning.tga \
 
 
 

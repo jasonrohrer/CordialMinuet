@@ -249,7 +249,7 @@ void GamePage::base_draw( doublePair inViewCenter,
                       sWaitingFade * sCurrentWaitingSpriteFade );
 
         drawSprite( sWaitingSprites[sCurrentWaitingSprite], 
-                    spritePos, 1/16.0 );
+                    spritePos );
 
         if( sLastWaitingSprite != -1 ) {
             
@@ -257,7 +257,7 @@ void GamePage::base_draw( doublePair inViewCenter,
                           sWaitingFade * ( 1 - sCurrentWaitingSpriteFade ) );
             
             drawSprite( sWaitingSprites[sLastWaitingSprite], 
-                        spritePos, 1/16.0 );
+                        spritePos );
             }
 
 
@@ -266,7 +266,7 @@ void GamePage::base_draw( doublePair inViewCenter,
             
             setDrawColor( r, g, b, sWaitingFade );
             
-            drawSprite( sResponseWarningSprite, spritePos, 1/16.0 );
+            drawSprite( sResponseWarningSprite, spritePos );
             sResponseWarningShowing = true;
             sResponseWarningPosition = spritePos;
             }
