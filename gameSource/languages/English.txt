@@ -36,7 +36,7 @@ checkingCode  "Checking demo permissions with server..."
 
 
 
-responseWarning "Cannot reach server.  Attempting retry %d..."
+responseWarning "Cannot reach server.##Attempting retry %d..."
 
 
 err_webRequest   "ERROR:  Web request failed."

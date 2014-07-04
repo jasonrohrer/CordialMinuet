@@ -4,6 +4,8 @@
 
 #include "serialWebRequests.h"
 
+#include "whiteSprites.h"
+
 #include "minorGems/util/stringUtils.h"
 #include "minorGems/game/game.h"
 
@@ -46,11 +48,11 @@ GamePage::GamePage()
           mResponseWarningTipShowing( false ) {
 
     if( sWaitingSprites[0] == NULL ) {
-        sWaitingSprites[0] = loadSprite( "loading.tga", true );
-        sWaitingSprites[1] = loadSprite( "loading2.tga", true );
-        sWaitingSprites[2] = loadSprite( "loading3.tga", true );
+        sWaitingSprites[0] = loadWhiteSprite( "loading.tga" );
+        sWaitingSprites[1] = loadWhiteSprite( "loading2.tga" );
+        sWaitingSprites[2] = loadWhiteSprite( "loading3.tga" );
 
-        sResponseWarningSprite = loadSprite( "responseWarning.tga", true );
+        sResponseWarningSprite = loadWhiteSprite( "responseWarning.tga" );
         }
     sPageCount++;
     }
@@ -218,7 +220,7 @@ void GamePage::base_draw( doublePair inViewCenter,
     
     if( sWaitingFade > 0 ) {
         
-        doublePair spritePos = { 9.25, 7 };
+        doublePair spritePos = { 0, 280 };
         
         float r = 1;
         float g = 1;
@@ -262,7 +264,7 @@ void GamePage::base_draw( doublePair inViewCenter,
 
 
         if( showWarningIcon && ! makeWaitingIconSmall() ) {
-            spritePos.y -= 0.5;
+            
             
             setDrawColor( r, g, b, sWaitingFade );
             
@@ -430,8 +432,8 @@ void GamePage::setWaiting( char inWaiting, char inWarningOnly ) {
 void GamePage::pointerMove( float inX, float inY ) {
     if( sResponseWarningShowing && currentActiveSerialWebRequest != -1 ) {
         
-        if( fabs( inX - sResponseWarningPosition.x ) < 0.375 &&
-            fabs( inY - sResponseWarningPosition.y ) < 0.375 ) {
+        if( fabs( inX - sResponseWarningPosition.x ) < 20 &&
+            fabs( inY - sResponseWarningPosition.y ) < 20 ) {
             
             int status = 
                 getWebRequestRetryStatus( currentActiveSerialWebRequest );
