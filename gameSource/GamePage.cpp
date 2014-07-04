@@ -191,36 +191,44 @@ void GamePage::base_draw( doublePair inViewCenter,
 
     PageComponent::base_draw( inViewCenter, inViewSize );
     
-
+    char statusDrawn = false;
+    
     if( mStatusMessageKey != NULL ) {
-        doublePair labelPos = { 0, -5 };
+        doublePair labelPos = { 0, -280 };
         
         drawMessage( mStatusMessageKey, labelPos, mStatusError );
+        statusDrawn = true;
         }
     else if( mStatusMessage != NULL ) {
-        doublePair labelPos = { 0, -5 };
+        doublePair labelPos = { 0, -280 };
         
         drawMessage( mStatusMessage, labelPos, mStatusError );
+        statusDrawn = true;
         }
 
 
-    doublePair tipPosition = { 0, -7 };
-
-    if( mTipAtTopOfScreen ) {
-        tipPosition.y *= -1;
+    // skip drawing tip if status showing
+    if( ! statusDrawn ) {
+        
+        doublePair tipPosition = { 0, -280 };
+        
+        if( mTipAtTopOfScreen ) {
+            tipPosition.y *= -1;
+            }
+        
+        
+        if( mTip != NULL ) {
+            drawMessage( mTip, tipPosition );
+            }
+        else if( mLastTip != NULL && mLastTipFade > 0 ) {
+            drawMessage( mLastTip, tipPosition, false, mLastTipFade );
+            }
         }
     
-
-    if( mTip != NULL ) {
-        drawMessage( mTip, tipPosition );
-        }
-    else if( mLastTip != NULL && mLastTipFade > 0 ) {
-        drawMessage( mLastTip, tipPosition, false, mLastTipFade );
-        }
     
     if( sWaitingFade > 0 ) {
         
-        doublePair spritePos = { 0, 280 };
+        doublePair spritePos = { 0, 310 };
         
         float r = 1;
         float g = 1;
