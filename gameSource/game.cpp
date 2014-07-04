@@ -67,6 +67,7 @@ GamePage *currentGamePage = NULL;
 
 FinalMessagePage *finalMessagePage;
 ServerActionPage *getServerURLPage;
+ServerActionPage *getRequiredVersionPage;
 
 
 // position of view in world
@@ -120,12 +121,12 @@ void getGameImageSize( int *outWidth, int *outHeight ) {
 
 
 const char *getWindowTitle() {
-    return "The Castle Doctrine";
+    return "Cordial Minuet";
     }
 
 
 const char *getAppName() {
-    return "CastleDoctrine";
+    return "CordialMinuet";
     }
 
 
@@ -441,11 +442,19 @@ void initFrameDrawer( int inWidth, int inHeight, int inTargetFrameRate,
             serverURL );
 
 
-    const char *resultNames[1] = { "serverURL" };
+    const char *resultNamesA[1] = { "serverURL" };
     
     getServerURLPage = new ServerActionPage( "reflect", 
-                                             1, resultNames, false );
+                                             1, resultNamesA, false );
+
+
+    const char *resultNamesB[2] = { "requiredVersionNumber",
+                                    "newVersionURL" };
     
+    getRequiredVersionPage = new ServerActionPage( "check_required_version", 
+                                                   2, resultNamesB, false );
+
+
     currentGamePage = getServerURLPage;
 
     currentGamePage->base_makeActive( true );
@@ -471,7 +480,7 @@ void freeFrameDrawer() {
     currentGamePage = NULL;
     delete finalMessagePage;
     delete getServerURLPage;
-    
+    delete getRequiredVersionPage;
 
 
     if( shutdownMessage != NULL ) {
@@ -952,9 +961,34 @@ void drawFrame( char inUpdate ) {
                 serverURL = getServerURLPage->getResponse( "serverURL" );
                 
                 printf( "Got server URL: %s\n", serverURL );
+
+                currentGamePage = getRequiredVersionPage;
+                currentGamePage->base_makeActive( true );
                 }
             }
-        
+        else if( currentGamePage == getRequiredVersionPage ) {
+            if( getRequiredVersionPage->isResponseReady() ) {
+                
+                int requiredVersionNumber = 
+                    getRequiredVersionPage->getResponseInt( 
+                        "requiredVersionNumber" );
+                
+                if( requiredVersionNumber > versionNumber ) {
+                    currentGamePage = finalMessagePage;
+
+                    finalMessagePage->setMessageKey( "upgradeMessage" );
+                    
+                    char *downloadURL = 
+                        getRequiredVersionPage->getResponse( "newVersionURL" );
+                    
+                    finalMessagePage->setSubMessage( downloadURL );
+                    
+                    currentGamePage->base_makeActive( true );
+                    }
+                // else our version is okay!
+                // fixme
+                }
+            }
         }
 
 

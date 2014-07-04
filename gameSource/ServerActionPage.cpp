@@ -88,7 +88,6 @@ void ServerActionPage::makeActive( char inFresh ) {
     if( !inFresh ) {
         return;
         }
-    mResponsePartNames.deallocateStringElements();
     mResponseParts.deallocateStringElements();
 
 
@@ -198,6 +197,7 @@ void ServerActionPage::step() {
                             mResponseParts.push_back( 
                                 *( lines->getElement( i ) ) );
                             }
+                        mResponseReady = true;
                         }
                     delete lines;
                     }
@@ -227,7 +227,7 @@ char ServerActionPage::isResponseReady() {
 
 // result destroyed by caller
 char *ServerActionPage::getResponse( const char *inPartName ) {
-    for( int i=0; i<mActionParameterNames.size(); i++ ) {
+    for( int i=0; i<mResponseParts.size(); i++ ) {
         char *name = *( mResponsePartNames.getElement( i ) );
         
         if( strcmp( name, inPartName ) == 0 ) {

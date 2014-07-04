@@ -8,6 +8,9 @@ loading "Loading..."
 requestDenied "Request denied by server."
 
 
+serverShutdownMessage "The server has been##shut down for maintenance.##Please try again later."
+
+upgradeMessage "Please download##the latest version:"
 
 
 

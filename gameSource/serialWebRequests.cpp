@@ -108,7 +108,7 @@ void checkForServerShutdown( SerialWebRecord *inR ) {
             int numParts;
             char **parts = split( result, "\n", &numParts );
             
-            if( numParts == 2 ) {
+            if( numParts > 1 ) {
                 
                 if( shutdownMessage != NULL ) {
                     delete [] shutdownMessage;

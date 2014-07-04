@@ -57,13 +57,13 @@ void FinalMessagePage::makeActive( char inFresh ) {
 void FinalMessagePage::draw( doublePair inViewCenter, 
                               double inViewSize ) {
 
-    doublePair labelPos = { 0, 1 };
+    doublePair labelPos = { 0, 100 };
 
     
     drawMessage( translate( mKey ), labelPos, false );
 
     if( mSubMessage != NULL ) {    
-        labelPos.y -= 4;
+        labelPos.y -= 200;
         
         drawMessage( mSubMessage, labelPos, false );
         }
