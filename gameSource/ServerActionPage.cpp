@@ -88,6 +88,13 @@ void ServerActionPage::makeActive( char inFresh ) {
     if( !inFresh ) {
         return;
         }
+    startRequest();
+    }
+
+
+
+void ServerActionPage::startRequest() {
+
     mResponseParts.deallocateStringElements();
 
 

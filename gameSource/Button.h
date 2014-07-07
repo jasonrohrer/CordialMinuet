@@ -33,8 +33,18 @@ class Button : public PageComponent, public ActionListenerList {
 
         
         virtual double getWidth();
-
         
+
+        // defaults to
+        // ( 0.828, 0.647, 0.212, 1 ) for drag-over
+        // ( 0.886, 0.764, 0.475, 1 ) for hover and
+        // white for non-hover
+        virtual void setDragOverColor( float r, float g, float b, float a );
+
+        virtual void setNoHoverColor( float r, float g, float b, float a );
+        
+        virtual void setHoverColor( float r, float g, float b, float a );        
+                                     
     protected:
 
         virtual void clearState();
@@ -73,6 +83,11 @@ class Button : public PageComponent, public ActionListenerList {
         // default is just a rectangle
         // Button class sets the draw color before calling drawBorder
         virtual void drawBorder();
+        
+
+        FloatColor mDragOverColor;
+        FloatColor mHoverColor;
+        FloatColor mNoHoverColor;
         
         
     };

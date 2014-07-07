@@ -13,6 +13,16 @@ Button::Button( double inX, double inY,
           mHover( false ), mDragOver( false ),
           mWide( inWide ), mHigh( inHigh ), mPixWidth( inPixelSize ),
           mMouseOverTip( NULL ) {
+    
+    
+    FloatColor tempA = { 0.828, 0.647, 0.212, 1 }; 
+    mDragOverColor = tempA;
+    
+    FloatColor tempB = { 0.886, 0.764, 0.475, 1 };
+    mHoverColor = tempB;
+    
+    FloatColor tempC = { 1, 1, 1, 1 };
+    mNoHoverColor = tempC;
     }
 
 
@@ -98,13 +108,13 @@ void Button::draw() {
               rectEndX, rectEndY );
 
     if( mDragOver ) {    
-        setDrawColor( 0.828, 0.647, 0.212, 1 );
+        setDrawColor( mDragOverColor );
         }
     else if( mHover ) {
-        setDrawColor( 0.886, 0.764, 0.475, 1 );
+        setDrawColor( mHoverColor );
         }
     else {
-        setDrawColor( 1, 1, 1, 1 );
+        setDrawColor( mNoHoverColor );
         }
     
     drawContents();
@@ -181,3 +191,31 @@ void Button::pointerUp( float inX, float inY ) {
         }
     }        
 
+
+
+
+
+void Button::setDragOverColor( float r, float g, float b, float a ) {
+    mDragOverColor.r = r;
+    mDragOverColor.g = g;
+    mDragOverColor.b = b;
+    mDragOverColor.a = a;
+    }
+
+
+
+void Button::setNoHoverColor( float r, float g, float b, float a ) {
+    mNoHoverColor.r = r;
+    mNoHoverColor.g = g;
+    mNoHoverColor.b = b;
+    mNoHoverColor.a = a;
+    }
+
+
+        
+void Button::setHoverColor( float r, float g, float b, float a ) {
+    mHoverColor.r = r;
+    mHoverColor.g = g;
+    mHoverColor.b = b;
+    mHoverColor.a = a;
+    }

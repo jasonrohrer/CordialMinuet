@@ -54,6 +54,7 @@ CustomRandomSource randSource( 34957197 );
 
 #include "FinalMessagePage.h"
 #include "ServerActionPage.h"
+#include "AccountCheckPage.h"
 
 
 #include "serialWebRequests.h"
@@ -68,6 +69,7 @@ GamePage *currentGamePage = NULL;
 FinalMessagePage *finalMessagePage;
 ServerActionPage *getServerURLPage;
 ServerActionPage *getRequiredVersionPage;
+AccountCheckPage *accountCheckPage;
 
 
 // position of view in world
@@ -454,6 +456,8 @@ void initFrameDrawer( int inWidth, int inHeight, int inTargetFrameRate,
     getRequiredVersionPage = new ServerActionPage( "check_required_version", 
                                                    2, resultNamesB, false );
 
+    accountCheckPage = new AccountCheckPage();
+    
 
     currentGamePage = getServerURLPage;
 
@@ -481,6 +485,7 @@ void freeFrameDrawer() {
     delete finalMessagePage;
     delete getServerURLPage;
     delete getRequiredVersionPage;
+    delete accountCheckPage;
 
 
     if( shutdownMessage != NULL ) {
@@ -985,8 +990,12 @@ void drawFrame( char inUpdate ) {
                     
                     currentGamePage->base_makeActive( true );
                     }
-                // else our version is okay!
-                // fixme
+                else {
+                    // version okay
+                    // login
+                    currentGamePage = accountCheckPage;
+                    currentGamePage->base_makeActive( true );
+                    }
                 }
             }
         }

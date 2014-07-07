@@ -1,9 +1,12 @@
+#ifndef SERVER_ACTION_PAGE_INCLUDED
+#define SERVER_ACTION_PAGE_INCLUDED
+
+
 #include "GamePage.h"
 
 #include "TextButton.h"
 
 
-#include "minorGems/ui/event/ActionListener.h"
 
 
 // base class for pages that execute a server action and step
@@ -31,6 +34,7 @@ class ServerActionPage : public GamePage {
         void setActionParameter( const char *inParameterName,
                                  double inParameterValue );
         
+
 
 
         // default behavior is to start request immediately upon
@@ -80,3 +84,4 @@ class ServerActionPage : public GamePage {
 
         
 
+#endif

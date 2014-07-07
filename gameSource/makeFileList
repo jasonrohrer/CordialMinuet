@@ -30,6 +30,8 @@ CheckboxButton.cpp \
 serialWebRequests.cpp \
 ServerActionPage.cpp \
 whiteSprites.cpp \
+AccountCheckPage.cpp \
+buttonStyle.cpp \
 
 
 
