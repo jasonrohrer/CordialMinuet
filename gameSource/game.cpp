@@ -123,12 +123,12 @@ void getGameImageSize( int *outWidth, int *outHeight ) {
 
 
 const char *getWindowTitle() {
-    return "Cordial Minuet";
+    return "CORDIAL MINUET";
     }
 
 
 const char *getAppName() {
-    return "CordialMinuet";
+    return "CORDIAL_MINUET";
     }
 
 
@@ -284,7 +284,7 @@ char *getHashSalt() {
 
 
 void initDrawString( int inWidth, int inHeight ) {
-    mainFont = new Font( getFontTGAFileName(), 4, 16, false, 16 );
+    mainFont = new Font( getFontTGAFileName(), 6, 16, false, 16 );
 
     setViewCenterPosition( lastScreenViewCenter.x, lastScreenViewCenter.y );
 
@@ -356,8 +356,8 @@ void initFrameDrawer( int inWidth, int inHeight, int inTargetFrameRate,
     
     
     
-    mainFontFixed = new Font( getFontTGAFileName(), 4, 16, true, 16 );
-    numbersFontFixed = new Font( getFontTGAFileName(), 4, 16, true, 16, 16 );
+    mainFontFixed = new Font( getFontTGAFileName(), 6, 16, true, 16 );
+    numbersFontFixed = new Font( getFontTGAFileName(), 6, 16, true, 16, 16 );
     
     tinyFont = new Font( "font_4_8.tga", 1, 2, false );
 

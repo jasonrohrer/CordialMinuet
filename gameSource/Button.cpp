@@ -12,17 +12,18 @@ Button::Button( double inX, double inY,
         : PageComponent( inX, inY ),
           mHover( false ), mDragOver( false ),
           mWide( inWide ), mHigh( inHigh ), mPixWidth( inPixelSize ),
-          mMouseOverTip( NULL ) {
+          mMouseOverTip( NULL ),
+          mBracketCoverLength( -1.0 ) {
     
     
-    FloatColor tempA = { 0.828, 0.647, 0.212, 1 }; 
-    mDragOverColor = tempA;
+    setDragOverColor( 0.828, 0.647, 0.212, 1 ); 
     
-    FloatColor tempB = { 0.886, 0.764, 0.475, 1 };
-    mHoverColor = tempB;
+    setHoverColor( 0.886, 0.764, 0.475, 1 );
     
-    FloatColor tempC = { 1, 1, 1, 1 };
-    mNoHoverColor = tempC;
+    setNoHoverColor( 1, 1, 1, 1 );
+    
+    setFillColor( 0.25, 0.25, 0.25, 1 );
+    setDragOverFillColor( 0.1, 0.1, 0.1, 1 );
     }
 
 
@@ -92,10 +93,10 @@ void Button::draw() {
     
 
     if( mDragOver ) {
-        setDrawColor( 0.1, 0.1, 0.1, 1 );
+        setDrawColor( mDragOverFillColor );
         }
     else {
-        setDrawColor( 0.25, 0.25, 0.25, 1 );
+        setDrawColor( mFillColor );
         }
     
     double rectStartX = - mWide / 2 + mPixWidth;
@@ -127,8 +128,24 @@ void Button::drawContents() {
 
 
 void Button::drawBorder() {
-    drawRect( - mWide / 2, - mHigh / 2, 
-              mWide / 2, mHigh / 2 );
+    if( mBracketCoverLength >= 0 ) {
+        // one rect on either end
+        drawRect( - mWide / 2, 
+                  - mHigh / 2, 
+                  - mWide / 2 + mBracketCoverLength, 
+                  mHigh / 2 );
+        
+        drawRect( mWide / 2 - mBracketCoverLength, 
+                  - mHigh / 2, 
+                  mWide / 2, 
+                  mHigh / 2 );
+        }
+    else {
+        // one solid rect
+        drawRect( - mWide / 2, - mHigh / 2, 
+                  mWide / 2, mHigh / 2 );
+        }
+    
     }
 
 
@@ -218,4 +235,28 @@ void Button::setHoverColor( float r, float g, float b, float a ) {
     mHoverColor.g = g;
     mHoverColor.b = b;
     mHoverColor.a = a;
+    }
+
+
+
+void Button::setFillColor( float r, float g, float b, float a ) {
+    mFillColor.r = r;
+    mFillColor.g = g;
+    mFillColor.b = b;
+    mFillColor.a = a;
+    }
+
+
+
+void Button::setDragOverFillColor( float r, float g, float b, float a ) {
+    mDragOverFillColor.r = r;
+    mDragOverFillColor.g = g;
+    mDragOverFillColor.b = b;
+    mDragOverFillColor.a = a;
+    }
+
+
+
+void Button::setBracketCoverLength( double inLength ) {
+    mBracketCoverLength = inLength;
     }

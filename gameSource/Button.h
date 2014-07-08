@@ -43,8 +43,28 @@ class Button : public PageComponent, public ActionListenerList {
 
         virtual void setNoHoverColor( float r, float g, float b, float a );
         
-        virtual void setHoverColor( float r, float g, float b, float a );        
-                                     
+        virtual void setHoverColor( float r, float g, float b, float a );
+
+
+        // defaults to
+        // ( 0.25, 0.25, 0.25, 1 );
+        virtual void setFillColor( float r, float g, float b, float a );
+     
+        // defaults to
+        // ( 0.1, 0.1, 0.1, 1 );
+        virtual void setDragOverFillColor( 
+            float r, float g, float b, float a );
+        
+
+        // if we think about the button border as being
+        // made of two brackets, like this:  [button]
+        // this is the horizontal length that is enclosed
+        // in the brackets (above and below the button text), or how
+        // far the top and bottom arms of the brackets reach
+        // Defaults to -1, which is a complete, unbroken border
+        virtual void setBracketCoverLength( double inLength );
+        
+
     protected:
 
         virtual void clearState();
@@ -89,7 +109,11 @@ class Button : public PageComponent, public ActionListenerList {
         FloatColor mHoverColor;
         FloatColor mNoHoverColor;
         
+        FloatColor mFillColor;
+        FloatColor mDragOverFillColor;
         
+
+        double mBracketCoverLength;
     };
 
 
