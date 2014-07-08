@@ -11,5 +11,10 @@ void setButtonStyle( Button *inButton ) {
     inButton->setDragOverFillColor( 0, 0, 0, 1 );
     
     inButton->setBracketCoverLength( 16 );
+    
+    
+    doublePair shift = { 0, -2 };
+    
+    inButton->setContentsShift( shift );
     }
 

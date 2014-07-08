@@ -64,6 +64,13 @@ class Button : public PageComponent, public ActionListenerList {
         // Defaults to -1, which is a complete, unbroken border
         virtual void setBracketCoverLength( double inLength );
         
+        
+        // deftaults to 0,0
+        // sets a shift that is applied before drawing subclass contents
+        // (for example, to shift a font baseline)
+        virtual void setContentsShift( doublePair inShift );
+        
+
 
     protected:
 
@@ -114,6 +121,9 @@ class Button : public PageComponent, public ActionListenerList {
         
 
         double mBracketCoverLength;
+
+
+        doublePair mContentsShift;
     };
 
 

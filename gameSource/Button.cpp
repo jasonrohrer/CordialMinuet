@@ -1,6 +1,7 @@
 #include "Button.h"
 #include "minorGems/game/drawUtils.h"
 #include "minorGems/game/gameGraphics.h"
+#include "minorGems/game/game.h"
 #include "minorGems/util/stringUtils.h"
 
 #include <math.h>
@@ -24,6 +25,10 @@ Button::Button( double inX, double inY,
     
     setFillColor( 0.25, 0.25, 0.25, 1 );
     setDragOverFillColor( 0.1, 0.1, 0.1, 1 );
+
+
+    mContentsShift.x = 0;
+    mContentsShift.y = 0;
     }
 
 
@@ -117,8 +122,16 @@ void Button::draw() {
     else {
         setDrawColor( mNoHoverColor );
         }
+
+
+    doublePair oldViewCenter = getViewCenterPosition();
+
+    setViewCenterPosition( oldViewCenter.x - mContentsShift.x, 
+                           oldViewCenter.y - mContentsShift.y );
     
     drawContents();
+    
+    setViewCenterPosition( oldViewCenter.x, oldViewCenter.y );
     }
 
 
@@ -259,4 +272,10 @@ void Button::setDragOverFillColor( float r, float g, float b, float a ) {
 
 void Button::setBracketCoverLength( double inLength ) {
     mBracketCoverLength = inLength;
+    }
+
+
+
+void Button::setContentsShift( doublePair inShift ) {
+    mContentsShift = inShift;
     }
