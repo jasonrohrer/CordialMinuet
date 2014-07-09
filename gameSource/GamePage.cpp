@@ -45,6 +45,7 @@ GamePage::GamePage()
           mLastTip( NULL ),
           mLastTipFade( 1 ),
           mTipAtTopOfScreen( false ),
+          mSignal( NULL ),
           mResponseWarningTipShowing( false ) {
 
     if( sWaitingSprites[0] == NULL ) {
@@ -70,6 +71,9 @@ GamePage::~GamePage() {
     if( mLastTip != NULL ) {
         delete [] mLastTip;
         }
+    
+    clearSignal();
+    
     
     sPageCount--;
     if( sPageCount == 0 ) {
@@ -378,6 +382,37 @@ void GamePage::showShutdownPendingWarning() {
 
 
 
+void GamePage::setSignal( const char *inSignalName ) {
+    clearSignal();
+    mSignal = stringDuplicate( inSignalName );
+    }
+
+
+
+void GamePage::clearSignal() {
+    if( mSignal != NULL ) {
+        delete [] mSignal;
+        }
+    mSignal = NULL;
+    }
+
+
+
+char GamePage::checkSignal( const char *inSignalName ) {
+    if( mSignal == NULL ) {
+        return false;
+        }
+    else if( strcmp( inSignalName, mSignal ) == 0 ) {
+        return true;
+        }
+    else {
+        return false;
+        }
+    }
+
+
+
+
 void GamePage::base_keyDown( unsigned char inASCII ) {
     PageComponent::base_keyDown( inASCII );
     
@@ -404,6 +439,8 @@ void GamePage::base_makeActive( char inFresh ){
             delete [] mTip;
             mTip = NULL;
             }
+
+        clearSignal();
         }
     
 

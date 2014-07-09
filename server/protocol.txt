@@ -42,6 +42,8 @@ newVersionDownloadURL is url reminder for users to fetch latest version
 
 === Call:
 server.php?action=check_user&email=[signup email address]
+							&sequence_number=[number]
+                            &account_hmac=[hmac-sha1, hex-encoded]
 
 Returns:
 userID
@@ -49,10 +51,25 @@ sequenceNumber
 OK
 
 Where:
+sequence_number is a dummy sequence number that is not verified to be
+as-of-yet unused (can be 0, for example).
+
+account_zero_hmac is the HMAC (see below) computed on sequence_number.
+This is not replay-proof, but it doesn't need to be, because it updates no
+server state, and userID is not secret. It allows clients to verify their 
+account key in one call.
+
 userID = unique user ID number
 sequenceNumber = sequence number for hmac-sha1 secure hashing of account keys
                  to sign future transactions.  Any transactions using
                  lower sequence numbers will be denied as stale replays. 
+
+
+Note:
+The idea here is that you pass in a dummy sequece_number just to check if 
+your account key is correct, and if it is correct, then the true sequence
+number (for your next, fully-validated api call) is returned.
+
 
 
 
@@ -95,10 +112,6 @@ OK
 
 
 
-NOTE:
-server_public_key ships hard-coded in clients.  It is the server's 32-byte 
-curve25519 public key, hex-encoded as a 64-character string.  Shipping the
-server public key with the client prevents man-in-the-middle attacks.
 
 
 

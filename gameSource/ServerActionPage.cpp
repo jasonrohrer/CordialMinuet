@@ -2,6 +2,7 @@
 
 #include "minorGems/util/SimpleVector.h"
 #include "minorGems/util/stringUtils.h"
+#include "minorGems/system/Time.h"
 
 
 #include "serialWebRequests.h"
@@ -18,7 +19,9 @@ ServerActionPage::ServerActionPage( const char *inActionName,
         : mActionName( stringDuplicate( inActionName ) ),
           mAttachAccountHmac( inAttachAccountHmac ),
           mNumResponseParts( inRequiredNumResponseParts ),
-          mWebRequest( -1 ), mResponseReady( false ) {
+          mWebRequest( -1 ), mResponseReady( false ),
+          mMinimumResponseSeconds( 0 ),
+          mRequestStartTime( 0 ) {
     
     for( int i=0; i<mNumResponseParts; i++ ) {
         mResponsePartNames.push_back( 
@@ -81,6 +84,11 @@ void ServerActionPage::setActionParameter( const char *inParameterName,
     delete [] valueString;
     }
 
+
+
+void ServerActionPage::setAttachAccountHmac( char inShouldAttach ) {
+    mAttachAccountHmac = inShouldAttach;
+    }
         
 
 
@@ -147,6 +155,8 @@ void ServerActionPage::startRequest() {
 
     mResponseReady = false;
     
+    mRequestStartTime = Time::getCurrentTime();
+
     setWaiting( true );
     }
 
@@ -156,6 +166,15 @@ void ServerActionPage::step() {
     if( mWebRequest != -1 ) {
             
         int stepResult = stepWebRequestSerial( mWebRequest );
+        
+        
+        if( mMinimumResponseSeconds > 0 &&
+            Time::getCurrentTime() -  mRequestStartTime 
+            < mMinimumResponseSeconds ) {
+            
+            // wait to process result
+            return;
+            }
         
         if( stepResult != 0 ) {
             setWaiting( false );
@@ -279,5 +298,11 @@ double ServerActionPage::getResponseDouble( const char *inPartName ) {
     else {
         return -1.0;
         }
+    }
+
+
+
+void ServerActionPage::setMinimumResponseTime( double inSeconds ) {
+    mMinimumResponseSeconds = inSeconds;
     }
 

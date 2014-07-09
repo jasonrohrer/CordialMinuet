@@ -55,6 +55,7 @@ CustomRandomSource randSource( 34957197 );
 #include "FinalMessagePage.h"
 #include "ServerActionPage.h"
 #include "AccountCheckPage.h"
+#include "DepositPage.h"
 
 
 #include "serialWebRequests.h"
@@ -70,6 +71,7 @@ FinalMessagePage *finalMessagePage;
 ServerActionPage *getServerURLPage;
 ServerActionPage *getRequiredVersionPage;
 AccountCheckPage *accountCheckPage;
+DepositPage *depositPage;
 
 
 // position of view in world
@@ -172,7 +174,7 @@ char *serverURL = NULL;
 
 char *userEmail = NULL;
 int userID = -1;
-char *downloadCode = NULL;
+char *accountKey = NULL;
 // each new request to server must use next sequence number
 int serverSequenceNumber = -1;
 
@@ -200,11 +202,11 @@ static int stepsBetweenDeleteRepeat;
 
 static const char *customDataFormatWriteString = 
     "version%d_mouseSpeed%f_musicOff%d_"
-    "_webRetrySeconds%d_downloadCode%s_email%s";
+    "_webRetrySeconds%d_accountKey%s_email%s";
 
 static const char *customDataFormatReadString = 
     "version%d_mouseSpeed%f_musicOff%d_"
-    "_webRetrySeconds%d_downloadCode%10s_email%99s";
+    "_webRetrySeconds%d_accountKey%10s_email%99s";
 
 
 char *getCustomRecordedGameData() {    
@@ -234,7 +236,7 @@ char *getCustomRecordedGameData() {
         }
     
     
-    char *code = SettingsManager::getStringSetting( "downloadCode" );
+    char *code = SettingsManager::getStringSetting( "accountKey" );
     
     if( code == NULL ) {
         code = stringDuplicate( "**********" );
@@ -368,7 +370,7 @@ void initFrameDrawer( int inWidth, int inHeight, int inTargetFrameRate,
     int webRetrySecondsSetting = 10;
 
     userEmail = new char[100];
-    downloadCode = new char[11];
+    accountKey = new char[11];
     
     int readVersionNumber;
     
@@ -378,7 +380,7 @@ void initFrameDrawer( int inWidth, int inHeight, int inTargetFrameRate,
                           &mouseSpeedSetting, 
                           &musicOffSetting,
                           &webRetrySecondsSetting,
-                          downloadCode,
+                          accountKey,
                           userEmail );
     if( numRead != 7 ) {
         // no recorded game?
@@ -393,9 +395,9 @@ void initFrameDrawer( int inWidth, int inHeight, int inTargetFrameRate,
                 readVersionNumber, versionNumber );
             }
 
-        if( strcmp( downloadCode, "**********" ) == 0 ) {
-            delete [] downloadCode;
-            downloadCode = NULL;
+        if( strcmp( accountKey, "**********" ) == 0 ) {
+            delete [] accountKey;
+            accountKey = NULL;
             }
         if( strcmp( userEmail, "*" ) == 0 ) {
             delete [] userEmail;
@@ -411,9 +413,9 @@ void initFrameDrawer( int inWidth, int inHeight, int inTargetFrameRate,
         userEmail = SettingsManager::getStringSetting( "email" );    
 
         
-        delete [] downloadCode;
+        delete [] accountKey;
         
-        downloadCode = SettingsManager::getStringSetting( "downloadCode" );    
+        accountKey = SettingsManager::getStringSetting( "accountKey" );    
         }
     
 
@@ -457,6 +459,7 @@ void initFrameDrawer( int inWidth, int inHeight, int inTargetFrameRate,
                                                    2, resultNamesB, false );
 
     accountCheckPage = new AccountCheckPage();
+    depositPage = new DepositPage();
     
 
     currentGamePage = getServerURLPage;
@@ -486,7 +489,8 @@ void freeFrameDrawer() {
     delete getServerURLPage;
     delete getRequiredVersionPage;
     delete accountCheckPage;
-
+    delete depositPage;
+    
 
     if( shutdownMessage != NULL ) {
         delete [] shutdownMessage;
@@ -498,9 +502,9 @@ void freeFrameDrawer() {
         serverURL = NULL;
         }
 
-    if( downloadCode != NULL ) {
-        delete [] downloadCode;
-        downloadCode = NULL;
+    if( accountKey != NULL ) {
+        delete [] accountKey;
+        accountKey = NULL;
         }
     
     if( userEmail != NULL ) {
@@ -996,6 +1000,20 @@ void drawFrame( char inUpdate ) {
                     currentGamePage = accountCheckPage;
                     currentGamePage->base_makeActive( true );
                     }
+                }
+            }
+        else if( currentGamePage == accountCheckPage ) {
+            if( accountCheckPage->checkSignal( "newAccount" ) ) {
+                currentGamePage = depositPage;
+                currentGamePage->base_makeActive( true );
+                }
+            else if( accountCheckPage->checkSignal( "existingAccount" ) ) {
+                }
+            }
+        else if( currentGamePage == depositPage ) {
+            if( depositPage->checkSignal( "back" ) ) {
+                currentGamePage = accountCheckPage;
+                currentGamePage->base_makeActive( true );
                 }
             }
         }

@@ -5,7 +5,7 @@
 #include "minorGems/crypto/hashes/sha1.h"
 
 
-extern char *downloadCode;
+extern char *accountKey;
 extern int serverSequenceNumber;
 extern int accountHmacVersionNumber;
 
@@ -14,8 +14,8 @@ char *getAccountHmac() {
 
     const char *codeToHash = "";
 
-    if( downloadCode != NULL ) {
-        codeToHash = downloadCode;
+    if( accountKey != NULL ) {
+        codeToHash = accountKey;
         }
 
     

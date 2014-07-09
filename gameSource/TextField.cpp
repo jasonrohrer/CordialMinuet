@@ -30,6 +30,7 @@ TextField::TextField( Font *inFixedFont,
         : PageComponent( inX, inY ),
           mActive( true ), mFont( inDisplayFont ), 
           mCharsWide( inCharsWide ),
+          mMaxLength( -1 ),
           mForceCaps( inForceCaps ),
           mLabelText( NULL ),
           mAllowedChars( NULL ), mForbiddenChars( NULL ),
@@ -130,6 +131,12 @@ void TextField::setText( const char *inText ) {
 
 char *TextField::getText() {
     return stringDuplicate( mText );
+    }
+
+
+
+void TextField::setMaxLength( int inLimit ) {
+    mMaxLength = inLimit;
     }
 
 
@@ -490,6 +497,13 @@ void TextField::insertCharacter( unsigned char inASCII ) {
     // add to it
     char *oldText = mText;
     
+    if( mMaxLength != -1 &&
+        strlen( oldText ) >= (unsigned int) mMaxLength ) {
+        // max length hit, don't add it
+        return;
+        }
+    
+
     char *preCursor = stringDuplicate( mText );
     preCursor[ mCursorPosition ] = '\0';
     char *postCursor = &( mText[ mCursorPosition ] );

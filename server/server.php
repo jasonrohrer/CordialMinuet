@@ -701,6 +701,12 @@ function cm_checkUser() {
             return;
             }
 
+        if( ! cm_verifyTransaction( $user_id, false ) ) {
+            cm_log( "checkUser failed, dummy sequence number HMAC failed" );
+            return;
+            }
+        
+
         global $cm_version;
     
         echo "$cm_version $user_id $sequence_number OK";
@@ -969,7 +975,8 @@ function cm_getUserID() {
 global $transactionAlreadyVerified;
 $transactionAlreadyVerified = 0;
 
-function cm_verifyTransaction() {
+function cm_verifyTransaction( $inUserID = -1,
+                               $inCheckSequenceNumber = true ) {
     global $transactionAlreadyVerified;
 
     if( $transactionAlreadyVerified ) {
@@ -1013,9 +1020,13 @@ function cm_verifyTransaction() {
     
     
     global $tableNamePrefix;
-    
-    $user_id = cm_getUserID();
 
+    $user_id = $inUserID;
+    
+    if( $user_id == -1 ) {
+        $user_id = cm_getUserID();
+        }
+    
     $sequence_number = cm_requestFilter( "sequence_number", "/\d+/" );
 
     $account_hmac = cm_requestFilter( "account_hmac", "/[A-F0-9]+/i" );
@@ -1053,7 +1064,9 @@ function cm_verifyTransaction() {
 
     $last_sequence_number = $row[ "sequence_number" ];
 
-    if( $sequence_number < $last_sequence_number ) {
+    if( $inCheckSequenceNumber &&
+        $sequence_number < $last_sequence_number ) {
+
         cm_transactionDeny();
         cm_log( "Transaction denied for user_id $user_id, ".
                 "stale sequence number" );
@@ -1082,30 +1095,39 @@ function cm_verifyTransaction() {
         return 0;
         }
 
-    // sig passed, sequence number not a replay!
 
-    // update the sequence number, which we have locked
+    if( $inCheckSequenceNumber ) {
+        
+        // sig passed, sequence number not a replay!
+        
+        // update the sequence number, which we have locked
+        
+        $new_number = $sequence_number + 1;
+        
+        $query = "UPDATE $tableNamePrefix"."users SET ".
+            "sequence_number = $new_number ".
+            "WHERE user_id = $user_id;";
+        cm_queryDatabase( $query );
+        }
 
-    $new_number = $sequence_number + 1;
     
-    $query = "UPDATE $tableNamePrefix"."users SET ".
-        "sequence_number = $new_number ".
-        "WHERE user_id = $user_id;";
-    cm_queryDatabase( $query );
-
     cm_queryDatabase( "COMMIT;" );
     cm_queryDatabase( "SET AUTOCOMMIT=1" );
 
 
-    // counts as an action for this user
-    $query = "UPDATE $tableNamePrefix"."houses SET ".
-        "last_owner_action_time = CURRENT_TIMESTAMP ".
-        "WHERE user_id = $user_id;";
-    
-    cm_queryDatabase( $query );
+    if( $inCheckSequenceNumber ) {
+        
+        // counts as an action for this user
+        $query = "UPDATE $tableNamePrefix"."houses SET ".
+            "last_owner_action_time = CURRENT_TIMESTAMP ".
+            "WHERE user_id = $user_id;";
+        
+        cm_queryDatabase( $query );
 
 
-    $transactionAlreadyVerified = 1;
+        $transactionAlreadyVerified = 1;
+        }
+
     
     return 1;
     }

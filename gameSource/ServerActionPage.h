@@ -34,7 +34,9 @@ class ServerActionPage : public GamePage {
         void setActionParameter( const char *inParameterName,
                                  double inParameterValue );
         
-
+        
+        // defaults to true
+        void setAttachAccountHmac( char inShouldAttach );
 
 
         // default behavior is to start request immediately upon
@@ -58,6 +60,13 @@ class ServerActionPage : public GamePage {
         
         double getResponseDouble( const char *inPartName );
         
+        
+        // defaults to 0
+        // sets minimum time before response from server is processed
+        // and flagged with isResponseReady
+        // (To allow user to read messages during server action, like
+        //  "Logging in...")
+        void setMinimumResponseTime( double inSeconds );
 
 
     protected:
@@ -80,6 +89,11 @@ class ServerActionPage : public GamePage {
 
         int mWebRequest;
         char mResponseReady;
+
+
+        double mMinimumResponseSeconds;
+        
+        double mRequestStartTime;
     };
 
         

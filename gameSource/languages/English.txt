@@ -1,16 +1,16 @@
-writeFailed "Error:  game folder is read-only"
+writeFailed "ERROR:##GAME FOLDER IS##READ-ONLY"
 
 
-loading "Loading..."
+loading "LOADING"
 
 
 
-requestDenied "Request denied by server."
+requestDenied "DENIED BY SERVER"
 
 
-serverShutdownMessage "The server has been##shut down for maintenance.##Please try again later."
+serverShutdownMessage "THE SERVER HAS BEEN##SHUT DOWN FOR MAINTENANCE.##PLEASE TRY AGAIN LATER."
 
-upgradeMessage "Please download##the latest version:"
+upgradeMessage "PLEASE DOWNLOAD##THE LATEST VERSION:"
 
 
 
@@ -18,26 +18,38 @@ newAccount "NEW ACCOUNT"
 existingAccount "EXISTING ACCOUNT"
 
 
+deposit "DEPOSIT"
+cancel "CANCEL"
+
+email "EMAIL"
+card "CARD#"
+expMonth "EXP MM"
+expYear "YYYY"
+cvs "CVC"
 
 
-pauseMessage1 "Press ENTER to resume"
+loggingIn " LOGGING IN##[%s]"
 
-pauseMessage2 "or type something for posterity:"
 
-pauseMessage3 "Press '%' to quit"
-pauseMessage3b "You can't quit now (you'll die)"
+
+pauseMessage1 "[ENTER] TO RESUME"
+
+pauseMessage2 "OR TYPE SOMETHING:"
+
+pauseMessage3 "PRESS [%] TO QUIT"
+pauseMessage3b "YOU CAN'T QUIT NOW"
 
 pauseMessage4 "-"
 
 
 
-quitMessage "Press ESC to Quit"
+quitMessage "[ESC] TO QUIT"
 
 
 
-playbackTag           "Playback %:"
-playbackToggleMessage "(Press % to hide)"
-playbackEndMessage    "(Press ESC to end)"
+playbackTag           "PLAYBACK %:"
+playbackToggleMessage "(PRESS [%] TO HIDE)"
+playbackEndMessage    "(PRESS [ESC] TO END)"
 
 
 enterDemoCode  "Enter a demo code:"
@@ -45,11 +57,11 @@ checkingCode  "Checking demo permissions with server..."
 
 
 
-responseWarning "Cannot reach server.##Attempting retry %d..."
+responseWarning "CANNOT REACH SERVER.##ATTEMPTING RETRY %d"
 
 
-err_webRequest   "ERROR:  Web request failed."
+err_webRequest   "ERROR:  WEB REQUEST FAILED."
 err_codeFailed  "This demo code was denied by the server."
 err_serverVerifyFailed  "Response from the server##could not be authenticated."
 
-err_badServerResponse  "ERROR:  Unexpected##response from server"
+err_badServerResponse  "ERROR:  UNEXPECTED##RESPONSE FROM SERVER"

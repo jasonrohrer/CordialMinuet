@@ -34,6 +34,11 @@ class TextField : public PageComponent, public ActionListenerList {
         // destroyed by caller
         char *getText();
         
+
+        // defaults to -1 (no limit)
+        void setMaxLength( int inLimit );
+        
+
         // at current cursor position
         void insertCharacter( unsigned char inASCII );
 
@@ -78,6 +83,9 @@ class TextField : public PageComponent, public ActionListenerList {
         
         Font *mFont;
         int mCharsWide;
+        
+        int mMaxLength;
+        
 
         char mForceCaps;
 

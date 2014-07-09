@@ -41,6 +41,7 @@ class GamePage : public PageComponent {
         // inFresh set to true when returning to this page
         // after visiting other pages
         // set to false after returning from pause.
+        // (if inFresh is true, any signal is cleared)
         void base_makeActive( char inFresh );
         void base_makeNotActive();
 
@@ -57,7 +58,29 @@ class GamePage : public PageComponent {
         // override to catch keypress to dismiss shutdown warning
         // overlay
         virtual void base_keyDown( unsigned char inASCII );
+        
 
+
+        // signals are string flags that can be set by a page
+        // so that the state of the page can be checked cleanly from outside
+        // For example, a "nextPage" signal could be set when a given
+        // page is ready to switch to the next page in a sequence,
+        // or a "menu" signal could be set when the user wants to return
+        // back to the menu page.
+
+        // at most one signal can be set at a time per page
+
+        // this mechanism eliminates multiple checking methods, while
+        // also limiting exposure of private variables (that seem
+        // unnatural to overload for both internal operations and
+        // external state checking).
+
+        // also, implementing signals as separate boolean variables
+        // (like an mNextPage and an mReturnToMenu variable) means
+        // that they need to be declared, initialized, and maintained.
+
+        virtual char checkSignal( const char *inSignalName );
+        
         
     protected:
         
@@ -137,6 +160,15 @@ class GamePage : public PageComponent {
         virtual void showShutdownPendingWarning();
         
 
+        // sets the named signal and clears previous signal
+        virtual void setSignal( const char *inSignalName );
+        
+        // clears any signal
+        // signal is also auto-cleared by base_makeActive( true ) 
+        virtual void clearSignal();
+        
+
+
         GamePage();
         
 
@@ -150,6 +182,9 @@ class GamePage : public PageComponent {
         double mLastTipFade;
         
         char mTipAtTopOfScreen;
+
+        char *mSignal;
+        
 
         static int sPageCount;
 
