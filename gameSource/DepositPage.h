@@ -30,6 +30,11 @@ class DepositPage : public ServerActionPage, public ActionListener {
         // for arrow keys (switch fields)
         virtual void specialKeyDown( int inKeyCode );
         
+        virtual void draw( doublePair inViewCenter, 
+                           double inViewSize );
+        
+        virtual void step();
+        
     protected:
         
         TextField mEmailField;
@@ -49,4 +54,8 @@ class DepositPage : public ServerActionPage, public ActionListener {
         
         // -1 to move up
         void switchFields( int inDir = 1 );
+
+
+        void checkIfDepositButtonVisible();
+        
     };

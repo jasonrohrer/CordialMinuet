@@ -20,8 +20,7 @@ int TextField::sDeleteNextDelaySteps = 2;
 
 
 
-TextField::TextField( Font *inFixedFont,
-                      Font *inDisplayFont, 
+TextField::TextField( Font *inDisplayFont, 
                       double inX, double inY, int inCharsWide,
                       char inForceCaps,
                       const char *inLabelText,
@@ -52,20 +51,43 @@ TextField::TextField( Font *inFixedFont,
     clearArrowRepeat();
         
 
-    mCharWidth = inFixedFont->measureString( "W" );
+    mCharWidth = mFont->getFontHeight();
 
     mBorderWide = mCharWidth * 0.25;
 
-    mHigh = mCharWidth + 2 * mBorderWide;
+    mHigh = mFont->getFontHeight() + 2 * mBorderWide;
 
     char *fullString = new char[ mCharsWide + 1 ];
+
+    unsigned char widestChar = 0;
+    double width = 0;
+
+    for( int c=32; c<256; c++ ) {
+        unsigned char pc = processCharacter( c );
+
+        if( pc != 0 ) {
+            char s[2];
+            s[0] = pc;
+            s[1] = '\0';
+
+            double thisWidth = mFont->measureString( s );
+            
+            if( thisWidth > width ) {
+                width = thisWidth;
+                widestChar = pc;    
+                }
+            }
+        }
     
+    
+
+
     for( int i=0; i<mCharsWide; i++ ) {
-        fullString[i] = 'W';
+        fullString[i] = widestChar;
         }
     fullString[ mCharsWide ] = '\0';
     
-    double fullStringWidth = inFixedFont->measureString( fullString );
+    double fullStringWidth = mFont->measureString( fullString );
 
     delete [] fullString;
 

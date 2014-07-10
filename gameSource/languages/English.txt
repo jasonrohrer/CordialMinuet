@@ -27,6 +27,12 @@ expMonth "EXP MM"
 expYear "YYYY"
 cvs "CVC"
 
+secure "256-BIT ECDH ENCRYPTION"
+noStore "CARD INFO NOT STORED ON SERVER"
+
+invalid "INVALID"
+
+
 
 loggingIn " LOGGING IN##[%s]"
 

@@ -13,12 +13,11 @@ class TextField : public PageComponent, public ActionListenerList {
         
     public:
         
-        // Fixed width font is used for sizing of text field
-        // centered on inX, inY
+        // text field width based on widest allowed 
+        // (or non-forbidden) character
 
         // label text and char maps copied internally
-        TextField( Font *inFixedFont, 
-                   Font *inDisplayFont, 
+        TextField( Font *inDisplayFont, 
                    double inX, double inY, int inCharsWide,
                    char inForceCaps = false,
                    const char *inLabelText = NULL,

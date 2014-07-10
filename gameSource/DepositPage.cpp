@@ -2,6 +2,9 @@
 
 #include "buttonStyle.h"
 
+#include "message.h"
+
+
 #include "minorGems/game/Font.h"
 #include "minorGems/game/game.h"
 
@@ -9,7 +12,6 @@
 
 
 extern Font *mainFont;
-extern Font *mainFontFixed;
 
 
 extern int userID;
@@ -21,6 +23,40 @@ extern char gamePlayingBack;
 
 
 
+// verifies a credit card number with the Luhn formula
+static char checkLuhn( const char *inCC ) {
+    int numDigits = strlen( inCC );
+    
+    int *digits = new int[numDigits];
+    
+    for( int i=0; i<numDigits; i++ ) {
+        digits[i] = inCC[i] - '0';
+        }
+
+    // every second digit, starting at right
+    for( int i=numDigits-2; i>=0; i -= 2 ) {
+        // double it
+        digits[i] *= 2;
+        
+        if( digits[i] > 9 ) {
+            
+            // add its digits together if 10 or greater
+            // ( 11 -> 2,   18 -> 9, etc)
+            digits[i] = 1 + ( digits[i] - 10 );
+            }
+        }
+    
+    int sum = 0;
+    
+    for( int i=0; i<numDigits; i++ ) {
+        sum += digits[i];
+        }
+    
+    return ( sum % 10 == 0 );
+    }
+
+
+
 
 
 const char *makeDepositPartNames[2] = { "newAccount", "encryptedAccountKey" };
@@ -29,30 +65,30 @@ const char *makeDepositPartNames[2] = { "newAccount", "encryptedAccountKey" };
 DepositPage::DepositPage()
         : ServerActionPage( "make_deposit",
                             2, makeDepositPartNames ),
-          mEmailField( mainFontFixed, mainFont, 0, 192, 10, false, 
+        mEmailField( mainFont, 0, 96, 10, false, 
                        translate( "email" ),
                        NULL,
                        // forbid only spaces
                        " "),
-          mCardNumberField( mainFontFixed, mainFont, 0, 128, 10, true,
+          mCardNumberField( mainFont, 0, 32, 16, true,
                             translate( "card" ),
                         // allow only numbers
                         "0123456789" ),
-          mExpireMonthField( mainFontFixed, mainFont, -100, 64, 2, true,
+          mExpireMonthField( mainFont, -100, -32, 2, true,
                              translate( "expMonth" ),
                              // allow only numbers
                              "0123456789" ),
-          mExpireYearField( mainFontFixed, mainFont, 150, 64, 4, true,
+          mExpireYearField( mainFont, 132, -32, 4, true,
                             translate( "expYear" ),
                              // allow only numbers
                              "0123456789" ),
-          mCVCField( mainFontFixed, mainFont, 0, 0, 4, true,
+          mCVCField( mainFont, 0, -96, 4, true,
                      translate( "CVC" ),
                      // allow only numbers
                      "0123456789" ),
-          mDepositeButton( mainFont, 0, -64, 
+          mDepositeButton( mainFont, 150, -200, 
                            translate( "deposit" ) ),
-          mCancelButton( mainFont, 0, -128, 
+          mCancelButton( mainFont, -150, -200, 
                          translate( "cancel" ) ) {
 
 
@@ -109,13 +145,115 @@ void DepositPage::makeActive( char inFresh ) {
     if( !inFresh ) {
         return;
         }
-
+    
     mEmailField.focus();
         
     for( int i=0; i<NUM_DEPOSIT_FIELDS; i++ ) {
         mFields[i]->setActive( true );
         }
+
+    checkIfDepositButtonVisible();
+    }
+
+
+void DepositPage::draw( doublePair inViewCenter, 
+                               double inViewSize ) {
+        
+    doublePair labelPos = { 0, 264 };
+    drawMessage( "secure", labelPos, false );    
     
+    doublePair labelPosB = { 0, 200 };
+    drawMessage( "noStore", labelPosB, false );    
+
+
+    if( ! mCardNumberField.isFocused() ) {
+        
+        char *cc = mCardNumberField.getText();
+    
+        int length = strlen( cc );
+        
+        if( length > 0 && 
+            ( length < 12 ||
+              ! checkLuhn( cc ) ) ) {
+            
+            // invalid CC
+            doublePair labelPosCC = { 256, 32 };
+            drawMessage( "invalid", labelPosCC, false );  
+            }
+
+        delete [] cc;
+        }
+    
+
+
+    /*
+    doublePair labelPosC = { 0, 150 };
+    char luhnCheck = checkLuhn( "4941598664272299" );
+    
+    char *message = autoSprintf( "Luhn test = %d\n", luhnCheck );
+    drawMessage( message,  labelPosC );
+    */
+    }
+
+
+
+void DepositPage::step() {
+    checkIfDepositButtonVisible();
+    }
+
+
+
+
+
+void DepositPage::checkIfDepositButtonVisible() {
+    char visible = true;
+
+    char *email = mEmailField.getText();
+    
+    if( strlen( email ) < 3 ||
+        strstr( email, "@" ) == NULL ||
+        strstr( email, "." ) == NULL ) {
+        visible = false;
+        }
+    delete [] email;
+    
+    
+    char *cc = mCardNumberField.getText();
+    
+    if( strlen( cc ) < 12 ||
+        ! checkLuhn( cc ) ) {
+        visible = false;
+        }
+
+    delete [] cc;
+
+
+    char *mm = mExpireMonthField.getText();
+    
+    if( strlen( mm ) < 2 ) {
+        visible = false;
+        }
+
+    delete [] mm;
+
+    char *yyyy = mExpireYearField.getText();
+    
+    if( strlen( yyyy ) < 4 ) {
+        visible = false;
+        }
+
+    delete [] yyyy;
+
+    char *cvc = mCVCField.getText();
+    
+    if( strlen( cvc ) < 3 ) {
+        visible = false;
+        }
+
+    delete [] cvc;
+
+
+    mDepositeButton.setVisible( visible );
     }
 
 
@@ -155,7 +293,7 @@ void DepositPage::keyDown( unsigned char inASCII ) {
     if( inASCII == 10 || inASCII == 13 ) {
         // enter key
         
-        if( mCardNumberField.isFocused() ) {
+        if( mCVCField.isFocused() ) {
             // FIXME:  process enter on last field
             //startLogin();
             
