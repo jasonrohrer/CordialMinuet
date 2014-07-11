@@ -287,6 +287,7 @@ char *getHashSalt() {
 
 void initDrawString( int inWidth, int inHeight ) {
     mainFont = new Font( getFontTGAFileName(), 6, 16, false, 16 );
+    mainFont->setMinimumPositionPrecision( 1 );
 
     setViewCenterPosition( lastScreenViewCenter.x, lastScreenViewCenter.y );
 
@@ -362,6 +363,10 @@ void initFrameDrawer( int inWidth, int inHeight, int inTargetFrameRate,
     numbersFontFixed = new Font( getFontTGAFileName(), 6, 16, true, 16, 16 );
     
     tinyFont = new Font( "font_4_8.tga", 1, 2, false );
+
+    mainFontFixed->setMinimumPositionPrecision( 1 );
+    numbersFontFixed->setMinimumPositionPrecision( 1 );
+    tinyFont->setMinimumPositionPrecision( 1 );
 
 
     float mouseSpeedSetting = 1.0f;
