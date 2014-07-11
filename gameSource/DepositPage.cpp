@@ -82,8 +82,8 @@ DepositPage::DepositPage()
                             translate( "expYear" ),
                              // allow only numbers
                              "0123456789" ),
-          mCVCField( mainFont, 0, -96, 4, true,
-                     translate( "CVC" ),
+          mCVCField( mainFont, -150, -96, 4, true,
+                     translate( "cvc" ),
                      // allow only numbers
                      "0123456789" ),
           mDepositeButton( mainFont, 150, -200, 
