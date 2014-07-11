@@ -70,6 +70,10 @@ class Button : public PageComponent, public ActionListenerList {
         // (for example, to shift a font baseline)
         virtual void setContentsShift( doublePair inShift );
         
+        
+        // should button border and fill be drawn?
+        // if not, only button contents (from sub class) is drawn
+        virtual void setDrawBackground( char inDraw );
 
 
     protected:
@@ -124,6 +128,8 @@ class Button : public PageComponent, public ActionListenerList {
 
 
         doublePair mContentsShift;
+
+        char mDrawBackground;
     };
 
 

@@ -14,7 +14,8 @@ Button::Button( double inX, double inY,
           mHover( false ), mDragOver( false ),
           mWide( inWide ), mHigh( inHigh ), mPixWidth( inPixelSize ),
           mMouseOverTip( NULL ),
-          mBracketCoverLength( -1.0 ) {
+          mBracketCoverLength( -1.0 ),
+          mDrawBackground( true ) {
     
     
     setDragOverColor( 0.828, 0.647, 0.212, 1 ); 
@@ -84,34 +85,39 @@ void Button::step() {
         
 
 void Button::draw() {
-    if( mHover && ! mDragOver ) {    
-        setDrawColor( 0.75, 0.75, 0.75, 1 );
-        }
-    else if( mDragOver ) {
-        setDrawColor( 0.25, 0.25, 0.25, 1 );
-        }
-    else {
-        setDrawColor( 0.5, 0.5, 0.5, 1 );
-        }
+
+    if( mDrawBackground ) {
+        
+        if( mHover && ! mDragOver ) {    
+            setDrawColor( 0.75, 0.75, 0.75, 1 );
+            }
+        else if( mDragOver ) {
+            setDrawColor( 0.25, 0.25, 0.25, 1 );
+            }
+        else {
+            setDrawColor( 0.5, 0.5, 0.5, 1 );
+            }
     
-    drawBorder();
+        drawBorder();
     
 
-    if( mDragOver ) {
-        setDrawColor( mDragOverFillColor );
-        }
-    else {
-        setDrawColor( mFillColor );
-        }
+        if( mDragOver ) {
+            setDrawColor( mDragOverFillColor );
+            }
+        else {
+            setDrawColor( mFillColor );
+            }
     
-    double rectStartX = - mWide / 2 + mPixWidth;
-    double rectStartY = - mHigh / 2 + mPixWidth;
+        double rectStartX = - mWide / 2 + mPixWidth;
+        double rectStartY = - mHigh / 2 + mPixWidth;
 
-    double rectEndX = mWide / 2 - mPixWidth;
-    double rectEndY = mHigh / 2 - mPixWidth;
+        double rectEndX = mWide / 2 - mPixWidth;
+        double rectEndY = mHigh / 2 - mPixWidth;
     
-    drawRect( rectStartX, rectStartY,
-              rectEndX, rectEndY );
+        drawRect( rectStartX, rectStartY,
+                  rectEndX, rectEndY );
+        }
+    
 
     if( mDragOver ) {    
         setDrawColor( mDragOverColor );
@@ -279,3 +285,10 @@ void Button::setBracketCoverLength( double inLength ) {
 void Button::setContentsShift( doublePair inShift ) {
     mContentsShift = inShift;
     }
+
+
+
+void Button::setDrawBackground( char inDraw ) {
+    mDrawBackground = inDraw;
+    }
+
