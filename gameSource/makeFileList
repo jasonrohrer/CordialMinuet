@@ -33,6 +33,8 @@ whiteSprites.cpp \
 AccountCheckPage.cpp \
 buttonStyle.cpp \
 DepositPage.cpp \
+NumberPicker.cpp \
+
 
 
 
