@@ -77,18 +77,44 @@ NumberPicker::~NumberPicker() {
 
 void NumberPicker::setMax( double inMax ) {
     mMax = inMax;
+    setValue( getValue() );
     }
 
 
 
 void NumberPicker::setMin( double inMin ) {
     mMin = inMin;
+    setValue( getValue() );
     }
 
 
 
 void NumberPicker::setValue( double inValue ) {
+    if( inValue == 20.20 ) {
+        printf( "here = %f\n", inValue );
+        }
     
+    if( mMax >= 0 && 
+        inValue > mMax ) {
+
+        inValue = mMax;
+        }
+    if( inValue < mMin ) {
+        inValue = mMin;
+        }
+
+    double factor = pow( 10, mMaxFractionDigits );
+    
+
+    double roundingTerm = 1.0 / pow( 10, mMaxFractionDigits + 1 );
+    
+    inValue += roundingTerm;
+
+    for( int i=0; i<mMaxTotalDigits; i++ ) {
+        mDigits[i] = ( (int)( inValue * factor ) ) % 10;
+        
+        factor /= 10;
+        }
     }
 
 
@@ -163,5 +189,6 @@ void NumberPicker::actionPerformed( GUIComponent *inTarget ) {
             }
         }
     printf( "New value = %f\n", getValue() );
+    setValue( getValue() );
     }
 
