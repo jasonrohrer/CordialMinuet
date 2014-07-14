@@ -86,6 +86,7 @@ DepositPage::DepositPage()
                      translate( "cvc" ),
                      // allow only numbers
                      "0123456789" ),
+          mAmountPicker( mainFont, 0, -150, 4, 2 ),
           mDepositeButton( mainFont, 150, -200, 
                            translate( "deposit" ) ),
           mCancelButton( mainFont, -150, -200, 
@@ -103,6 +104,9 @@ DepositPage::DepositPage()
 
     mDepositeButton.addActionListener( this );
     mCancelButton.addActionListener( this );
+
+
+    addComponent( &mAmountPicker );
 
 
     mFields[0] = &mEmailField;

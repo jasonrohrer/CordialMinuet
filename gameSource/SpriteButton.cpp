@@ -1,4 +1,5 @@
 #include "SpriteButton.h"
+#include "whiteSprites.h"
 
 #include "minorGems/util/log/AppLog.h"
 
@@ -7,10 +8,11 @@
 SpriteButton::SpriteButton( SpriteHandle inSprite,
                             int inWide, int inHigh,
                             double inX, double inY,
-                            double inDrawScale )
+                            double inDrawScale,
+                            double inSizeFactor )
         : Button( inX, inY, 
-                  inWide * 2 * inDrawScale,
-                  inHigh * 2 * inDrawScale, 
+                  inWide * inSizeFactor * inDrawScale,
+                  inHigh * inSizeFactor * inDrawScale, 
                   inDrawScale ), 
           mShouldDestroySprite( false ),
           mSprite( inSprite ), 
@@ -21,7 +23,9 @@ SpriteButton::SpriteButton( SpriteHandle inSprite,
 
 
 SpriteButton::SpriteButton( const char *inTGAFileName, double inX, double inY,
-                            double inDrawScale )
+                            double inDrawScale,
+                            double inSizeFactor, 
+                            char inWhiteSprite )
         : // placeholder until we load file below 
         Button( inX, inY, 
                 1,
@@ -31,23 +35,42 @@ SpriteButton::SpriteButton( const char *inTGAFileName, double inX, double inY,
         mSprite( NULL ), 
         mOverrideHighlightColor( false ),
         mDrawScale( inDrawScale ) {
-    
-    Image *image = readTGAFile( inTGAFileName );
 
-    if( image != NULL ) {
-        // fill Button's values here
-        mWide = image->getWidth() * 2 * inDrawScale;
-        mHigh = image->getHeight() * 2 * inDrawScale;
+
+    if( ! inWhiteSprite ) {
         
-        mSprite = fillSprite( image );
-        mShouldDestroySprite = true;
+        Image *image = readTGAFile( inTGAFileName );
         
-        delete image;
+        if( image != NULL ) {
+            // fill Button's values here
+            mWide = image->getWidth() * inSizeFactor * inDrawScale;
+            mHigh = image->getHeight() * inSizeFactor * inDrawScale;
+            
+            mSprite = fillSprite( image );
+            mShouldDestroySprite = true;
+            
+            delete image;
+            }
         }
     else {
+        int w, h;
+        
+        mSprite = loadWhiteSprite( inTGAFileName, &w, &h );
+    
+        if( mSprite != NULL ) {
+            // fill Button's values here
+            mWide = w * inSizeFactor * inDrawScale;
+            mHigh = h * inSizeFactor * inDrawScale;
+            
+            mShouldDestroySprite = true;
+            }
+        }
+
+    if( mSprite == NULL ) {
         AppLog::errorF( "Failed to read file for SpriteButton: %s",
                         inTGAFileName );
         }
+    
     }
 
 

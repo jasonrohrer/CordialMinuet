@@ -1,8 +1,15 @@
 #include "whiteSprites.h"
 
 
-SpriteHandle loadWhiteSprite( const char *inTGAFileName ) {
+SpriteHandle loadWhiteSprite( const char *inTGAFileName,
+                              int *outW,
+                              int *outH ) {
+
     Image *spriteImage = readTGAFile( inTGAFileName );
+
+    if( spriteImage == NULL ) {
+        return NULL;
+        }
     
     int width = spriteImage->getWidth();
         
@@ -41,6 +48,17 @@ SpriteHandle loadWhiteSprite( const char *inTGAFileName ) {
             sizeof( double ) * numPixels ); 
 
     delete spriteImage;
+    delete [] solidWhite;
+
+    
+    if( outW != NULL ) {
+        *outW = width;
+        }
+    
+    if( outH != NULL ) {
+        *outH = height;
+        }
+    
     
     return fillSprite( &rgbaImage, false );
     }

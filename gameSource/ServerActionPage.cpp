@@ -223,6 +223,9 @@ void ServerActionPage::step() {
                             mResponseParts.push_back( 
                                 *( lines->getElement( i ) ) );
                             }
+                        
+                        delete [] *( lines->getElement( lines->size()-1 ) );
+                        
                         mResponseReady = true;
                         }
                     delete lines;

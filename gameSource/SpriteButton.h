@@ -12,14 +12,20 @@ class SpriteButton : public Button {
     public:
         
         // inSprite NOT destroyed by this class
+        // inSizeFactor is how big the button is in each dimension
+        // relative to the sprite (1 means no border around sprite, defaults
+        // to 2)
         SpriteButton( SpriteHandle inSprite, 
                       // size of sprite in pixels
                       int inWide, int inHigh,
                       double inX, double inY,
-                      double inDrawScale = 1.0 );
+                      double inDrawScale = 1.0,
+                      double inSizeFactor = 2.0 );
         
         SpriteButton( const char *inTGAFileName, double inX, double inY,
-                      double inDrawScale = 1.0 );
+                      double inDrawScale = 1.0,
+                      double inSizeFactor = 2.0,
+                      char inWhiteSprite = false );
 
         virtual ~SpriteButton();
         

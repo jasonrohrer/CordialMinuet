@@ -26,8 +26,25 @@ class NumberPicker : public PageComponent, public ActionListener {
 
         virtual ~NumberPicker();
 
+        // defaults to -1, no limit
+        void setMax( double inMax );
+        
+        // defaults to 0, no limit
+        void setMin( double inMin );
+        
+        // auto-forced into min/max range
+        void setValue( double inValue );
+
+
+        double getValue();
+        
+
 
         virtual void draw();
+
+        virtual void actionPerformed( GUIComponent *inTarget );
+
+
 
 
     protected:
@@ -37,9 +54,13 @@ class NumberPicker : public PageComponent, public ActionListener {
         int mMaxMainDigits;
         int mMaxFractionDigits;
         
-        SpriteButton *mUpButtons;
-        SpriteButton *mDownButtons;
-                
+        SpriteButton **mUpButtons;
+        SpriteButton **mDownButtons;
+
+        int *mDigits;
+        
+        double mMax;
+        double mMin;
         
     };
 

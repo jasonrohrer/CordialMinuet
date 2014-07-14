@@ -7,6 +7,7 @@
 
 #include "TextButton.h"
 #include "TextField.h"
+#include "NumberPicker.h"
 
 
 
@@ -45,6 +46,9 @@ class DepositPage : public ServerActionPage, public ActionListener {
         
 
         TextField *mFields[NUM_DEPOSIT_FIELDS];
+
+
+        NumberPicker mAmountPicker;
         
 
         TextButton mDepositeButton;
