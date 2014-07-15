@@ -7,6 +7,16 @@
 
 
 
+
+static void setArrowButtonStyle( Button *inButton ) {
+    inButton->setDrawBackground( false );
+    
+    inButton->setHoverColor( 1, 1, 1, 1 );
+    inButton->setNoHoverColor( 0.5, 0.5, 0.5, 1 );
+    inButton->setDragOverColor( 0.25, 0.25, 0.25, 1 );
+    }
+
+
 NumberPicker::NumberPicker( Font *inDisplayFont, 
                             double inX, double inY,
                             int inMaxMainDigits,
@@ -53,11 +63,11 @@ NumberPicker::NumberPicker( Font *inDisplayFont,
         addComponent( mUpButtons[i] );
         addComponent( mDownButtons[i] );
         
-        mUpButtons[i]->setDrawBackground( false );
-        mDownButtons[i]->setDrawBackground( false );
-        
         mUpButtons[i]->addActionListener( this );
         mDownButtons[i]->addActionListener( this );
+
+        setArrowButtonStyle( mUpButtons[i] );
+        setArrowButtonStyle( mDownButtons[i] );
         }
     }
 

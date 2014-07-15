@@ -27,6 +27,7 @@ Button::Button( double inX, double inY,
     setFillColor( 0.25, 0.25, 0.25, 1 );
     setDragOverFillColor( 0.1, 0.1, 0.1, 1 );
 
+    setHoverBorderColor( 0.75, 0.75, 0.75, 1 );
 
     mContentsShift.x = 0;
     mContentsShift.y = 0;
@@ -89,7 +90,7 @@ void Button::draw() {
     if( mDrawBackground ) {
         
         if( mHover && ! mDragOver ) {    
-            setDrawColor( 0.75, 0.75, 0.75, 1 );
+            setDrawColor( mHoverBorderColor );
             }
         else if( mDragOver ) {
             setDrawColor( 0.25, 0.25, 0.25, 1 );
@@ -272,6 +273,15 @@ void Button::setDragOverFillColor( float r, float g, float b, float a ) {
     mDragOverFillColor.g = g;
     mDragOverFillColor.b = b;
     mDragOverFillColor.a = a;
+    }
+
+
+
+void Button::setHoverBorderColor( float r, float g, float b, float a ) {
+    mHoverBorderColor.r = r;
+    mHoverBorderColor.g = g;
+    mHoverBorderColor.b = b;
+    mHoverBorderColor.a = a;
     }
 
 

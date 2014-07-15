@@ -12,6 +12,8 @@ void setButtonStyle( Button *inButton ) {
     
     inButton->setBracketCoverLength( 16 );
     
+
+    inButton->setHoverBorderColor( 1, 1, 1, 1 );
     
     doublePair shift = { 0, -2 };
     

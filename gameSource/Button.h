@@ -54,6 +54,12 @@ class Button : public PageComponent, public ActionListenerList {
         // ( 0.1, 0.1, 0.1, 1 );
         virtual void setDragOverFillColor( 
             float r, float g, float b, float a );
+
+        
+        // defaults to
+        // ( 0.75, 0.75, 0.75, 1 );
+        virtual void setHoverBorderColor(
+            float r, float g, float b, float a );
         
 
         // if we think about the button border as being
@@ -123,6 +129,7 @@ class Button : public PageComponent, public ActionListenerList {
         FloatColor mFillColor;
         FloatColor mDragOverFillColor;
         
+        FloatColor mHoverBorderColor;
 
         double mBracketCoverLength;
 
