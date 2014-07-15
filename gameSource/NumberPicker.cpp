@@ -16,6 +16,7 @@ NumberPicker::NumberPicker( Font *inDisplayFont,
           mMaxTotalDigits( inMaxMainDigits + inMaxFractionDigits ),
           mMaxMainDigits( inMaxMainDigits ),
           mMaxFractionDigits( inMaxFractionDigits ),
+          mUsableDigits( inMaxMainDigits + inMaxFractionDigits ),
           mMax( -1 ), mMin( 0 ) {
 
     
@@ -77,7 +78,41 @@ NumberPicker::~NumberPicker() {
 
 void NumberPicker::setMax( double inMax ) {
     mMax = inMax;
-    setValue( getValue() );
+
+    double oldValue = getValue();
+    
+    
+    // count how many digits are used
+    setValue( inMax );
+    
+    mUsableDigits = mMaxTotalDigits;
+    
+    for( int i=mMaxTotalDigits-1; i>=0; i-- ) {
+        
+        if( mDigits[i] == 0 ) {
+            mUsableDigits--;
+            }
+        else {
+            break;
+            }
+        }
+    
+    
+    for( int i=0; i<mMaxTotalDigits; i++ ) {
+        if( i < mUsableDigits ) {
+            mUpButtons[i]->setVisible( true );
+            mDownButtons[i]->setVisible( true );
+            }
+        else {
+            mUpButtons[i]->setVisible( false );
+            mDownButtons[i]->setVisible( false );
+            }
+        }
+    
+    
+    
+    // restore value (and truncate it with new max)
+    setValue( oldValue );
     }
 
 
@@ -120,7 +155,7 @@ void NumberPicker::setValue( double inValue ) {
 
 
     if( inValue == mMax ) {
-        for( int i=0; i<mMaxTotalDigits; i++ ) {
+        for( int i=0; i<mUsableDigits; i++ ) {
             
             // can digit be tweaked up and bring value less than max?
             if( getTweakedValue( i, +1 ) < mMax ) {
@@ -141,7 +176,7 @@ void NumberPicker::setValue( double inValue ) {
         }
 
     if( inValue == mMin ) {
-        for( int i=0; i<mMaxTotalDigits; i++ ) {
+        for( int i=0; i<mUsableDigits; i++ ) {
             
             // can digit be tweaked up and bring value greater than min?
             if( getTweakedValue( i, +1 ) > mMin ) {
@@ -163,11 +198,11 @@ void NumberPicker::setValue( double inValue ) {
 
     if( inValue != mMin && inValue != mMax ) {
 
-        for( int i=0; i<mMaxTotalDigits; i++ ) {
+        for( int i=0; i<mUsableDigits; i++ ) {
             mUpButtons[i]->setVisible( true );
             }
 
-        for( int i=0; i<mMaxTotalDigits; i++ ) {
+        for( int i=0; i<mUsableDigits; i++ ) {
             mDownButtons[i]->setVisible( true );
             }
         }
@@ -229,7 +264,7 @@ void NumberPicker::draw() {
     double spacing = mFont->getFontHeight();
     double nextX = mMaxFractionDigits * spacing;
     
-    for( int i=0; i<mMaxTotalDigits; i++ ) {
+    for( int i=0; i<mUsableDigits; i++ ) {
         if( mMaxFractionDigits > 0 &&
             i == mMaxFractionDigits ) {
             // done with fraction digits...

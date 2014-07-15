@@ -54,6 +54,10 @@ class NumberPicker : public PageComponent, public ActionListener {
         int mMaxMainDigits;
         int mMaxFractionDigits;
         
+        // useable given max limit
+        int mUsableDigits;
+        
+
         SpriteButton **mUpButtons;
         SpriteButton **mDownButtons;
 
