@@ -9,6 +9,15 @@
 #include "minorGems/game/game.h"
 
 #include "minorGems/util/stringUtils.h"
+#include "minorGems/util/SettingsManager.h"
+
+#include "minorGems/crypto/cryptoRandom.h"
+#include "minorGems/crypto/keyExchange/curve25519.h"
+
+#include "minorGems/formats/encodingUtils.h"
+
+#include "minorGems/crypto/hashes/sha1.h"
+
 
 
 extern Font *mainFont;
@@ -126,8 +135,21 @@ DepositPage::DepositPage()
     mExpireMonthField.setMaxLength( 2 );
     mExpireYearField.setMaxLength( 4 );
     mCVCField.setMaxLength( 6 );
+    
 
+    // for testing
+    //mCardNumberField.setText( "4242424242424242" );
+    mCardNumberField.setText( "4000000000000002" );
+    mEmailField.setText( "jasonrohrer@fastmail.fm" );
+    mExpireMonthField.setText( "11" );
+    mExpireYearField.setText( "2015" );
+    mCVCField.setText( "137" );
+
+
+    addServerErrorString( "ACCOUNT_EXISTS", "accountExists" );
+    addServerErrorString( "PAYMENT_FAILED", "paymentFailed" );
     }
+
 
         
 DepositPage::~DepositPage() {
@@ -135,12 +157,147 @@ DepositPage::~DepositPage() {
 
 
 
+
 void DepositPage::actionPerformed( GUIComponent *inTarget ) {
     if( inTarget == &mDepositeButton ) {
+        setStatus( NULL, false );
 
         char existingUser = ( userID != -1 );
 
         setAttachAccountHmac( existingUser );
+
+        
+        
+        
+        char gotKey = getCryptoRandomBytes( mSecretKey, 32 );
+
+        if( !gotKey ) {
+            setStatus( "err_encryption", true );
+            return;
+            }
+
+        curve25519_genPublicKey( mPublicKey, mSecretKey );
+        
+        char *client_public_key = hexEncode( mPublicKey, 32 );
+        setActionParameter( "client_public_key", client_public_key );
+        delete [] client_public_key;
+
+        char *serverKeyHex = 
+            SettingsManager::getStringSetting( "serverPublicKey" );
+        
+
+        if( serverKeyHex == NULL ) {
+            setStatus( "err_encryption", true );
+            return;
+            }
+        
+        unsigned char *serverKey = hexDecode( serverKeyHex );
+        delete [] serverKeyHex;
+        
+        if( serverKey == NULL ) {
+            setStatus( "err_encryption", true );
+            return;
+            }
+        
+        curve25519_genSharedSecretKey( mSharedSecretKey, mSecretKey,
+                                       serverKey );
+        
+        delete [] serverKey;
+        
+        char *sharedSecretKeyHex = hexEncode( mSharedSecretKey, 32 );
+        
+        printf( "Shared secret = %s\n", sharedSecretKeyHex );
+        
+
+        char *email = mEmailField.getText();
+        char *email_hmac = hmac_sha1( sharedSecretKeyHex, email );
+        
+        setActionParameter( "email", email );
+        delete [] email;
+        
+        setActionParameter( "email_hmac", email_hmac );
+        delete [] email_hmac;
+        
+        char *cardNumber = mCardNumberField.getText();        
+        char *mm = mExpireMonthField.getText();
+        char *yyyy = mExpireYearField.getText();
+        char *cvc = mCVCField.getText();
+        
+        char *cardData =
+            autoSprintf( "%s#%s#%s#%s", cardNumber, mm, yyyy, cvc );
+
+        delete [] cardNumber;
+        delete [] mm;
+        delete [] yyyy;
+        delete [] cvc;
+
+        int numCardDataBytes = strlen( cardData );
+        
+        if( numCardDataBytes > 40 ) {
+            delete [] cardData;
+            setStatus( "err_encryption", true );
+            return;
+            }
+        
+        char *secretHmac0 = hmac_sha1( sharedSecretKeyHex, "0" );
+        char *secretHmac1 = hmac_sha1( sharedSecretKeyHex, "1" );
+        
+        char *keyStreamHex = concatonate( secretHmac0, secretHmac1 );
+        
+        printf( "Hex key stream = %s\n", keyStreamHex );
+
+        delete [] secretHmac0;
+        delete [] secretHmac1;
+        
+        // 40 bytes
+        unsigned char *keyStream = hexDecode( keyStreamHex );
+        delete [] keyStreamHex;
+        
+        
+        unsigned char *encryptedCardDataBytes = 
+            new unsigned char[ strlen( cardData ) ];
+        
+        for( int i=0; i<numCardDataBytes; i++ ) {
+            encryptedCardDataBytes[i] = cardData[i] ^ keyStream[i];
+            }
+        
+        delete [] cardData;
+        delete [] keyStream;
+
+        char *encryptedCardDataHex = hexEncode( encryptedCardDataBytes,
+                                                numCardDataBytes );
+        
+        
+        setActionParameter( "card_data_encrypted", encryptedCardDataHex );
+        delete [] encryptedCardDataHex;
+
+        double dollarAmount = mAmountPicker.getValue();
+        
+        char *dollarAmountString = autoSprintf( "%.2f", dollarAmount );
+        
+        char *dollarAmountHmac = hmac_sha1( sharedSecretKeyHex, 
+                                            dollarAmountString );
+        
+        setActionParameter( "dollar_amount", dollarAmountString );
+        delete [] dollarAmountString;
+
+        setActionParameter( "dollar_amount_hmac", dollarAmountHmac );
+        delete [] dollarAmountHmac;
+        
+        
+
+        
+        delete [] sharedSecretKeyHex;
+
+        
+        mDepositeButton.setVisible( false );
+        mCancelButton.setVisible( false );
+        
+        for( int i=0; i<NUM_DEPOSIT_FIELDS; i++ ) {
+            mFields[i]->setActive( false );
+            }
+
+        startRequest();
         }
     else if( inTarget == &mCancelButton ) {
         setSignal( "back" );
@@ -153,6 +310,8 @@ void DepositPage::makeActive( char inFresh ) {
     if( !inFresh ) {
         return;
         }
+    
+    setStatus( NULL, true );
     
     mEmailField.focus();
         
@@ -207,6 +366,8 @@ void DepositPage::draw( doublePair inViewCenter,
 
 
 void DepositPage::step() {
+    ServerActionPage::step();
+    
     checkIfDepositButtonVisible();
     }
 

@@ -260,6 +260,7 @@ static char *getActionFromRequest( char *inRequest ) {
 
 
 static void printRequestStart( SerialWebRecord *r ) {
+    /*
     // hide contents of web request from stdout (prevent simple cheating)
     
     // at least show action value, for easier debugging
@@ -275,10 +276,10 @@ static void printRequestStart( SerialWebRecord *r ) {
         }
     
     return;
-
+    */
 
     // old:  show all parts of request being started
-    /*
+    
     char *trimmedBody = trimMapFromRequest( r->body );
                 
     printf( "\nStarting web request %d [%s %s %s]\n\n", 
@@ -287,7 +288,6 @@ static void printRequestStart( SerialWebRecord *r ) {
     if( trimmedBody != NULL ) {
         delete [] trimmedBody;
         }
-    */
     }
 
 

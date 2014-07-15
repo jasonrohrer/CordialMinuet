@@ -36,6 +36,12 @@ invalid "INVALID"
 
 addMoney "DEPOSIT $"
 
+err_encryption "ENCRYPTION FAILED"
+
+
+accountExists "ACCOUNT EXISTS"
+paymentFailed "PAYMENT FAILED"
+
 
 loggingIn " LOGGING IN##[%s]"
 

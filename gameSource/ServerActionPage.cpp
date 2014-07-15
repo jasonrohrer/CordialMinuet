@@ -27,6 +27,8 @@ ServerActionPage::ServerActionPage( const char *inActionName,
         mResponsePartNames.push_back( 
             stringDuplicate( inResponsePartNames[i] ) );
         }
+
+    addServerErrorString( "DENIED", "requestDenied" );
     }
 
         
@@ -46,6 +48,11 @@ ServerActionPage::~ServerActionPage() {
         
     mResponsePartNames.deallocateStringElements();
     mResponseParts.deallocateStringElements();
+
+    
+    for( int i=0; i<mErrorStringList.size(); i++ ) {
+        delete [] *( mErrorStringList.getElement( i ) );
+        }
     }
 
         
@@ -89,7 +96,15 @@ void ServerActionPage::setActionParameter( const char *inParameterName,
 void ServerActionPage::setAttachAccountHmac( char inShouldAttach ) {
     mAttachAccountHmac = inShouldAttach;
     }
-        
+
+
+
+void ServerActionPage::addServerErrorString( const char *inServerErrorString,
+                                             const char *inUserMessageKey ) {
+    mErrorStringList.push_back( stringDuplicate( inServerErrorString ) );
+    mErrorStringUserMessageKeys.push_back( inUserMessageKey );
+    }
+
 
 
 void ServerActionPage::makeActive( char inFresh ) {
@@ -196,11 +211,23 @@ void ServerActionPage::step() {
                      
                 printf( "Web result = %s\n", result );
    
-                if( strstr( result, "DENIED" ) != NULL ) {
-                    mStatusError = true;
-                    mStatusMessageKey = "requestDenied";
+                
+                char errorParsed = false;
+                
+                for( int i=0; i<mErrorStringList.size(); i++ ) {
+                    if( strstr( result, 
+                                *( mErrorStringList.getElement(i) ) )
+                        != NULL ) {
+                        
+                        mStatusError = true;
+                        mStatusMessageKey = 
+                            *( mErrorStringUserMessageKeys.getElement(i) ); 
+                        errorParsed = true;
+                        break;
+                        }
                     }
-                else {
+                    
+                if( !errorParsed ) {
                     SimpleVector<char *> *lines = 
                         tokenizeString( result );
                     

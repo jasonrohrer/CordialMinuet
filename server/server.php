@@ -735,7 +735,8 @@ function cm_checkHmac() {
 function cm_makeDeposit() {
     $email = cm_requestFilter( "email", "/[A-Z0-9._%+-]+@[A-Z0-9.-]+/i" );
 
-
+    global $tableNamePrefix;
+    
     // does account for this email exist already?
     $query = "SELECT user_id, blocked ".
         "FROM $tableNamePrefix"."users ".
@@ -808,13 +809,12 @@ function cm_makeDeposit() {
         return;
         }
     
-    $sharedSecretHex = $output[0];
-    
-
+    $sharedSecretHex = $output[0];    
     
     $email_hmac = cm_requestFilter( "email_hmac",
                                     "/[A-F0-9]+/i" );
-    if( $email_hmac != cm_hmac_sha1( $sharedSecretHex, $email ) ) {
+    if( strtoupper( $email_hmac ) !=
+        strtoupper( cm_hmac_sha1( $sharedSecretHex, $email ) ) ) {
         echo "DENIED";
 
         cm_log( "deposit for $email DENIED, ".
@@ -838,8 +838,9 @@ function cm_makeDeposit() {
     
     $dollar_amount_hmac = cm_requestFilter( "dollar_amount_hmac",
                                             "/[A-F0-9]+/i" );
-    if( $dollar_amount_hmac != cm_hmac_sha1( $sharedSecretHex,
-                                             $dollar_amount ) ) {
+    if( strtoupper( $dollar_amount_hmac ) !=
+        strtoupper( cm_hmac_sha1( $sharedSecretHex, $dollar_amount ) ) ) {
+        
         echo "DENIED";
 
         cm_log( "deposit for $email DENIED, ".
@@ -851,21 +852,25 @@ function cm_makeDeposit() {
     $card_data_encrypted = cm_requestFilter( "card_data_encrypted",
                                              "/[A-F0-9]+/i" );
 
+    
     $encryptionKeyHex =
-        cm_hmac_sha1( $sharedSecretHex, 0 ) .
-        cm_hmac_sha1( $sharedSecretHex, 1 );
+        cm_hmac_sha1( $sharedSecretHex, "0" ) .
+        cm_hmac_sha1( $sharedSecretHex, "1" );
+
+    
+
+    $encryptionKeyBin = cm_hex2bin( $encryptionKeyHex );    
 
 
-    $encryptionKeyBin = sg_hex2bin( $encryptionKeyHex );    
-
+    $card_data_encrypted_bin = cm_hex2bin( $card_data_encrypted );
     
     $cardDataBytes = array();
 
-    $length = strlen( $card_data_encrypted );
+    $length = strlen( $card_data_encrypted_bin );
 
     for( $i=0; $i<$length; $i++ ) {
         $cardDataBytes[$i] =
-            $encryptionKeyHex[$i] ^ $card_data_encrypted[$i];
+            $encryptionKeyBin[$i] ^ $card_data_encrypted_bin[$i];
         }
 
 
@@ -880,7 +885,7 @@ function cm_makeDeposit() {
         echo "DENIED";
 
         cm_log( "deposit for $email DENIED, ".
-                "badly formatted card data" );
+                "badly formatted card data (length $length): $cardData" );
         return;
         }
 
@@ -894,7 +899,8 @@ function cm_makeDeposit() {
 
     $cents_amount = floor( $dollar_amount * 100 );
     
-    global $curlPath, $stripeChargeURL, $stripeSecretKey;
+    global $curlPath, $stripeChargeURL, $stripeSecretKey,
+        $stripeChargeDescription;
 
     $curlCallString =
         "$curlPath ".
@@ -903,19 +909,59 @@ function cm_makeDeposit() {
         "-d 'receipt_email=$email'  ".
         "-d 'amount=$cents_amount'  ".
         "-d 'currency=usd'  ".
-        "-d 'description=$stripeChargeDescription' ".
+        "-d \"description=$stripeChargeDescription\" ".
         "-d 'card[number]=$cardNumber'  ".
         "-d 'card[exp_month]=$month'  ".
         "-d 'card[exp_year]=$year'  ".
         "-d 'card[cvc]=$cvc' ";
+
+    //cm_log( "Calling Stripe with CURL:  $curlCallString" );
     
     exec( $curlCallString, $output );
 
-    // FIXME:
     // process result
-    cd_log( "Response from Square:<br>$output" );
+    $outputString = implode( "\n", $output );
     
+    //cm_log( "Response from Stripe:\n$outputString" );
+
+
+    if( strstr( $outputString, "error" ) != FALSE ) {
+        echo "PAYMENT_FAILED";
+
+        cm_log( "PAYMENT_FAILED for $email, ".
+                "stripe error:\n$outputString" );
+        return;
+        }
+
     
+    $paid = false;
+
+    foreach( $output as $line ) {
+
+        if( strstr( $outputString, "paid" ) != FALSE &&
+            strstr( $outputString, "true" ) != FALSE ) {
+            $paid = true;
+            }
+        }
+
+    if( !$paid ) {
+        echo "PAYMENT_FAILED";
+
+        cm_log( "PAYMENT_FAILED for $email, ".
+                "stripe result not marked as paid:\n$outputString" );
+        return;
+        }
+
+    // else we're good
+
+
+    if( $user_id == "" ) {
+        // new account
+        
+        }
+    else {
+        // existing account
+        }
     }
 
 
@@ -2438,6 +2484,21 @@ function cm_hmac_sha1( $inKey, $inData ) {
                       $inData, $inKey );
     }
 
+
+
+function cm_hex2bin( $inHexString ) {
+    $pos = 0;
+    $result = "";
+    $length = strlen( $inHexString );
+    
+    while( $pos < $length ) {
+        $code = hexdec( substr( $inHexString, $pos, 2 ) );
+        $pos = $pos + 2;
+        $result .= chr( $code ); 
+        }
+
+    return $result;
+    }
 
 
 

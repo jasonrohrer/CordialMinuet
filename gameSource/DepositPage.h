@@ -54,6 +54,12 @@ class DepositPage : public ServerActionPage, public ActionListener {
 
         TextButton mCancelButton;
 
+
+        unsigned char mPublicKey[32];
+        unsigned char mSecretKey[32];
+
+        unsigned char mSharedSecretKey[32];
+        
         
         // -1 to move up
         void switchFields( int inDir = 1 );

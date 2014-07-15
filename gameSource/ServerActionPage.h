@@ -39,6 +39,12 @@ class ServerActionPage : public GamePage {
         void setAttachAccountHmac( char inShouldAttach );
 
 
+        // beyond DENIED, which is built-in and maps to key requestDenied, 
+        // adds other error strings to be handled specially
+        void addServerErrorString( const char *inServerErrorString,
+                                   const char *inUserMessageKey );        
+
+
         // default behavior is to start request immediately upon
         // makeActive (this is great for single-action pages)
         // override makeActive to change this behavior
@@ -80,6 +86,9 @@ class ServerActionPage : public GamePage {
         SimpleVector<char*> mActionParameterValues;
         
         char mAttachAccountHmac;
+
+        SimpleVector<char *> mErrorStringList;
+        SimpleVector<const char *> mErrorStringUserMessageKeys;
         
         int mNumResponseParts;
         

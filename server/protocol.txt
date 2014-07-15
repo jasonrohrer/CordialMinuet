@@ -124,7 +124,7 @@ server.php?action=make_deposit
           &email=[email]
           &client_public_key=[32-byte key, hex-encoded]
           &email_hmac=[hmac-sha1, hex-encoded]
-		  &card_data_encrypted=[encrypted card data]
+		  &card_data_encrypted=[encrypted card data, hex-encoded]
 		  &dollar_amount=[ASCII decimal value]
           &dollar_amount_hmac=[hmac-sha1, hex-encoded]
        For existing accounts:
@@ -171,6 +171,10 @@ the client_public_key has not been tampered with---that the person who supplied
 a valid, chargeable card number also supplied client_public_key, so it's
 safe to send new account details back encrypted against this key).
 
+
+NOTE:
+shared_secret_hex, as referenced above, is always UPPERCASE when being
+used as a key string for HMAC_SHA1.
 
 
 

@@ -60,9 +60,9 @@ $curlPath = "/usr/bin/curl";
 
 
 // settings for stripe.com payment processor
-$stripeChargeURL = "https://api.stripe.come/v1/charges";
+$stripeChargeURL = "https://api.stripe.com/v1/charges";
 
-$stripeSecretKey = "sk_test_BQokikJOvBiI2HlWgH4olfq2";
+$stripeSecretKey = "sk_test_YFNDtqJP2HSlwGRsI2f55vs3";
 
 $stripeChargeDescription = "Deposit for Jason Rohrer's Cordial Minuet game";
 
