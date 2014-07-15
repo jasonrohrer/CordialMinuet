@@ -44,7 +44,8 @@ NumberPicker::NumberPicker( Font *inDisplayFont,
                                            1, 1, true );
         
         mDownButtons[i] =  new SpriteButton( "numberDown.tga", 
-                                             nextX, -spacing,
+                                             nextX, 
+                                             (-spacing) + .15625 * spacing,
                                              1, 1, true  );
 
         nextX -= spacing;
