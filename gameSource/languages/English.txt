@@ -34,6 +34,8 @@ noStore "CARD INFO NOT STORED ON SERVER"
 invalid "INVALID"
 
 
+addMoney "DEPOSIT $"
+
 
 loggingIn " LOGGING IN##[%s]"
 

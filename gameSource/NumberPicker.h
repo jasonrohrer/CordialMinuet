@@ -22,7 +22,8 @@ class NumberPicker : public PageComponent, public ActionListener {
         NumberPicker( Font *inDisplayFont, 
                       double inX, double inY,
                       int inMaxMainDigits,
-                      int inMaxFractionDigits );
+                      int inMaxFractionDigits,
+                      const char *inLabelText = NULL );
 
         virtual ~NumberPicker();
 
@@ -57,6 +58,7 @@ class NumberPicker : public PageComponent, public ActionListener {
         // useable given max limit
         int mUsableDigits;
         
+        char *mLabelText;
 
         SpriteButton **mUpButtons;
         SpriteButton **mDownButtons;

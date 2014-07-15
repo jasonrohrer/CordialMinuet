@@ -20,13 +20,15 @@ static void setArrowButtonStyle( Button *inButton ) {
 NumberPicker::NumberPicker( Font *inDisplayFont, 
                             double inX, double inY,
                             int inMaxMainDigits,
-                            int inMaxFractionDigits )
+                            int inMaxFractionDigits,
+                            const char *inLabelText )
         : PageComponent( inX, inY ),
           mFont( inDisplayFont ),
           mMaxTotalDigits( inMaxMainDigits + inMaxFractionDigits ),
           mMaxMainDigits( inMaxMainDigits ),
           mMaxFractionDigits( inMaxFractionDigits ),
           mUsableDigits( inMaxMainDigits + inMaxFractionDigits ),
+          mLabelText( NULL ),
           mMax( -1 ), mMin( 0 ) {
 
     
@@ -69,6 +71,11 @@ NumberPicker::NumberPicker( Font *inDisplayFont,
         setArrowButtonStyle( mUpButtons[i] );
         setArrowButtonStyle( mDownButtons[i] );
         }
+
+
+    if( inLabelText != NULL ) {
+        mLabelText = stringDuplicate( inLabelText );
+        }
     }
 
 
@@ -83,6 +90,10 @@ NumberPicker::~NumberPicker() {
     delete [] mDownButtons;
     
     delete [] mDigits;
+
+    if( mLabelText != NULL ) {
+        delete [] mLabelText;
+        }
     }
 
 
@@ -136,10 +147,6 @@ void NumberPicker::setMin( double inMin ) {
 
 
 void NumberPicker::setValue( double inValue ) {
-    if( inValue == 20.20 ) {
-        printf( "here = %f\n", inValue );
-        }
-    
     if( mMax >= 0 && 
         inValue >= mMax ) {
 
@@ -300,6 +307,14 @@ void NumberPicker::draw() {
         nextX -= spacing;
         }
     
+    setDrawColor( 1, 1, 1, 1 );
+
+    
+    if( mLabelText != NULL ) {
+        doublePair labelPos = { nextX, 0 };
+        
+        mFont->drawString( mLabelText, labelPos, alignRight );
+        }
     }
 
 

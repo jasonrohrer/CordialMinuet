@@ -65,28 +65,28 @@ const char *makeDepositPartNames[2] = { "newAccount", "encryptedAccountKey" };
 DepositPage::DepositPage()
         : ServerActionPage( "make_deposit",
                             2, makeDepositPartNames ),
-        mEmailField( mainFont, 0, 96, 10, false, 
+          mAmountPicker( mainFont, 34, 201, 4, 2, translate( "addMoney" ) ),
+          mEmailField( mainFont, 0, 126, 10, false, 
                        translate( "email" ),
                        NULL,
                        // forbid only spaces
                        " "),
-          mCardNumberField( mainFont, 0, 32, 16, true,
+          mCardNumberField( mainFont, 0, 62, 16, true,
                             translate( "card" ),
                         // allow only numbers
                         "0123456789" ),
-          mExpireMonthField( mainFont, -100, -32, 2, true,
+          mExpireMonthField( mainFont, -100, -2, 2, true,
                              translate( "expMonth" ),
                              // allow only numbers
                              "0123456789" ),
-          mExpireYearField( mainFont, 132, -32, 4, true,
+          mExpireYearField( mainFont, 132, -2, 4, true,
                             translate( "expYear" ),
                              // allow only numbers
                              "0123456789" ),
-          mCVCField( mainFont, -150, -96, 4, true,
+          mCVCField( mainFont, 0, -66, 4, true,
                      translate( "cvc" ),
                      // allow only numbers
                      "0123456789" ),
-          mAmountPicker( mainFont, 150, -120, 4, 2 ),
           mDepositeButton( mainFont, 150, -200, 
                            translate( "deposit" ) ),
           mCancelButton( mainFont, -150, -200, 
@@ -109,10 +109,8 @@ DepositPage::DepositPage()
     addComponent( &mAmountPicker );
     
     
-    mAmountPicker.setValue( 439.345 );
     mAmountPicker.setMin( 2 );
-    mAmountPicker.setMax( 35.20 );
-    
+    mAmountPicker.setValue( 5.00 );
 
 
     mFields[0] = &mEmailField;
@@ -172,7 +170,7 @@ void DepositPage::draw( doublePair inViewCenter,
     doublePair labelPos = { 0, 264 };
     drawMessage( "secure", labelPos, false );    
     
-    doublePair labelPosB = { 0, 200 };
+    doublePair labelPosB = { 0, -130 };
     drawMessage( "noStore", labelPosB, false );    
 
 
@@ -187,7 +185,8 @@ void DepositPage::draw( doublePair inViewCenter,
               ! checkLuhn( cc ) ) ) {
             
             // invalid CC
-            doublePair labelPosCC = { 256, 32 };
+            doublePair labelPosCC = mCardNumberField.getPosition();
+            labelPosCC.x = 258;
             drawMessage( "invalid", labelPosCC, false );  
             }
 

@@ -37,6 +37,8 @@ class DepositPage : public ServerActionPage, public ActionListener {
         virtual void step();
         
     protected:
+
+        NumberPicker mAmountPicker;
         
         TextField mEmailField;
         TextField mCardNumberField;
@@ -47,9 +49,6 @@ class DepositPage : public ServerActionPage, public ActionListener {
 
         TextField *mFields[NUM_DEPOSIT_FIELDS];
 
-
-        NumberPicker mAmountPicker;
-        
 
         TextButton mDepositeButton;
 
