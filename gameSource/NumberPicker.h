@@ -61,7 +61,15 @@ class NumberPicker : public PageComponent, public ActionListener {
         
         double mMax;
         double mMin;
+
         
+        double getValue( int inDigits[] );
+        
+        // what is the value of our digits if we tweak one digit up or down
+        double getTweakedValue( int inDigitToTweak, int inTweakDelta );
+        
+        
+
     };
 
 

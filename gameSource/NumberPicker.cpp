@@ -95,44 +95,129 @@ void NumberPicker::setValue( double inValue ) {
         }
     
     if( mMax >= 0 && 
-        inValue > mMax ) {
+        inValue >= mMax ) {
 
         inValue = mMax;
         }
-    if( inValue < mMin ) {
+    
+    if( inValue <= mMin ) {
         inValue = mMin;
         }
+    
 
     double factor = pow( 10, mMaxFractionDigits );
     
 
     double roundingTerm = 1.0 / pow( 10, mMaxFractionDigits + 1 );
     
-    inValue += roundingTerm;
+    double roundedValue = inValue + roundingTerm;
 
     for( int i=0; i<mMaxTotalDigits; i++ ) {
-        mDigits[i] = ( (int)( inValue * factor ) ) % 10;
+        mDigits[i] = ( (int)( roundedValue * factor ) ) % 10;
         
         factor /= 10;
         }
+
+
+    if( inValue == mMax ) {
+        for( int i=0; i<mMaxTotalDigits; i++ ) {
+            
+            // can digit be tweaked up and bring value less than max?
+            if( getTweakedValue( i, +1 ) < mMax ) {
+                mUpButtons[i]->setVisible( true );
+                }
+            else {
+                mUpButtons[i]->setVisible( false );
+                }
+            
+            // can digit be tweaked down and bring value less than max?
+            if( getTweakedValue( i, -1 ) < mMax ) {
+                mDownButtons[i]->setVisible( true );
+                }
+            else {
+                mDownButtons[i]->setVisible( false );
+                }
+            }
+        }
+
+    if( inValue == mMin ) {
+        for( int i=0; i<mMaxTotalDigits; i++ ) {
+            
+            // can digit be tweaked up and bring value greater than min?
+            if( getTweakedValue( i, +1 ) > mMin ) {
+                mUpButtons[i]->setVisible( true );
+                }
+            else {
+                mUpButtons[i]->setVisible( false );
+                }
+
+            // can digit be tweaked down and bring value greater than min?
+            if( getTweakedValue( i, -1 ) > mMin ) {
+                mDownButtons[i]->setVisible( true );
+                }
+            else {
+                mDownButtons[i]->setVisible( false );
+                }
+            }
+        }
+
+    if( inValue != mMin && inValue != mMax ) {
+
+        for( int i=0; i<mMaxTotalDigits; i++ ) {
+            mUpButtons[i]->setVisible( true );
+            }
+
+        for( int i=0; i<mMaxTotalDigits; i++ ) {
+            mDownButtons[i]->setVisible( true );
+            }
+        }
+    
     }
 
 
 
-double NumberPicker::getValue() {
+double NumberPicker::getValue( int inDigits[] ) {
     double value = 0;
     
     double factor = 1.0 / pow( 10, mMaxFractionDigits );
     
 
     for( int i=0; i<mMaxTotalDigits; i++ ) {
-        value += factor * mDigits[i];
+        value += factor * inDigits[i];
         
         factor *= 10;
         }
 
     return value;
     }
+
+
+
+double NumberPicker::getValue() {
+    return getValue( mDigits );
+    }
+
+
+
+double NumberPicker::getTweakedValue( int inDigitToTweak, int inTweakDelta ) {
+    int *tempDigits = new int[ mMaxTotalDigits ];
+    memcpy( tempDigits, mDigits, mMaxTotalDigits * sizeof( int ) );
+    
+    tempDigits[inDigitToTweak] += inTweakDelta;
+    
+    if( tempDigits[inDigitToTweak] >= 10 ) {
+        tempDigits[inDigitToTweak] -= 10;
+        }
+    else if( tempDigits[inDigitToTweak] < 0 ) {
+        tempDigits[inDigitToTweak] += 10;
+        }
+
+    double tempValue = getValue( tempDigits );
+    delete [] tempDigits;
+    
+    return tempValue;
+    }
+
 
 
 
