@@ -1269,7 +1269,7 @@ function cm_verifyTransaction( $inUserID = -1,
 
     // automatically ignore blocked users
     
-    $query = "SELECT sequence_number, lives_left, account_key ".
+    $query = "SELECT sequence_number, account_key ".
         "FROM $tableNamePrefix"."users ".
         "WHERE user_id = '$user_id' AND blocked='0' FOR UPDATE;";
 
@@ -1288,11 +1288,6 @@ function cm_verifyTransaction( $inUserID = -1,
     
     $row = mysql_fetch_array( $result, MYSQL_ASSOC );
 
-    $lives_left = $row[ "lives_left" ];
-
-    if( $lives_left == 0 ) {
-        cm_permadead( $user_id );
-        }
     
 
     $last_sequence_number = $row[ "sequence_number" ];
@@ -1311,12 +1306,11 @@ function cm_verifyTransaction( $inUserID = -1,
     $account_key = $row[ "account_key" ];
 
 
-    global $sharedClientSecret, $cm_accountHmacVersion;
+    global $cm_accountHmacVersion;
     
     $correct_account_hmac = cm_hmac_sha1( $account_key,
                                          "$sequence_number" .
-                                         "$cm_accountHmacVersion" .
-                                         $sharedClientSecret );
+                                         "$cm_accountHmacVersion" );
 
 
     if( strtoupper( $correct_account_hmac ) !=
@@ -2797,72 +2791,6 @@ function cm_hexDecodeToBitString( $inHexString ) {
 
 
 
-// simple, probably insecure encryption based on SHA1 to generate a keystream
-// returns resulting encrypted data in MIME base64 format
-// Also, rather slow, but fast enough (500 map-length encryptions per second
-// on an old machine)
-//
-// uses $sharedClientSecret along with $inKey
-function cm_sha1Encrypt( $inKey, $inDataString ) {
-    global $sharedClientSecret;
-    
-    $dataLength = strlen( $inDataString );
-
-    $keyStream = "";
-    $keyStreamLength = 0;
-
-    $counter = 0;
-    
-    while( $keyStreamLength < $dataLength ) {
-        // another 20 bytes of raw SHA1 data
-        $keyStream = $keyStream . sha1( "$counter" .
-                                        $inKey . $sharedClientSecret .
-                                        "$counter",
-                                        true );
-        
-        $keyStreamLength += 20;
-
-        $counter ++;
-        }
-
-    $encryptedData = $keyStream ^ $inDataString;
-
-
-    return base64_encode( $encryptedData );
-    }
-
-
-
-// uses $sharedClientSecret along with $inKey
-function cm_sha1Decrypt( $inKey, $inEncryptedDataBase64 ) {
-    global $sharedClientSecret;
-
-    $encryptedData = base64_decode( $inEncryptedDataBase64 );
-    
-    $dataLength = strlen( $encryptedData );
-
-    $keyStream = "";
-    $keyStreamLength = 0;
-
-    $counter = 0;
-    
-    while( $keyStreamLength < $dataLength ) {
-        // another 20 bytes of raw SHA1 data
-        $keyStream = $keyStream . sha1( "$counter" .
-                                        $inKey . $sharedClientSecret .
-                                        "$counter",
-                                        true );
-        
-        $keyStreamLength += 20;
-
-        $counter ++;
-        }
-
-    $decryptedData = $keyStream ^ $encryptedData;
-
-
-    return $decryptedData;
-    }
 
 
 

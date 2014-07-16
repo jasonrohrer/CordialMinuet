@@ -177,7 +177,7 @@ char *userEmail = NULL;
 int userID = -1;
 char *accountKey = NULL;
 // each new request to server must use next sequence number
-int serverSequenceNumber = -1;
+int serverSequenceNumber = 0;
 
 int playerIsAdmin = 0;
 
