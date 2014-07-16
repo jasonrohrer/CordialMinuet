@@ -61,6 +61,8 @@ static char checkLuhn( const char *inCC ) {
         sum += digits[i];
         }
     
+    delete [] digits;
+
     return ( sum % 10 == 0 );
     }
 
@@ -262,6 +264,7 @@ void DepositPage::actionPerformed( GUIComponent *inTarget ) {
 
         char *encryptedCardDataHex = hexEncode( encryptedCardDataBytes,
                                                 numCardDataBytes );
+        delete [] encryptedCardDataBytes;
         
         
         setActionParameter( "card_data_encrypted", encryptedCardDataHex );
