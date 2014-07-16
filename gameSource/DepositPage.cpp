@@ -101,7 +101,8 @@ DepositPage::DepositPage()
           mDepositeButton( mainFont, 150, -200, 
                            translate( "deposit" ) ),
           mCancelButton( mainFont, -150, -200, 
-                         translate( "cancel" ) ) {
+                         translate( "cancel" ) ),
+          mResponseProcessed( false ) {
 
 
 
@@ -296,6 +297,7 @@ void DepositPage::actionPerformed( GUIComponent *inTarget ) {
             mFields[i]->setActive( false );
             }
 
+        mResponseProcessed = false;
         startRequest();
         }
     else if( inTarget == &mCancelButton ) {
@@ -320,6 +322,7 @@ void DepositPage::makeActive( char inFresh ) {
 
     checkIfDepositButtonVisible();
     }
+
 
 
 void DepositPage::draw( doublePair inViewCenter, 
@@ -371,7 +374,7 @@ void DepositPage::step() {
 
     // FIXME:
     // don't repeat this every step
-    if( isResponseReady() ) {
+    if( !mResponseProcessed && isResponseReady() ) {
         
         int newAccount = getResponseInt( "newAccount" );
         
@@ -407,8 +410,12 @@ void DepositPage::step() {
             
             delete [] encryptedAccountKeyHex;
             
+            if( accountKey != NULL ) {
+                delete accountKey;
+                }
+            
         
-            char *accountKey = 
+            accountKey = 
                 new char[ accountKeyLength + 1 ];
         
             for( int i=0; i<accountKeyLength; i++ ) {
@@ -418,15 +425,21 @@ void DepositPage::step() {
             
             delete [] encryptedAccountKeyBin;
             delete [] keyStream;
+
+
+            SettingsManager::setSetting( "accountKey", accountKey );
             
-            char *message = autoSprintf( "New: %s", accountKey );
-                        
-            setStatusDirect( message, false );
-            delete [] message;
-            delete [] accountKey;
+            if( userEmail != NULL ) {
+                delete [] userEmail;
+                }
+            userEmail = mEmailField.getText();
+                
+            SettingsManager::setSetting( "email", userEmail );
+            
+            setSignal( "newAccount" );
             }
         else {
-            setStatusDirect( "Deposit in existing account", false );
+            setSignal( "existingAccount" );
             }
         }
     

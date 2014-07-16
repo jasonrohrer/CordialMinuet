@@ -189,7 +189,7 @@ account.  No key is returned if the deposit is made into an existing account
 (the string # is returned in that spot instead).
 
 encrypted_account_key is the ASCII representation of the account key, with
-hyphens removed, XOR'd with sufficient bytes from 
+hyphens included, XOR'd with sufficient bytes from 
 HMAC_SHA1( shared_secret_hex, 2 ) . HMAC_SHA1( shared_secret_hex, 3 )
 (two HMACs concatonated to make 40 bytes), where shared_secret is derived
 through curve25519 key exchange.

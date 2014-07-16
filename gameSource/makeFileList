@@ -34,6 +34,7 @@ AccountCheckPage.cpp \
 buttonStyle.cpp \
 DepositPage.cpp \
 NumberPicker.cpp \
+NewAccountDisplayPage.cpp \
 
 
 

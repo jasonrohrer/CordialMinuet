@@ -43,6 +43,17 @@ accountExists "ACCOUNT EXISTS"
 paymentFailed "PAYMENT FAILED"
 
 
+
+emailReceipt "RECEIPT SENT BY EMAIL" 
+newAccountDetails "NEW ACCOUNT DETAILS:"
+
+copyToClipboard "COPY TO CLIPBOARD"
+
+savedLocally "(ACCOUNT DETAILS SAVED LOCALLY)"
+
+done "DONE"
+
+
 loggingIn " LOGGING IN##[%s]"
 
 

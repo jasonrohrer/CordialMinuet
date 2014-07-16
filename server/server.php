@@ -1008,6 +1008,16 @@ function cm_makeDeposit() {
             }
 
 
+
+        // for presentation to user
+        
+        // break into "-" separated chunks of 5 digits
+        $account_key_chunks = str_split( $account_key, 5 );
+
+        $account_key = implode( "-", $account_key_chunks );
+        
+        
+
         // now encrypt the account key
 
         $encryptionKeyHex =

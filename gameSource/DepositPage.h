@@ -67,4 +67,7 @@ class DepositPage : public ServerActionPage, public ActionListener {
 
         void checkIfDepositButtonVisible();
         
+
+        char mResponseProcessed;
+        
     };
