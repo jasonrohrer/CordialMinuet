@@ -742,17 +742,21 @@ function cm_makeDeposit() {
     $email = cm_requestFilter( "email", "/[A-Z0-9._%+-]+@[A-Z0-9.-]+/i" );
 
     global $tableNamePrefix;
+
+
+    cm_queryDatabase( "SET AUTOCOMMIT=0" );
     
     // does account for this email exist already?
-    $query = "SELECT user_id, blocked ".
+    $query = "SELECT user_id, account_key, blocked ".
         "FROM $tableNamePrefix"."users ".
-        "WHERE email = '$email';";
+        "WHERE email = '$email' FOR UPDATE;";
 
     $result = cm_queryDatabase( $query );
     
     $numRows = mysql_numrows( $result );
 
     $user_id = "";
+    $account_key = "";
     $dollar_balance = 0;
     
     if( $numRows > 0 ) {
@@ -763,8 +767,11 @@ function cm_makeDeposit() {
 
         if( $blocked ) {
             echo "DENIED";
+            cm_queryDatabase( "COMMIT;" );
+            cm_queryDatabase( "SET AUTOCOMMIT=1" );
 
             cm_log( "deposit for $email DENIED, blocked" );
+
             return;
             }
         
@@ -773,6 +780,8 @@ function cm_makeDeposit() {
 
         if( cm_getUserID() != $user_id ) {
             echo "ACCOUNT_EXISTS";
+            cm_queryDatabase( "COMMIT;" );
+            cm_queryDatabase( "SET AUTOCOMMIT=1" );
 
             cm_log( "deposit for $email DENIED, existing account with " .
                     "user_id mismatch" );
@@ -781,10 +790,11 @@ function cm_makeDeposit() {
 
         // existing account with valid user_id supplied
         // must have transaction credentials attached
-        if( ! cd_verifyTransaction() ) {
+        if( ! cm_verifyTransaction() ) {
             return;
             }
 
+        $account_key = $row[ "account_key" ];
         $dollar_balance = $row[ "dollar_balance" ];
         }
     // else, no account exists for this email.
@@ -796,7 +806,9 @@ function cm_makeDeposit() {
 
     if( strlen( $client_public_key ) != 64 ) {
         echo "DENIED";
-
+        cm_queryDatabase( "COMMIT;" );
+        cm_queryDatabase( "SET AUTOCOMMIT=1" );
+            
         cm_log( "deposit for $email DENIED, ".
                 "bad client key $client_public_key" );
         return;
@@ -812,6 +824,10 @@ function cm_makeDeposit() {
     if( count( $output ) != 1 ) {
         echo "FAILED: Unexpected output from curve25519GenSharedKey:<br>\n" .
             "$output";
+        
+        cm_queryDatabase( "COMMIT;" );
+        cm_queryDatabase( "SET AUTOCOMMIT=1" );
+
         return;
         }
     
@@ -822,7 +838,9 @@ function cm_makeDeposit() {
     if( strtoupper( $email_hmac ) !=
         strtoupper( cm_hmac_sha1( $sharedSecretHex, $email ) ) ) {
         echo "DENIED";
-
+        cm_queryDatabase( "COMMIT;" );
+        cm_queryDatabase( "SET AUTOCOMMIT=1" );
+        
         cm_log( "deposit for $email DENIED, ".
                 "bad email hmac" );
         return;
@@ -834,7 +852,9 @@ function cm_makeDeposit() {
     global $minDeposit;
     if( $dollar_amount < $minDeposit ) {
         echo "DENIED";
-
+        cm_queryDatabase( "COMMIT;" );
+        cm_queryDatabase( "SET AUTOCOMMIT=1" );
+        
         cm_log( "deposit for $email DENIED, ".
                 "bad dollar amount below $minDeposit, $dollar_amount" );
         return;
@@ -848,7 +868,9 @@ function cm_makeDeposit() {
         strtoupper( cm_hmac_sha1( $sharedSecretHex, $dollar_amount ) ) ) {
         
         echo "DENIED";
-
+        cm_queryDatabase( "COMMIT;" );
+        cm_queryDatabase( "SET AUTOCOMMIT=1" );
+            
         cm_log( "deposit for $email DENIED, ".
                 "bad dollar amount hmac" );
         return;
@@ -889,7 +911,9 @@ function cm_makeDeposit() {
         strlen( $dataParts[2] ) != 4 ) {
 
         echo "DENIED";
-
+        cm_queryDatabase( "COMMIT;" );
+        cm_queryDatabase( "SET AUTOCOMMIT=1" );
+        
         cm_log( "deposit for $email DENIED, ".
                 "badly formatted card data (length $length): $cardData" );
         return;
@@ -933,7 +957,9 @@ function cm_makeDeposit() {
 
     if( strstr( $outputString, "error" ) != FALSE ) {
         echo "PAYMENT_FAILED";
-
+        cm_queryDatabase( "COMMIT;" );
+        cm_queryDatabase( "SET AUTOCOMMIT=1" );
+        
         cm_log( "PAYMENT_FAILED for $email, ".
                 "stripe error:\n$outputString" );
         return;
@@ -952,7 +978,9 @@ function cm_makeDeposit() {
 
     if( !$paid ) {
         echo "PAYMENT_FAILED";
-
+        cm_queryDatabase( "COMMIT;" );
+        cm_queryDatabase( "SET AUTOCOMMIT=1" );
+        
         cm_log( "PAYMENT_FAILED for $email, ".
                 "stripe result not marked as paid:\n$outputString" );
         return;
@@ -960,6 +988,8 @@ function cm_makeDeposit() {
 
     // else we're good
 
+    $dollar_balance += $dollar_amount;
+    
 
     if( $user_id == "" ) {
         // new account
@@ -981,7 +1011,7 @@ function cm_makeDeposit() {
             $query = "INSERT INTO $tableNamePrefix". "users SET ".
                 "account_key = '$account_key', ".
                 "email = '$email', ".
-                "dollar_balance = '$dollar_amount', ".
+                "dollar_balance = '$dollar_balance', ".
                 "num_deposits = 1, ".
                 "total_deposits = '$dollar_amount', ".
                 "num_withdrawals = 0, ".
@@ -1044,14 +1074,49 @@ function cm_makeDeposit() {
 
         
         echo "1\n$encryptedAccountKeyHex\nOK";
-        return; 
+        cm_queryDatabase( "COMMIT;" );
+        cm_queryDatabase( "SET AUTOCOMMIT=1" );
         }
     else {
         // existing account
+
+        $query = "UPDATE $tableNamePrefix". "users SET ".
+            "dollar_balance = '$dollar_balance' ".
+            "WHERE user_id = $user_id;";
+        cm_queryDatabase( $query );
+
+        
+        cm_queryDatabase( "COMMIT;" );
+        cm_queryDatabase( "SET AUTOCOMMIT=1" );
         
         echo "0\n#\nOK";
-        return;
         }
+
+    // got here
+    // deposit happened
+    // send email receipt
+
+    $balanceString = number_format( $dollar_balance, 2 );
+    $amountString = number_format( $dollar_amount, 2 );
+    
+    
+    $message =
+        "You successfully deposited \$$amountString into your ".
+        "CORDIAL MINUET account.  Your new balance is \$$balanceString.\n\n".
+        "Here are your account details:\n\n".
+        "Email:  $email\n".
+        "Account Key:  $account_key\n\n".
+        "Please save these for future reference.  These account details ".
+        "are saved locally by your game client, but you may need to enter ".
+        "them again if you are playing the game from a different computer ".
+        "or fresh install in the future.\n\n\n".
+        "Enjoy the game!\n".
+        "Jason\n\n";
+            
+    
+    cm_mail( $email, "Cordial Minuet Deposit Receipt",
+             $message );
+    
     }
 
 
@@ -1764,17 +1829,17 @@ function cm_blockUserID() {
 
 
 
-function cd_updateUser() {
-    cd_checkPassword( "update_user" );
+function cm_updateUser() {
+    cm_checkPassword( "update_user" );
 
 
-    $user_id = cd_getUserID();
+    $user_id = cm_getUserID();
 
-    $blocked = cd_requestFilter( "blocked", "/[1]/", "0" );
-    $email = cd_requestFilter( "email", "/[A-Z0-9._%+-]+@[A-Z0-9.-]+/i" );
+    $blocked = cm_requestFilter( "blocked", "/[1]/", "0" );
+    $email = cm_requestFilter( "email", "/[A-Z0-9._%+-]+@[A-Z0-9.-]+/i" );
 
-    if( cd_updateUser_internal( $user_id, $blocked, $email ) ) {
-        cd_showDetail();
+    if( cm_updateUser_internal( $user_id, $blocked, $email ) ) {
+        cm_showDetail();
         }
     }
 
@@ -1782,7 +1847,7 @@ function cd_updateUser() {
 
 // set any to -1 to leave unchanged
 // returns 1 on success
-function cd_updateUser_internal( $user_id, $blocked, $email ) {
+function cm_updateUser_internal( $user_id, $blocked, $email ) {
     
     global $tableNamePrefix;
         
@@ -1794,7 +1859,7 @@ function cd_updateUser_internal( $user_id, $blocked, $email ) {
     $query = "SELECT user_id, blocked, email ".
         "FROM $tableNamePrefix"."users ".
         "WHERE user_id = '$user_id';";
-    $result = cd_queryDatabase( $query );
+    $result = cm_queryDatabase( $query );
 
     $numRows = mysql_numrows( $result );
 
@@ -1814,12 +1879,12 @@ function cd_updateUser_internal( $user_id, $blocked, $email ) {
             "blocked = '$blocked', email = '$email' " .
             "WHERE user_id = '$user_id';";
         
-        $result = cd_queryDatabase( $query );
+        $result = cm_queryDatabase( $query );
         
         return 1;
         }
     else {
-        cd_log( "$user_id not found for $remoteIP" );
+        cm_log( "$user_id not found for $remoteIP" );
 
         echo "$user_id not found";
         }
