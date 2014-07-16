@@ -138,8 +138,8 @@ DepositPage::DepositPage()
     
 
     // for testing
-    //mCardNumberField.setText( "4242424242424242" );
-    mCardNumberField.setText( "4000000000000002" );
+    mCardNumberField.setText( "4242424242424242" );
+    //mCardNumberField.setText( "4000000000000002" );
     mEmailField.setText( "jasonrohrer@fastmail.fm" );
     mExpireMonthField.setText( "11" );
     mExpireYearField.setText( "2015" );
@@ -206,8 +206,6 @@ void DepositPage::actionPerformed( GUIComponent *inTarget ) {
         
         char *sharedSecretKeyHex = hexEncode( mSharedSecretKey, 32 );
         
-        printf( "Shared secret = %s\n", sharedSecretKeyHex );
-        
 
         char *email = mEmailField.getText();
         char *email_hmac = hmac_sha1( sharedSecretKeyHex, email );
@@ -244,8 +242,6 @@ void DepositPage::actionPerformed( GUIComponent *inTarget ) {
         
         char *keyStreamHex = concatonate( secretHmac0, secretHmac1 );
         
-        printf( "Hex key stream = %s\n", keyStreamHex );
-
         delete [] secretHmac0;
         delete [] secretHmac1;
         
@@ -369,6 +365,68 @@ void DepositPage::step() {
     ServerActionPage::step();
     
     checkIfDepositButtonVisible();
+
+    // FIXME:
+    // don't repeat this every step
+    if( isResponseReady() ) {
+        
+        int newAccount = getResponseInt( "newAccount" );
+        
+        if( newAccount ) {
+            
+            char *encryptedAccountKeyHex =
+                getResponse( "encryptedAccountKey" );
+            
+
+            char *sharedSecretKeyHex = hexEncode( mSharedSecretKey, 32 );
+
+            char *secretHmac2 = hmac_sha1( sharedSecretKeyHex, "2" );
+            char *secretHmac3 = hmac_sha1( sharedSecretKeyHex, "3" );
+            
+            delete [] sharedSecretKeyHex;
+            
+            char *keyStreamHex = concatonate( secretHmac2, secretHmac3 );
+        
+            delete [] secretHmac2;
+            delete [] secretHmac3;
+        
+            // 40 bytes
+            unsigned char *keyStream = hexDecode( keyStreamHex );
+            delete [] keyStreamHex;
+        
+
+            int accountKeyLength = strlen( encryptedAccountKeyHex ) / 2;
+            
+            
+            
+            unsigned char *encryptedAccountKeyBin = 
+                hexDecode( encryptedAccountKeyHex );
+            
+            delete [] encryptedAccountKeyHex;
+            
+        
+            char *accountKey = 
+                new char[ accountKeyLength + 1 ];
+        
+            for( int i=0; i<accountKeyLength; i++ ) {
+                accountKey[i] = encryptedAccountKeyBin[i] ^ keyStream[i];
+                }
+            accountKey[ accountKeyLength ] = '\0';
+            
+            delete [] encryptedAccountKeyBin;
+            delete [] keyStream;
+            
+            char *message = autoSprintf( "New: %s", accountKey );
+                        
+            setStatusDirect( message, false );
+            delete [] message;
+            delete [] accountKey;
+            }
+        else {
+            setStatusDirect( "Deposit in existing account", false );
+            }
+        }
+    
     }
 
 

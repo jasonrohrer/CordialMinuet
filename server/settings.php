@@ -55,6 +55,14 @@ $tableNamePrefix = "minuetServer_";
 
 
 
+// number of "readable base-32" digits (2-9,A-H,J-N,P-Z) in each account key.
+// Account keys are broken up into clumps of 5 digits separated by "-"
+// max supported length is 210 (with separators inserted, this is a
+// 251-character string)
+// 5 bits of security per digit.
+$accountKeyLength = 20;
+
+
 
 $curlPath = "/usr/bin/curl";
 

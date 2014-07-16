@@ -103,7 +103,7 @@ void GamePage::setStatus( const char *inStatusMessageKey, char inError ) {
 
 
 
-void GamePage::setStatusDirect( char *inStatusMessage, char inError ) {
+void GamePage::setStatusDirect( const char *inStatusMessage, char inError ) {
     if( mStatusMessage != NULL ) {
         delete [] mStatusMessage;
         mStatusMessage = NULL;

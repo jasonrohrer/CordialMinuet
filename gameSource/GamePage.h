@@ -19,7 +19,7 @@ class GamePage : public PageComponent {
         void setStatus( const char *inStatusMessageKey, char inError );
 
         // inStatusMessage destroyed by caller
-        void setStatusDirect( char *inStatusMessage, char inError );
+        void setStatusDirect( const char *inStatusMessage, char inError );
 
         char isStatusShowing();
         

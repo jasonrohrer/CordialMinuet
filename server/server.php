@@ -353,6 +353,12 @@ function cm_setupDatabase() {
             "email VARCHAR(255) NOT NULL," .
             "INDEX( email ),".
             "dollar_balance DOUBLE NOT NULL,".
+            "num_deposits INT NOT NULL,".
+            "total_deposits DOUBLE NOT NULL,".
+            "num_withdrawals INT NOT NULL,".
+            "total_withdrawals DOUBLE NOT NULL,".
+            "total_won DOUBLE NOT NULL,".
+            "total_lost DOUBLE NOT NULL,".
             "sequence_number INT NOT NULL," .
             "last_action_time DATETIME NOT NULL," .
             "blocked TINYINT NOT NULL ) ENGINE = INNODB;";
@@ -957,11 +963,117 @@ function cm_makeDeposit() {
 
     if( $user_id == "" ) {
         // new account
+
+        // look for collisions, try new salt
+        $salt = 0;
+
+
+        $found_unused = false;
+
+
+        while( ! $found_unused ) {
+            
         
+            $account_key = cm_generateAccountKey( $email, $salt );
+
+            
+            // user_id auto-assigned (auto-increment)
+            $query = "INSERT INTO $tableNamePrefix". "users SET ".
+                "account_key = '$account_key', ".
+                "email = '$email', ".
+                "dollar_balance = '$dollar_amount', ".
+                "num_deposits = 1, ".
+                "total_deposits = '$dollar_amount', ".
+                "num_withdrawals = 0, ".
+                "total_withdrawals = 0, ".
+                "total_won = 0, ".
+                "total_lost = 0, ".
+                "sequence_number = 0, ".
+                "last_action_time = CURRENT_TIMESTAMP, ".
+                "blocked = 0;";
+            
+            $result = mysql_query( $query );
+            
+            if( $result ) {
+                $found_unused = 1;
+
+                global $remoteIP;
+                cm_log( "Account key $account_key created by $remoteIP" );
+                }
+            else {
+                cm_log( "Duplicate ids?  Error:  " . mysql_error() );
+                // try again
+                $salt += 1;
+                }
+            }
+
+
+        // now encrypt the account key
+
+        $encryptionKeyHex =
+            cm_hmac_sha1( $sharedSecretHex, "2" ) .
+            cm_hmac_sha1( $sharedSecretHex, "3" );
+
+    
+
+        $encryptionKeyBin = cm_hex2bin( $encryptionKeyHex );    
+    
+        $encryptedAccountKeyBytes = array();
+        
+        
+        $length = strlen( $account_key );
+
+        for( $i=0; $i<$length; $i++ ) {
+            $encryptedAccountKeyBytes[$i] =
+                $encryptionKeyBin[$i] ^ $account_key[$i];
+            }
+
+        $encryptedAccountKeyHex =
+            bin2hex( implode( $encryptedAccountKeyBytes ) );
+        
+
+        
+        echo "1\n$encryptedAccountKeyHex\nOK";
+        return; 
         }
     else {
         // existing account
+        
+        echo "0\n#\nOK";
+        return;
         }
+    }
+
+
+
+// no hyphens
+function cm_generateAccountKey( $inEmail, $inSalt ) {
+
+    global $serverSecretKey, $accountKeyLength;
+    
+    $account_key = "";
+
+    // repeat hashing new rand values, mixed with our secret
+    // for security, until we have generated enough digits.
+    while( strlen( $account_key ) < $accountKeyLength ) {
+        
+        $randVal = rand();
+        
+        $hash_bin =
+            cm_hmac_sha1_raw( $serverSecretKey,
+                              $inEmail .
+                              uniqid( "$randVal"."$inSalt", true ) );
+        
+        
+        $hash_base32 = cm_readableBase32Encode( $hash_bin );
+        
+        $digitsLeft = $accountKeyLength - strlen( $account_key );
+        
+        $account_key = $account_key . substr( $hash_base32, 0, $digitsLeft );
+        }
+    
+    
+    return $account_key;
     }
 
 
@@ -2486,6 +2598,13 @@ function cm_hmac_sha1( $inKey, $inData ) {
 
 
 
+function cm_hmac_sha1_raw( $inKey, $inData ) {
+    return hash_hmac( "sha1", 
+                      $inData, $inKey, true );
+    }
+
+
+
 function cm_hex2bin( $inHexString ) {
     $pos = 0;
     $result = "";
@@ -2500,6 +2619,33 @@ function cm_hex2bin( $inHexString ) {
     return $result;
     }
 
+
+
+
+// convert a binary string into a "readable" base-32 encoding
+function cm_readableBase32Encode( $inBinaryString ) {
+    global $readableBase32DigitArray;
+    
+    $binaryDigits = str_split( $inBinaryString );
+
+    // string of 0s and 1s
+    $binString = "";
+    
+    foreach( $binaryDigits as $digit ) {
+        $binDigitString = decbin( ord( $digit ) );
+
+        // pad with 0s
+        $binDigitString =
+            substr( "00000000", 0, 8 - strlen( $binDigitString ) ) .
+            $binDigitString;
+
+        $binString = $binString . $binDigitString;
+        }
+
+    // now have full string of 0s and 1s for $inBinaryString
+
+    return cm_readableBase32EncodeFromBitString( $binString );
+    }
 
 
 
@@ -2674,7 +2820,7 @@ function cm_mail( $inEmail,
 
 
         if( PEAR::isError( $mail ) ) {
-            ts_log( "Email send failed:  " .
+            cm_log( "Email send failed:  " .
                     $mail->getMessage() );
             return false;
             }

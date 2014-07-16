@@ -193,6 +193,8 @@ hyphens removed, XOR'd with sufficient bytes from
 HMAC_SHA1( shared_secret_hex, 2 ) . HMAC_SHA1( shared_secret_hex, 3 )
 (two HMACs concatonated to make 40 bytes), where shared_secret is derived
 through curve25519 key exchange.
+The result is hex encoded.
+
 
 Deposits into existing accounts MUST include user_id, sequence_number, and
 account_hmac.
