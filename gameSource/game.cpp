@@ -73,6 +73,8 @@ ServerActionPage *getRequiredVersionPage;
 AccountCheckPage *accountCheckPage;
 DepositPage *depositPage;
 NewAccountDisplayPage *newAccountDisplayPage;
+ServerActionPage *getBalancePage;
+
 
 
 // position of view in world
@@ -178,6 +180,9 @@ int userID = -1;
 char *accountKey = NULL;
 // each new request to server must use next sequence number
 int serverSequenceNumber = 0;
+
+double userBalance = 0;
+
 
 int playerIsAdmin = 0;
 
@@ -468,6 +473,13 @@ void initFrameDrawer( int inWidth, int inHeight, int inTargetFrameRate,
     depositPage = new DepositPage();
     newAccountDisplayPage = new NewAccountDisplayPage();
 
+    
+    const char *resultNamesC[1] = { "dollarBalance" };
+    
+    getBalancePage = new ServerActionPage( "get_balance", 
+                                             1, resultNamesC, true );
+
+
     currentGamePage = getServerURLPage;
 
     currentGamePage->base_makeActive( true );
@@ -476,6 +488,7 @@ void initFrameDrawer( int inWidth, int inHeight, int inTargetFrameRate,
 
     initDone = true;
     }
+
 
 
 void freeFrameDrawer() {
@@ -497,7 +510,8 @@ void freeFrameDrawer() {
     delete accountCheckPage;
     delete depositPage;
     delete newAccountDisplayPage;
-
+    delete getBalancePage;
+    
     if( shutdownMessage != NULL ) {
         delete [] shutdownMessage;
         shutdownMessage = NULL;
@@ -1015,6 +1029,17 @@ void drawFrame( char inUpdate ) {
                 }
             else if( accountCheckPage->checkSignal( "existingAccount" ) ) {
                 }
+            else if( accountCheckPage->isResponseReady() ) {
+                // logged in
+
+                userID = 
+                    accountCheckPage->getResponseInt( "userID" );
+                serverSequenceNumber = 
+                    accountCheckPage->getResponseInt( "sequenceNumber" );
+                
+                currentGamePage = getBalancePage;
+                currentGamePage->base_makeActive( true );
+                }
             }
         else if( currentGamePage == depositPage ) {
             if( depositPage->checkSignal( "back" ) ) {
@@ -1035,6 +1060,15 @@ void drawFrame( char inUpdate ) {
                 currentGamePage->base_makeActive( true );
                 }
             }
+        else if( currentGamePage == getBalancePage ) {
+            if( getBalancePage->isResponseReady() ) {
+                userBalance = 
+                    getBalancePage->getResponseInt( "dollarBalance" );
+                
+                printf( "User balance = %f\n", userBalance );
+                }
+            }
+        
         }
 
 

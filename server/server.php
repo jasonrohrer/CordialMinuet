@@ -3,7 +3,7 @@
 
 
 // for testing
-//sleep( 4 );
+//sleep( 2 );
 
 
 // server will tell clients to upgrade to this version
@@ -193,6 +193,9 @@ else if( $action == "check_user" ) {
     }
 else if( $action == "check_hmac" ) {
     cm_checkHmac();
+    }
+else if( $action == "get_balance" ) {
+    cm_getBalance();
     }
 else if( $action == "make_deposit" ) {
     cm_makeDeposit();
@@ -733,6 +736,40 @@ function cm_checkHmac() {
         return;
         }
 
+    echo "OK";
+    }
+
+
+
+
+function cm_getBalance() {
+    if( ! cm_verifyTransaction() ) {
+        return;
+        }
+
+    $user_id = cm_getUserID();
+
+    global $tableNamePrefix;
+    
+    
+    // does account for this email exist already?
+    $query = "SELECT dollar_balance ".
+        "FROM $tableNamePrefix"."users ".
+        "WHERE user_id = '$user_id';";
+
+    $result = cm_queryDatabase( $query );
+    
+    $numRows = mysql_numrows( $result );
+
+    if( $numRows == 0 ) {
+        cm_transactionDeny();
+        return;
+        }
+
+    $dollar_balance = mysql_result( $result, 0, "dollar_balance" );
+
+    echo "$dollar_balance\n";
+    
     echo "OK";
     }
 
@@ -1346,8 +1383,8 @@ function cm_verifyTransaction( $inUserID = -1,
     if( $inCheckSequenceNumber ) {
         
         // counts as an action for this user
-        $query = "UPDATE $tableNamePrefix"."houses SET ".
-            "last_owner_action_time = CURRENT_TIMESTAMP ".
+        $query = "UPDATE $tableNamePrefix"."users SET ".
+            "last_action_time = CURRENT_TIMESTAMP ".
             "WHERE user_id = $user_id;";
         
         cm_queryDatabase( $query );

@@ -10,6 +10,8 @@
 
 extern char *serverURL;
 
+extern int userID;
+
 
 
 ServerActionPage::ServerActionPage( const char *inActionName,
@@ -145,6 +147,15 @@ void ServerActionPage::startRequest() {
         
         delete [] accountHmac;
         }
+
+    if( userID != -1 ) {
+        char *userIDString = autoSprintf( "&user_id=%d", userID );
+        
+        actionParameterListChars.appendElementString( userIDString );
+        
+        delete [] userIDString;
+        }
+    
     
     char *actionParameterListString = 
         actionParameterListChars.getElementString();

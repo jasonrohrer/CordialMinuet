@@ -110,7 +110,18 @@ OK
 
 
 
+=== Call:
+server.php?action=get_balance&user_id=[id number]
+                             &sequence_number=[number]
+                             &account_hmac=[hmac-sha1, hex-encoded]
+Returns:
+dollar_balance
+OK
 
+
+Where:
+
+dollar_balance is dollars in ASCII floating point
 
 
 
