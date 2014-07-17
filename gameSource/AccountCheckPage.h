@@ -19,7 +19,9 @@ class AccountCheckPage : public ServerActionPage, public ActionListener {
 
         virtual void makeActive( char inFresh );
 
-        
+        virtual void step();
+
+
     protected:
         
         TextButton mNewAccountButton;

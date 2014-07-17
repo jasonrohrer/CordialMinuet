@@ -89,3 +89,16 @@ void AccountCheckPage::makeActive( char inFresh ) {
     
     }
 
+
+
+
+void AccountCheckPage::step() {
+    ServerActionPage::step();
+
+    if( isError() && ! mNewAccountButton.isVisible() ) {
+        mNewAccountButton.setVisible( true );
+        mExistingAccountButton.setVisible( true );
+        }
+    }
+
+    
