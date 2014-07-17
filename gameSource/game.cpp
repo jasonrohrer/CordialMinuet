@@ -1076,7 +1076,7 @@ void drawFrame( char inUpdate ) {
         else if( currentGamePage == getBalancePage ) {
             if( getBalancePage->isResponseReady() ) {
                 userBalance = 
-                    getBalancePage->getResponseInt( "dollarBalance" );
+                    getBalancePage->getResponseDouble( "dollarBalance" );
                 
                 currentGamePage = menuPage;
                 currentGamePage->base_makeActive( true );
