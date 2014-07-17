@@ -372,7 +372,18 @@ void DepositPage::step() {
     ServerActionPage::step();
     
     if( ! isActionInProgress() ) {
-        checkIfDepositButtonVisible();    
+        checkIfDepositButtonVisible();
+
+        // last field (not email) should always be active
+        if( ! mFields[ NUM_DEPOSIT_FIELDS - 1 ]->isActive() ) {
+            // make fields active
+            mEmailField.focus();
+            
+            for( int i=0; i<NUM_DEPOSIT_FIELDS; i++ ) {
+                mFields[i]->setActive( true );
+                }
+            }
+        mCancelButton.setVisible( true );
         }
     
     if( !mResponseProcessed && isResponseReady() ) {
