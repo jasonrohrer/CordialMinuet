@@ -98,6 +98,7 @@ DepositPage::DepositPage()
                      translate( "cvc" ),
                      // allow only numbers
                      "0123456789" ),
+          mEmailFieldCanFocus( true ),
           mDepositeButton( mainFont, 150, -200, 
                            translate( "deposit" ) ),
           mCancelButton( mainFont, -150, -200, 
@@ -156,6 +157,12 @@ DepositPage::DepositPage()
 
         
 DepositPage::~DepositPage() {
+    }
+
+
+
+void DepositPage::setEmailFieldCanFocus( char inCanFocus ) {
+    mEmailFieldCanFocus = inCanFocus;
     }
 
 
@@ -314,14 +321,32 @@ void DepositPage::makeActive( char inFresh ) {
         }
     
     setStatus( NULL, true );
-    
-    mEmailField.focus();
-        
-    for( int i=0; i<NUM_DEPOSIT_FIELDS; i++ ) {
-        mFields[i]->setActive( true );
-        }
 
+    makeFieldsActive();
+    
     checkIfDepositButtonVisible();
+    }
+
+
+
+void DepositPage::makeFieldsActive() {
+    if( mEmailFieldCanFocus ) {
+        mEmailField.focus();
+        }
+    else {
+        mEmailField.cursorReset();
+        mCardNumberField.focus();
+        }
+    
+    for( int i=0; i<NUM_DEPOSIT_FIELDS; i++ ) {
+        if( !mEmailFieldCanFocus &&
+            mFields[i] == &mEmailField ) {
+            mFields[i]->setActive( false );
+            }
+        else {
+            mFields[i]->setActive( true );
+            }
+        }
     }
 
 
@@ -376,12 +401,7 @@ void DepositPage::step() {
 
         // last field (not email) should always be active
         if( ! mFields[ NUM_DEPOSIT_FIELDS - 1 ]->isActive() ) {
-            // make fields active
-            mEmailField.focus();
-            
-            for( int i=0; i<NUM_DEPOSIT_FIELDS; i++ ) {
-                mFields[i]->setActive( true );
-                }
+            makeFieldsActive();
             }
         mCancelButton.setVisible( true );
         }
@@ -423,7 +443,7 @@ void DepositPage::step() {
             delete [] encryptedAccountKeyHex;
             
             if( accountKey != NULL ) {
-                delete accountKey;
+                delete [] accountKey;
                 }
             
         
@@ -439,14 +459,17 @@ void DepositPage::step() {
             delete [] keyStream;
 
 
-            SettingsManager::setSetting( "accountKey", accountKey );
             
             if( userEmail != NULL ) {
                 delete [] userEmail;
                 }
             userEmail = mEmailField.getText();
+            
+            if( !gamePlayingBack ) {
                 
-            SettingsManager::setSetting( "email", userEmail );
+                SettingsManager::setSetting( "email", userEmail );
+                SettingsManager::setSetting( "accountKey", accountKey );
+                }
             
             setSignal( "newAccount" );
             }

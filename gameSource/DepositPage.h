@@ -20,6 +20,11 @@ class DepositPage : public ServerActionPage, public ActionListener {
         DepositPage();
         
         ~DepositPage();
+
+
+        // defaults to true
+        void setEmailFieldCanFocus( char inCanFocus );
+        
         
         virtual void actionPerformed( GUIComponent *inTarget );
 
@@ -49,6 +54,8 @@ class DepositPage : public ServerActionPage, public ActionListener {
 
         TextField *mFields[NUM_DEPOSIT_FIELDS];
 
+        char mEmailFieldCanFocus;
+        
 
         TextButton mDepositeButton;
 
@@ -64,6 +71,7 @@ class DepositPage : public ServerActionPage, public ActionListener {
         // -1 to move up
         void switchFields( int inDir = 1 );
 
+        void makeFieldsActive();
 
         void checkIfDepositButtonVisible();
         

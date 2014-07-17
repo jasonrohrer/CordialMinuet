@@ -57,6 +57,7 @@ CustomRandomSource randSource( 34957197 );
 #include "AccountCheckPage.h"
 #include "DepositPage.h"
 #include "NewAccountDisplayPage.h"
+#include "MenuPage.h"
 
 #include "serialWebRequests.h"
 #include "TextField.h"
@@ -74,7 +75,7 @@ AccountCheckPage *accountCheckPage;
 DepositPage *depositPage;
 NewAccountDisplayPage *newAccountDisplayPage;
 ServerActionPage *getBalancePage;
-
+MenuPage *menuPage;
 
 
 // position of view in world
@@ -479,6 +480,8 @@ void initFrameDrawer( int inWidth, int inHeight, int inTargetFrameRate,
     getBalancePage = new ServerActionPage( "get_balance", 
                                              1, resultNamesC, true );
 
+    menuPage = new MenuPage();
+
 
     currentGamePage = getServerURLPage;
 
@@ -511,7 +514,8 @@ void freeFrameDrawer() {
     delete depositPage;
     delete newAccountDisplayPage;
     delete getBalancePage;
-    
+    delete menuPage;
+
     if( shutdownMessage != NULL ) {
         delete [] shutdownMessage;
         shutdownMessage = NULL;
@@ -1043,15 +1047,24 @@ void drawFrame( char inUpdate ) {
             }
         else if( currentGamePage == depositPage ) {
             if( depositPage->checkSignal( "back" ) ) {
-                currentGamePage = accountCheckPage;
-                currentGamePage->base_makeActive( true );
+
+                if( userID == -1 ) {
+                    currentGamePage = accountCheckPage;
+                    currentGamePage->base_makeActive( true );
+                    }
+                else {
+                    // logged in already
+                    currentGamePage = menuPage;
+                    currentGamePage->base_makeActive( true );
+                    }
                 }
             else if( depositPage->checkSignal( "newAccount" ) ) {
                 currentGamePage = newAccountDisplayPage;
                 currentGamePage->base_makeActive( true );
                 }
             else if( depositPage->checkSignal( "existingAccount" ) ) {
-                
+                currentGamePage = getBalancePage;
+                currentGamePage->base_makeActive( true );
                 }
             }
         else if( currentGamePage == newAccountDisplayPage ) {
@@ -1065,7 +1078,16 @@ void drawFrame( char inUpdate ) {
                 userBalance = 
                     getBalancePage->getResponseInt( "dollarBalance" );
                 
-                printf( "User balance = %f\n", userBalance );
+                currentGamePage = menuPage;
+                currentGamePage->base_makeActive( true );
+                }
+            }
+        else if( currentGamePage == menuPage ) {
+            if( menuPage->checkSignal( "deposit" ) ) {
+                
+                currentGamePage = depositPage;
+                depositPage->setEmailFieldCanFocus( false );
+                currentGamePage->base_makeActive( true );
                 }
             }
         

@@ -785,7 +785,7 @@ function cm_makeDeposit() {
     cm_queryDatabase( "SET AUTOCOMMIT=0" );
     
     // does account for this email exist already?
-    $query = "SELECT user_id, account_key, blocked ".
+    $query = "SELECT user_id, account_key, dollar_balance, blocked ".
         "FROM $tableNamePrefix"."users ".
         "WHERE email = '$email' FOR UPDATE;";
 

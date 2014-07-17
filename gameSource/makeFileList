@@ -35,6 +35,7 @@ buttonStyle.cpp \
 DepositPage.cpp \
 NumberPicker.cpp \
 NewAccountDisplayPage.cpp \
+MenuPage.cpp \
 
 
 

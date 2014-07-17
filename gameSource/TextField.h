@@ -42,6 +42,10 @@ class TextField : public PageComponent, public ActionListenerList {
         void insertCharacter( unsigned char inASCII );
 
 
+        // brings cursor back to start of string
+        void cursorReset();
+        
+
         virtual void setActive( char inActive );
         virtual char isActive();
         

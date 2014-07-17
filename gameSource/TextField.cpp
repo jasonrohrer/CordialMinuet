@@ -588,6 +588,12 @@ void TextField::insertCharacter( unsigned char inASCII ) {
 
 
 
+void TextField::cursorReset() {
+    mCursorPosition = 0;
+    }
+
+
+
 
 void TextField::keyDown( unsigned char inASCII ) {
     if( !mFocused ) {
