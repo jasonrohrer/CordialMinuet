@@ -109,6 +109,13 @@ class TextField : public PageComponent, public ActionListenerList {
 
         int mCursorPosition;
         
+        
+        char *mDrawnText;
+        // position of cursor within text that is actually drawn
+        int mCursorDrawPosition;
+        // leftmost x position of drawn text
+        double mDrawnTextX;
+        
 
         int mHoldDeleteSteps;
         char mFirstDeleteRepeatDone;

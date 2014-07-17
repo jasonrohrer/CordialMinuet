@@ -44,7 +44,7 @@ AccountCheckPage::AccountCheckPage()
     mNewAccountButton.addActionListener( this );
     mExistingAccountButton.addActionListener( this );
 
-    setMinimumResponseTime( 3 );
+    setMinimumResponseTime( 1 );
     }
 
         

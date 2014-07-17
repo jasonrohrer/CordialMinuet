@@ -35,6 +35,8 @@ TextField::TextField( Font *inDisplayFont,
           mAllowedChars( NULL ), mForbiddenChars( NULL ),
           mFocused( false ), mText( new char[1] ),
           mCursorPosition( 0 ),
+          mDrawnText( NULL ),
+          mCursorDrawPosition( 0 ),
           mHoldDeleteSteps( -1 ), mFirstDeleteRepeatDone( false ) {
     
     if( inLabelText != NULL ) {
@@ -93,7 +95,7 @@ TextField::TextField( Font *inDisplayFont,
 
     mWide = fullStringWidth + 2 * mBorderWide;
     
-    
+    mDrawnTextX = - ( mWide / 2 - mBorderWide );
 
     mText[0] = '\0';
     }
@@ -117,6 +119,10 @@ TextField::~TextField() {
         }
     if( mForbiddenChars != NULL ) {
         delete [] mForbiddenChars;
+        }
+
+    if( mDrawnText != NULL ) {
+        delete [] mDrawnText;
         }
     }
 
@@ -273,7 +279,7 @@ void TextField::draw() {
     char tooLongFront = false;
     char tooLongBack = false;
     
-    int cursorDrawPosition = mCursorPosition;
+    mCursorDrawPosition = mCursorPosition;
 
 
     char *textBeforeCursorBase = stringDuplicate( mText );
@@ -303,7 +309,7 @@ void TextField::draw() {
                 
                 textBeforeCursor = &( textBeforeCursor[1] );
                 
-                cursorDrawPosition --;
+                mCursorDrawPosition --;
                 }
         
             while( mFont->measureString( textAfterCursor ) > 
@@ -327,7 +333,7 @@ void TextField::draw() {
                 
                 textBeforeCursor = &( textBeforeCursor[1] );
                 
-                cursorDrawPosition --;
+                mCursorDrawPosition --;
                 
                 delete [] sumText;
                 sumText = concatonate( textBeforeCursor, textAfterCursor );
@@ -354,14 +360,19 @@ void TextField::draw() {
         }
 
     
-    char *textToDraw = concatonate( textBeforeCursor, textAfterCursor );
+    if( mDrawnText != NULL ) {
+        delete [] mDrawnText;
+        }
+    
+    mDrawnText = concatonate( textBeforeCursor, textAfterCursor );
 
     char leftAlign = true;
     char cursorCentered = false;
     doublePair centerPos = { 0, 0 };
     
     if( ! tooLongFront ) {
-        mFont->drawString( textToDraw, textPos, alignLeft );
+        mFont->drawString( mDrawnText, textPos, alignLeft );
+        mDrawnTextX = textPos.x;
         }
     else if( tooLongFront && ! tooLongBack ) {
         
@@ -369,7 +380,8 @@ void TextField::draw() {
 
         doublePair textPos2 = { mWide/2 - mBorderWide, 0 };
 
-        mFont->drawString( textToDraw, textPos2, alignRight );
+        mFont->drawString( mDrawnText, textPos2, alignRight );
+        mDrawnTextX = textPos2.x - mFont->measureString( mDrawnText );
         }
     else {
         // text around perfectly centered cursor
@@ -382,7 +394,8 @@ void TextField::draw() {
         doublePair textPos2 = textPos;
         textPos2.x += xDiff;
 
-        mFont->drawString( textToDraw, textPos2, alignLeft );
+        mFont->drawString( mDrawnText, textPos2, alignLeft );
+        mDrawnTextX = textPos2.x;
         }
     
 
@@ -415,12 +428,13 @@ void TextField::draw() {
         drawQuads( 1, verts , vertColors );
         }
     
-    if( mFocused && cursorDrawPosition > -1 ) {            
+    if( mFocused && mCursorDrawPosition > -1 ) {            
         // make measurement to draw cursor
 
-        char *beforeCursorText = stringDuplicate( textToDraw );
+        char *beforeCursorText = stringDuplicate( mDrawnText );
         
-        beforeCursorText[ cursorDrawPosition ] = '\0';
+        beforeCursorText[ mCursorDrawPosition ] = '\0';
+        
         
         double cursorXOffset;
 
@@ -454,7 +468,6 @@ void TextField::draw() {
                   rectEndY + pixWidth );
         }
     
-    delete [] textToDraw;
     delete [] textBeforeCursorBase;
     delete [] textAfterCursorBase;
     }
@@ -467,6 +480,39 @@ void TextField::pointerUp( float inX, float inY ) {
         inY < + mHigh / 2 ) {
 
         focus();
+
+        
+        int bestCursorDrawPosition = mCursorDrawPosition;
+        double bestDistance = mWide * 2;
+        
+        int drawnTextLength = strlen( mDrawnText );
+        
+        // find gap between drawn letters that is closest to clicked x
+
+        for( int i=0; i<=drawnTextLength; i++ ) {
+            
+            char *textCopy = stringDuplicate( mDrawnText );
+            
+            textCopy[i] = '\0';
+
+            double thisGapX = 
+                mDrawnTextX + 
+                mFont->measureString( textCopy ) +
+                mFont->getCharSpacing() / 2;
+            
+            delete [] textCopy;
+            
+            double thisDistance = fabs( thisGapX - inX );
+            
+            if( thisDistance < bestDistance ) {
+                bestCursorDrawPosition = i;
+                bestDistance = thisDistance;
+                }
+            }
+        
+        int cursorDelta = bestCursorDrawPosition - mCursorDrawPosition;
+        
+        mCursorPosition += cursorDelta;
         }
     }
 
