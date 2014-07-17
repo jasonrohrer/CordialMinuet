@@ -295,6 +295,7 @@ void DepositPage::actionPerformed( GUIComponent *inTarget ) {
         
         for( int i=0; i<NUM_DEPOSIT_FIELDS; i++ ) {
             mFields[i]->setActive( false );
+            mFields[i]->unfocus();
             }
 
         mResponseProcessed = false;
@@ -370,10 +371,10 @@ void DepositPage::draw( doublePair inViewCenter,
 void DepositPage::step() {
     ServerActionPage::step();
     
-    checkIfDepositButtonVisible();
-
-    // FIXME:
-    // don't repeat this every step
+    if( ! isActionInProgress() ) {
+        checkIfDepositButtonVisible();    
+        }
+    
     if( !mResponseProcessed && isResponseReady() ) {
         
         int newAccount = getResponseInt( "newAccount" );
@@ -441,6 +442,8 @@ void DepositPage::step() {
         else {
             setSignal( "existingAccount" );
             }
+        
+        mResponseProcessed = true;
         }
     
     }

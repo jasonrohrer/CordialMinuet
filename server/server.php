@@ -2,6 +2,10 @@
 
 
 
+// for testing
+//sleep( 4 );
+
+
 // server will tell clients to upgrade to this version
 global $cm_version;
 $cm_version = "1";

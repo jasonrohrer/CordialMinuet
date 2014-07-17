@@ -58,6 +58,8 @@ class ServerActionPage : public GamePage {
 
         char isResponseReady();
         
+        char isActionInProgress();
+        
 
         // result destroyed by caller
         char *getResponse( const char *inPartName );

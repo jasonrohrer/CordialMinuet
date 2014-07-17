@@ -281,6 +281,12 @@ char ServerActionPage::isResponseReady() {
 
 
 
+char ServerActionPage::isActionInProgress() {
+    return ( mWebRequest != -1 );
+    }
+
+
+
 // result destroyed by caller
 char *ServerActionPage::getResponse( const char *inPartName ) {
     for( int i=0; i<mResponseParts.size(); i++ ) {
