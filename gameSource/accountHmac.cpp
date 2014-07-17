@@ -42,7 +42,7 @@ char *getAccountHmac() {
     delete [] pureCode;
     delete [] toHash;
 
-    char *result = autoSprintf( "sequence_number=%d&ticket_hmac=%s",
+    char *result = autoSprintf( "sequence_number=%d&account_hmac=%s",
                                 serverSequenceNumber,
                                 hash );
     delete [] hash;
