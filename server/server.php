@@ -712,10 +712,7 @@ function cm_checkUser() {
             return;
             }
         
-
-        global $cm_version;
-    
-        echo "$cm_version $user_id $sequence_number OK";
+        echo "$user_id $sequence_number OK";
         }
     else {
         echo "DENIED";
