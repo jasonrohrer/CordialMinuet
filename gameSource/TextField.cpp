@@ -468,6 +468,15 @@ void TextField::draw() {
                   rectEndY + pixWidth );
         }
     
+    
+    if( ! mActive ) {
+        setDrawColor( 0, 0, 0, 0.5 );
+        // dark overlay
+        drawRect( - mWide / 2, - mHigh / 2, 
+                  mWide / 2, mHigh / 2 );
+        }
+        
+
     delete [] textBeforeCursorBase;
     delete [] textAfterCursorBase;
     }
