@@ -28,6 +28,7 @@ NumberPicker::NumberPicker( Font *inDisplayFont,
           mMaxMainDigits( inMaxMainDigits ),
           mMaxFractionDigits( inMaxFractionDigits ),
           mUsableDigits( inMaxMainDigits + inMaxFractionDigits ),
+          mAdjustable( true ),
           mLabelText( NULL ),
           mMax( -1 ), mMin( 0 ) {
 
@@ -225,6 +226,16 @@ void NumberPicker::setValue( double inValue ) {
             }
         }
     
+    
+    if( !mAdjustable ) {
+        for( int i=0; i<mUsableDigits; i++ ) {
+            mUpButtons[i]->setVisible( false );
+            }
+
+        for( int i=0; i<mUsableDigits; i++ ) {
+            mDownButtons[i]->setVisible( false );
+            }
+        }
     }
 
 
@@ -242,6 +253,13 @@ double NumberPicker::getValue( int inDigits[] ) {
         }
 
     return value;
+    }
+
+
+
+void NumberPicker::setAdjustable( char inAdjustable ) {
+    mAdjustable = inAdjustable;
+    setValue( getValue() );
     }
 
 

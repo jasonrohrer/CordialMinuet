@@ -39,7 +39,10 @@ class NumberPicker : public PageComponent, public ActionListener {
 
         double getValue();
         
-
+        // defaults to true
+        // if false, all up/down buttons disabled
+        void setAdjustable( char inAdjustable );
+        
 
         virtual void draw();
 
@@ -58,6 +61,8 @@ class NumberPicker : public PageComponent, public ActionListener {
         // useable given max limit
         int mUsableDigits;
         
+        char mAdjustable;
+
         char *mLabelText;
 
         SpriteButton **mUpButtons;

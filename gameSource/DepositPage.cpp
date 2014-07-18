@@ -305,6 +305,8 @@ void DepositPage::actionPerformed( GUIComponent *inTarget ) {
             mFields[i]->unfocus();
             }
 
+        mAmountPicker.setAdjustable( false );
+        
         mResponseProcessed = false;
         startRequest();
         }
@@ -347,6 +349,8 @@ void DepositPage::makeFieldsActive() {
             mFields[i]->setActive( true );
             }
         }
+    
+    mAmountPicker.setAdjustable( true );
     }
 
 
@@ -480,6 +484,12 @@ void DepositPage::step() {
         mResponseProcessed = true;
         }
     
+    }
+
+
+
+double DepositPage::getDepositAmount() {
+    return mAmountPicker.getValue();
     }
 
 

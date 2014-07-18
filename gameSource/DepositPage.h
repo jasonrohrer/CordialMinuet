@@ -41,6 +41,9 @@ class DepositPage : public ServerActionPage, public ActionListener {
         
         virtual void step();
         
+
+        double getDepositAmount();
+        
     protected:
 
         NumberPicker mAmountPicker;
