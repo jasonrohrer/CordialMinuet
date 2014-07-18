@@ -563,6 +563,31 @@ void DepositPage::switchFields( int inDir ) {
     for( int i=0; i<NUM_DEPOSIT_FIELDS; i++ ) {
         
         if( mFields[i]->isFocused() ) {
+
+            // auto-pad month an year field if needed
+            if( mFields[i] == &mExpireMonthField ) {
+                // leaving month field
+                char *text = mExpireMonthField.getText();
+                
+                if( strlen( text ) == 1 ) {
+                    char *newText = autoSprintf( "0%s\n", text );
+                    mExpireMonthField.setText( newText );
+                    delete [] newText;
+                    }
+                delete [] text;
+                }
+            else if( mFields[i] == &mExpireYearField ) {
+                // leaving month field
+                char *text = mExpireYearField.getText();
+                
+                if( strlen( text ) == 2 ) {
+                    char *newText = autoSprintf( "20%s\n", text );
+                    mExpireYearField.setText( newText );
+                    delete [] newText;
+                    }
+                delete [] text;
+                }
+
             int next = i + inDir;
             
             if( next >= NUM_DEPOSIT_FIELDS ) {
