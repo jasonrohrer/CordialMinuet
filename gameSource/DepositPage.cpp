@@ -190,7 +190,16 @@ void DepositPage::actionPerformed( GUIComponent *inTarget ) {
         
         char *client_public_key = hexEncode( mPublicKey, 32 );
         setActionParameter( "client_public_key", client_public_key );
+
+        char *tagString = autoSprintf( "%d", time( NULL ) );
+        char *deposit_tag = hmac_sha1( client_public_key, tagString );
         delete [] client_public_key;
+        delete [] tagString;
+
+        setActionParameter( "deposit_tag", deposit_tag );
+        delete [] deposit_tag;
+        
+        
 
         char *serverKeyHex = 
             SettingsManager::getStringSetting( "serverPublicKey" );

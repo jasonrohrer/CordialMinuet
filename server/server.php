@@ -3,7 +3,7 @@
 
 
 // for testing
-//sleep( 2 );
+//sleep( 5 );
 
 
 // server will tell clients to upgrade to this version
@@ -368,6 +368,8 @@ function cm_setupDatabase() {
             "total_lost DOUBLE NOT NULL,".
             "sequence_number INT NOT NULL," .
             "last_action_time DATETIME NOT NULL," .
+            "last_deposit_tag TEXT NOT NULL,".
+            "last_deposit_response TEXT NOT NULL,".
             "blocked TINYINT NOT NULL ) ENGINE = INNODB;";
 
         $result = cm_queryDatabase( $query );
@@ -779,13 +781,16 @@ function cm_getBalance() {
 function cm_makeDeposit() {
     $email = cm_requestFilter( "email", "/[A-Z0-9._%+-]+@[A-Z0-9.-]+/i" );
 
+    $deposit_tag = cm_requestFilter( "deposit_tag", "/[A-F0-9]+/i" );
+    
     global $tableNamePrefix;
 
 
     cm_queryDatabase( "SET AUTOCOMMIT=0" );
     
     // does account for this email exist already?
-    $query = "SELECT user_id, account_key, dollar_balance, blocked ".
+    $query = "SELECT user_id, account_key, dollar_balance, ".
+        "last_deposit_tag, last_deposit_response, blocked ".
         "FROM $tableNamePrefix"."users ".
         "WHERE email = '$email' FOR UPDATE;";
 
@@ -796,6 +801,9 @@ function cm_makeDeposit() {
     $user_id = "";
     $account_key = "";
     $dollar_balance = 0;
+    
+    $last_deposit_tag = "";
+    $last_deposit_response = "";
     
     if( $numRows > 0 ) {
 
@@ -810,6 +818,26 @@ function cm_makeDeposit() {
 
             cm_log( "deposit for $email DENIED, blocked" );
 
+            return;
+            }
+
+        $last_deposit_tag = $row[ "last_deposit_tag" ];
+        $last_deposit_response = $row[ "last_deposit_response" ];
+
+        if( $last_deposit_tag == $deposit_tag ) {
+            // repeat of an already-complete deposit
+            cm_queryDatabase( "COMMIT;" );
+            cm_queryDatabase( "SET AUTOCOMMIT=1" );
+
+            // don't need to check anything else at this point
+            // secure to just return same response again
+            // (only original request originator will be able to
+            //  make use of it)
+
+            cm_log( "Retry of already-complete deposit for $email,".
+                    " resending last response" );
+            
+            echo $last_deposit_response;
             return;
             }
         
@@ -1008,8 +1036,8 @@ function cm_makeDeposit() {
 
     foreach( $output as $line ) {
 
-        if( strstr( $outputString, "paid" ) != FALSE &&
-            strstr( $outputString, "true" ) != FALSE ) {
+        if( strstr( $line, "paid" ) != FALSE &&
+            strstr( $line, "true" ) != FALSE ) {
             $paid = true;
             }
         }
@@ -1058,6 +1086,8 @@ function cm_makeDeposit() {
                 "total_lost = 0, ".
                 "sequence_number = 0, ".
                 "last_action_time = CURRENT_TIMESTAMP, ".
+                "last_deposit_tag = '$deposit_tag', ".
+                "last_deposit_response = '', ".
                 "blocked = 0;";
             
             $result = mysql_query( $query );
@@ -1066,7 +1096,8 @@ function cm_makeDeposit() {
                 $found_unused = 1;
 
                 global $remoteIP;
-                cm_log( "Account key $account_key created by $remoteIP" );
+                cm_log( "Account key $account_key created by $remoteIP, ".
+                        "initial deposit \$$dollar_amount" );
                 }
             else {
                 cm_log( "Duplicate ids?  Error:  " . mysql_error() );
@@ -1110,24 +1141,43 @@ function cm_makeDeposit() {
             bin2hex( implode( $encryptedAccountKeyBytes ) );
         
 
+        $response = "1\n$encryptedAccountKeyHex\nOK";
+
+
+        $query = "UPDATE $tableNamePrefix". "users SET ".
+            "last_deposit_tag = '$deposit_tag', ".
+            "last_deposit_response = '$response' ".
+            "WHERE email = '$email';";
+        cm_queryDatabase( $query );
+
         
-        echo "1\n$encryptedAccountKeyHex\nOK";
+        echo $response;
+        
         cm_queryDatabase( "COMMIT;" );
         cm_queryDatabase( "SET AUTOCOMMIT=1" );
         }
     else {
         // existing account
 
+        $response = "0\n#\nOK";
+        
         $query = "UPDATE $tableNamePrefix". "users SET ".
-            "dollar_balance = '$dollar_balance' ".
+            "dollar_balance = '$dollar_balance', ".
+            "num_deposits = num_deposits + 1, ".
+            "total_deposits = total_deposits + '$dollar_amount', ".
+            "last_deposit_tag = '$deposit_tag', ".
+            "last_deposit_response = '$response' ".
             "WHERE user_id = $user_id;";
         cm_queryDatabase( $query );
 
+        global $remoteIP;
+        cm_log( "Deposit of \$$dollar_amount for user $user_id ($email) by ".
+                "$remoteIP" );
         
         cm_queryDatabase( "COMMIT;" );
         cm_queryDatabase( "SET AUTOCOMMIT=1" );
         
-        echo "0\n#\nOK";
+        echo $response;
         }
 
     // got here

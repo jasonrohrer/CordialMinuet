@@ -87,7 +87,8 @@ void DepositDisplayPage::draw( doublePair inViewCenter,
     
     char *valueString = autoSprintf( "$%.2f", mOldBalance );
 
-    double xOffset = 1.25 * mainFont->measureString( valueString );
+    double xOffset = 2 * mainFont->getFontHeight() + 
+        mainFont->measureString( valueString );
     
     pos.x = xOffset;
     mainFont->drawString( valueString, pos, alignRight );

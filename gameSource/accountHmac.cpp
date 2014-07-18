@@ -56,7 +56,7 @@ char *getAccountHmac() {
 
 char *replaceAccountHmac( char *inString ) {
     const char *keyA = "sequence_number=";
-    const char *keyB = "ticket_hmac=";
+    const char *keyB = "account_hmac=";
     
     if( inString == NULL ) {
         return NULL;
