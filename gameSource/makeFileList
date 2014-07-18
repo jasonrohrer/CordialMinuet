@@ -36,7 +36,7 @@ DepositPage.cpp \
 NumberPicker.cpp \
 NewAccountDisplayPage.cpp \
 MenuPage.cpp \
-
+DepositDisplayPage.cpp \
 
 
 

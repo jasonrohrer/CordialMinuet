@@ -54,8 +54,17 @@ savedLocally "(ACCOUNT DETAILS SAVED LOCALLY)"
 done "DONE"
 
 
-loggingIn " LOGGING IN##[%s]"
+loggingIn "LOGGING IN##[%s]"
 
+
+okay "OK"
+
+
+oldBalance "OLD BALANCE:"
+
+addedAmount "ADDED:"
+
+newBalance "NEW BALANCE:"
 
 
 pauseMessage1 "[ENTER] TO RESUME"

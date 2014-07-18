@@ -58,6 +58,8 @@ CustomRandomSource randSource( 34957197 );
 #include "DepositPage.h"
 #include "NewAccountDisplayPage.h"
 #include "MenuPage.h"
+#include "DepositDisplayPage.h"
+
 
 #include "serialWebRequests.h"
 #include "TextField.h"
@@ -76,6 +78,7 @@ DepositPage *depositPage;
 NewAccountDisplayPage *newAccountDisplayPage;
 ServerActionPage *getBalancePage;
 MenuPage *menuPage;
+DepositDisplayPage *depositDisplayPage;
 
 
 // position of view in world
@@ -482,6 +485,8 @@ void initFrameDrawer( int inWidth, int inHeight, int inTargetFrameRate,
 
     menuPage = new MenuPage();
 
+    depositDisplayPage = new DepositDisplayPage();
+    
 
     currentGamePage = getServerURLPage;
 
@@ -515,7 +520,8 @@ void freeFrameDrawer() {
     delete newAccountDisplayPage;
     delete getBalancePage;
     delete menuPage;
-
+    delete depositDisplayPage;
+    
     if( shutdownMessage != NULL ) {
         delete [] shutdownMessage;
         shutdownMessage = NULL;
@@ -1063,7 +1069,10 @@ void drawFrame( char inUpdate ) {
                 currentGamePage->base_makeActive( true );
                 }
             else if( depositPage->checkSignal( "existingAccount" ) ) {
-                currentGamePage = getBalancePage;
+                depositDisplayPage->setDepositAmount( 
+                    depositPage->getDepositAmount() );
+                
+                currentGamePage = depositDisplayPage;
                 currentGamePage->base_makeActive( true );
                 }
             }
@@ -1077,6 +1086,15 @@ void drawFrame( char inUpdate ) {
             if( getBalancePage->isResponseReady() ) {
                 userBalance = 
                     getBalancePage->getResponseDouble( "dollarBalance" );
+                
+                currentGamePage = menuPage;
+                currentGamePage->base_makeActive( true );
+                }
+            }
+        else if( currentGamePage == depositDisplayPage ) {
+            if( depositDisplayPage->checkSignal( "done" ) ) {
+                userBalance = 
+                    depositDisplayPage->getResponseDouble( "dollarBalance" );
                 
                 currentGamePage = menuPage;
                 currentGamePage->base_makeActive( true );
