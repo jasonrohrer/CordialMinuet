@@ -1,6 +1,7 @@
 #include "DepositDisplayPage.h"
 
 #include "buttonStyle.h"
+#include "balanceFormat.h"
 
 #include "minorGems/game/Font.h"
 #include "minorGems/game/game.h"
@@ -84,8 +85,10 @@ void DepositDisplayPage::draw( doublePair inViewCenter,
     pos.y += 64;
     
     mainFont->drawString( translate( "oldBalance" ), pos, alignRight );
+
+    char fullPrecision = false;
     
-    char *valueString = autoSprintf( "$%.2f", mOldBalance );
+    char *valueString = formatBalance( mOldBalance, false, &fullPrecision );
 
     double xOffset = 2 * mainFont->getFontHeight() + 
         mainFont->measureString( valueString );
@@ -100,7 +103,7 @@ void DepositDisplayPage::draw( doublePair inViewCenter,
  
     mainFont->drawString( translate( "addedAmount" ), pos, alignRight );
     
-    valueString = autoSprintf( "$%.2f", mDepositAmount );
+    valueString = formatBalance( mDepositAmount, fullPrecision );
     
     pos.x = xOffset;
     mainFont->drawString( valueString, pos, alignRight );
@@ -115,8 +118,8 @@ void DepositDisplayPage::draw( doublePair inViewCenter,
 
     if( isResponseReady() ) {
         
-        valueString = autoSprintf( "$%.2f", 
-                                   getResponseDouble( "dollarBalance" )  );
+        valueString = formatBalance( getResponseDouble( "dollarBalance" ),
+                                     fullPrecision );
     
         pos.x = xOffset;
         mainFont->drawString( valueString, pos, alignRight );

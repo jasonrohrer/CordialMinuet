@@ -2,6 +2,7 @@
 
 #include "buttonStyle.h"
 #include "message.h"
+#include "balanceFormat.h"
 
 #include "minorGems/game/game.h"
 #include "minorGems/game/Font.h"
@@ -42,7 +43,7 @@ void MenuPage::actionPerformed( GUIComponent *inTarget ) {
 void MenuPage::draw( doublePair inViewCenter, 
                      double inViewSize ) {
     
-    char *balanceString = autoSprintf( "$%.2f", userBalance );
+    char *balanceString = formatBalance( userBalance );
     
     doublePair pos = { 0, 250 };
     

@@ -307,17 +307,22 @@ function cm_setupDatabase() {
     if( ! cm_doesTableExist( $tableName ) ) {
 
         // this table contains general info about the server
+        // house_dollar_balance is where unwithdrawn house game fees are
+        // tracked
+        // house_withdrawals is total money withdrawn from house balance 
         // use INNODB engine so table can be locked
         $query =
             "CREATE TABLE $tableName(" .
-            "last_flush_time DATETIME NOT NULL ) ENGINE = INNODB;";
+            "last_flush_time DATETIME NOT NULL, ".
+            "house_dollar_balance DECIMAL(64, 4)  NOT NULL, ".
+            "house_withdrawals DECIMAL(64, 4) NOT NULL ) ENGINE = INNODB;";
 
         $result = cm_queryDatabase( $query );
 
         echo "<B>$tableName</B> table created<BR>";
 
         // create one row
-        $query = "INSERT INTO $tableName VALUES ( CURRENT_TIMESTAMP );";
+        $query = "INSERT INTO $tableName VALUES ( CURRENT_TIMESTAMP, 0, 0 );";
         $result = cm_queryDatabase( $query );
         }
     else {
@@ -359,13 +364,13 @@ function cm_setupDatabase() {
             "INDEX( account_key )," .
             "email VARCHAR(255) NOT NULL," .
             "INDEX( email ),".
-            "dollar_balance DOUBLE NOT NULL,".
+            "dollar_balance DECIMAL(64, 4) NOT NULL,".
             "num_deposits INT NOT NULL,".
-            "total_deposits DOUBLE NOT NULL,".
+            "total_deposits DECIMAL(64, 4) NOT NULL,".
             "num_withdrawals INT NOT NULL,".
-            "total_withdrawals DOUBLE NOT NULL,".
-            "total_won DOUBLE NOT NULL,".
-            "total_lost DOUBLE NOT NULL,".
+            "total_withdrawals DECIMAL(64, 4) NOT NULL,".
+            "total_won DECIMAL(64, 4) NOT NULL,".
+            "total_lost DECIMAL(64, 4) NOT NULL,".
             "sequence_number INT NOT NULL," .
             "last_action_time DATETIME NOT NULL," .
             "last_deposit_tag TEXT NOT NULL,".
@@ -396,7 +401,7 @@ function cm_setupDatabase() {
             "max_concurrent_connections INT NOT NULL DEFAULT 0," .
 
             "game_count INT NOT NULL DEFAULT 0,".
-            "total_buy_in DOUBLE NOT NULL DEFAULT 0 ".
+            "total_buy_in DECIMAL(64, 4) NOT NULL DEFAULT 0 ".
             ") ENGINE = INNODB;";
         
 
@@ -773,6 +778,20 @@ function cm_getBalance() {
     echo "$dollar_balance\n";
     
     echo "OK";
+    }
+
+
+
+// formats dollar values with up to 4 fractional digits
+// adds $ and commas to separate thousands, trims off 00 if value
+// is a whole number of cents
+function cm_formatBalanceForDisplay( $inDollars ) {
+    $result = number_format( $inDollars, 4 );
+
+    if( substr( $result, -2 ) === "00" ) {
+        $result = number_format( $inDollars, 2 );
+        }
+    return "\$$result";
     }
 
 
@@ -1184,13 +1203,13 @@ function cm_makeDeposit() {
     // deposit happened
     // send email receipt
 
-    $balanceString = number_format( $dollar_balance, 2 );
-    $amountString = number_format( $dollar_amount, 2 );
+    $balanceString = cm_formatBalanceForDisplay( $dollar_balance );
+    $amountString = cm_formatBalanceForDisplay( $dollar_amount );
     
     
     $message =
-        "You successfully deposited \$$amountString into your ".
-        "CORDIAL MINUET account.  Your new balance is \$$balanceString.\n\n".
+        "You successfully deposited $amountString into your ".
+        "CORDIAL MINUET account.  Your new balance is $balanceString.\n\n".
         "Here are your account details:\n\n".
         "Email:  $email\n".
         "Account Key:  $account_key\n\n".
@@ -1661,7 +1680,10 @@ function cm_showDataUserList() {
         echo "<td align=right>$blocked [$block_toggle]</td>\n";
         echo "<td>$account_key</td>\n";
         echo "<td>$email</td>\n";
-        echo "<td>\$$dollar_balance</td>\n";
+
+        $balanceString = cm_formatBalanceForDisplay( $dollar_balance );
+        
+        echo "<td>$balanceString</td>\n";
         echo "<td>$last_action_time</td>\n";
         echo "</tr>\n";
         }
@@ -1718,6 +1740,50 @@ function cm_generateHeader() {
     if( $connectionCount == 1 ) {
         $connectionWord = "connection";
         }
+
+    global $tableNamePrefix;
+
+    $query = "SELECT SUM( dollar_balance ) FROM $tableNamePrefix"."users;";
+    $result = cm_queryDatabase( $query );
+
+    $totalBalance = mysql_result( $result, 0, 0 );
+
+    $query = "SELECT SUM( total_deposits ) FROM $tableNamePrefix"."users;";
+    $result = cm_queryDatabase( $query );
+
+    $totalDeposits = mysql_result( $result, 0, 0 );
+
+    $query = "SELECT SUM( total_withdrawals ) FROM $tableNamePrefix"."users;";
+    $result = cm_queryDatabase( $query );
+
+    $totalWithdrawals = mysql_result( $result, 0, 0 );
+
+    
+
+    $query = "SELECT house_dollar_balance, house_withdrawals ".
+        "FROM  $tableNamePrefix"."server_globals;";
+    $result = cm_queryDatabase( $query );
+
+    $house_dollar_balance = mysql_result( $result, 0, "house_dollar_balance" );
+    $house_withdrawals = mysql_result( $result, 0, "house_withdrawals" );
+
+    $leaked_money =
+        $totalBalance
+        - $totalDeposits
+        + $totalWithdrawals
+        - ( $house_dollar_balance + $house_withdrawals );
+    
+
+    $totalBalanceString = cm_formatBalanceForDisplay( $totalBalance );
+    $totalDepositsString = cm_formatBalanceForDisplay( $totalDeposits );
+    $totalWithdrawalsString = cm_formatBalanceForDisplay( $totalWithdrawals );
+
+    $houseBalanceString = cm_formatBalanceForDisplay( $house_dollar_balance );
+    $houseWithdrawalsString = cm_formatBalanceForDisplay( $house_withdrawals );
+
+    $leakedMoneyString = cm_formatBalanceForDisplay( $leaked_money );
+
+    
     
     echo "<table width='100%' border=0><tr>".
         "<td valign=top width=25%>[<a href=\"server.php?action=show_data" .
@@ -1728,7 +1794,13 @@ function cm_generateHeader() {
         "$sizeString ($perUserString per user)<br>".
         "$connectionCount active MySQL $connectionWord<br>".
         "Users: $usersDay/d | $usersHour/h | $usersFiveMin/5m | ".
-        "$usersMinute/m | $usersSecond/s</td>".
+        "$usersMinute/m | $usersSecond/s<br>".
+        "Player balance: $totalBalanceString | ".
+        "Deposits: $totalDepositsString | ".
+        "Withdrawals: $totalWithdrawalsString<br>".
+        "House balance: $houseBalanceString | ".
+        "House withdrawals: $houseWithdrawalsString | ".
+        "Leaked: $leakedMoneyString</td>".
         "<td valign=top align=right width=25%>[<a href=\"server.php?action=logout" .
             "\">Logout</a>]</td>".
         "</tr></table><br><br><br>";
