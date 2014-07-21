@@ -1,6 +1,7 @@
 #include "AccountCheckPage.h"
 
 #include "buttonStyle.h"
+#include "message.h"
 
 #include "minorGems/game/Font.h"
 #include "minorGems/game/game.h"
@@ -101,4 +102,14 @@ void AccountCheckPage::step() {
         }
     }
 
+
+
+void AccountCheckPage::draw( doublePair inViewCenter, 
+                             double inViewSize ) {
+
+
+    doublePair labelPos = { 0, 200 };
+
+    drawMessage( "quitMessage", labelPos );
+    }
     

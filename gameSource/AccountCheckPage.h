@@ -21,6 +21,8 @@ class AccountCheckPage : public ServerActionPage, public ActionListener {
 
         virtual void step();
 
+        virtual void draw( doublePair inViewCenter, double inViewSize );
+        
 
     protected:
         
