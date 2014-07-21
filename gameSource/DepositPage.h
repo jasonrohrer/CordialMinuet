@@ -30,6 +30,9 @@ class DepositPage : public ServerActionPage, public ActionListener {
 
         virtual void makeActive( char inFresh );
         
+        virtual void makeNotActive();
+        
+
         // for TAB and ENTER (switch fields and start login)
         virtual void keyDown( unsigned char inASCII );
         

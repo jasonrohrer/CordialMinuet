@@ -327,16 +327,32 @@ void DepositPage::actionPerformed( GUIComponent *inTarget ) {
 
 
 void DepositPage::makeActive( char inFresh ) {
+    
+    if( ! isActionInProgress() ) {
+        makeFieldsActive();
+        }
+    
+
+
     if( !inFresh ) {
         return;
         }
     
     setStatus( NULL, true );
 
-    makeFieldsActive();
     
     checkIfDepositButtonVisible();
     }
+
+
+
+void DepositPage::makeNotActive() {
+    // paused? clear delete-held status
+    for( int i=0; i<NUM_DEPOSIT_FIELDS; i++ ) {
+        mFields[i]->unfocus();
+        }
+    }
+
 
 
 
