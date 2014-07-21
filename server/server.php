@@ -200,6 +200,10 @@ else if( $action == "get_balance" ) {
 else if( $action == "make_deposit" ) {
     cm_makeDeposit();
     }
+else if( $action == "check_for_flush" ) {
+    cm_checkForFlush();
+    echo "OK";
+    }
 else if( $action == "show_data" ) {
     cm_showData();
     }
