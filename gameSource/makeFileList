@@ -38,6 +38,8 @@ NewAccountDisplayPage.cpp \
 MenuPage.cpp \
 DepositDisplayPage.cpp \
 balanceFormat.cpp \
+ExistingAccountPage.cpp \
+
 
 
 

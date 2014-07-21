@@ -65,6 +65,13 @@ oldBalance "OLD BALANCE:"
 addedAmount "ADDED:"
 
 newBalance "NEW BALANCE:"
+atSignTip "INSERT '@' SIGN (INTL KEYBOARDS)"
+
+
+loginButton "LOGIN"
+accountKey "KEY"
+paste "PASTE"
+
 
 
 pauseMessage1 "[ENTER] TO RESUME"

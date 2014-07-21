@@ -59,6 +59,7 @@ CustomRandomSource randSource( 34957197 );
 #include "NewAccountDisplayPage.h"
 #include "MenuPage.h"
 #include "DepositDisplayPage.h"
+#include "ExistingAccountPage.h"
 
 
 #include "serialWebRequests.h"
@@ -79,6 +80,7 @@ NewAccountDisplayPage *newAccountDisplayPage;
 ServerActionPage *getBalancePage;
 MenuPage *menuPage;
 DepositDisplayPage *depositDisplayPage;
+ExistingAccountPage *existingAccountPage;
 
 
 // position of view in world
@@ -486,6 +488,7 @@ void initFrameDrawer( int inWidth, int inHeight, int inTargetFrameRate,
     menuPage = new MenuPage();
 
     depositDisplayPage = new DepositDisplayPage();
+    existingAccountPage = new ExistingAccountPage();
     
 
     currentGamePage = getServerURLPage;
@@ -521,7 +524,8 @@ void freeFrameDrawer() {
     delete getBalancePage;
     delete menuPage;
     delete depositDisplayPage;
-    
+    delete existingAccountPage;
+
     if( shutdownMessage != NULL ) {
         delete [] shutdownMessage;
         shutdownMessage = NULL;
@@ -1038,6 +1042,8 @@ void drawFrame( char inUpdate ) {
                 currentGamePage->base_makeActive( true );
                 }
             else if( accountCheckPage->checkSignal( "existingAccount" ) ) {
+                currentGamePage = existingAccountPage;
+                currentGamePage->base_makeActive( true );
                 }
             else if( accountCheckPage->isResponseReady() ) {
                 // logged in
@@ -1097,6 +1103,12 @@ void drawFrame( char inUpdate ) {
                     depositDisplayPage->getResponseDouble( "dollarBalance" );
                 
                 currentGamePage = menuPage;
+                currentGamePage->base_makeActive( true );
+                }
+            }
+        else if( currentGamePage == existingAccountPage ) {
+            if( existingAccountPage->checkSignal( "done" ) ) {
+                currentGamePage = accountCheckPage;
                 currentGamePage->base_makeActive( true );
                 }
             }
