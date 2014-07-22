@@ -25,21 +25,36 @@ extern char *accountKey;
 
 
 ExistingAccountPage::ExistingAccountPage()
-        : mEmailField( mainFont, 0, 64, 10, false, 
+        : mEmailField( mainFont, 0, 128, 10, false, 
                        translate( "email" ),
                        NULL,
                        // forbid only spaces
                        " "),
-          mKeyField( mainFont, 0, -64, 10, true,
+          mKeyField( mainFont, 0, 0, 15, true,
                      translate( "accountKey" ),
                      // allow only ticket code characters
                      "23456789ABCDEFGHJKLMNPQRSTUVWXYZ-" ),
-          mAtSignButton( mainFont, 252, 64, "@" ),
-          mPasteButton( mainFont, 262, -64, translate( "paste" ), 'v', 'V' ),
+          mAtSignButton( mainFont, 252, 128, "@" ),
+          mPasteButton( mainFont, 0, -80, translate( "paste" ), 'v', 'V' ),
           mLoginButton( mainFont, 150, -200, translate( "loginButton" ) ),
           mCancelButton( mainFont, -150, -200, 
                          translate( "cancel" ) ) {
     
+    
+    // center this in free space
+    /*
+    mPasteButton.setPosition( ( 333 + mKeyField.getRightEdgeX() ) / 2,
+                              -64 );
+    */
+    // align this one with the paste button
+    mAtSignButton.setPosition( mEmailField.getRightEdgeX() + 48,
+                               128 );
+    
+    
+    if( userEmail != NULL && accountKey != NULL ) {
+        mEmailField.setText( userEmail );
+        mKeyField.setText( accountKey );
+        }
 
     setButtonStyle( &mLoginButton );
     setButtonStyle( &mCancelButton );
@@ -78,6 +93,8 @@ ExistingAccountPage::~ExistingAccountPage() {
 
 void ExistingAccountPage::makeActive( char inFresh ) {
     mEmailField.focus();
+    mPasteButton.setVisible( false );
+    mAtSignButton.setVisible( true );
     }
 
 
