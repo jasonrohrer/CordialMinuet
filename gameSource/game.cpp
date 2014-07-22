@@ -60,6 +60,7 @@ CustomRandomSource randSource( 34957197 );
 #include "MenuPage.h"
 #include "DepositDisplayPage.h"
 #include "ExistingAccountPage.h"
+#include "WithdrawPage.h"
 
 
 #include "serialWebRequests.h"
@@ -81,6 +82,7 @@ ServerActionPage *getBalancePage;
 MenuPage *menuPage;
 DepositDisplayPage *depositDisplayPage;
 ExistingAccountPage *existingAccountPage;
+WithdrawPage *withdrawPage;
 
 
 // position of view in world
@@ -476,6 +478,7 @@ void initFrameDrawer( int inWidth, int inHeight, int inTargetFrameRate,
 
     depositDisplayPage = new DepositDisplayPage();
     existingAccountPage = new ExistingAccountPage();
+    withdrawPage = new WithdrawPage();
     
 
     currentGamePage = getServerURLPage;
@@ -510,6 +513,8 @@ void freeFrameDrawer() {
     delete menuPage;
     delete depositDisplayPage;
     delete existingAccountPage;
+    delete withdrawPage;
+
 
     if( shutdownMessage != NULL ) {
         delete [] shutdownMessage;
@@ -1102,6 +1107,18 @@ void drawFrame( char inUpdate ) {
                 
                 currentGamePage = depositPage;
                 depositPage->setEmailFieldCanFocus( false );
+                currentGamePage->base_makeActive( true );
+                }
+            if( menuPage->checkSignal( "withdraw" ) ) {
+                
+                currentGamePage = withdrawPage;
+                currentGamePage->base_makeActive( true );
+                }
+            }
+        else if( currentGamePage == withdrawPage ) {
+            if( withdrawPage->checkSignal( "back" ) ) {
+                
+                currentGamePage = menuPage;
                 currentGamePage->base_makeActive( true );
                 }
             }

@@ -39,6 +39,7 @@ MenuPage.cpp \
 DepositDisplayPage.cpp \
 balanceFormat.cpp \
 ExistingAccountPage.cpp \
+WithdrawPage.cpp \
 
 
 

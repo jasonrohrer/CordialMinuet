@@ -241,3 +241,29 @@ into a different account).
 For existing accounts, an even stronger property holds.
 
 
+
+
+
+=== Call:
+server.php?action=get_withdrawal_methods
+          &user_id=[id number]
+          &sequence_number=[number]
+          &account_hmac=[hmac-sha1, hex-encoded]  
+		  
+Returns:
+method_name#dollar_cost
+method_name#dollar_cost
+method_name#dollar_cost
+...
+method_name#dollar_cost
+OK
+
+
+Where:
+dollar_cost is ascii decimal cost in dollars
+
+
+Current method_name possibilities include:
+
+us_check
+account_transfer

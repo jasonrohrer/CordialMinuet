@@ -21,13 +21,19 @@ extern Font *mainFont;
 
 MenuPage::MenuPage()
         : mDepositButton( mainFont, 0, 64, 
-                          translate( "deposit" ) ) {
+                          translate( "deposit" ) ),
+          mWithdrawButton( mainFont, 0, -64, 
+                         translate( "withdraw" ) ) {
 
     addComponent( &mDepositButton );
+    addComponent( &mWithdrawButton );
+    
     setButtonStyle( &mDepositButton );
+    setButtonStyle( &mWithdrawButton );
     
 
     mDepositButton.addActionListener( this );
+    mWithdrawButton.addActionListener( this );
     }
 
 
@@ -35,6 +41,9 @@ MenuPage::MenuPage()
 void MenuPage::actionPerformed( GUIComponent *inTarget ) {
     if( inTarget == &mDepositButton ) {
         setSignal( "deposit" );
+        }
+    if( inTarget == &mWithdrawButton ) {
+        setSignal( "withdraw" );
         }
     }
 

@@ -76,6 +76,22 @@ $stripeChargeDescription = "Deposit for Jason Rohrer's Cordial Minuet game";
 
 
 
+// settings for lob.com check-mailing service
+$lobURL = "https://api.lob.com/v1/checks";
+
+$lobAPIKey = "test_10f8920b3c49e0aa69798860c5eecfa809b";
+
+// cost in dollars
+$lobCheckCost = 1.50;
+
+
+$checkMethodAvailable = 1;
+
+$transferMethodAvailable = 1;
+
+
+
+
 
 $enableLog = 1;
 

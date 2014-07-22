@@ -169,8 +169,9 @@ if( $shutdownMode &&
     ( $action == "check_required_version" ||
       $action == "check_user" ||
       $action == "check_hmac" ||
-      $action == "make_deposit" ) ) {
-
+      $action == "make_deposit" ||
+      $action == "get_withdrawal_methods" ) ) {
+    
     echo "SHUTDOWN";
     global $shutdownMessage;
     echo "\n$shutdownMessage";
@@ -199,6 +200,9 @@ else if( $action == "get_balance" ) {
     }
 else if( $action == "make_deposit" ) {
     cm_makeDeposit();
+    }
+    else if( $action == "get_withdrawal_methods" ) {
+    cm_getWithdrawalMethods();
     }
 else if( $action == "check_for_flush" ) {
     cm_checkForFlush();
@@ -1262,6 +1266,25 @@ function cm_generateAccountKey( $inEmail, $inSalt ) {
     return $account_key;
     }
 
+
+
+    
+function cm_getWithdrawalMethods() {
+    if( ! cm_verifyTransaction() ) {
+        return;
+        }
+
+    global $checkMethodAvailable, $transferMethodAvailable, $lobCheckCost;
+
+    if( $checkMethodAvailable ) {
+        echo "us_check#$lobCheckCost\n";
+        }
+    if( $transferMethodAvailable ) {
+        echo "account_transfer#0.00\n";
+        }
+    
+    echo "OK";
+    }
 
 
 

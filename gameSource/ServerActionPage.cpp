@@ -33,7 +33,21 @@ ServerActionPage::ServerActionPage( const char *inActionName,
     addServerErrorString( "DENIED", "requestDenied" );
     }
 
-        
+
+
+ServerActionPage::ServerActionPage( const char *inActionName,
+                                    char inAttachAccountHmac )
+        : mActionName( stringDuplicate( inActionName ) ),
+          mAttachAccountHmac( inAttachAccountHmac ),
+          mNumResponseParts( -1 ),
+          mWebRequest( -1 ), mResponseReady( false ),
+          mMinimumResponseSeconds( 0 ),
+          mRequestStartTime( 0 ) {
+    
+    addServerErrorString( "DENIED", "requestDenied" );
+    }
+
+
 
 ServerActionPage::~ServerActionPage() {
     
@@ -242,11 +256,27 @@ void ServerActionPage::step() {
                     SimpleVector<char *> *lines = 
                         tokenizeString( result );
                     
-                    if( lines->size() != mNumResponseParts + 1
-                        ||
-                        strcmp( *( lines->getElement( mNumResponseParts ) ), 
-                                "OK" ) != 0 ) {
+                    if( mNumResponseParts != -1 
+                        // fixed number response parts
+                        &&
+                        ( lines->size() != mNumResponseParts + 1
+                          ||
+                          strcmp( *( lines->getElement( mNumResponseParts ) ), 
+                                  "OK" ) != 0 ) ) {
 
+                        mStatusError = true;
+                        setStatus( "err_badServerResponse", true );
+                        
+
+                        for( int i=0; i<lines->size(); i++ ) {
+                            delete [] *( lines->getElement( i ) );
+                            }
+                        }
+                    else if( mNumResponseParts == -1 
+                             // variable number response parts
+                             && 
+                             strcmp( *( lines->getElement( lines->size()-1 ) ),
+                                     "OK" ) != 0 ) {
                         mStatusError = true;
                         setStatus( "err_badServerResponse", true );
                         
@@ -304,7 +334,7 @@ char *ServerActionPage::getResponse( const char *inPartName ) {
         char *name = *( mResponsePartNames.getElement( i ) );
         
         if( strcmp( name, inPartName ) == 0 ) {
-            return stringDuplicate( *( mResponseParts.getElement( i ) ) );
+            return getResponse( i );
             }
         }
     return NULL;
@@ -346,6 +376,19 @@ double ServerActionPage::getResponseDouble( const char *inPartName ) {
         return -1.0;
         }
     }
+
+
+
+int ServerActionPage::getNumResponseParts() {
+    return mResponseParts.size();
+    }
+
+
+
+char *ServerActionPage::getResponse( int inPartNumber ) {
+    return stringDuplicate( *( mResponseParts.getElement( inPartNumber ) ) );
+    }
+
 
 
 

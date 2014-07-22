@@ -22,6 +22,12 @@ class ServerActionPage : public GamePage {
                           char inAttachAccountHmac = true );
         
 
+        // for responses with a variable number of parts
+        ServerActionPage( const char *inActionName,
+                          char inAttachAccountHmac = true );
+        
+                          
+        
         virtual ~ServerActionPage();
         
 
@@ -68,6 +74,13 @@ class ServerActionPage : public GamePage {
         
         double getResponseDouble( const char *inPartName );
         
+        
+        // for variable-length response lists
+        int getNumResponseParts();
+        
+        char *getResponse( int inPartNumber );
+
+
         
         // defaults to 0
         // sets minimum time before response from server is processed

@@ -19,6 +19,7 @@ existingAccount "EXISTING ACCOUNT"
 
 
 deposit "DEPOSIT"
+withdraw "WITHDRAW"
 cancel "CANCEL"
 
 email "EMAIL"
@@ -71,6 +72,20 @@ atSignTip "INSERT '@' SIGN (INTL KEYBOARDS)"
 loginButton "LOGIN"
 accountKey "KEY"
 paste "PASTE"
+
+
+
+sendCheck "MAIL A CHECK"
+
+accountTransfer "TRANSFER TO ANOTHER PLAYER"
+
+fee "FEE"
+free "FREE"
+
+checkNote "US RESIDENTS ONLY:##(%s)"
+
+transferNote "WORLDWIDE RESIDENTS:##(%s)"
+
 
 
 
