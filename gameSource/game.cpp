@@ -171,8 +171,6 @@ Font *mainFont;
 Font *mainFontFixed;
 Font *numbersFontFixed;
 
-Font *tinyFont;
-
 char *shutdownMessage = NULL;
 
 
@@ -366,12 +364,9 @@ void initFrameDrawer( int inWidth, int inHeight, int inTargetFrameRate,
     mainFontFixed = new Font( getFontTGAFileName(), 6, 16, true, 16 );
     numbersFontFixed = new Font( getFontTGAFileName(), 6, 16, true, 16, 16 );
     
-    tinyFont = new Font( "font_4_8.tga", 1, 2, false );
-
     mainFontFixed->setMinimumPositionPrecision( 1 );
     numbersFontFixed->setMinimumPositionPrecision( 1 );
-    tinyFont->setMinimumPositionPrecision( 1 );
-
+    
 
     float mouseSpeedSetting = 1.0f;
     
@@ -497,8 +492,6 @@ void initFrameDrawer( int inWidth, int inHeight, int inTargetFrameRate,
 void freeFrameDrawer() {
     delete mainFontFixed;
     delete numbersFontFixed;
-
-    delete tinyFont;
     
     if( currentUserTypedMessage != NULL ) {
         delete [] currentUserTypedMessage;
