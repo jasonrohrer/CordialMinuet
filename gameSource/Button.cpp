@@ -63,6 +63,9 @@ void Button::setVisible( char inIsVible ) {
         
     if( ! mVisible ) {
         clearState();
+        if( mMouseOverTip != NULL ) {
+            clearToolTip( mMouseOverTip );
+            }
         }
     }
 
