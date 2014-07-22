@@ -322,15 +322,7 @@ void freeDrawString() {
 void initFrameDrawer( int inWidth, int inHeight, int inTargetFrameRate,
                       const char *inCustomRecordedGameData,
                       char inPlayingBack ) {
-
-
-    // test clipboard copy
-    setClipboardText( "This is a test\n" );
     
-
-
-
-
     gamePlayingBack = inPlayingBack;
     
     screenW = inWidth;
