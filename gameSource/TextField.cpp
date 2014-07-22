@@ -603,6 +603,12 @@ void TextField::cursorReset() {
 
 
 
+double TextField::getRightEdgeX() {
+    
+    return mX + mWide / 2;
+    }
+
+
 
 void TextField::keyDown( unsigned char inASCII ) {
     if( !mFocused ) {

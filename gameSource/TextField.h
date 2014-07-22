@@ -45,6 +45,9 @@ class TextField : public PageComponent, public ActionListenerList {
         // brings cursor back to start of string
         void cursorReset();
         
+        
+        double getRightEdgeX();
+        
 
         virtual void setActive( char inActive );
         virtual char isActive();
