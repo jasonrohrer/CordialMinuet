@@ -40,6 +40,7 @@ DepositDisplayPage.cpp \
 balanceFormat.cpp \
 ExistingAccountPage.cpp \
 WithdrawPage.cpp \
+SendCheckPage.cpp \
 
 
 

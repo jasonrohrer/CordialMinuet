@@ -14,3 +14,7 @@ char *getAccountHmac();
 // returns NULL if inString NULL
 char *replaceAccountHmac( char *inString );
 
+
+// get account key without hyphens
+// destroyed by caller
+char *getPureAccountKey();

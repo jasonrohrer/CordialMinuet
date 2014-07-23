@@ -64,6 +64,8 @@ okay "OK"
 oldBalance "OLD BALANCE:"
 
 addedAmount "ADDED:"
+withdrawAmount "WITHDREW:"
+
 
 newBalance "NEW BALANCE:"
 atSignTip "INSERT '@' SIGN (INTL KEYBOARDS)"
@@ -87,6 +89,21 @@ checkNote "US RESIDENTS ONLY:##(%s)"
 transferNote "WORLDWIDE RESIDENTS:##(%s)"
 
 
+
+withdrawMoney "WITDRAW $"
+
+name "NAME"
+address1 "ADDRESS"
+address2 " "
+
+city "CITY"
+state "STATE"
+zip "ZIP"
+
+sendCheckButton "MAIL CHECK"
+
+
+feeSubtracted "$%.2f FEE WILL BE SUBTRACTED"
 
 
 pauseMessage1 "[ENTER] TO RESUME"

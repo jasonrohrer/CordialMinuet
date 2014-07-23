@@ -10,8 +10,7 @@ extern int serverSequenceNumber;
 extern int accountHmacVersionNumber;
 
 
-char *getAccountHmac() {
-
+char *getPureAccountKey() {
     const char *codeToHash = "";
 
     if( accountKey != NULL ) {
@@ -31,6 +30,13 @@ char *getAccountHmac() {
         }
     delete [] codeParts;
 
+    return pureCode;
+    }
+
+
+char *getAccountHmac() {
+
+    char *pureCode = getPureAccountKey();    
 
 
     char *toHash = autoSprintf( "%d%d", 

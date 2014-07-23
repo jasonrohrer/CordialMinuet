@@ -61,6 +61,7 @@ CustomRandomSource randSource( 34957197 );
 #include "DepositDisplayPage.h"
 #include "ExistingAccountPage.h"
 #include "WithdrawPage.h"
+#include "SendCheckPage.h"
 
 
 #include "serialWebRequests.h"
@@ -83,6 +84,8 @@ MenuPage *menuPage;
 DepositDisplayPage *depositDisplayPage;
 ExistingAccountPage *existingAccountPage;
 WithdrawPage *withdrawPage;
+SendCheckPage *sendCheckPage;
+DepositDisplayPage *withdrawalDisplayPage;
 
 
 // position of view in world
@@ -188,6 +191,8 @@ char *accountKey = NULL;
 int serverSequenceNumber = 0;
 
 double userBalance = 0;
+double checkCost = 0;
+double transferCost = 0;
 
 
 int playerIsAdmin = 0;
@@ -479,7 +484,11 @@ void initFrameDrawer( int inWidth, int inHeight, int inTargetFrameRate,
     depositDisplayPage = new DepositDisplayPage();
     existingAccountPage = new ExistingAccountPage();
     withdrawPage = new WithdrawPage();
+    sendCheckPage = new SendCheckPage();
     
+    
+    withdrawalDisplayPage = new DepositDisplayPage();
+    withdrawalDisplayPage->setWithdraw( true );
 
     currentGamePage = getServerURLPage;
 
@@ -514,7 +523,8 @@ void freeFrameDrawer() {
     delete depositDisplayPage;
     delete existingAccountPage;
     delete withdrawPage;
-
+    delete sendCheckPage;
+    delete withdrawalDisplayPage;
 
     if( shutdownMessage != NULL ) {
         delete [] shutdownMessage;
@@ -1065,7 +1075,7 @@ void drawFrame( char inUpdate ) {
                 currentGamePage->base_makeActive( true );
                 }
             else if( depositPage->checkSignal( "existingAccount" ) ) {
-                depositDisplayPage->setDepositAmount( 
+                depositDisplayPage->setDeltaAmount( 
                     depositPage->getDepositAmount() );
                 
                 currentGamePage = depositDisplayPage;
@@ -1109,7 +1119,7 @@ void drawFrame( char inUpdate ) {
                 depositPage->setEmailFieldCanFocus( false );
                 currentGamePage->base_makeActive( true );
                 }
-            if( menuPage->checkSignal( "withdraw" ) ) {
+            else if( menuPage->checkSignal( "withdraw" ) ) {
                 
                 currentGamePage = withdrawPage;
                 currentGamePage->base_makeActive( true );
@@ -1121,8 +1131,36 @@ void drawFrame( char inUpdate ) {
                 currentGamePage = menuPage;
                 currentGamePage->base_makeActive( true );
                 }
+            else if( withdrawPage->checkSignal( "sendCheck" ) ) {
+                
+                currentGamePage = sendCheckPage;
+                currentGamePage->base_makeActive( true );
+                }
             }
-        
+        else if( currentGamePage == sendCheckPage ) {
+            if( sendCheckPage->checkSignal( "back" ) ) {
+                
+                currentGamePage = menuPage;
+                currentGamePage->base_makeActive( true );
+                }
+            else if( sendCheckPage->isResponseReady() ) {
+                withdrawalDisplayPage->setDeltaAmount( 
+                    sendCheckPage->getWithdrawalAmount() );
+                
+                currentGamePage = withdrawalDisplayPage;
+                currentGamePage->base_makeActive( true );
+                }
+            }
+        else if( currentGamePage == withdrawalDisplayPage ) {
+            if( withdrawalDisplayPage->checkSignal( "done" ) ) {
+                userBalance = 
+                    withdrawalDisplayPage->getResponseDouble( 
+                        "dollarBalance" );
+                
+                currentGamePage = menuPage;
+                currentGamePage->base_makeActive( true );
+                }
+            }
         }
 
 

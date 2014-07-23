@@ -267,3 +267,53 @@ Current method_name possibilities include:
 
 us_check
 account_transfer
+
+
+
+
+=== Call:
+server.php?action=send_us_check
+	      &check_sequence_nuber=[number]
+          &dollar_amount=[dollar amount as 2-decimal float]
+          &dollar_amount_hmac=[dollar amount as 2-decimal float]
+          &name=[name]
+          &name_hmac=[hmac-sha1, hex-encoded]
+          &address1=[address line 1]
+          &address1_hmac=[hmac-sha1, hex-encoded]
+          &address2=[address line 2]
+          &address2_hmac=[hmac-sha1, hex-encoded]
+          &city=[city name]
+          &city_hmac=[hmac-sha1, hex-encoded]
+          &state=[two-character state abbreviation]
+          &state_hmac=[hmac-sha1, hex-encoded]
+          &zip=[zip code]
+          &zip_hmac=[hmac-sha1, hex-encoded]
+          &user_id=[id number]
+          &sequence_number=[number]
+          &account_hmac=[hmac-sha1, hex-encoded]  
+
+Returns:
+OK
+
+
+Note:
+All hmacs (like name_hmac), excluding account_hmac, are computed as
+
+  HMAC_SHA1( account_key . check_sequence_number , 
+             url_decoded_string_to_sign )
+
+
+Where:
+check_sequence_number is a unique, ascending sequence number for checks
+requested by this account.  These must be increasing, but numbers can be
+skipped.  Thus, a copy of sequence_number can be used (though, for the same
+request, sequence_number will change during retries, while 
+check_sequence_number will not).
+
+name is the check recipient's name, url-encoded.
+
+address1, address2, city, and state are url-encoded. (The unencoded strings
+are used for computing the hmacs.)
+
+address2 can be empty (but not omitted), but all other fields must be filled,
+or request will be denined.

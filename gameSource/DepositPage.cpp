@@ -18,6 +18,8 @@
 
 #include "minorGems/crypto/hashes/sha1.h"
 
+#include "minorGems/network/web/URLUtils.h"
+
 
 
 extern Font *mainFont;
@@ -99,7 +101,7 @@ DepositPage::DepositPage()
                      // allow only numbers
                      "0123456789" ),
           mEmailFieldCanFocus( true ),
-          mDepositeButton( mainFont, 150, -200, 
+          mDepositButton( mainFont, 150, -200, 
                            translate( "deposit" ) ),
           mCancelButton( mainFont, -150, -200, 
                          translate( "cancel" ) ),
@@ -107,15 +109,15 @@ DepositPage::DepositPage()
 
 
 
-    addComponent( &mDepositeButton );
+    addComponent( &mDepositButton );
     addComponent( &mCancelButton );
     
 
-    setButtonStyle( &mDepositeButton );
+    setButtonStyle( &mDepositButton );
     setButtonStyle( &mCancelButton );
     
 
-    mDepositeButton.addActionListener( this );
+    mDepositButton.addActionListener( this );
     mCancelButton.addActionListener( this );
 
 
@@ -169,7 +171,7 @@ void DepositPage::setEmailFieldCanFocus( char inCanFocus ) {
 
 
 void DepositPage::actionPerformed( GUIComponent *inTarget ) {
-    if( inTarget == &mDepositeButton ) {
+    if( inTarget == &mDepositButton ) {
         setStatus( NULL, false );
 
         char existingUser = ( userID != -1 );
@@ -229,8 +231,11 @@ void DepositPage::actionPerformed( GUIComponent *inTarget ) {
         char *email = mEmailField.getText();
         char *email_hmac = hmac_sha1( sharedSecretKeyHex, email );
         
-        setActionParameter( "email", email );
+        char *encodedEmail = URLUtils::urlEncode( email );
         delete [] email;
+
+        setActionParameter( "email", encodedEmail );
+        delete [] encodedEmail;
         
         setActionParameter( "email_hmac", email_hmac );
         delete [] email_hmac;
@@ -306,7 +311,7 @@ void DepositPage::actionPerformed( GUIComponent *inTarget ) {
         delete [] sharedSecretKeyHex;
 
         
-        mDepositeButton.setVisible( false );
+        mDepositButton.setVisible( false );
         mCancelButton.setVisible( false );
         
         for( int i=0; i<NUM_DEPOSIT_FIELDS; i++ ) {
@@ -569,7 +574,7 @@ void DepositPage::checkIfDepositButtonVisible() {
     delete [] cvc;
 
 
-    mDepositeButton.setVisible( visible );
+    mDepositButton.setVisible( visible );
     }
 
 
@@ -621,7 +626,7 @@ void DepositPage::switchFields( int inDir ) {
     
 
 void DepositPage::keyDown( unsigned char inASCII ) {
-    if( false /* FIXME:  some check for currently sending request */) {
+    if( isActionInProgress() ) {
         return;
         }
 
@@ -634,9 +639,9 @@ void DepositPage::keyDown( unsigned char inASCII ) {
     if( inASCII == 10 || inASCII == 13 ) {
         // enter key
         
-        if( mCVCField.isFocused() ) {
-            // FIXME:  process enter on last field
-            //startLogin();
+        if( mCVCField.isFocused() && mDepositButton.isVisible() ) {
+            // process enter on last field
+            actionPerformed( &mDepositButton );
             
             return;
             }
@@ -649,7 +654,7 @@ void DepositPage::keyDown( unsigned char inASCII ) {
 
 
 void DepositPage::specialKeyDown( int inKeyCode ) {
-    if( false /* FIXME:  some check for currently sending request */ ) {
+    if( isActionInProgress() ) {
         return;
         }
 

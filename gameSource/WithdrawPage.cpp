@@ -19,7 +19,8 @@ extern int serverSequenceNumber;
 
 extern char gamePlayingBack;
 
-
+extern double checkCost;
+extern double transferCost;
 
 
 
@@ -33,9 +34,7 @@ WithdrawPage::WithdrawPage()
           mAccountTransferButton( mainFont, 0, -64, 
                                   translate( "accountTransfer" ) ),
           mCancelButton( mainFont, 0, -200, 
-                         translate( "cancel" ) ),
-          mCheckCost( 0 ),
-          mTransferCost( 0 ) {
+                         translate( "cancel" ) ) {
 
     addComponent( &mSendCheckButton );
     addComponent( &mAccountTransferButton );
@@ -58,10 +57,10 @@ WithdrawPage::~WithdrawPage() {
         
 void WithdrawPage::actionPerformed( GUIComponent *inTarget ) {
     if( inTarget == &mSendCheckButton ) {
-        setSignal( "newAccount" );
+        setSignal( "sendCheck" );
         }
     else if( inTarget == &mAccountTransferButton ) {
-        setSignal( "existingAccount" );
+        setSignal( "transfer" );
         }
     else if( inTarget == &mCancelButton ) {
         setSignal( "back" );
@@ -115,13 +114,13 @@ void WithdrawPage::step() {
                     
                     mSendCheckButton.setVisible( true );
 
-                    sscanf( parts[1], "%lf", &mCheckCost );
+                    sscanf( parts[1], "%lf", &checkCost );
                     }
                 else if( strcmp( parts[0], "account_transfer" ) == 0 ) {
                     
                     mAccountTransferButton.setVisible( true );
 
-                    sscanf( parts[1], "%lf", &mTransferCost );
+                    sscanf( parts[1], "%lf", &transferCost );
                     }
                 }
             
@@ -171,11 +170,11 @@ void WithdrawPage::draw( doublePair inViewCenter,
 
 
     if( mSendCheckButton.isVisible() ) {
-        drawButtonNote( &mSendCheckButton, "checkNote", mCheckCost );
+        drawButtonNote( &mSendCheckButton, "checkNote", checkCost );
         }
     if( mAccountTransferButton.isVisible() ) {
         drawButtonNote( &mAccountTransferButton, "transferNote", 
-                        mTransferCost );
+                        transferCost );
         }
     
     }

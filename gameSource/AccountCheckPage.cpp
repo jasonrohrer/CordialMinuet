@@ -8,6 +8,8 @@
 
 #include "minorGems/util/stringUtils.h"
 
+#include "minorGems/network/web/URLUtils.h"
+
 
 extern Font *mainFont;
 
@@ -78,7 +80,10 @@ void AccountCheckPage::makeActive( char inFresh ) {
         
         delete [] status;
         
-        setActionParameter( "email", userEmail );
+        char *encodedEmail = URLUtils::urlEncode( userEmail );
+        
+        setActionParameter( "email", encodedEmail );
+        delete [] encodedEmail;
         
         startRequest();
         }

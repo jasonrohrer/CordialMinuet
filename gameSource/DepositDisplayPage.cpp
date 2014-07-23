@@ -22,10 +22,11 @@ const char *getBalancePartNames[1] = { "dollarBalance" };
 DepositDisplayPage::DepositDisplayPage()
         : ServerActionPage( "get_balance",
                             1, getBalancePartNames, true ),
+          mWithdraw( false ),
           mOkayButton( mainFont, 0, -200, 
                        translate( "OK" ) ),
           mOldBalance( 0 ),
-          mDepositAmount( 0 ) {
+          mDeltaAmount( 0 ) {
 
     addComponent( &mOkayButton );
     setButtonStyle( &mOkayButton );
@@ -35,6 +36,12 @@ DepositDisplayPage::DepositDisplayPage()
 
         
 DepositDisplayPage::~DepositDisplayPage() {
+    }
+
+
+
+void DepositDisplayPage::setWithdraw( char inWithdraw ) {
+    mWithdraw = inWithdraw;
     }
 
 
@@ -60,8 +67,8 @@ void DepositDisplayPage::makeActive( char inFresh ) {
 
 
 
-void DepositDisplayPage::setDepositAmount( double inAmount ) {
-    mDepositAmount = inAmount;
+void DepositDisplayPage::setDeltaAmount( double inAmount ) {
+    mDeltaAmount = inAmount;
     }
 
 
@@ -100,10 +107,16 @@ void DepositDisplayPage::draw( doublePair inViewCenter,
 
     pos.x = 0;
     pos.y -= 64;
- 
-    mainFont->drawString( translate( "addedAmount" ), pos, alignRight );
+
+    const char *amountKey = "addedAmount";
     
-    valueString = formatBalance( mDepositAmount, fullPrecision );
+    if( mWithdraw ) {
+        amountKey = "withdrawAmount";
+        }
+
+    mainFont->drawString( translate( amountKey ), pos, alignRight );
+    
+    valueString = formatBalance( mDeltaAmount, fullPrecision );
     
     pos.x = xOffset;
     mainFont->drawString( valueString, pos, alignRight );

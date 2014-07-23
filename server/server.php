@@ -170,7 +170,8 @@ if( $shutdownMode &&
       $action == "check_user" ||
       $action == "check_hmac" ||
       $action == "make_deposit" ||
-      $action == "get_withdrawal_methods" ) ) {
+      $action == "get_withdrawal_methods" ||
+      $action == "send_us_check" ) ) {
     
     echo "SHUTDOWN";
     global $shutdownMessage;
@@ -201,8 +202,11 @@ else if( $action == "get_balance" ) {
 else if( $action == "make_deposit" ) {
     cm_makeDeposit();
     }
-    else if( $action == "get_withdrawal_methods" ) {
+else if( $action == "get_withdrawal_methods" ) {
     cm_getWithdrawalMethods();
+    }
+else if( $action == "send_us_check" ) {
+    cm_sendUSCheck();
     }
 else if( $action == "check_for_flush" ) {
     cm_checkForFlush();
@@ -380,6 +384,7 @@ function cm_setupDatabase() {
             "total_won DECIMAL(64, 4) NOT NULL,".
             "total_lost DECIMAL(64, 4) NOT NULL,".
             "sequence_number INT NOT NULL," .
+            "check_sequence_number INT NOT NULL," .
             "last_action_time DATETIME NOT NULL," .
             "last_deposit_tag TEXT NOT NULL,".
             "last_deposit_response TEXT NOT NULL,".
@@ -1006,9 +1011,10 @@ function cm_makeDeposit() {
         echo "DENIED";
         cm_queryDatabase( "COMMIT;" );
         cm_queryDatabase( "SET AUTOCOMMIT=1" );
-        
+
+        // don't log card_data
         cm_log( "deposit for $email DENIED, ".
-                "badly formatted card data (length $length): $cardData" );
+                "badly formatted card data (length $length)" );
         return;
         }
 
@@ -1112,6 +1118,7 @@ function cm_makeDeposit() {
                 "total_won = 0, ".
                 "total_lost = 0, ".
                 "sequence_number = 0, ".
+                "check_sequence_number = 0, ".
                 "last_action_time = CURRENT_TIMESTAMP, ".
                 "last_deposit_tag = '$deposit_tag', ".
                 "last_deposit_response = '', ".
@@ -1288,6 +1295,211 @@ function cm_getWithdrawalMethods() {
 
 
 
+function cm_verifyCheckHMAC( $account_key, $check_sequence_number,
+                             $field_name, $field_value ) {
+    $field_hmac = cm_requestFilter( "$field_name"."_hmac",
+                                     "/[A-F0-9]+/i" );
+    if( strtoupper( $field_hmac ) !=
+        strtoupper( cm_hmac_sha1( $account_key . $check_sequence_number,
+                                  $field_value ) ) ) {
+        
+
+        cm_log( "cm_sendUSCheck back hmac for $field_name" );
+
+        
+        cm_transactionDeny();
+            
+        return false;
+        }
+    else {
+        return true;
+        }
+    }
+
+
+
+
+function cm_sendUSCheck() {
+    if( ! cm_verifyTransaction() ) {
+        return;
+        }
+
+    global $tableNamePrefix, $checkMethodAvailable;
+
+    
+    if( !$checkMethodAvailable ) {
+        cm_log( "cm_sendUSCheck, check-send withdrawal method blocked" );
+        cm_transactionDeny();
+        return;
+        }
+
+        
+    $user_id = cm_getUserID();
+    
+    cm_queryDatabase( "SET AUTOCOMMIT=0" );
+    
+    $query = "SELECT account_key, dollar_balance, ".
+        "check_sequence_number, blocked ".
+        "FROM $tableNamePrefix"."users ".
+        "WHERE user_id = '$user_id' FOR UPDATE;";
+
+    $result = cm_queryDatabase( $query );
+
+
+    $numRows = mysql_numrows( $result );
+
+    
+    if( $numRows == 0 ) {
+        cm_log( "cm_sendUSCheck, user $user_id not found" );
+        cm_transactionDeny();
+        return;
+        }
+
+    $row = mysql_fetch_array( $result, MYSQL_ASSOC );
+
+    if( $row[ "blocked" ] ) {
+        cm_log( "cm_sendUSCheck, user $user_id blocked" );
+        cm_transactionDeny();
+        return;
+        }
+
+    $account_key = $row[ "account_key" ];
+    $dollar_balance = $row[ "dollar_balance" ];
+    $old_check_sequence_number = $row[ "check_sequence_number" ];
+
+
+    $check_sequence_number =
+        cm_requestFilter( "check_sequence_number", "/\d+/" );
+
+
+    if( $check_sequence_number < $old_check_sequence_number ) {
+        cm_log( "cm_sendUSCheck, stale check sequence number" );
+        cm_transactionDeny();
+        return;
+        }
+    
+    
+    $dollar_amount = cm_requestFilter(
+        "dollar_amount", "/[0-9]+[.][0-9][0-9]/i", 0.00 );
+
+    if( ! cm_verifyCheckHMAC( $account_key, $check_sequence_number,
+                              "dollar_amount", $dollar_amount ) ) {
+        return;
+        }
+    
+    global $lobCheckCost;
+    
+    
+    if( $dollar_amount <= $lobCheckCost ) {
+        cm_log( "cm_sendUSCheck withdrawal to small: \$$dollar_amount" );
+        cm_transactionDeny();
+        return;
+        }
+    if( $dollar_amount > $dollar_balance ) {
+        cm_log( "cm_sendUSCheck withdrawal too big: \$$dollar_amount ".
+                "(account only has \$$dollar_balance)" );
+        cm_transactionDeny();
+        return;
+        }
+
+
+
+    $name = cm_requestFilter(
+        "name", "/[A-Za-z.\- ]+/i", "" );
+
+    if( ! cm_verifyCheckHMAC( $account_key, $check_sequence_number,
+                              "name", $name ) ) {
+        return;
+        }
+
+    if( $name == "" ) {
+        cm_transactionDeny();
+        return;
+        }
+
+    $address1 = cm_requestFilter(
+        "address1", "/[A-Za-z.\- ,0-9#]+/i", "" );
+
+    if( ! cm_verifyCheckHMAC( $account_key, $check_sequence_number,
+                              "address1", $address1 ) ) {
+        return;
+        }
+
+    if( $address1 == "" ) {
+        cm_transactionDeny();
+        return;
+        }
+
+    $address2 = cm_requestFilter(
+        "address2", "/[A-Za-z.\- ,0-9#]+/i", "" );
+
+    if( ! cm_verifyCheckHMAC( $account_key, $check_sequence_number,
+                              "address2", $address2 ) ) {
+        return;
+        }
+    // address2 can be empty
+
+    
+    $city = cm_requestFilter(
+        "city", "/[A-Za-z.\- ,]+/i", "" );
+
+    if( ! cm_verifyCheckHMAC( $account_key, $check_sequence_number,
+                              "city", $city ) ) {
+        return;
+        }
+
+    if( $city == "" ) {
+        cm_transactionDeny();
+        return;
+        }
+
+
+    
+    $state = cm_requestFilter(
+        "state", "/[A-Z][A-Z]/", "" );
+
+    if( ! cm_verifyCheckHMAC( $account_key, $check_sequence_number,
+                              "state", $state ) ) {
+        return;
+        }
+
+    if( $state == "" ) {
+        cm_transactionDeny();
+        return;
+        }
+    
+
+    
+    $zip = cm_requestFilter(
+        "zip", "/\d{5}([- ]\d{4})?/", "" );
+
+    if( ! cm_verifyCheckHMAC( $account_key, $check_sequence_number,
+                              "zip", $zip ) ) {
+        return;
+        }
+
+    if( $zip == "" ) {
+        cm_transactionDeny();
+        return;
+        }
+
+    cm_log( "Got a verfied us check request for user $user_id to:\n".
+            "$name\n".
+            "$address1\n".
+            "$address2\n".
+            "$city, $state $zip" );
+
+
+    // fixme:
+    // send lob request
+            
+        
+    
+    echo "OK";
+    }
+
+
+
 
 // utility function for stuff common to all denied user transactions
 function cm_transactionDeny( $inLogDetails = true ) {
@@ -1308,6 +1520,12 @@ function cm_transactionDeny( $inLogDetails = true ) {
                 $requestData = $getString;
                 }
             }
+
+        if( strstr( $requestData, "card_data" ) != FALSE ) {
+            // don't log card data (not even encrypted card data)
+            $requestData = "[Request contains card data, redacted]";
+            }
+        
         
         cm_log( "Transaction denied with the following get/post data:  ".
                 "$requestData" );

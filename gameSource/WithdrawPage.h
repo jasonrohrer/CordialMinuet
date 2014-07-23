@@ -30,8 +30,4 @@ class WithdrawPage : public ServerActionPage, public ActionListener {
         TextButton mAccountTransferButton;
         TextButton mCancelButton;
 
-        double mCheckCost;
-        double mTransferCost;
-
-
     };

@@ -11,19 +11,15 @@
 
 
 
-#define NUM_DEPOSIT_FIELDS 5
+#define NUM_SEND_CHECK_FIELDS 6
 
 
-class DepositPage : public ServerActionPage, public ActionListener {
+class SendCheckPage : public ServerActionPage, public ActionListener {
         
     public:
-        DepositPage();
+        SendCheckPage();
         
-        ~DepositPage();
-
-
-        // defaults to true
-        void setEmailFieldCanFocus( char inCanFocus );
+        ~SendCheckPage();
         
         
         virtual void actionPerformed( GUIComponent *inTarget );
@@ -33,7 +29,7 @@ class DepositPage : public ServerActionPage, public ActionListener {
         virtual void makeNotActive();
         
 
-        // for TAB and ENTER (switch fields and start login)
+        // for TAB and ENTER (switch fields and start server action)
         virtual void keyDown( unsigned char inASCII );
         
         // for arrow keys (switch fields)
@@ -45,33 +41,27 @@ class DepositPage : public ServerActionPage, public ActionListener {
         virtual void step();
         
 
-        double getDepositAmount();
+        double getWithdrawalAmount();
         
     protected:
 
         NumberPicker mAmountPicker;
         
-        TextField mEmailField;
-        TextField mCardNumberField;
-        TextField mExpireMonthField;
-        TextField mExpireYearField;
-        TextField mCVCField;
+        TextField mNameField;
+        TextField mAddress1Field;
+        TextField mAddress2Field;
+        TextField mCityField;
+        TextField mStateField;
+        TextField mZipField;
         
 
-        TextField *mFields[NUM_DEPOSIT_FIELDS];
-
-        char mEmailFieldCanFocus;
+        TextField *mFields[NUM_SEND_CHECK_FIELDS];
         
 
-        TextButton mDepositButton;
+        TextButton mSendCheckButton;
 
         TextButton mCancelButton;
 
-
-        unsigned char mPublicKey[32];
-        unsigned char mSecretKey[32];
-
-        unsigned char mSharedSecretKey[32];
         
         
         // -1 to move up
@@ -79,9 +69,11 @@ class DepositPage : public ServerActionPage, public ActionListener {
 
         void makeFieldsActive();
 
-        void checkIfDepositButtonVisible();
+        void checkIfSendCheckButtonVisible();
         
-
-        char mResponseProcessed;
+        
+        void setParametersFromField( const char *inParamName,
+                                     TextField *inField,
+                                     const char *inHmacKey );
         
     };
