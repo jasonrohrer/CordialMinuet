@@ -386,8 +386,8 @@ function cm_setupDatabase() {
             "sequence_number INT NOT NULL," .
             "check_sequence_number INT NOT NULL," .
             "last_action_time DATETIME NOT NULL," .
-            "last_deposit_tag TEXT NOT NULL,".
-            "last_deposit_response TEXT NOT NULL,".
+            "last_request_tag TEXT NOT NULL,".
+            "last_request_response TEXT NOT NULL,".
             "blocked TINYINT NOT NULL ) ENGINE = INNODB;";
 
         $result = cm_queryDatabase( $query );
@@ -795,6 +795,45 @@ function cm_getBalance() {
 
 
 
+// handles cases for user-validated transactions where request_tag matches
+// the user's last_request_tag by sending out last_request_response
+//
+// Assumes that cm_verifyTransaction has already been passed.
+//
+// returns true if this is a repeat response
+function cm_handleRepeatResponse() {
+    $user_id = cm_getUserID();
+
+    $request_tag = cm_requestFilter( "request_tag", "/[A-F0-9]+/i", "" );
+
+    if( $request_tag == "" ) {
+        return false;
+        }
+
+    global $tableNamePrefix;
+    
+    $query = "SELECT last_request_response ".
+        "FROM $tableNamePrefix"."users ".
+        "WHERE user_id = '$user_id' AND last_request_tag = '$request_tag' ".
+        "AND blocked = 0;";
+
+    $result = cm_queryDatabase( $query );
+    
+    $numRows = mysql_numrows( $result );
+
+    if( $numRows == 0 ) {
+        return false;
+        }
+    $last_request_response = mysql_result( 0, 0, "last_request_response" );
+
+    echo $last_request_response;
+    
+    return true;
+    }
+
+
+
+
 // formats dollar values with up to 4 fractional digits
 // adds $ and commas to separate thousands, trims off 00 if value
 // is a whole number of cents
@@ -813,7 +852,7 @@ function cm_formatBalanceForDisplay( $inDollars ) {
 function cm_makeDeposit() {
     $email = cm_requestFilter( "email", "/[A-Z0-9._%+-]+@[A-Z0-9.-]+/i" );
 
-    $deposit_tag = cm_requestFilter( "deposit_tag", "/[A-F0-9]+/i" );
+    $request_tag = cm_requestFilter( "request_tag", "/[A-F0-9]+/i" );
     
     global $tableNamePrefix;
 
@@ -822,7 +861,7 @@ function cm_makeDeposit() {
     
     // does account for this email exist already?
     $query = "SELECT user_id, account_key, dollar_balance, ".
-        "last_deposit_tag, last_deposit_response, blocked ".
+        "last_request_tag, last_request_response, blocked ".
         "FROM $tableNamePrefix"."users ".
         "WHERE email = '$email' FOR UPDATE;";
 
@@ -834,8 +873,8 @@ function cm_makeDeposit() {
     $account_key = "";
     $dollar_balance = 0;
     
-    $last_deposit_tag = "";
-    $last_deposit_response = "";
+    $last_request_tag = "";
+    $last_request_response = "";
     
     if( $numRows > 0 ) {
 
@@ -853,10 +892,10 @@ function cm_makeDeposit() {
             return;
             }
 
-        $last_deposit_tag = $row[ "last_deposit_tag" ];
-        $last_deposit_response = $row[ "last_deposit_response" ];
+        $last_request_tag = $row[ "last_request_tag" ];
+        $last_request_response = $row[ "last_request_response" ];
 
-        if( $last_deposit_tag == $deposit_tag ) {
+        if( $last_request_tag == $request_tag ) {
             // repeat of an already-complete deposit
             cm_queryDatabase( "COMMIT;" );
             cm_queryDatabase( "SET AUTOCOMMIT=1" );
@@ -869,7 +908,7 @@ function cm_makeDeposit() {
             cm_log( "Retry of already-complete deposit for $email,".
                     " resending last response" );
             
-            echo $last_deposit_response;
+            echo $last_request_response;
             return;
             }
         
@@ -1031,6 +1070,8 @@ function cm_makeDeposit() {
     global $curlPath, $stripeChargeURL, $stripeSecretKey,
         $stripeChargeDescription;
 
+    $fullDescription = $stripeChargeDescription . $email;
+    
     $curlCallString =
         "$curlPath ".
         "'$stripeChargeURL' ".
@@ -1038,7 +1079,7 @@ function cm_makeDeposit() {
         "-d 'receipt_email=$email'  ".
         "-d 'amount=$cents_amount'  ".
         "-d 'currency=usd'  ".
-        "-d \"description=$stripeChargeDescription\" ".
+        "-d \"description=$fullDescription\" ".
         "-d 'card[number]=$cardNumber'  ".
         "-d 'card[exp_month]=$month'  ".
         "-d 'card[exp_year]=$year'  ".
@@ -1046,8 +1087,9 @@ function cm_makeDeposit() {
 
     //cm_log( "Calling Stripe with CURL:  $curlCallString" );
     
+    $output = array();
     exec( $curlCallString, $output );
-
+    
     // process result
     $outputString = implode( "\n", $output );
     
@@ -1090,6 +1132,13 @@ function cm_makeDeposit() {
     $dollar_balance += $dollar_amount;
     
 
+    // FIXME
+    // parse balance_transaction from Stripe response, and use it
+    // to query v1/balance/history to find fee for the transaction
+    // SUBTRACT it from house_balance
+    // ADD      it to house_withdrawals
+    // (It's like money that has been auto-withdrawn from the house account.)
+    
     if( $user_id == "" ) {
         // new account
 
@@ -1120,8 +1169,8 @@ function cm_makeDeposit() {
                 "sequence_number = 0, ".
                 "check_sequence_number = 0, ".
                 "last_action_time = CURRENT_TIMESTAMP, ".
-                "last_deposit_tag = '$deposit_tag', ".
-                "last_deposit_response = '', ".
+                "last_request_tag = '$request_tag', ".
+                "last_request_response = '', ".
                 "blocked = 0;";
             
             $result = mysql_query( $query );
@@ -1179,8 +1228,8 @@ function cm_makeDeposit() {
 
 
         $query = "UPDATE $tableNamePrefix". "users SET ".
-            "last_deposit_tag = '$deposit_tag', ".
-            "last_deposit_response = '$response' ".
+            "last_request_tag = '$request_tag', ".
+            "last_request_response = '$response' ".
             "WHERE email = '$email';";
         cm_queryDatabase( $query );
 
@@ -1199,8 +1248,8 @@ function cm_makeDeposit() {
             "dollar_balance = '$dollar_balance', ".
             "num_deposits = num_deposits + 1, ".
             "total_deposits = total_deposits + '$dollar_amount', ".
-            "last_deposit_tag = '$deposit_tag', ".
-            "last_deposit_response = '$response' ".
+            "last_request_tag = '$request_tag', ".
+            "last_request_response = '$response' ".
             "WHERE user_id = $user_id;";
         cm_queryDatabase( $query );
 
@@ -1324,6 +1373,12 @@ function cm_sendUSCheck() {
         return;
         }
 
+    if( cm_handleRepeatResponse() ) {
+        return;
+        }
+
+    $request_tag = cm_requestFilter( "request_tag", "/[A-F0-9]+/i", "" );
+    
     global $tableNamePrefix, $checkMethodAvailable;
 
     
@@ -1338,7 +1393,7 @@ function cm_sendUSCheck() {
     
     cm_queryDatabase( "SET AUTOCOMMIT=0" );
     
-    $query = "SELECT account_key, dollar_balance, ".
+    $query = "SELECT email, account_key, dollar_balance, ".
         "check_sequence_number, blocked ".
         "FROM $tableNamePrefix"."users ".
         "WHERE user_id = '$user_id' FOR UPDATE;";
@@ -1363,6 +1418,7 @@ function cm_sendUSCheck() {
         return;
         }
 
+    $email = $row[ "email" ];
     $account_key = $row[ "account_key" ];
     $dollar_balance = $row[ "dollar_balance" ];
     $old_check_sequence_number = $row[ "check_sequence_number" ];
@@ -1405,7 +1461,7 @@ function cm_sendUSCheck() {
 
 
     $name = cm_requestFilter(
-        "name", "/[A-Za-z.\- ]+/i", "" );
+        "name", "/[A-Za-z.\-' ]+/i", "" );
 
     if( ! cm_verifyCheckHMAC( $account_key, $check_sequence_number,
                               "name", $name ) ) {
@@ -1418,7 +1474,7 @@ function cm_sendUSCheck() {
         }
 
     $address1 = cm_requestFilter(
-        "address1", "/[A-Za-z.\- ,0-9#]+/i", "" );
+        "address1", "/[A-Za-z.\-' ,0-9#]+/i", "" );
 
     if( ! cm_verifyCheckHMAC( $account_key, $check_sequence_number,
                               "address1", $address1 ) ) {
@@ -1431,7 +1487,7 @@ function cm_sendUSCheck() {
         }
 
     $address2 = cm_requestFilter(
-        "address2", "/[A-Za-z.\- ,0-9#]+/i", "" );
+        "address2", "/[A-Za-z.\-' ,0-9#]+/i", "" );
 
     if( ! cm_verifyCheckHMAC( $account_key, $check_sequence_number,
                               "address2", $address2 ) ) {
@@ -1441,7 +1497,7 @@ function cm_sendUSCheck() {
 
     
     $city = cm_requestFilter(
-        "city", "/[A-Za-z.\- ,]+/i", "" );
+        "city", "/[A-Za-z.\-' ,]+/i", "" );
 
     if( ! cm_verifyCheckHMAC( $account_key, $check_sequence_number,
                               "city", $city ) ) {
@@ -1492,10 +1548,121 @@ function cm_sendUSCheck() {
 
     // fixme:
     // send lob request
-            
-        
+
+    global $curlPath, $lobURL, $lobAPIKey,
+        $lobCheckNote, $lobBankAccount;
+
+    $fullNote = $lobCheckNote . $email;
+
+    $address2Param = "";
+
+    if( $address2 != "" ) {
+        $address2Param = "-d \"to[address_line2]=$address2\" ";
+        }
     
-    echo "OK";
+    $check_amount = $dollar_amount - $lobCheckCost;
+
+    
+    $curlCallString =
+        "$curlPath ".
+        "'$lobURL' ".
+        "-u $lobAPIKey".": ".
+        "-d \"message=$fullNote\" ".
+        "-d 'memo=$email' ".
+        "-d 'name=Cordial Minuet Withdrawal' ".
+        "-d \"bank_account=$lobBankAccount\" ".
+        "-d \"amount=$check_amount\" ".
+        "-d \"to[name]=$name\" ".
+        "-d \"to[address_line1]=$address1\" ".
+        $address2Param .
+        "-d \"to[address_city]=$city\" ".
+        "-d \"to[address_state]=$state\" ".
+        "-d \"to[address_zip]=$zip\" ".
+        "-d \"to[address_country]=US\" ";
+
+
+    //cm_log( "Calling Lob with:\n$curlCallString" );
+
+    $output = array();
+    exec( $curlCallString, $output );
+
+    // process result
+    $outputString = implode( "\n", $output );
+    
+    //cm_log( "Response from Lob:\n$outputString" );
+
+
+    if( strstr( $outputString, "errors" ) != FALSE ) {
+        echo "CHECK_FAILED";
+        cm_queryDatabase( "COMMIT;" );
+        cm_queryDatabase( "SET AUTOCOMMIT=1" );
+        
+        cm_log( "CHECK_FAILED for $email, ".
+                "Lob error:\n$outputString" );
+        return;
+        }
+
+    
+    $processed = false;
+
+    foreach( $output as $line ) {
+
+        if( strstr( $line, "status" ) != FALSE &&
+            strstr( $line, "processed" ) != FALSE ) {
+            $processed = true;
+            }
+        }
+
+    if( !$processed ) {
+        echo "CHECK_FAILED";
+        cm_queryDatabase( "COMMIT;" );
+        cm_queryDatabase( "SET AUTOCOMMIT=1" );
+        
+        cm_log( "CHECK_FAILED for $email, ".
+                "Lob result not marked as processed:\n$outputString" );
+        return;
+        }
+
+    // else we're good
+
+    $dollar_balance -= $dollar_amount;
+
+
+    // FIXME:
+    // find "price" field in LOB response
+    // it may differ from what we charged the user for their check
+    // handle the difference in house_dollar_balance and house_withdrawals
+    
+
+    $response = "OK";
+        
+    $query = "UPDATE $tableNamePrefix". "users SET ".
+        "dollar_balance = '$dollar_balance', ".
+        "check_sequence_number = $check_sequence_number + 1, ".
+        "num_withdrawals = num_withdrawals + 1, ".
+        // track amount they receive by check
+        // check fee is added to house_balance below
+        "total_withdrawals = total_withdrawals + '$check_amount', ".
+        "last_request_tag = '$request_tag', ".
+        "last_request_response = '$response' ".
+        "WHERE user_id = $user_id;";
+    cm_queryDatabase( $query );
+
+    // since Lob fees are taken out of a separate bank account
+    // (via debit card payment), count them as free money in the house account
+    $query = "UPDATE $tableNamePrefix". "server_globals SET ".
+        "house_dollar_balance = house_dollar_balance + '$lobCheckCost';";
+    cm_queryDatabase( $query );
+
+
+    global $remoteIP;
+    cm_log( "Withdrawal of \$$dollar_amount for user $user_id ($email) by ".
+            "$remoteIP" );
+    
+    cm_queryDatabase( "COMMIT;" );
+    cm_queryDatabase( "SET AUTOCOMMIT=1" );
+        
+    echo $response;
     }
 
 
@@ -2016,7 +2183,7 @@ function cm_generateHeader() {
         $totalBalance
         - $totalDeposits
         + $totalWithdrawals
-        - ( $house_dollar_balance + $house_withdrawals );
+        + ( $house_dollar_balance + $house_withdrawals );
     
 
     $totalBalanceString = cm_formatBalanceForDisplay( $totalBalance );

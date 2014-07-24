@@ -64,7 +64,7 @@ $accountKeyLength = 20;
 
 
 
-$curlPath = "/usr/bin/curl";
+$curlPath = "/home/jcr13/curl-7.37.1/src/curl";
 
 
 // settings for stripe.com payment processor
@@ -72,7 +72,9 @@ $stripeChargeURL = "https://api.stripe.com/v1/charges";
 
 $stripeSecretKey = "sk_test_YFNDtqJP2HSlwGRsI2f55vs3";
 
-$stripeChargeDescription = "Deposit for Jason Rohrer's Cordial Minuet game";
+// email address will be appended to this description
+$stripeChargeDescription =
+"Deposit for Jason Rohrer's Cordial Minuet game for ";
 
 
 
@@ -81,8 +83,14 @@ $lobURL = "https://api.lob.com/v1/checks";
 
 $lobAPIKey = "test_10f8920b3c49e0aa69798860c5eecfa809b";
 
+$lobBankAccount = "bank_9cea4f3e314e883";
+
 // cost in dollars
 $lobCheckCost = 1.50;
+
+// email address will be appended to this description
+$lobCheckNote = "Withdrawal from Jason Rohrer's Cordial Minuet game for ";
+
 
 
 $checkMethodAvailable = 1;

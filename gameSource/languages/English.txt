@@ -106,6 +106,10 @@ sendCheckButton "MAIL CHECK"
 feeSubtracted "$%.2f FEE WILL BE SUBTRACTED"
 
 
+checkFailed "MAILING TO THIS ADDRESS FAILED"
+
+
+
 pauseMessage1 "[ENTER] TO RESUME"
 
 pauseMessage2 "OR TYPE SOMETHING:"

@@ -56,7 +56,7 @@ SendCheckPage::SendCheckPage()
                       translate( "city" ),
                       "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
                       "abcdefghijklmnopqrstuvwxyz"
-                      ".'- " ),
+                      ".'-, " ),
           mStateField( mainFont, -132, -130, 2, true, 
                        translate( "state" ),
                        "ABCDEFGHIJKLMNOPQRSTUVWXYZ" ),
@@ -102,15 +102,16 @@ SendCheckPage::SendCheckPage()
     mZipField.setMaxLength( 10 );
     
     
-    /*
+    
     // for testing
-    mCardNumberField.setText( "4242424242424242" );
-    //mCardNumberField.setText( "4000000000000002" );
-    mEmailField.setText( "jasonrohrer@fastmail.fm" );
-    mExpireMonthField.setText( "11" );
-    mExpireYearField.setText( "2015" );
-    mCVCField.setText( "137" );
-    */
+    mNameField.setText( "Jason Rohrer" );
+    mAddress1Field.setText( "1208 L St." );
+    mAddress2Field.setText( "" );
+    mCityField.setText( "Davis" );
+    mStateField.setText( "CA" );
+    mZipField.setText( "95616" );
+
+    addServerErrorString( "CHECK_FAILED", "checkFailed" );
     }
 
 
@@ -152,6 +153,13 @@ void SendCheckPage::actionPerformed( GUIComponent *inTarget ) {
         
         char *hmacKey = autoSprintf( "%s%d", pureKey, serverSequenceNumber );
         delete [] pureKey;
+
+        char *tagString = autoSprintf( "%d", time( NULL ) );
+        char *request_tag = hmac_sha1( hmacKey, tagString );
+        delete [] tagString;
+
+        setActionParameter( "request_tag", request_tag );
+        delete [] request_tag;
         
         
         setParametersFromField( "name", &mNameField, hmacKey );
@@ -217,7 +225,7 @@ void SendCheckPage::makeActive( char inFresh ) {
 
     // fix later with balance and check fee when page made active
     mAmountPicker.setMin( checkCost + 0.01 );
-    mAmountPicker.setValue( userBalance );
+    mAmountPicker.setMax( userBalance );
     }
 
 

@@ -194,12 +194,12 @@ void DepositPage::actionPerformed( GUIComponent *inTarget ) {
         setActionParameter( "client_public_key", client_public_key );
 
         char *tagString = autoSprintf( "%d", time( NULL ) );
-        char *deposit_tag = hmac_sha1( client_public_key, tagString );
+        char *request_tag = hmac_sha1( client_public_key, tagString );
         delete [] client_public_key;
         delete [] tagString;
 
-        setActionParameter( "deposit_tag", deposit_tag );
-        delete [] deposit_tag;
+        setActionParameter( "request_tag", request_tag );
+        delete [] request_tag;
         
         
 
