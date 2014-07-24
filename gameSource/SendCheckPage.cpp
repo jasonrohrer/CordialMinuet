@@ -37,30 +37,30 @@ SendCheckPage::SendCheckPage()
         : ServerActionPage( "send_us_check", true),
           mAmountPicker( mainFont, 34, 201, 4, 2, 
                          translate( "withdrawMoney" ) ),
-          mNameField( mainFont, 0, 126, 10, false, 
+          mNameField( mainFont, 33, 126, 12, false, 
                       translate( "name" ),
                       "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
                       "abcdefghijklmnopqrstuvwxyz"
                       ".'- " ),
-          mAddress1Field( mainFont, 0, 62, 10, false, 
+          mAddress1Field( mainFont, 33, 62, 12, false, 
                           translate( "address1" ),
                           "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
                           "abcdefghijklmnopqrstuvwxyz"
                           ".'- ,0123456789#" ),
-          mAddress2Field( mainFont, 0, -2, 10, false, 
+          mAddress2Field( mainFont, 33, -2, 12, false, 
                           translate( "address2" ),
                           "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
                           "abcdefghijklmnopqrstuvwxyz"
                           ".'- ,0123456789#" ),
-          mCityField( mainFont, -0, -66, 10, false, 
+          mCityField( mainFont, 33, -66, 12, false, 
                       translate( "city" ),
                       "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
                       "abcdefghijklmnopqrstuvwxyz"
                       ".'- " ),
-          mStateField( mainFont, -150, -130, 2, true, 
+          mStateField( mainFont, -132, -130, 2, true, 
                        translate( "state" ),
                        "ABCDEFGHIJKLMNOPQRSTUVWXYZ" ),
-          mZipField( mainFont, 150, -130, 10, true,
+          mZipField( mainFont, 121, -130, 10, true,
                      translate( "zip" ),
                      "0123456789-" ),
           mSendCheckButton( mainFont, 150, -200, 
