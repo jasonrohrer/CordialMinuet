@@ -156,7 +156,6 @@ void ServerActionPage::startRequest() {
         
         char *accountHmac = getAccountHmac();
         
-        actionParameterListChars.push_back( '&' );
         actionParameterListChars.appendElementString( accountHmac );
         
         delete [] accountHmac;

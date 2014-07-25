@@ -48,7 +48,7 @@ char *getAccountHmac() {
     delete [] pureCode;
     delete [] toHash;
 
-    char *result = autoSprintf( "sequence_number=%d&account_hmac=%s",
+    char *result = autoSprintf( "&sequence_number=%d&account_hmac=%s",
                                 serverSequenceNumber,
                                 hash );
     delete [] hash;
@@ -61,8 +61,8 @@ char *getAccountHmac() {
 
 
 char *replaceAccountHmac( char *inString ) {
-    const char *keyA = "sequence_number=";
-    const char *keyB = "account_hmac=";
+    const char *keyA = "&sequence_number=";
+    const char *keyB = "&account_hmac=";
     
     if( inString == NULL ) {
         return NULL;

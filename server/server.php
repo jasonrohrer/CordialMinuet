@@ -122,6 +122,7 @@ function cm_checkReferrer() {
 
 
 // grab POST/GET variables
+global $action;
 $action = cm_requestFilter( "action", "/[A-Z_]+/i" );
 
 $trackDatabaseStats = true;
@@ -824,7 +825,14 @@ function cm_handleRepeatResponse() {
     if( $numRows == 0 ) {
         return false;
         }
-    $last_request_response = mysql_result( 0, 0, "last_request_response" );
+
+    global $action;
+    
+    cm_log( "Retry of already-complete $action request,".
+            " resending last response" );
+    
+    $last_request_response = mysql_result( $result, 0,
+                                           "last_request_response" );
 
     echo $last_request_response;
     
