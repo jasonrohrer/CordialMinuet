@@ -1600,7 +1600,12 @@ function cm_sendUSCheck() {
         return;
         }
 
-    cm_log( "Got a verfied us check request for user $user_id to:\n".
+    
+    $check_amount = $dollar_amount - $lobCheckCost;
+    $check_amount = number_format( $check_amount, 2 );
+    
+    
+    cm_log( "Got a verfied [\$$check_amount] US check request to:\n".
             "$name\n".
             "$address1\n".
             "$address2\n".
@@ -1612,16 +1617,20 @@ function cm_sendUSCheck() {
     global $curlPath, $lobURL, $lobAPIKey,
         $lobCheckNote, $lobBankAccount;
 
-    $fullNote = $lobCheckNote . $email;
+    $dollar_string = number_format( $dollar_amount, 2 );
+    $fee_string = number_format( $lobCheckCost, 2 );
 
+    
+    $fullNote = $lobCheckNote .
+        "$email".".  Withdrawing USD $dollar_string with a $fee_string fee.  ".
+        "Check is for USD $check_amount.";
+
+    
     $address2Param = "";
 
     if( $address2 != "" ) {
         $address2Param = "-d \"to[address_line2]=$address2\" ";
         }
-    
-    $check_amount = $dollar_amount - $lobCheckCost;
-
     
     $curlCallString =
         "$curlPath ".
@@ -1739,7 +1748,7 @@ function cm_sendUSCheck() {
 
 
     global $remoteIP;
-    cm_log( "Withdrawal of \$$dollar_amount for user $user_id ($email) by ".
+    cm_log( "Withdrawal of \$$dollar_amount for $email by ".
             "$remoteIP" );
     
     cm_queryDatabase( "COMMIT;" );
