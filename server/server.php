@@ -1109,11 +1109,21 @@ function cm_makeDeposit() {
     
     $paid = false;
 
+    $balance_transaction = "";
+    
     foreach( $output as $line ) {
 
         if( strstr( $line, "paid" ) != FALSE &&
             strstr( $line, "true" ) != FALSE ) {
             $paid = true;
+            }
+        else if( strstr( $line, "balance_transaction" ) != FALSE ) {
+            $matches = array();
+
+            if( preg_match( "/(txn_[^\"]*)\"/", $line, $matches ) ) {
+                
+                $balance_transaction = $matches[1];
+                }
             }
         }
 
@@ -1132,12 +1142,63 @@ function cm_makeDeposit() {
     $dollar_balance += $dollar_amount;
     
 
-    // FIXME
+
+    
     // parse balance_transaction from Stripe response, and use it
     // to query v1/balance/history to find fee for the transaction
-    // SUBTRACT it from house_balance
+    // SUBTRACT it from house_dollar_balance
     // ADD      it to house_withdrawals
     // (It's like money that has been auto-withdrawn from the house account.)
+
+    global $stripeBalanceHistoryURL;
+    
+    $curlCallString =
+        "$curlPath ".
+        "'$stripeBalanceHistoryURL/$balance_transaction' ".
+        "-u $stripeSecretKey".": ";
+
+    // cm_log( "Calling Stripe with CURL:  $curlCallString" );
+    
+    $output = array();
+    exec( $curlCallString, $output );
+    
+    // process result
+    $outputString = implode( "\n", $output );
+
+    $fee = 0;
+    
+    if( strstr( $outputString, "error" ) != FALSE ) {
+        
+        cm_log( "Failed to get fee info for transaction, ".
+                "stripe error:\n$outputString" );
+        }
+    else {
+        foreach( $output as $line ) {
+
+            if( strstr( $line, "\"fee\"" ) != FALSE ) {
+                $matches = array();
+
+                if( preg_match( "/(\d+),/", $line, $matches ) ) {
+                
+                    $fee = $matches[1];
+
+                    // in dollars
+                    $fee = $fee / 100;
+                    }
+                }
+            }
+        }
+
+    
+    if( $fee != 0 ) {
+        $query = "UPDATE $tableNamePrefix". "server_globals SET ".
+            "house_dollar_balance = house_dollar_balance - $fee, ".
+            "house_withdrawals = house_withdrawals + $fee;";
+        cm_queryDatabase( $query );
+        }
+    
+    
+    
     
     if( $user_id == "" ) {
         // new account
@@ -1546,7 +1607,6 @@ function cm_sendUSCheck() {
             "$city, $state $zip" );
 
 
-    // fixme:
     // send lob request
 
     global $curlPath, $lobURL, $lobAPIKey,
@@ -1604,12 +1664,21 @@ function cm_sendUSCheck() {
 
     
     $processed = false;
-
+    $price = 0;
+    
     foreach( $output as $line ) {
 
         if( strstr( $line, "status" ) != FALSE &&
             strstr( $line, "processed" ) != FALSE ) {
             $processed = true;
+            }
+        else if( strstr( $line, "price" ) != FALSE ) {
+            $matches = array();
+
+            if( preg_match( "/\"(\d*\.\d*)\"/", $line, $matches ) ) {
+                
+                $price = $matches[1];
+                }
             }
         }
 
@@ -1628,10 +1697,23 @@ function cm_sendUSCheck() {
     $dollar_balance -= $dollar_amount;
 
 
-    // FIXME:
-    // find "price" field in LOB response
+    // we found "price" field in LOB response
     // it may differ from what we charged the user for their check
-    // handle the difference in house_dollar_balance and house_withdrawals
+    
+    // (we don't actually charge the user a different amount)
+
+    // house_dollar_balance should reflect how much we actually charged them,
+    // because lob fees come out of a different account anyway
+    
+    if( $price != $lobCheckCost ) {
+        $message = "Lob check price has changed from server setting.  ".
+            "New Lob price: \$$price  Our setting: \$$lobCheckCost";
+        
+        cm_log( $message );
+        
+        cm_informAdmin( $message );
+        }
+    
     
 
     $response = "OK";
@@ -1650,6 +1732,7 @@ function cm_sendUSCheck() {
 
     // since Lob fees are taken out of a separate bank account
     // (via debit card payment), count them as free money in the house account
+    // this is how much WE charged the user for the check.
     $query = "UPDATE $tableNamePrefix". "server_globals SET ".
         "house_dollar_balance = house_dollar_balance + '$lobCheckCost';";
     cm_queryDatabase( $query );
