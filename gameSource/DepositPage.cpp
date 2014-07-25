@@ -531,7 +531,7 @@ void DepositPage::checkIfDepositButtonVisible() {
 
     char *email = mEmailField.getText();
     
-    if( strlen( email ) < 3 ||
+    if( strlen( email ) < 5 ||
         strstr( email, "@" ) == NULL ||
         strstr( email, "." ) == NULL ) {
         visible = false;

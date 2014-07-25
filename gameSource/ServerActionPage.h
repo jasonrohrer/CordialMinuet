@@ -5,6 +5,7 @@
 #include "GamePage.h"
 
 #include "TextButton.h"
+#include "TextField.h"
 
 
 
@@ -118,6 +119,11 @@ class ServerActionPage : public GamePage {
         double mMinimumResponseSeconds;
         
         double mRequestStartTime;
+
+        // for two-parameter, hmac-signed parameters
+        void setParametersFromField( const char *inParamName,
+                                     TextField *inField,
+                                     const char *inHmacKey );
     };
 
         

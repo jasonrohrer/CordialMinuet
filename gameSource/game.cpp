@@ -62,6 +62,7 @@ CustomRandomSource randSource( 34957197 );
 #include "ExistingAccountPage.h"
 #include "WithdrawPage.h"
 #include "SendCheckPage.h"
+#include "AccountTransferPage.h"
 
 
 #include "serialWebRequests.h"
@@ -85,6 +86,7 @@ DepositDisplayPage *depositDisplayPage;
 ExistingAccountPage *existingAccountPage;
 WithdrawPage *withdrawPage;
 SendCheckPage *sendCheckPage;
+AccountTransferPage *accountTransferPage;
 DepositDisplayPage *withdrawalDisplayPage;
 
 
@@ -485,6 +487,7 @@ void initFrameDrawer( int inWidth, int inHeight, int inTargetFrameRate,
     existingAccountPage = new ExistingAccountPage();
     withdrawPage = new WithdrawPage();
     sendCheckPage = new SendCheckPage();
+    accountTransferPage = new AccountTransferPage();
     
     
     withdrawalDisplayPage = new DepositDisplayPage();
@@ -524,6 +527,7 @@ void freeFrameDrawer() {
     delete existingAccountPage;
     delete withdrawPage;
     delete sendCheckPage;
+    delete accountTransferPage;
     delete withdrawalDisplayPage;
 
     if( shutdownMessage != NULL ) {
@@ -1136,6 +1140,11 @@ void drawFrame( char inUpdate ) {
                 currentGamePage = sendCheckPage;
                 currentGamePage->base_makeActive( true );
                 }
+            else if( withdrawPage->checkSignal( "transfer" ) ) {
+                
+                currentGamePage = accountTransferPage;
+                currentGamePage->base_makeActive( true );
+                }
             }
         else if( currentGamePage == sendCheckPage ) {
             if( sendCheckPage->checkSignal( "back" ) ) {
@@ -1146,6 +1155,20 @@ void drawFrame( char inUpdate ) {
             else if( sendCheckPage->isResponseReady() ) {
                 withdrawalDisplayPage->setDeltaAmount( 
                     sendCheckPage->getWithdrawalAmount() );
+                
+                currentGamePage = withdrawalDisplayPage;
+                currentGamePage->base_makeActive( true );
+                }
+            }
+        else if( currentGamePage == accountTransferPage ) {
+            if( accountTransferPage->checkSignal( "back" ) ) {
+                
+                currentGamePage = menuPage;
+                currentGamePage->base_makeActive( true );
+                }
+            else if( accountTransferPage->isResponseReady() ) {
+                withdrawalDisplayPage->setDeltaAmount( 
+                    accountTransferPage->getWithdrawalAmount() );
                 
                 currentGamePage = withdrawalDisplayPage;
                 currentGamePage->base_makeActive( true );

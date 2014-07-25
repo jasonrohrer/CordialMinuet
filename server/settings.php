@@ -98,6 +98,9 @@ $checkMethodAvailable = 1;
 
 $transferMethodAvailable = 1;
 
+$transferCost = "0.00";
+
+
 
 
 

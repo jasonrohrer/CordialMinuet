@@ -4,6 +4,10 @@
 #include "minorGems/util/stringUtils.h"
 #include "minorGems/system/Time.h"
 
+#include "minorGems/crypto/hashes/sha1.h"
+
+#include "minorGems/network/web/URLUtils.h"
+
 
 #include "serialWebRequests.h"
 #include "accountHmac.h"
@@ -393,5 +397,27 @@ char *ServerActionPage::getResponse( int inPartNumber ) {
 
 void ServerActionPage::setMinimumResponseTime( double inSeconds ) {
     mMinimumResponseSeconds = inSeconds;
+    }
+
+
+
+void ServerActionPage::setParametersFromField( const char *inParamName,
+                                               TextField *inField,
+                                               const char *inHmacKey ) {
+    
+    char *value = inField->getText();
+    char *value_hmac = hmac_sha1( inHmacKey, value );
+        
+    char *encodedValue = URLUtils::urlEncode( value );
+    delete [] value;
+
+    setActionParameter( inParamName, encodedValue );
+    delete [] encodedValue;
+        
+    char *hmacParamName = autoSprintf( "%s_hmac", inParamName );
+
+    setActionParameter( hmacParamName, value_hmac );
+    delete [] hmacParamName;
+    delete [] value_hmac;
     }
 

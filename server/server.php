@@ -172,7 +172,8 @@ if( $shutdownMode &&
       $action == "check_hmac" ||
       $action == "make_deposit" ||
       $action == "get_withdrawal_methods" ||
-      $action == "send_us_check" ) ) {
+      $action == "send_us_check" ||
+      $action == "account_transfer" ) ) {
     
     echo "SHUTDOWN";
     global $shutdownMessage;
@@ -208,6 +209,9 @@ else if( $action == "get_withdrawal_methods" ) {
     }
 else if( $action == "send_us_check" ) {
     cm_sendUSCheck();
+    }
+else if( $action == "account_transfer" ) {
+    cm_accountTransfer();
     }
 else if( $action == "check_for_flush" ) {
     cm_checkForFlush();
@@ -992,7 +996,7 @@ function cm_makeDeposit() {
         }
 
     $dollar_amount = cm_requestFilter(
-        "dollar_amount", "/[0-9]+[.][0-9][0-9]/i", 0.00 );
+        "dollar_amount", "/[0-9]+[.][0-9][0-9]/i", "0.00" );
 
     global $minDeposit;
     if( $dollar_amount < $minDeposit ) {
@@ -1399,13 +1403,14 @@ function cm_getWithdrawalMethods() {
         return;
         }
 
-    global $checkMethodAvailable, $transferMethodAvailable, $lobCheckCost;
+    global $checkMethodAvailable, $transferMethodAvailable, $lobCheckCost,
+        $transferCost;
 
     if( $checkMethodAvailable ) {
         echo "us_check#$lobCheckCost\n";
         }
     if( $transferMethodAvailable ) {
-        echo "account_transfer#0.00\n";
+        echo "account_transfer#$transferCost\n";
         }
     
     echo "OK";
@@ -1422,7 +1427,7 @@ function cm_verifyCheckHMAC( $account_key, $check_sequence_number,
                                   $field_value ) ) ) {
         
 
-        cm_log( "cm_sendUSCheck back hmac for $field_name" );
+        cm_log( "cm_sendUSCheck/cm_accountTransfer bad hmac for $field_name" );
 
         
         cm_transactionDeny();
@@ -1505,7 +1510,7 @@ function cm_sendUSCheck() {
     
     
     $dollar_amount = cm_requestFilter(
-        "dollar_amount", "/[0-9]+[.][0-9][0-9]/i", 0.00 );
+        "dollar_amount", "/[0-9]+[.][0-9][0-9]/i", "0.00" );
 
     if( ! cm_verifyCheckHMAC( $account_key, $check_sequence_number,
                               "dollar_amount", $dollar_amount ) ) {
@@ -1516,7 +1521,7 @@ function cm_sendUSCheck() {
     
     
     if( $dollar_amount <= $lobCheckCost ) {
-        cm_log( "cm_sendUSCheck withdrawal to small: \$$dollar_amount" );
+        cm_log( "cm_sendUSCheck withdrawal too small: \$$dollar_amount" );
         cm_transactionDeny();
         return;
         }
@@ -1758,6 +1763,183 @@ function cm_sendUSCheck() {
     global $remoteIP;
     cm_log( "Withdrawal of \$$dollar_amount for $email by ".
             "$remoteIP" );
+    
+    cm_queryDatabase( "COMMIT;" );
+    cm_queryDatabase( "SET AUTOCOMMIT=1" );
+        
+    echo $response;
+    }
+
+
+
+
+
+function cm_accountTransfer() {
+    if( ! cm_verifyTransaction() ) {
+        return;
+        }
+
+    if( cm_handleRepeatResponse() ) {
+        return;
+        }
+
+    $request_tag = cm_requestFilter( "request_tag", "/[A-F0-9]+/i", "" );
+    
+    global $tableNamePrefix, $transferMethodAvailable;
+
+    
+    if( !$transferMethodAvailable ) {
+        cm_log( "cm_accountTransfer, transfer withdrawal method blocked" );
+        cm_transactionDeny();
+        return;
+        }
+
+        
+    $user_id = cm_getUserID();
+    
+    cm_queryDatabase( "SET AUTOCOMMIT=0" );
+    
+    $query = "SELECT email, account_key, dollar_balance, ".
+        "check_sequence_number, blocked ".
+        "FROM $tableNamePrefix"."users ".
+        "WHERE user_id = '$user_id' FOR UPDATE;";
+
+    $result = cm_queryDatabase( $query );
+
+
+    $numRows = mysql_numrows( $result );
+
+    
+    if( $numRows == 0 ) {
+        cm_log( "cm_accountTransfer, user $user_id not found" );
+        cm_transactionDeny();
+        return;
+        }
+
+    $row = mysql_fetch_array( $result, MYSQL_ASSOC );
+
+    if( $row[ "blocked" ] ) {
+        cm_log( "cm_accountTransfer, user $user_id blocked" );
+        cm_transactionDeny();
+        return;
+        }
+
+    
+    $email = $row[ "email" ];
+    $account_key = $row[ "account_key" ];
+    $dollar_balance = $row[ "dollar_balance" ];
+    $old_check_sequence_number = $row[ "check_sequence_number" ];
+
+
+    $check_sequence_number =
+        cm_requestFilter( "check_sequence_number", "/\d+/" );
+
+
+    if( $check_sequence_number < $old_check_sequence_number ) {
+        cm_log( "cm_accountTransfer, stale check sequence number" );
+        cm_transactionDeny();
+        return;
+        }
+
+
+    $recipient_email =
+        cm_requestFilter( "recipient_email",
+                          "/[A-Z0-9._%+-]+@[A-Z0-9.-]+/i", "" );
+
+    if( ! cm_verifyCheckHMAC( $account_key, $check_sequence_number,
+                              "recipient_email", $recipient_email ) ) {
+        return;
+        }
+
+    
+    if( $email == $recipient_email ) {
+        // can't transfer to self
+        cm_log( "cm_accountTransfer blocked transfer to self" );
+        cm_transactionDeny();
+        return;
+        }
+
+    
+    
+    $dollar_amount = cm_requestFilter(
+        "dollar_amount", "/[0-9]+[.][0-9][0-9]/i", "0.00" );
+
+    if( ! cm_verifyCheckHMAC( $account_key, $check_sequence_number,
+                              "dollar_amount", $dollar_amount ) ) {
+        return;
+        }
+    
+    global $transferCost;
+    
+    
+    if( $dollar_amount <= $transferCost ) {
+        cm_log( "cm_accountTransfer withdrawal too small: \$$dollar_amount" );
+        cm_transactionDeny();
+        return;
+        }
+    if( $dollar_amount > $dollar_balance ) {
+        cm_log( "cm_accountTransfer transfer too big: \$$dollar_amount ".
+                "(account only has \$$dollar_balance)" );
+        cm_transactionDeny();
+        return;
+        }
+    
+    
+
+
+    
+    $transfer_amount = $dollar_amount - $transferCost;
+    $transfer_amount = number_format( $transfer_amount, 2 );
+
+
+    $query = "SELECT COUNT(*) FROM $tableNamePrefix"."users ".
+        "WHERE email = '$recipient_email' and blocked = 0;";
+
+    $result = cm_queryDatabase( $query );
+
+    if( mysql_result( $result, 0, 0 ) == 0 ) {
+        cm_log( "cm_accountTransfer recipient not found; $recipient_email" );
+
+        echo "RECIPIENT_NOT_FOUND";
+        return;
+        }
+
+    // first, withdraw from sender
+    $dollar_balance = $dollar_balance - $dollar_amount;
+    
+    $response = "OK";
+        
+    $query = "UPDATE $tableNamePrefix"."users SET ".
+        "dollar_balance = '$dollar_balance', ".
+        "check_sequence_number = $check_sequence_number + 1, ".
+        "num_withdrawals = num_withdrawals + 1, ".
+        // track amount recipient receives
+        // transfer fee is added to house_balance below
+        "total_withdrawals = total_withdrawals + '$transfer_amount', ".
+        "last_request_tag = '$request_tag', ".
+        "last_request_response = '$response' ".
+        "WHERE user_id = $user_id;";
+
+    cm_queryDatabase( $query );
+
+    $query = "UPDATE $tableNamePrefix". "server_globals SET ".
+        "house_dollar_balance = house_dollar_balance + '$transferCost';";
+    cm_queryDatabase( $query );
+
+    $query = "UPDATE $tableNamePrefix"."users SET ".
+        "dollar_balance = dollar_balance + $transfer_amount, ".
+        "num_deposits = num_deposits + 1, ".
+        // track amount recipient receives
+        // transfer fee is added to house_balance below
+        "total_deposits = total_deposits + '$transfer_amount' ".
+        "WHERE email = '$recipient_email';";
+    cm_queryDatabase( $query );
+    
+    
+    global $remoteIP;
+    cm_log( "Account transfer of \$$dollar_amount ".
+            "($transfer_amount after fee) from $email to $recipient_email ".
+            "by $remoteIP" );
     
     cm_queryDatabase( "COMMIT;" );
     cm_queryDatabase( "SET AUTOCOMMIT=1" );

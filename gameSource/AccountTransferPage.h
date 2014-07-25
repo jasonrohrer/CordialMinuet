@@ -11,15 +11,14 @@
 
 
 
-#define NUM_SEND_CHECK_FIELDS 6
 
 
-class SendCheckPage : public ServerActionPage, public ActionListener {
+class AccountTransferPage : public ServerActionPage, public ActionListener {
         
     public:
-        SendCheckPage();
+        AccountTransferPage();
         
-        ~SendCheckPage();
+        ~AccountTransferPage();
         
         
         virtual void actionPerformed( GUIComponent *inTarget );
@@ -32,8 +31,6 @@ class SendCheckPage : public ServerActionPage, public ActionListener {
         // for TAB and ENTER (switch fields and start server action)
         virtual void keyDown( unsigned char inASCII );
         
-        // for arrow keys (switch fields)
-        virtual void specialKeyDown( int inKeyCode );
         
         virtual void draw( doublePair inViewCenter, 
                            double inViewSize );
@@ -47,28 +44,19 @@ class SendCheckPage : public ServerActionPage, public ActionListener {
 
         NumberPicker mAmountPicker;
         
-        TextField mNameField;
-        TextField mAddress1Field;
-        TextField mAddress2Field;
-        TextField mCityField;
-        TextField mStateField;
-        TextField mZipField;
+        TextField mEmailField;
         
 
-        TextField *mFields[NUM_SEND_CHECK_FIELDS];
-        
-
-        TextButton mSendCheckButton;
+        TextButton mTransferButton;
 
         TextButton mCancelButton;
 
         
         
-        // -1 to move up
-        void switchFields( int inDir = 1 );
 
         void makeFieldsActive();
 
-        void checkIfSendCheckButtonVisible();
+        void checkIfTransferButtonVisible();
                 
+        
     };

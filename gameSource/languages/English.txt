@@ -110,6 +110,16 @@ checkFailed "MAILING TO THIS ADDRESS FAILED"
 
 
 
+transferMoney "TRANSFER $"
+
+transferButton "TRANSFER"
+
+
+recipientNotFound "NO ACCOUNT FOR THIS EMAIL"
+
+
+
+
 pauseMessage1 "[ENTER] TO RESUME"
 
 pauseMessage2 "OR TYPE SOMETHING:"
