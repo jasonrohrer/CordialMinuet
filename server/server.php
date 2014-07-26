@@ -1091,6 +1091,7 @@ function cm_makeDeposit() {
         "-d 'receipt_email=$email'  ".
         "-d 'amount=$cents_amount'  ".
         "-d 'currency=usd'  ".
+        "-d 'expand[]=balance_transaction'  ".
         "-d \"description=$fullDescription\" ".
         "-d 'card[number]=$cardNumber'  ".
         "-d 'card[exp_month]=$month'  ".
@@ -1121,7 +1122,7 @@ function cm_makeDeposit() {
     
     $paid = false;
 
-    $balance_transaction = "";
+    $fee = 0;
     
     foreach( $output as $line ) {
 
@@ -1129,12 +1130,15 @@ function cm_makeDeposit() {
             strstr( $line, "true" ) != FALSE ) {
             $paid = true;
             }
-        else if( strstr( $line, "balance_transaction" ) != FALSE ) {
+        else if( strstr( $line, "\"fee\"" ) != FALSE ) {
             $matches = array();
-
-            if( preg_match( "/(txn_[^\"]*)\"/", $line, $matches ) ) {
+            
+            if( preg_match( "/(\d+),/", $line, $matches ) ) {
                 
-                $balance_transaction = $matches[1];
+                $fee = $matches[1];
+                
+                // in dollars
+                $fee = $fee / 100;
                 }
             }
         }
@@ -1154,53 +1158,11 @@ function cm_makeDeposit() {
     $dollar_balance += $dollar_amount;
     
 
+    // fee is taken out of amount actually deposited, but we
+    // don't pass this onto player.
 
-    
-    // parse balance_transaction from Stripe response, and use it
-    // to query v1/balance/history to find fee for the transaction
-    // SUBTRACT it from house_dollar_balance
-    // ADD      it to house_withdrawals
-    // (It's like money that has been auto-withdrawn from the house account.)
-
-    global $stripeBalanceHistoryURL;
-    
-    $curlCallString =
-        "$curlPath ".
-        "'$stripeBalanceHistoryURL/$balance_transaction' ".
-        "-u $stripeSecretKey".": ";
-
-    // cm_log( "Calling Stripe with CURL:  $curlCallString" );
-    
-    $output = array();
-    exec( $curlCallString, $output );
-    
-    // process result
-    $outputString = implode( "\n", $output );
-
-    $fee = 0;
-    
-    if( strstr( $outputString, "error" ) != FALSE ) {
-        
-        cm_log( "Failed to get fee info for transaction, ".
-                "stripe error:\n$outputString" );
-        }
-    else {
-        foreach( $output as $line ) {
-
-            if( strstr( $line, "\"fee\"" ) != FALSE ) {
-                $matches = array();
-
-                if( preg_match( "/(\d+),/", $line, $matches ) ) {
-                
-                    $fee = $matches[1];
-
-                    // in dollars
-                    $fee = $fee / 100;
-                    }
-                }
-            }
-        }
-
+    // instead, count it as a withdrawal (an automatic one)
+    // from the house balance.
     
     if( $fee != 0 ) {
         $query = "UPDATE $tableNamePrefix". "server_globals SET ".
