@@ -86,8 +86,11 @@ free "FREE"
 
 checkNote "US RESIDENTS ONLY:##(%s)"
 
+checkBalanceLow "(BALANCE TOO LOW FOR CHECK)" 
+
 transferNote "WORLDWIDE RESIDENTS:##(%s)"
 
+transferBalanceLow "(BALANCE TOO LOW FOR TRANSFER)" 
 
 
 withdrawMoney "WITDRAW $"

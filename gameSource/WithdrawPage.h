@@ -29,5 +29,8 @@ class WithdrawPage : public ServerActionPage, public ActionListener {
         TextButton mSendCheckButton;
         TextButton mAccountTransferButton;
         TextButton mCancelButton;
+        
 
+        char mCheckAvailable;
+        char mTransferAvailable;
     };

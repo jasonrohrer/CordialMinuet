@@ -4,6 +4,7 @@
 
 
 #include <math.h>
+#include <limits.h>
 
 
 
@@ -30,7 +31,7 @@ NumberPicker::NumberPicker( Font *inDisplayFont,
           mUsableDigits( inMaxMainDigits + inMaxFractionDigits ),
           mAdjustable( true ),
           mLabelText( NULL ),
-          mMax( -1 ), mMin( 0 ) {
+          mMax( DBL_MAX ), mMin( 0 ) {
 
     
     mUpButtons = new SpriteButton *[mMaxTotalDigits];
@@ -120,6 +121,11 @@ void NumberPicker::setMax( double inMax ) {
             }
         }
     
+    if( mUsableDigits < mMaxFractionDigits + 1 ) {
+        // always show complete fractional part, if that's all we have
+        mUsableDigits = mMaxFractionDigits + 1;
+        }
+    
     
     for( int i=0; i<mMaxTotalDigits; i++ ) {
         if( i < mUsableDigits ) {
@@ -147,6 +153,24 @@ void NumberPicker::setMin( double inMin ) {
 
 
 
+
+void NumberPicker::setValue( double inValue, int inDigits[] ) {
+    double factor = pow( 10, mMaxFractionDigits );
+    
+
+    double roundingTerm = 1.0 / pow( 10, mMaxFractionDigits + 1 );
+    
+    double roundedValue = inValue + roundingTerm;
+
+    for( int i=0; i<mMaxTotalDigits; i++ ) {
+        inDigits[i] = ( (int)( roundedValue * factor ) ) % 10;
+        
+        factor /= 10;
+        }
+    }
+
+
+
 void NumberPicker::setValue( double inValue ) {
     if( mMax >= 0 && 
         inValue >= mMax ) {
@@ -159,73 +183,28 @@ void NumberPicker::setValue( double inValue ) {
         }
     
 
-    double factor = pow( 10, mMaxFractionDigits );
+    setValue( inValue, mDigits );
     
-
-    double roundingTerm = 1.0 / pow( 10, mMaxFractionDigits + 1 );
-    
-    double roundedValue = inValue + roundingTerm;
-
-    for( int i=0; i<mMaxTotalDigits; i++ ) {
-        mDigits[i] = ( (int)( roundedValue * factor ) ) % 10;
-        
-        factor /= 10;
-        }
-
-
-    if( inValue == mMax ) {
-        for( int i=0; i<mUsableDigits; i++ ) {
+    for( int i=0; i<mUsableDigits; i++ ) {
             
-            // can digit be tweaked up and bring value less than max?
-            if( getTweakedValue( i, +1 ) < mMax ) {
-                mUpButtons[i]->setVisible( true );
-                }
-            else {
-                mUpButtons[i]->setVisible( false );
-                }
-            
-            // can digit be tweaked down and bring value less than max?
-            if( getTweakedValue( i, -1 ) < mMax ) {
-                mDownButtons[i]->setVisible( true );
-                }
-            else {
-                mDownButtons[i]->setVisible( false );
-                }
-            }
-        }
-
-    if( inValue == mMin ) {
-        for( int i=0; i<mUsableDigits; i++ ) {
-            
-            // can digit be tweaked up and bring value greater than min?
-            if( getTweakedValue( i, +1 ) > mMin ) {
-                mUpButtons[i]->setVisible( true );
-                }
-            else {
-                mUpButtons[i]->setVisible( false );
-                }
-
-            // can digit be tweaked down and bring value greater than min?
-            if( getTweakedValue( i, -1 ) > mMin ) {
-                mDownButtons[i]->setVisible( true );
-                }
-            else {
-                mDownButtons[i]->setVisible( false );
-                }
-            }
-        }
-
-    if( inValue != mMin && inValue != mMax ) {
-
-        for( int i=0; i<mUsableDigits; i++ ) {
+        // can digit be tweaked up to a different value?
+        int upTweaked = getTweakedValue( i, +1 );
+        if( upTweaked != mDigits[i] ) {
             mUpButtons[i]->setVisible( true );
             }
-
-        for( int i=0; i<mUsableDigits; i++ ) {
+        else {
+            mUpButtons[i]->setVisible( false );
+            }
+        
+        // can digit be tweaked down to a different value?
+        double downTweaked = getTweakedValue( i, -1 );
+        if( downTweaked != mDigits[i] ) {
             mDownButtons[i]->setVisible( true );
             }
+        else {
+            mDownButtons[i]->setVisible( false );
+            }
         }
-    
     
     if( !mAdjustable ) {
         for( int i=0; i<mUsableDigits; i++ ) {
@@ -270,7 +249,7 @@ double NumberPicker::getValue() {
 
 
 
-double NumberPicker::getTweakedValue( int inDigitToTweak, int inTweakDelta ) {
+int NumberPicker::getTweakedValue( int inDigitToTweak, int inTweakDelta ) {
     int *tempDigits = new int[ mMaxTotalDigits ];
     memcpy( tempDigits, mDigits, mMaxTotalDigits * sizeof( int ) );
     
@@ -284,9 +263,24 @@ double NumberPicker::getTweakedValue( int inDigitToTweak, int inTweakDelta ) {
         }
 
     double tempValue = getValue( tempDigits );
+    
+    
+    if( tempValue > mMax ) {
+        tempValue = mMax;
+        }
+    else if( tempValue < mMin ) {
+        tempValue = mMin;
+        }
+    
+    setValue( tempValue, tempDigits );
+    
+
+    int returnValue = tempDigits[inDigitToTweak];
+
     delete [] tempDigits;
     
-    return tempValue;
+
+    return returnValue;
     }
 
 

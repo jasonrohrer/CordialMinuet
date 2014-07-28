@@ -73,14 +73,18 @@ class NumberPicker : public PageComponent, public ActionListener {
         double mMax;
         double mMin;
 
-        
+
+        void setValue( double inValue, int inDigits[] );
+
         double getValue( int inDigits[] );
         
-        // what is the value of our digits if we tweak one digit up or down
-        double getTweakedValue( int inDigitToTweak, int inTweakDelta );
+        // what is the value of a digit if we tweak it up or down?
+        // applies wrap-around
+        // this includes capping of all-digit value to min/max range
+        // (thus, sometimes a tweaked digit doesn't change)
+        int getTweakedValue( int inDigitToTweak, int inTweakDelta );
         
         
-
     };
 
 

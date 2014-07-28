@@ -21,6 +21,7 @@ extern char gamePlayingBack;
 
 extern double checkCost;
 extern double transferCost;
+extern double userBalance;
 
 
 
@@ -34,7 +35,9 @@ WithdrawPage::WithdrawPage()
           mAccountTransferButton( mainFont, 0, -64, 
                                   translate( "accountTransfer" ) ),
           mCancelButton( mainFont, 0, -200, 
-                         translate( "cancel" ) ) {
+                         translate( "cancel" ) ),
+          mCheckAvailable( false ), 
+          mTransferAvailable( false ) {
 
     addComponent( &mSendCheckButton );
     addComponent( &mAccountTransferButton );
@@ -78,7 +81,10 @@ void WithdrawPage::makeActive( char inFresh ) {
     mSendCheckButton.setVisible( false );
     mAccountTransferButton.setVisible( false );
     mCancelButton.setVisible( false );
-    
+
+    mCheckAvailable = false;
+    mTransferAvailable = false;
+
     startRequest();
     }
 
@@ -112,15 +118,23 @@ void WithdrawPage::step() {
             if( numParts == 2 ) {
                 if( strcmp( parts[0], "us_check" ) == 0 ) {
                     
-                    mSendCheckButton.setVisible( true );
-
+                    mCheckAvailable = true;
+                    
                     sscanf( parts[1], "%lf", &checkCost );
+                    
+                    if( userBalance >= checkCost + 0.01 ) {
+                        mSendCheckButton.setVisible( true );
+                        }
                     }
                 else if( strcmp( parts[0], "account_transfer" ) == 0 ) {
-                    
-                    mAccountTransferButton.setVisible( true );
+
+                    mTransferAvailable = true;
 
                     sscanf( parts[1], "%lf", &transferCost );
+                    
+                    if( userBalance >= transferCost + 0.01 ) {
+                        mAccountTransferButton.setVisible( true );
+                        }
                     }
                 }
             
@@ -139,6 +153,7 @@ void WithdrawPage::step() {
 
 
 static void drawButtonNote( Button *inButton, const char *inNoteKey,
+                            const char *inBalanceLowKey,
                             double inCost ) {
     doublePair labelPos = inButton->getPosition();
 
@@ -157,10 +172,18 @@ static void drawButtonNote( Button *inButton, const char *inNoteKey,
     
     char *message = autoSprintf( translate( inNoteKey ), feeString );
     delete [] feeString;
-    
-    drawMessage( message, labelPos );
 
+    if( inButton->isVisible() ) {
+        drawMessage( message, labelPos );
+        }
+    
     delete [] message;
+
+    if( ! inButton->isVisible() ) {
+        labelPos = inButton->getPosition();
+        
+        drawMessage( inBalanceLowKey, labelPos );
+        }
     }
 
 
@@ -169,11 +192,13 @@ void WithdrawPage::draw( doublePair inViewCenter,
                              double inViewSize ) {
 
 
-    if( mSendCheckButton.isVisible() ) {
-        drawButtonNote( &mSendCheckButton, "checkNote", checkCost );
+    if( mCheckAvailable ) {
+        drawButtonNote( &mSendCheckButton, "checkNote", "checkBalanceLow",
+                        checkCost );
         }
-    if( mAccountTransferButton.isVisible() ) {
+    if( mTransferAvailable ) {
         drawButtonNote( &mAccountTransferButton, "transferNote", 
+                        "transferBalanceLow", 
                         transferCost );
         }
     
