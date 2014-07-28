@@ -1577,10 +1577,10 @@ function cm_sendUSCheck() {
 
     
     $check_amount = $dollar_amount - $lobCheckCost;
-    $check_amount = number_format( $check_amount, 2 );
+    $check_amount_string = number_format( $check_amount, 2 );
     
     
-    cm_log( "Got a verfied [\$$check_amount] US check request to:\n".
+    cm_log( "Got a verfied [\$$check_amount_string] US check request to:\n".
             "$name\n".
             "$address1\n".
             "$address2\n".
@@ -1851,7 +1851,7 @@ function cm_accountTransfer() {
 
     
     $transfer_amount = $dollar_amount - $transferCost;
-    $transfer_amount = number_format( $transfer_amount, 2 );
+    $transfer_amount_string = number_format( $transfer_amount, 2 );
 
 
     $query = "SELECT COUNT(*) FROM $tableNamePrefix"."users ".
@@ -1899,7 +1899,7 @@ function cm_accountTransfer() {
     
     
     global $remoteIP;
-    cm_log( "Account transfer of \$$dollar_amount ".
+    cm_log( "Account transfer of \$$dollar_amount_string ".
             "($transfer_amount after fee) from $email to $recipient_email ".
             "by $remoteIP" );
     
