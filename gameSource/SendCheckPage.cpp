@@ -126,7 +126,7 @@ void SendCheckPage::actionPerformed( GUIComponent *inTarget ) {
     if( inTarget == &mSendCheckButton ) {
         setStatus( NULL, false );
 
-        setActionParameter( "check_sequence_number", serverSequenceNumber );
+        setActionParameter( "request_sequence_number", serverSequenceNumber );
         
         char *pureKey = getPureAccountKey();
         

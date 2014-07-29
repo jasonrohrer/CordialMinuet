@@ -84,7 +84,7 @@ void AccountTransferPage::actionPerformed( GUIComponent *inTarget ) {
     if( inTarget == &mTransferButton ) {
         setStatus( NULL, false );
 
-        setActionParameter( "check_sequence_number", serverSequenceNumber );
+        setActionParameter( "request_sequence_number", serverSequenceNumber );
         
         char *pureKey = getPureAccountKey();
         

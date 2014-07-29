@@ -37,6 +37,8 @@ set_error_handler( "cm_noticeAndWarningHandler", E_NOTICE | E_WARNING );
 include( "settings.php" );
 
 
+include( "semaphores.php" );
+
 
 // no end-user settings below this point
 
@@ -173,7 +175,8 @@ if( $shutdownMode &&
       $action == "make_deposit" ||
       $action == "get_withdrawal_methods" ||
       $action == "send_us_check" ||
-      $action == "account_transfer" ) ) {
+      $action == "account_transfer" ||
+      $action == "create_games" ) ) {
     
     echo "SHUTDOWN";
     global $shutdownMessage;
@@ -212,6 +215,9 @@ else if( $action == "send_us_check" ) {
     }
 else if( $action == "account_transfer" ) {
     cm_accountTransfer();
+    }
+else if( $action == "create_game" ) {
+    cm_createGame();
     }
 else if( $action == "check_for_flush" ) {
     cm_checkForFlush();
@@ -269,6 +275,7 @@ else if( preg_match( "/server\.php/", $_SERVER[ "SCRIPT_NAME" ] ) ) {
         cm_doesTableExist( $tableNamePrefix."server_globals" ) &&
         cm_doesTableExist( $tableNamePrefix."log" ) &&
         cm_doesTableExist( $tableNamePrefix."users" ) &&
+        cm_doesTableExist( $tableNamePrefix."games" ) &&
         cm_doesTableExist( $tableNamePrefix."server_stats" ) &&
         cm_doesTableExist( $tableNamePrefix."user_stats" );
     
@@ -331,8 +338,8 @@ function cm_setupDatabase() {
         $query =
             "CREATE TABLE $tableName(" .
             "last_flush_time DATETIME NOT NULL, ".
-            "house_dollar_balance DECIMAL(64, 4)  NOT NULL, ".
-            "house_withdrawals DECIMAL(64, 4) NOT NULL ) ENGINE = INNODB;";
+            "house_dollar_balance DECIMAL(13, 4) NOT NULL, ".
+            "house_withdrawals DECIMAL(13, 4) NOT NULL ) ENGINE = INNODB;";
 
         $result = cm_queryDatabase( $query );
 
@@ -353,7 +360,7 @@ function cm_setupDatabase() {
 
         $query =
             "CREATE TABLE $tableName(" .
-            "log_id INT NOT NULL PRIMARY KEY AUTO_INCREMENT, ".
+            "log_id BIGINT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT, ".
             "entry TEXT NOT NULL, ".
             "entry_time DATETIME NOT NULL );";
 
@@ -376,24 +383,65 @@ function cm_setupDatabase() {
         // to prevent replay attacks
         $query =
             "CREATE TABLE $tableName(" .
-            "user_id INT NOT NULL PRIMARY KEY AUTO_INCREMENT," .
+            "user_id INT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT," .
             "account_key VARCHAR(255) NOT NULL," .
             "INDEX( account_key )," .
             "email VARCHAR(255) NOT NULL," .
             "INDEX( email ),".
-            "dollar_balance DECIMAL(64, 4) NOT NULL,".
-            "num_deposits INT NOT NULL,".
-            "total_deposits DECIMAL(64, 4) NOT NULL,".
-            "num_withdrawals INT NOT NULL,".
-            "total_withdrawals DECIMAL(64, 4) NOT NULL,".
-            "total_won DECIMAL(64, 4) NOT NULL,".
-            "total_lost DECIMAL(64, 4) NOT NULL,".
-            "sequence_number INT NOT NULL," .
-            "check_sequence_number INT NOT NULL," .
+            // 9 whole dollar digits (up to 999,999,999)
+            // 4 fractional digits (0.0001 resolution)
+            "dollar_balance DECIMAL(13, 4) NOT NULL,".
+            "num_deposits SMALLINT UNSIGNED NOT NULL,".
+            "total_deposits DECIMAL(13, 4) NOT NULL,".
+            "num_withdrawals SMALLINT UNSIGNED NOT NULL,".
+            "total_withdrawals DECIMAL(13, 4) NOT NULL,".
+            "total_won DECIMAL(13, 4) NOT NULL,".
+            "total_lost DECIMAL(13, 4) NOT NULL,".
+            "sequence_number INT UNSIGNED NOT NULL," .
+            "request_sequence_number INT UNSIGNED NOT NULL," .
             "last_action_time DATETIME NOT NULL," .
-            "last_request_tag TEXT NOT NULL,".
+            "last_request_tag CHAR(40) NOT NULL,".
             "last_request_response TEXT NOT NULL,".
             "blocked TINYINT NOT NULL ) ENGINE = INNODB;";
+
+        $result = cm_queryDatabase( $query );
+
+        echo "<B>$tableName</B> table created<BR>";
+        }
+    else {
+        echo "<B>$tableName</B> table already exists<BR>";
+        }
+
+
+
+    $tableName = $tableNamePrefix . "games";
+    if( ! cm_doesTableExist( $tableName ) ) {
+
+        // this table contains general info about each user
+        //
+        // sequence number used and incremented with each client request
+        // to prevent replay attacks
+        $query =
+            "CREATE TABLE $tableName(" .
+            "game_id CHAR(40) NOT NULL PRIMARY KEY," .
+            "INDEX( game_id ),".
+            "player_1_id INT UNSIGNED NOT NULL," .
+            "INDEX( player_1_id )," .
+            "player_2_id INT UNSIGNED NOT NULL," .
+            "INDEX( player_2_id )," .
+            "dollar_amount DECIMAL(13, 4) NOT NULL,".
+            "INDEX( dollar_amount )," .
+            // 36-cell square, numbers from 1 to 36, separated by #
+            // character
+            "game_square CHAR(125) NOT NULL,".
+            "first_user_moves CHAR(11) NOT NULL,".
+            "second_user_moves CHAR(11) NOT NULL,".
+            "player_1_coins TINYINT UNSIGNED NOT NULL, ".
+            "player_2_coins TINYINT UNSIGNED NOT NULL, ".
+            "player_1_pot_coins TINYINT UNSIGNED NOT NULL, ".
+            "player_2_pot_coins TINYINT UNSIGNED NOT NULL, ".
+            "house_coins TINYINT UNSIGNED NOT NULL, ".
+            "semaphore_key INT UNSIGNED NOT NULL ) ENGINE = INNODB;";
 
         $result = cm_queryDatabase( $query );
 
@@ -413,13 +461,13 @@ function cm_setupDatabase() {
         $query =
             "CREATE TABLE $tableName(" .
             "stat_date DATE NOT NULL PRIMARY KEY," .
-            "unique_users INT NOT NULL DEFAULT 0," .
+            "unique_users INT UNSIGNED NOT NULL DEFAULT 0," .
 
-            "database_connections INT NOT NULL DEFAULT 0," .
-            "max_concurrent_connections INT NOT NULL DEFAULT 0," .
+            "database_connections INT UNSIGNED NOT NULL DEFAULT 0," .
+            "max_concurrent_connections INT UNSIGNED NOT NULL DEFAULT 0," .
 
-            "game_count INT NOT NULL DEFAULT 0,".
-            "total_buy_in DECIMAL(64, 4) NOT NULL DEFAULT 0 ".
+            "game_count INT UNSIGNED NOT NULL DEFAULT 0,".
+            "total_buy_in DECIMAL(13, 4) NOT NULL DEFAULT 0 ".
             ") ENGINE = INNODB;";
         
 
@@ -447,9 +495,9 @@ function cm_setupDatabase() {
         $query =
             "CREATE TABLE $tableName(" .
             "stat_time DATETIME NOT NULL PRIMARY KEY," .
-            "users_last_five_minutes INT NOT NULL," .
-            "users_last_hour INT NOT NULL," .
-            "users_last_day INT NOT NULL );";
+            "users_last_five_minutes INT UNSIGNED NOT NULL," .
+            "users_last_hour INT UNSIGNED NOT NULL," .
+            "users_last_day INT UNSIGNED NOT NULL );";
         
 
         $result = cm_queryDatabase( $query );
@@ -1202,7 +1250,7 @@ function cm_makeDeposit() {
                 "total_won = 0, ".
                 "total_lost = 0, ".
                 "sequence_number = 0, ".
-                "check_sequence_number = 0, ".
+                "request_sequence_number = 0, ".
                 "last_action_time = CURRENT_TIMESTAMP, ".
                 "last_request_tag = '$request_tag', ".
                 "last_request_response = '', ".
@@ -1380,12 +1428,12 @@ function cm_getWithdrawalMethods() {
 
 
 
-function cm_verifyCheckHMAC( $account_key, $check_sequence_number,
+function cm_verifyCheckHMAC( $account_key, $request_sequence_number,
                              $field_name, $field_value ) {
     $field_hmac = cm_requestFilter( "$field_name"."_hmac",
                                      "/[A-F0-9]+/i" );
     if( strtoupper( $field_hmac ) !=
-        strtoupper( cm_hmac_sha1( $account_key . $check_sequence_number,
+        strtoupper( cm_hmac_sha1( $account_key . $request_sequence_number,
                                   $field_value ) ) ) {
         
 
@@ -1430,7 +1478,7 @@ function cm_sendUSCheck() {
     cm_queryDatabase( "SET AUTOCOMMIT=0" );
     
     $query = "SELECT email, account_key, dollar_balance, ".
-        "check_sequence_number, blocked ".
+        "request_sequence_number ".
         "FROM $tableNamePrefix"."users ".
         "WHERE user_id = '$user_id' FOR UPDATE;";
 
@@ -1448,24 +1496,19 @@ function cm_sendUSCheck() {
 
     $row = mysql_fetch_array( $result, MYSQL_ASSOC );
 
-    if( $row[ "blocked" ] ) {
-        cm_log( "cm_sendUSCheck, user $user_id blocked" );
-        cm_transactionDeny();
-        return;
-        }
 
     $email = $row[ "email" ];
     $account_key = $row[ "account_key" ];
     $dollar_balance = $row[ "dollar_balance" ];
-    $old_check_sequence_number = $row[ "check_sequence_number" ];
+    $old_request_sequence_number = $row[ "request_sequence_number" ];
 
 
-    $check_sequence_number =
-        cm_requestFilter( "check_sequence_number", "/\d+/" );
+    $request_sequence_number =
+        cm_requestFilter( "request_sequence_number", "/\d+/" );
 
 
-    if( $check_sequence_number < $old_check_sequence_number ) {
-        cm_log( "cm_sendUSCheck, stale check sequence number" );
+    if( $request_sequence_number < $old_request_sequence_number ) {
+        cm_log( "cm_sendUSCheck, stale request sequence number" );
         cm_transactionDeny();
         return;
         }
@@ -1474,7 +1517,7 @@ function cm_sendUSCheck() {
     $dollar_amount = cm_requestFilter(
         "dollar_amount", "/[0-9]+[.][0-9][0-9]/i", "0.00" );
 
-    if( ! cm_verifyCheckHMAC( $account_key, $check_sequence_number,
+    if( ! cm_verifyCheckHMAC( $account_key, $request_sequence_number,
                               "dollar_amount", $dollar_amount ) ) {
         return;
         }
@@ -1499,7 +1542,7 @@ function cm_sendUSCheck() {
     $name = cm_requestFilter(
         "name", "/[A-Za-z.\-' ]+/i", "" );
 
-    if( ! cm_verifyCheckHMAC( $account_key, $check_sequence_number,
+    if( ! cm_verifyCheckHMAC( $account_key, $request_sequence_number,
                               "name", $name ) ) {
         return;
         }
@@ -1512,7 +1555,7 @@ function cm_sendUSCheck() {
     $address1 = cm_requestFilter(
         "address1", "/[A-Za-z.\-' ,0-9#]+/i", "" );
 
-    if( ! cm_verifyCheckHMAC( $account_key, $check_sequence_number,
+    if( ! cm_verifyCheckHMAC( $account_key, $request_sequence_number,
                               "address1", $address1 ) ) {
         return;
         }
@@ -1525,7 +1568,7 @@ function cm_sendUSCheck() {
     $address2 = cm_requestFilter(
         "address2", "/[A-Za-z.\-' ,0-9#]+/i", "" );
 
-    if( ! cm_verifyCheckHMAC( $account_key, $check_sequence_number,
+    if( ! cm_verifyCheckHMAC( $account_key, $request_sequence_number,
                               "address2", $address2 ) ) {
         return;
         }
@@ -1535,7 +1578,7 @@ function cm_sendUSCheck() {
     $city = cm_requestFilter(
         "city", "/[A-Za-z.\-' ,]+/i", "" );
 
-    if( ! cm_verifyCheckHMAC( $account_key, $check_sequence_number,
+    if( ! cm_verifyCheckHMAC( $account_key, $request_sequence_number,
                               "city", $city ) ) {
         return;
         }
@@ -1550,7 +1593,7 @@ function cm_sendUSCheck() {
     $state = cm_requestFilter(
         "state", "/[A-Z][A-Z]/", "" );
 
-    if( ! cm_verifyCheckHMAC( $account_key, $check_sequence_number,
+    if( ! cm_verifyCheckHMAC( $account_key, $request_sequence_number,
                               "state", $state ) ) {
         return;
         }
@@ -1565,7 +1608,7 @@ function cm_sendUSCheck() {
     $zip = cm_requestFilter(
         "zip", "/\d{5}([- ]\d{4})?/", "" );
 
-    if( ! cm_verifyCheckHMAC( $account_key, $check_sequence_number,
+    if( ! cm_verifyCheckHMAC( $account_key, $request_sequence_number,
                               "zip", $zip ) ) {
         return;
         }
@@ -1704,7 +1747,7 @@ function cm_sendUSCheck() {
         
     $query = "UPDATE $tableNamePrefix". "users SET ".
         "dollar_balance = '$dollar_balance', ".
-        "check_sequence_number = $check_sequence_number + 1, ".
+        "request_sequence_number = $request_sequence_number + 1, ".
         "num_withdrawals = num_withdrawals + 1, ".
         // track amount they receive by check
         // check fee is added to house_balance below
@@ -1762,7 +1805,7 @@ function cm_accountTransfer() {
     cm_queryDatabase( "SET AUTOCOMMIT=0" );
     
     $query = "SELECT email, account_key, dollar_balance, ".
-        "check_sequence_number, blocked ".
+        "request_sequence_number ".
         "FROM $tableNamePrefix"."users ".
         "WHERE user_id = '$user_id' FOR UPDATE;";
 
@@ -1780,25 +1823,19 @@ function cm_accountTransfer() {
 
     $row = mysql_fetch_array( $result, MYSQL_ASSOC );
 
-    if( $row[ "blocked" ] ) {
-        cm_log( "cm_accountTransfer, user $user_id blocked" );
-        cm_transactionDeny();
-        return;
-        }
-
     
     $email = $row[ "email" ];
     $account_key = $row[ "account_key" ];
     $dollar_balance = $row[ "dollar_balance" ];
-    $old_check_sequence_number = $row[ "check_sequence_number" ];
+    $old_request_sequence_number = $row[ "request_sequence_number" ];
 
 
-    $check_sequence_number =
-        cm_requestFilter( "check_sequence_number", "/\d+/" );
+    $request_sequence_number =
+        cm_requestFilter( "request_sequence_number", "/\d+/" );
 
 
-    if( $check_sequence_number < $old_check_sequence_number ) {
-        cm_log( "cm_accountTransfer, stale check sequence number" );
+    if( $request_sequence_number < $old_request_sequence_number ) {
+        cm_log( "cm_accountTransfer, stale request sequence number" );
         cm_transactionDeny();
         return;
         }
@@ -1808,7 +1845,7 @@ function cm_accountTransfer() {
         cm_requestFilter( "recipient_email",
                           "/[A-Z0-9._%+-]+@[A-Z0-9.-]+/i", "" );
 
-    if( ! cm_verifyCheckHMAC( $account_key, $check_sequence_number,
+    if( ! cm_verifyCheckHMAC( $account_key, $request_sequence_number,
                               "recipient_email", $recipient_email ) ) {
         return;
         }
@@ -1826,7 +1863,7 @@ function cm_accountTransfer() {
     $dollar_amount = cm_requestFilter(
         "dollar_amount", "/[0-9]+[.][0-9][0-9]/i", "0.00" );
 
-    if( ! cm_verifyCheckHMAC( $account_key, $check_sequence_number,
+    if( ! cm_verifyCheckHMAC( $account_key, $request_sequence_number,
                               "dollar_amount", $dollar_amount ) ) {
         return;
         }
@@ -1873,7 +1910,7 @@ function cm_accountTransfer() {
         
     $query = "UPDATE $tableNamePrefix"."users SET ".
         "dollar_balance = '$dollar_balance', ".
-        "check_sequence_number = $check_sequence_number + 1, ".
+        "request_sequence_number = $request_sequence_number + 1, ".
         "num_withdrawals = num_withdrawals + 1, ".
         // track amount recipient receives
         // transfer fee is added to house_balance below
@@ -1902,6 +1939,147 @@ function cm_accountTransfer() {
     cm_log( "Account transfer of \$$dollar_amount_string ".
             "($transfer_amount after fee) from $email to $recipient_email ".
             "by $remoteIP" );
+    
+    cm_queryDatabase( "COMMIT;" );
+    cm_queryDatabase( "SET AUTOCOMMIT=1" );
+        
+    echo $response;
+    }
+
+
+
+// ends any games that this user is part of
+// (to clear up conflicts before starting new games
+
+// assumes that autocommit is off
+function cm_endOldGames( $user_id ) {
+    global $tableNamePrefix;
+    
+    $query = "SELECT game_id, semaphore_key, player_1_id, player_2_id ".
+        "FROM $tableNamePrefix"."games ".
+        "WHERE player_1_id = '$user_id' OR player_2_id = '$user_id' ".
+        "FOR UPDATE;";
+
+    $result = cm_queryDatabase( $query );
+
+    
+    $numRows = mysql_numrows( $result );
+
+    for( $i = 0; $i<$numRows; $i++ ) {
+        $game_id = mysql_result( $result, $i, "game_id" );
+        $semaphore_key = mysql_result( $result, $i, "semaphore_key" );
+        $player_1_id = mysql_result( $result, $i, "player_1_id" );
+        $player_2_id = mysql_result( $result, $i, "player_2_id" );
+        
+        if( $player_1_id == $user_id ) {
+            $player_1_id = -1;
+            }
+        if( $player_2_id == $user_id ) {
+            $player_2_id = -1;
+            }
+
+        $query = "UPDATE $tableNamePrefix"."games ".
+            "SET player_1_id = '$player_1_id', player_2_id = '$player_2_id' ".
+            "WHERE game_id = '$game_id';";
+
+        cm_queryDatabase( $query );
+        
+        // if other player is waiting for our move, free them to find
+        // out that we left
+        semSignal( $semaphore_key );
+        }
+    }
+
+
+
+
+function cm_createGame() {
+    if( ! cm_verifyTransaction() ) {
+        return;
+        }
+
+    if( cm_handleRepeatResponse() ) {
+        return;
+        }
+
+    $request_tag = cm_requestFilter( "request_tag", "/[A-F0-9]+/i", "" );
+    
+    global $tableNamePrefix ;
+
+        
+    $user_id = cm_getUserID();
+
+    cm_queryDatabase( "SET AUTOCOMMIT=0" );
+
+    
+    $query = "SELECT account_key, dollar_balance, ".
+        "request_sequence_number ".
+        "FROM $tableNamePrefix"."users ".
+        "WHERE user_id = '$user_id' FOR UPDATE;";
+
+    $result = cm_queryDatabase( $query );
+
+
+    $numRows = mysql_numrows( $result );
+
+    
+    if( $numRows == 0 ) {
+        cm_log( "cm_accountTransfer, user $user_id not found" );
+        cm_transactionDeny();
+        return;
+        }
+
+    $row = mysql_fetch_array( $result, MYSQL_ASSOC );
+
+    
+
+    $account_key = $row[ "account_key" ];
+    $dollar_balance = $row[ "dollar_balance" ];
+    $old_request_sequence_number = $row[ "request_sequence_number" ];
+
+
+    $request_sequence_number =
+        cm_requestFilter( "request_sequence_number", "/\d+/" );
+
+
+    if( $request_sequence_number < $old_request_sequence_number ) {
+        cm_log( "cm_createGame, stale request sequence number" );
+        cm_transactionDeny();
+        return;
+        }
+
+    // four fractional digits here
+    $dollar_amount = cm_requestFilter(
+        "dollar_amount", "/[0-9]+[.][0-9][0-9][0-9][0-9]/i", "0.0000" );
+
+    if( ! cm_verifyCheckHMAC( $account_key, $request_sequence_number,
+                              "dollar_amount", $dollar_amount ) ) {
+        return;
+        }
+
+
+    if( $dollar_amount > $dollar_balance ) {
+        cm_log( "cm_createGame, balance too low for requested game" );
+        cm_transactionDeny();
+        return;
+        }
+    
+
+    // if we got here, we've got a valid request
+        
+    cm_endOldGames( $user_id );
+
+
+    // FIXME:
+    // add game to the game table
+
+    // then what?   Probably return the game id
+    // need a wait_game_start protocol call to wait for opponent
+
+    
+    
+
+    
     
     cm_queryDatabase( "COMMIT;" );
     cm_queryDatabase( "SET AUTOCOMMIT=1" );
