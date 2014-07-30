@@ -121,6 +121,12 @@ transferButton "TRANSFER"
 recipientNotFound "NO ACCOUNT FOR THIS EMAIL"
 
 
+newGame "NEW GAME"
+
+buyIn "BUY IN $"
+
+create "CREATE"
+
 
 
 pauseMessage1 "[ENTER] TO RESUME"

@@ -1,0 +1,56 @@
+#include "ServerActionPage.h"
+
+
+
+#include "minorGems/ui/event/ActionListener.h"
+
+
+#include "TextButton.h"
+#include "TextField.h"
+#include "NumberPicker.h"
+
+
+
+
+
+class CreateGamePage : public ServerActionPage, public ActionListener {
+        
+    public:
+        CreateGamePage();
+        
+        ~CreateGamePage();
+        
+        
+        virtual void actionPerformed( GUIComponent *inTarget );
+
+        virtual void makeActive( char inFresh );
+        
+        
+
+        // for TAB and ENTER (switch fields and start server action)
+        virtual void keyDown( unsigned char inASCII );
+        
+        
+        virtual void draw( doublePair inViewCenter, 
+                           double inViewSize );
+        
+        virtual void step();
+        
+    protected:
+
+        NumberPicker mAmountPicker;
+        
+
+        TextButton mCreateButton;
+
+        TextButton mCancelButton;
+
+        
+        
+
+        void makeFieldsActive();
+
+        void checkIfCreateButtonVisible();
+                
+        
+    };

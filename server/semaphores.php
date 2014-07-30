@@ -28,16 +28,10 @@ function semUnlock( $inKey ) {
 
 
 
-// unlocks a semaphore and waits on that semaphore for a signal
-function semWait( $inKey ) {
-    return semaphoreOp( $inKey, "wait" );
-    }
-
-
 // unlocks a semaphore and waits on that semaphore for a signal, giving
-// up after $inTimeoutMS milliseconds.
+// up after $inTimeoutMS milliseconds, if not -1
 // On timeout, returns -2
-function semWait( $inKey,  $inTimeoutMS ) {
+function semWait( $inKey,  $inTimeoutMS = -1 ) {
     return semaphoreOp( $inKey, "wait", $inTimeoutMS );
     }
 

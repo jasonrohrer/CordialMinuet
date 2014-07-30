@@ -23,6 +23,7 @@ class MenuPage : public GamePage, public ActionListener {
         
         TextButton mDepositButton;
         TextButton mWithdrawButton;
+        TextButton mNewGameButton;
 
 
 

@@ -23,17 +23,22 @@ MenuPage::MenuPage()
         : mDepositButton( mainFont, 0, 64, 
                           translate( "deposit" ) ),
           mWithdrawButton( mainFont, 0, -64, 
-                         translate( "withdraw" ) ) {
+                         translate( "withdraw" ) ),
+          mNewGameButton( mainFont, 0, -128, 
+                          translate( "newGame" ) ){
 
     addComponent( &mDepositButton );
     addComponent( &mWithdrawButton );
+    addComponent( &mNewGameButton );
     
     setButtonStyle( &mDepositButton );
     setButtonStyle( &mWithdrawButton );
+    setButtonStyle( &mNewGameButton );
     
 
     mDepositButton.addActionListener( this );
     mWithdrawButton.addActionListener( this );
+    mNewGameButton.addActionListener( this );
     }
 
 
@@ -44,6 +49,9 @@ void MenuPage::actionPerformed( GUIComponent *inTarget ) {
         }
     if( inTarget == &mWithdrawButton ) {
         setSignal( "withdraw" );
+        }
+    if( inTarget == &mNewGameButton ) {
+        setSignal( "newGame" );
         }
     }
 

@@ -159,6 +159,12 @@ $flushDuringClientCalls = true;
 
 
 
+// starting key for SysV semaphores
+// keys go up sequentially from this value
+$startingSemKey = 1977;
+
+
+
 
 $emailAdminOnFatalError = 0;
 

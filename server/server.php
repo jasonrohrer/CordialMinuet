@@ -28,6 +28,11 @@ global $cm_flushInterval;
 $cm_flushInterval = "0 0:02:0.000";
 
 
+
+global $cm_gameCoins;
+$cm_gameCoins = 100;
+
+
 // override the default Notice and Warning handler 
 set_error_handler( "cm_noticeAndWarningHandler", E_NOTICE | E_WARNING );
 
@@ -395,6 +400,10 @@ function cm_setupDatabase() {
             "total_deposits DECIMAL(13, 4) NOT NULL,".
             "num_withdrawals SMALLINT UNSIGNED NOT NULL,".
             "total_withdrawals DECIMAL(13, 4) NOT NULL,".
+            "games_created INT UNSIGNED NOT NULL,".
+            "games_joined INT UNSIGNED NOT NULL,".
+            "games_started INT UNSIGNED NOT NULL,".
+            "total_buy_in DECIMAL(13, 4) NOT NULL,".
             "total_won DECIMAL(13, 4) NOT NULL,".
             "total_lost DECIMAL(13, 4) NOT NULL,".
             "sequence_number INT UNSIGNED NOT NULL," .
@@ -424,6 +433,7 @@ function cm_setupDatabase() {
         $query =
             "CREATE TABLE $tableName(" .
             "game_id CHAR(40) NOT NULL PRIMARY KEY," .
+            "creation_time DATETIME NOT NULL,".
             "INDEX( game_id ),".
             "player_1_id INT UNSIGNED NOT NULL," .
             "INDEX( player_1_id )," .
@@ -436,11 +446,11 @@ function cm_setupDatabase() {
             "game_square CHAR(125) NOT NULL,".
             "first_user_moves CHAR(11) NOT NULL,".
             "second_user_moves CHAR(11) NOT NULL,".
+            "move_deadline DATETIME NOT NULL,".
             "player_1_coins TINYINT UNSIGNED NOT NULL, ".
             "player_2_coins TINYINT UNSIGNED NOT NULL, ".
             "player_1_pot_coins TINYINT UNSIGNED NOT NULL, ".
             "player_2_pot_coins TINYINT UNSIGNED NOT NULL, ".
-            "house_coins TINYINT UNSIGNED NOT NULL, ".
             "semaphore_key INT UNSIGNED NOT NULL ) ENGINE = INNODB;";
 
         $result = cm_queryDatabase( $query );
@@ -1952,10 +1962,14 @@ function cm_accountTransfer() {
 // (to clear up conflicts before starting new games
 
 // assumes that autocommit is off
+
+// returns payout to $user_id
 function cm_endOldGames( $user_id ) {
     global $tableNamePrefix;
     
-    $query = "SELECT game_id, semaphore_key, player_1_id, player_2_id ".
+    $query = "SELECT game_id, semaphore_key, player_1_id, player_2_id, ".
+        "dollar_amount, player_1_coins, player_2_coins, ".
+        "player_1_pot_coins, player_2_pot_coins, ".
         "FROM $tableNamePrefix"."games ".
         "WHERE player_1_id = '$user_id' OR player_2_id = '$user_id' ".
         "FOR UPDATE;";
@@ -1965,29 +1979,131 @@ function cm_endOldGames( $user_id ) {
     
     $numRows = mysql_numrows( $result );
 
+    global $cm_gameCoins;
+    
     for( $i = 0; $i<$numRows; $i++ ) {
         $game_id = mysql_result( $result, $i, "game_id" );
         $semaphore_key = mysql_result( $result, $i, "semaphore_key" );
         $player_1_id = mysql_result( $result, $i, "player_1_id" );
         $player_2_id = mysql_result( $result, $i, "player_2_id" );
+
+        $old_player_1_id = $player_1_id;
+        $old_player_2_id = $player_2_id;
+        
+        
+        $dollar_amount = mysql_result( $result, $i, "dollar_amount" );
+        
+        $player_1_coins = mysql_result( $result, $i, "player_1_coins" );
+        $player_2_coins = mysql_result( $result, $i, "player_2_coins" );
+
+        $player_1_pot_coins =
+            mysql_result( $result, $i, "player_1_pot_coins" );
+        $player_2_pot_coins =
+            mysql_result( $result, $i, "player_2_pot_coins" );
+
         
         if( $player_1_id == $user_id ) {
             $player_1_id = -1;
+
+            // whole pot to player 2
+            $player_2_coins += $player_2_pot_coins + $player_1_pot_coins;
             }
         if( $player_2_id == $user_id ) {
             $player_2_id = -1;
+            
+            // whole pot to player 1
+            $player_1_coins += $player_2_pot_coins + $player_1_pot_coins;
             }
 
+        $player_1_pot_coins = 0;
+        $player_2_pot_coins = 0;
+
+        $player_1_payout =
+            ( $player_1_coins * $dollar_amount ) / $cm_gameCoins;
+
+        $player_2_payout =
+            ( $player_2_coins * $dollar_amount ) / $cm_gameCoins;
+
+        $house_coins =
+            2 * $cm_gameCoins - ( $player_1_coins + $player_2_coins );
+        
+        $house_payout =
+            ( $house_coins * $dollar_amount ) / $cm_gameCoins;
+        
+        
         $query = "UPDATE $tableNamePrefix"."games ".
-            "SET player_1_id = '$player_1_id', player_2_id = '$player_2_id' ".
+            "SET player_1_id = '$player_1_id', player_2_id = '$player_2_id', ".
+            "$player_1_coins = '$player_1_coins', ".
+            "$player_2_coins = '$player_2_coins', ".
+            "$player_1_pot_coins = 0, ".
+            "$player_2_pot_coins = 0, ".
             "WHERE game_id = '$game_id';";
 
         cm_queryDatabase( $query );
+        
+        if( $player_1_id != -1 ||
+            $player_2_id != -1 ) {
+
+            // first player just left the game, payout both
+
+            $won = $player_1_payout - $dollar_amount;
+            $lost = 0;
+            
+            if( $won < 0 ) {
+                $lost = - $won;
+                $won = 0;
+                }
+            
+            $query = "UPDATE $tableNamePrefix"."users ".
+                "SET dollar_balance = dollar_balance + $player_1_payout, ".
+                "total_won = total_won + $won, ".
+                "total_lost = total_lost + $lost ".
+                "WHERE user_id = '$old_player_1_id';";
+            cm_queryDatabase( $query );
+
+            
+            $won = $player_2_payout - $dollar_amount;
+            $lost = 0;
+            
+            if( $won < 0 ) {
+                $lost = - $won;
+                $won = 0;
+                }
+            
+            $query = "UPDATE $tableNamePrefix"."users ".
+                "SET dollar_balance = dollar_balance + $player_2_payout, ".
+                "total_won = total_won + $won, ".
+                "total_lost = total_lost + $lost ".
+                "WHERE user_id = '$old_player_2_id';";
+            cm_queryDatabase( $query );
+
+
+            
+            $query = "UPDATE $tableNamePrefix"."server_globals ".
+                "SET  house_dollar_balance = ".
+                "  house_dollar_balance + $house_payout;";
+            cm_queryDatabase( $query );
+            }
+        
+        
+        
         
         // if other player is waiting for our move, free them to find
         // out that we left
         semSignal( $semaphore_key );
         }
+    }
+
+
+
+// for now, give everyone the same square
+function cm_getNewSquare() {
+    return "20#31#15#11#32#2".
+        "#7#5#36#34#16#13". 
+        "#18#23#27#6#12#25".
+        "#17#8#22#29#14#21".
+        "#19#35#1#28#4#24".
+        "#30#9#10#3#33#26";
     }
 
 
@@ -2070,16 +2186,125 @@ function cm_createGame() {
     cm_endOldGames( $user_id );
 
 
-    // FIXME:
+    // don't subtract from their balance yet
+    // wait until both join
+    // (we later cash them both out when the first one leaves, for
+    //  cleanest accounting.
+    //  There's no money sitting in idle, half-full games.)
+    $query = "UPDATE $tableNamePrefix"."users SET ".
+        "games_created = games_created + 1 ".
+        "WHERE user_id = '$user_id';";
+    
+    $result = cm_queryDatabase( $query );
+
+    $square = cm_getNewSquare();
+
+    $query = "SELECT MAX( semaphore_key ) FROM $tableNamePrefix".
+                "gameData;";
+
+
+    global $startingSemKey;
+    
     // add game to the game table
 
-    // then what?   Probably return the game id
-    // need a wait_game_start protocol call to wait for opponent
+
+    // watch for game_id collisions
+    $errorNumber = 1062;    
+    $madeGame = false;
+
+    $salt = 0;
+
+    $tryCount = 0;
+
+    global $cm_gameCoins;
+    
+    while( $tryCount < 10 && ! $madeGame && $errorNumber == 1062 ) {
+        
+        $query = "INSERT INTO $tableNamePrefix"."games SET ".
+            "game_id = ".
+            "   SHA1( CONCAT( '$user_id', ".
+            "                 '$square', '$salt', CURRENT_TIMESTAMP ) ), ".
+            "creation_time = CURRENT_TIMESTAMP, ".
+            "player_1_id = '$user_id'," .
+            "player_2_id = -1," .
+            "dollar_amount = '$dollar_amount',".
+            "game_square = '$square',".
+            "first_user_moves = '',".
+            "second_user_moves = '',".
+            "move_deadline = CURRENT_TIMESTAMP, ".
+            "player_1_coins = $cm_gameCoins, ".
+            "player_2_coins = $cm_gameCoins, ".
+            "player_1_pot_coins = 0, ".
+            "player_2_pot_coins = 0, ".
+            "house_coins = 0, ".
+            "semaphore_key = COALESCE( MAX( semaphore_key ), ".
+            "                               $startingSemKey );";
+        $result = mysql_query( $query );
+
+        if( $result ) {
+            $madeGame = true;
+            }
+        else {
+            $errorNumber = mysql_errno();
+
+
+            if( $errorNumber != 1062 ) {
+                cm_fatalError(
+                    "Database query failed:<BR>$query<BR><BR>" .
+                    mysql_error() );
+                }
+            else {
+                $errorMessage = mysql_error();
+                
+                cm_log( "Game ID collision.  ".
+                        "Error: [$errorNumber] $errorMessage " );
+                
+                $salt ++;
+                $tryCount ++;
+                }
+            }
+        }
+
+    $query = "SELECT game_id, semaphore_key ".
+        "FROM $tableNamePrefix"."games ".
+        "WHERE player_2_id = '$user_id';";
+
+    $result = cm_queryDatabase( $query );
+
+
+    $numRows = mysql_numrows( $result );
 
     
-    
+    if( $numRows == 0 ) {
+        cm_log( "Newly created game not found" );
+        cm_transactionDeny();
+        return;
+        }
 
+    $game_id = mysql_result( $result, 0, "game_id" );
+    $semaphore_key = mysql_result( $result, 0, "semaphore_key" );
+
+    while( semInitLock( $semaphore_key ) != 0 ) {
+
+        $semaphore_key ++;
+
+        $query = "UPDATE $tableNamePrefix"."games SET ".
+            "semaphore_key = '$semaphore_key' ".
+            "WHERE game_id = '$game_id';";
+
+        cm_queryDatabase( $query );
+        }
+
+    $response = "$game_id\nOK";
+
+    $query = "UPDATE $tableNamePrefix"."users SET ".
+        "last_request_response = '$response', ".
+        "last_request_tag = '$request_tag' ".
+        "WHERE user_id = '$user_id';";
+
+    cm_queryDatabase( $query );
     
+        
     
     cm_queryDatabase( "COMMIT;" );
     cm_queryDatabase( "SET AUTOCOMMIT=1" );
@@ -2592,6 +2817,18 @@ function cm_generateHeader() {
 
     $totalWithdrawals = mysql_result( $result, 0, 0 );
 
+    $query = "SELECT SUM( total_withdrawals ) FROM $tableNamePrefix"."users;";
+    $result = cm_queryDatabase( $query );
+
+    $totalWithdrawals = mysql_result( $result, 0, 0 );
+
+    
+    $query = "SELECT 2 * SUM( dollar_amount ) FROM $tableNamePrefix"."games ".
+        "WHERE player_1_id != -1 AND player_2_id != -1;";
+    $result = cm_queryDatabase( $query );
+
+    $totalLiveBuyIns = mysql_result( $result, 0, 0 );
+
     
 
     $query = "SELECT house_dollar_balance, house_withdrawals ".
@@ -2603,12 +2840,14 @@ function cm_generateHeader() {
 
     $leaked_money =
         $totalBalance
+        + $totalLiveBuyIns
         - $totalDeposits
         + $totalWithdrawals
         + ( $house_dollar_balance + $house_withdrawals );
     
 
     $totalBalanceString = cm_formatBalanceForDisplay( $totalBalance );
+    $totalLiveBuyInString = cm_formatBalanceForDisplay( $totalLiveBuyIns );
     $totalDepositsString = cm_formatBalanceForDisplay( $totalDeposits );
     $totalWithdrawalsString = cm_formatBalanceForDisplay( $totalWithdrawals );
 
@@ -2630,6 +2869,7 @@ function cm_generateHeader() {
         "Users: $usersDay/d | $usersHour/h | $usersFiveMin/5m | ".
         "$usersMinute/m | $usersSecond/s<br>".
         "Player balance: $totalBalanceString | ".
+        "Live buy-ins: $totalLiveBuyInString | ".
         "Deposits: $totalDepositsString | ".
         "Withdrawals: $totalWithdrawalsString<br>".
         "House balance: $houseBalanceString | ".
