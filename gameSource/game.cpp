@@ -64,6 +64,7 @@ CustomRandomSource randSource( 34957197 );
 #include "SendCheckPage.h"
 #include "AccountTransferPage.h"
 #include "CreateGamePage.h"
+#include "WaitGamePage.h"
 
 
 #include "serialWebRequests.h"
@@ -90,6 +91,7 @@ SendCheckPage *sendCheckPage;
 AccountTransferPage *accountTransferPage;
 DepositDisplayPage *withdrawalDisplayPage;
 CreateGamePage *createGamePage;
+WaitGamePage *waitGamePage;
 
 
 // position of view in world
@@ -491,6 +493,7 @@ void initFrameDrawer( int inWidth, int inHeight, int inTargetFrameRate,
     sendCheckPage = new SendCheckPage();
     accountTransferPage = new AccountTransferPage();
     createGamePage = new CreateGamePage();
+    waitGamePage = new WaitGamePage();
     
     
     withdrawalDisplayPage = new DepositDisplayPage();
@@ -533,6 +536,7 @@ void freeFrameDrawer() {
     delete accountTransferPage;
     delete withdrawalDisplayPage;
     delete createGamePage;
+    delete waitGamePage;
     
 
     if( shutdownMessage != NULL ) {
@@ -1198,6 +1202,11 @@ void drawFrame( char inUpdate ) {
             if( createGamePage->checkSignal( "back" ) ) {
                 
                 currentGamePage = getBalancePage;
+                currentGamePage->base_makeActive( true );
+                }
+            else if( createGamePage->checkSignal( "created" ) ) {
+                
+                currentGamePage = waitGamePage;
                 currentGamePage->base_makeActive( true );
                 }
             }

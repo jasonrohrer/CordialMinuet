@@ -31,10 +31,9 @@ extern double transferCost;
 
 
 
-const char *createGamePartNames[1] = { "gameID" };
 
 CreateGamePage::CreateGamePage()
-        : ServerActionPage( "create_game", 1, createGamePartNames ),
+        : ServerActionPage( "create_game" ),
           mAmountPicker( mainFont, 34, 75, 6, 2, 
                          translate( "buyIn" ) ),
           mCreateButton( mainFont, 150, -200, 
@@ -158,13 +157,18 @@ void CreateGamePage::draw( doublePair inViewCenter,
 void CreateGamePage::step() {
     ServerActionPage::step();
     
-    if( ! isActionInProgress() ) {
+    
+    if( isResponseReady() ) {
+        setSignal( "created" );
+        }
+    else if( ! isActionInProgress() ) {
         checkIfCreateButtonVisible();
 
         makeFieldsActive();
         
         mCancelButton.setVisible( true );
         }
+
     }
 
 

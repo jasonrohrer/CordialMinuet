@@ -164,6 +164,11 @@ $flushDuringClientCalls = true;
 $startingSemKey = 1977;
 
 
+// timeout in MS when waiting for other player before returning TIMEOUT
+// should be matched up to retry on client (this should be shorter)
+$waitTimeout = 12000;
+
+
 
 
 $emailAdminOnFatalError = 0;

@@ -382,7 +382,6 @@ server.php?action=create_game
           &account_hmac=[hmac-sha1, hex-encoded]  
 
 Returns:
-game_id
 OK
 
 
@@ -400,3 +399,24 @@ game_sequence_number serves same function as it does in send_us_check
 request_tag is a unique string that the client generates for each new request
 (to prevent timeouts and retries from resulting in game creations).
 The same request_tag should be repeated across retries.
+
+
+
+
+
+=== Call:
+server.php?action=wait_game_start
+          &user_id=[id number]
+          &sequence_number=[number]
+          &account_hmac=[hmac-sha1, hex-encoded]  
+
+Returns:
+started
+OK
+
+or
+waiting
+OK
+
+This call is for game creators who are waiting for an opponent to join
+their game.

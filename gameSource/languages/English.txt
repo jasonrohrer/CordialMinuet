@@ -128,6 +128,11 @@ buyIn "BUY IN $"
 create "CREATE"
 
 
+waitingStart "WAITING FOR OPPONENT"
+
+
+
+
 
 pauseMessage1 "[ENTER] TO RESUME"
 

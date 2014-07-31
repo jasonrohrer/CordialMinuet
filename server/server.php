@@ -181,7 +181,8 @@ if( $shutdownMode &&
       $action == "get_withdrawal_methods" ||
       $action == "send_us_check" ||
       $action == "account_transfer" ||
-      $action == "create_games" ) ) {
+      $action == "create_games" ||
+      $action == "wait_game_start" ) ) {
     
     echo "SHUTDOWN";
     global $shutdownMessage;
@@ -223,6 +224,9 @@ else if( $action == "account_transfer" ) {
     }
 else if( $action == "create_game" ) {
     cm_createGame();
+    }
+else if( $action == "wait_game_start" ) {
+    cm_waitGameStart();
     }
 else if( $action == "check_for_flush" ) {
     cm_checkForFlush();
@@ -2322,7 +2326,7 @@ function cm_createGame() {
     
     
 
-    $response = "$game_id\nOK";
+    $response = "OK";
 
     $query = "UPDATE $tableNamePrefix"."users SET ".
         "last_request_response = '$response', ".
@@ -2339,6 +2343,93 @@ function cm_createGame() {
     echo $response;
     }
 
+
+
+function cm_waitGameStart() {
+    if( ! cm_verifyTransaction() ) {
+        return;
+        }
+    
+    global $tableNamePrefix ;
+
+        
+    $user_id = cm_getUserID();
+
+    cm_queryDatabase( "SET AUTOCOMMIT=0" );
+    
+    $query = "SELECT semaphore_key, player_2_id ".
+        "FROM $tableNamePrefix"."games ".
+        "WHERE player_1_id = '$user_id' FOR UPDATE;";
+
+    $result = cm_queryDatabase( $query );
+
+
+    $numRows = mysql_numrows( $result );
+
+    
+    if( $numRows == 0 ) {
+        cm_log( "Waiting on game that doesn't exist to start" );
+        cm_transactionDeny();
+        return;
+        }
+
+    $semaphore_key = mysql_result( $result, 0, "semaphore_key" );
+    $player_2_id = mysql_result( $result, 0, "player_2_id" );
+
+    if( $player_2_id != 0 ) {
+        echo "started\nOK";
+        return;
+        }
+    else {
+        global $waitTimeout;
+
+        semLock( $semaphore_key );
+
+        cm_queryDatabase( "COMMIT;" );
+        
+        $result = semWait( $semaphore_key, $waitTimeout );
+
+
+        if( $result == -2 ) {
+            echo "waiting\nOK";
+            return;
+            }
+        else {
+
+
+            $query = "SELECT player_2_id ".
+                "FROM $tableNamePrefix"."games ".
+                "WHERE player_1_id = '$user_id';";
+            
+            $result = cm_queryDatabase( $query );
+
+
+            $numRows = mysql_numrows( $result );
+
+    
+            if( $numRows == 0 ) {
+                cm_log( "Waiting on game that doesn't exist to start" );
+                cm_transactionDeny();
+                return;
+                }
+
+            $player_2_id = mysql_result( $result, 0, "player_2_id" );
+
+
+            if( $player_2_id == 0 ) {
+                // sem signaled, but opponent still not there?
+                echo "waiting\nOK";
+                return;
+                }
+            else {
+                // opponent present
+                echo "started\nOK";
+                return;
+                }
+            
+            }
+        }
+    }
 
 
 

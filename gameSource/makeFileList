@@ -43,6 +43,7 @@ WithdrawPage.cpp \
 SendCheckPage.cpp \
 AccountTransferPage.cpp \
 CreateGamePage.cpp \
+WaitGamePage.cpp \
 
 
 
