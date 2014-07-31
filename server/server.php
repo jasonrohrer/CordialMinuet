@@ -1969,7 +1969,7 @@ function cm_endOldGames( $user_id ) {
     
     $query = "SELECT game_id, semaphore_key, player_1_id, player_2_id, ".
         "dollar_amount, player_1_coins, player_2_coins, ".
-        "player_1_pot_coins, player_2_pot_coins, ".
+        "player_1_pot_coins, player_2_pot_coins ".
         "FROM $tableNamePrefix"."games ".
         "WHERE player_1_id = '$user_id' OR player_2_id = '$user_id' ".
         "FOR UPDATE;";
@@ -2003,13 +2003,13 @@ function cm_endOldGames( $user_id ) {
 
         
         if( $player_1_id == $user_id ) {
-            $player_1_id = -1;
+            $player_1_id = 0;
 
             // whole pot to player 2
             $player_2_coins += $player_2_pot_coins + $player_1_pot_coins;
             }
         if( $player_2_id == $user_id ) {
-            $player_2_id = -1;
+            $player_2_id = 0;
             
             // whole pot to player 1
             $player_1_coins += $player_2_pot_coins + $player_1_pot_coins;
@@ -2033,16 +2033,16 @@ function cm_endOldGames( $user_id ) {
         
         $query = "UPDATE $tableNamePrefix"."games ".
             "SET player_1_id = '$player_1_id', player_2_id = '$player_2_id', ".
-            "$player_1_coins = '$player_1_coins', ".
-            "$player_2_coins = '$player_2_coins', ".
-            "$player_1_pot_coins = 0, ".
-            "$player_2_pot_coins = 0, ".
+            "player_1_coins = '$player_1_coins', ".
+            "player_2_coins = '$player_2_coins', ".
+            "player_1_pot_coins = 0, ".
+            "player_2_pot_coins = 0 ".
             "WHERE game_id = '$game_id';";
 
         cm_queryDatabase( $query );
         
-        if( $player_1_id != -1 ||
-            $player_2_id != -1 ) {
+        if( $player_1_id != 0 ||
+            $player_2_id != 0 ) {
 
             // first player just left the game, payout both
 
@@ -2080,17 +2080,29 @@ function cm_endOldGames( $user_id ) {
 
             
             $query = "UPDATE $tableNamePrefix"."server_globals ".
-                "SET  house_dollar_balance = ".
+                "SET house_dollar_balance = ".
                 "  house_dollar_balance + $house_payout;";
+            cm_queryDatabase( $query );
+
+            // if other player is waiting for our move, free them to find
+            // out that we left
+            semSignal( $semaphore_key );
+            }
+        else {
+            // both have now left
+
+            // delete semaphore
+            semRemove( $semaphore_key );
+
+            $query = "DELETE FROM $tableNamePrefix"."games ".
+                "WHERE game_id = '$game_id';";
+
             cm_queryDatabase( $query );
             }
         
         
         
         
-        // if other player is waiting for our move, free them to find
-        // out that we left
-        semSignal( $semaphore_key );
         }
     }
 
@@ -2164,9 +2176,9 @@ function cm_createGame() {
         return;
         }
 
-    // four fractional digits here
+    // two fractional digits here
     $dollar_amount = cm_requestFilter(
-        "dollar_amount", "/[0-9]+[.][0-9][0-9][0-9][0-9]/i", "0.0000" );
+        "dollar_amount", "/[0-9]+[.][0-9][0-9]/i", "0.00" );
 
     if( ! cm_verifyCheckHMAC( $account_key, $request_sequence_number,
                               "dollar_amount", $dollar_amount ) ) {
@@ -2199,11 +2211,14 @@ function cm_createGame() {
 
     $square = cm_getNewSquare();
 
-    $query = "SELECT MAX( semaphore_key ) FROM $tableNamePrefix".
-                "gameData;";
-
-
     global $startingSemKey;
+
+    $query = "SELECT COALESCE( MAX( semaphore_key ) + 1, $startingSemKey ) ".
+        "FROM $tableNamePrefix"."games;";
+
+    $result = cm_queryDatabase( $query );
+
+    $semaphore_key = mysql_result( $result, 0, 0 );
     
     // add game to the game table
 
@@ -2226,7 +2241,7 @@ function cm_createGame() {
             "                 '$square', '$salt', CURRENT_TIMESTAMP ) ), ".
             "creation_time = CURRENT_TIMESTAMP, ".
             "player_1_id = '$user_id'," .
-            "player_2_id = -1," .
+            "player_2_id = 0," .
             "dollar_amount = '$dollar_amount',".
             "game_square = '$square',".
             "first_user_moves = '',".
@@ -2236,9 +2251,7 @@ function cm_createGame() {
             "player_2_coins = $cm_gameCoins, ".
             "player_1_pot_coins = 0, ".
             "player_2_pot_coins = 0, ".
-            "house_coins = 0, ".
-            "semaphore_key = COALESCE( MAX( semaphore_key ), ".
-            "                               $startingSemKey );";
+            "semaphore_key = '$semaphore_key';";
         $result = mysql_query( $query );
 
         if( $result ) {
@@ -2267,7 +2280,7 @@ function cm_createGame() {
 
     $query = "SELECT game_id, semaphore_key ".
         "FROM $tableNamePrefix"."games ".
-        "WHERE player_2_id = '$user_id';";
+        "WHERE player_1_id = '$user_id';";
 
     $result = cm_queryDatabase( $query );
 
@@ -2284,7 +2297,9 @@ function cm_createGame() {
     $game_id = mysql_result( $result, 0, "game_id" );
     $semaphore_key = mysql_result( $result, 0, "semaphore_key" );
 
-    while( semInitLock( $semaphore_key ) != 0 ) {
+    $tryCount = 0;
+    
+    while( $tryCount < 10 && semInitLock( $semaphore_key ) != 0 ) {
 
         $semaphore_key ++;
 
@@ -2293,7 +2308,19 @@ function cm_createGame() {
             "WHERE game_id = '$game_id';";
 
         cm_queryDatabase( $query );
+        cm_log( "Creating semaphore failed, trying next key $semaphore_key" );
+        $tryCount++;
         }
+
+    
+    
+    if( $tryCount == 10 ) {
+        cm_log( "Tried to create semaphore 10 times, failed." );
+        cm_transactionDeny();
+        return;
+        }
+    
+    
 
     $response = "$game_id\nOK";
 

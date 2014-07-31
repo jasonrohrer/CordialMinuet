@@ -35,7 +35,7 @@ const char *createGamePartNames[1] = { "gameID" };
 
 CreateGamePage::CreateGamePage()
         : ServerActionPage( "create_game", 1, createGamePartNames ),
-          mAmountPicker( mainFont, 34, 75, 6, 4, 
+          mAmountPicker( mainFont, 34, 75, 6, 2, 
                          translate( "buyIn" ) ),
           mCreateButton( mainFont, 150, -200, 
                          translate( "create" ) ),
@@ -90,7 +90,7 @@ void CreateGamePage::actionPerformed( GUIComponent *inTarget ) {
         
         double dollarAmount = mAmountPicker.getValue();
         
-        char *dollarAmountString = autoSprintf( "%.4f", dollarAmount );
+        char *dollarAmountString = autoSprintf( "%.2f", dollarAmount );
         
         char *dollarAmountHmac = hmac_sha1( hmacKey, 
                                             dollarAmountString );
@@ -135,8 +135,7 @@ void CreateGamePage::makeActive( char inFresh ) {
     
     checkIfCreateButtonVisible();
 
-    // fix later with balance and check fee when page made active
-    mAmountPicker.setMin( transferCost + 0.01 );
+    mAmountPicker.setMin( 0.01 );
     mAmountPicker.setMax( userBalance );
     }
 

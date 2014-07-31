@@ -1,6 +1,5 @@
 <?php
 
-include_once( "settings.php" );
 
 
 
@@ -55,7 +54,6 @@ function semRemove( $inKey ) {
 // $inTimeoutMS can only be not -1 for wait op.
 // returns -2 on timeout
 function semaphoreOp( $inKey, $inOp, $inTimeoutMS = -1 ) {
-    global $semaphoreAppPath;
 
     $timeoutString = "";
     if( $inTimeoutMS != -1 ) {
@@ -63,7 +61,7 @@ function semaphoreOp( $inKey, $inOp, $inTimeoutMS = -1 ) {
         }
     
     $lastLine =
-        exec( "$semaphoreAppPath  $inKey  $inOp $timeoutString",
+        exec( "./semaphoreOps  $inKey  $inOp $timeoutString",
               $output, $returnValue );
 
     if( strstr( $lastLine, "TIMEOUT" ) != FALSE ) {

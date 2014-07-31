@@ -1194,6 +1194,13 @@ void drawFrame( char inUpdate ) {
                 currentGamePage->base_makeActive( true );
                 }
             }
+        else if( currentGamePage == createGamePage ) {
+            if( createGamePage->checkSignal( "back" ) ) {
+                
+                currentGamePage = getBalancePage;
+                currentGamePage->base_makeActive( true );
+                }
+            }
         }
 
 
