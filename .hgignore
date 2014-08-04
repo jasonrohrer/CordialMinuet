@@ -8,3 +8,4 @@ syntax: glob
 
 gameSource/recordedGames/*
 gameSource/screenShots/*
+gameSource/testUser/*

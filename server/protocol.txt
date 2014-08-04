@@ -433,3 +433,38 @@ server.php?action=leave_game
 Returns:
 OK
 
+
+
+
+
+=== Call:
+server.php?action=list_games
+          &user_id=[id number]
+          &sequence_number=[number]
+          &account_hmac=[hmac-sha1, hex-encoded]  
+		  &skip=[number]
+          &limit=[number]
+
+Returns:
+game_id#dollar_cost
+game_id#dollar_cost
+game_id#dollar_cost
+game_id#dollar_cost
+...
+game_id#dollar_cost
+more_pages#skip
+OK
+
+
+Where:
+skip is the number of games to skip, in lowest-to-highest cost order, 
+when listing games.
+
+limit is the maximum number of games to return
+
+
+Each returned game has a game_id and dollar_cost with 2 fractional digits.
+
+more_pages is 1 if there are more pages of games after this, or 0 if not
+
+skip in the response indicates the skip that was used to generate the list.

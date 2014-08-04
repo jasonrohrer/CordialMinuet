@@ -183,7 +183,8 @@ if( $shutdownMode &&
       $action == "account_transfer" ||
       $action == "create_games" ||
       $action == "wait_game_start" ||
-      $action == "leave_game" ) ) {
+      $action == "leave_game" ||
+      $action == "list_games" ) ) {
     
     echo "SHUTDOWN";
     global $shutdownMessage;
@@ -231,6 +232,9 @@ else if( $action == "wait_game_start" ) {
     }
 else if( $action == "leave_game" ) {
     cm_leaveGame();
+    }
+else if( $action == "list_games" ) {
+    cm_listGames();
     }
 else if( $action == "check_for_flush" ) {
     cm_checkForFlush();
@@ -405,13 +409,13 @@ function cm_setupDatabase() {
             // 4 fractional digits (0.0001 resolution)
             "dollar_balance DECIMAL(13, 4) NOT NULL,".
             "num_deposits SMALLINT UNSIGNED NOT NULL,".
-            "total_deposits DECIMAL(13, 4) NOT NULL,".
+            "total_deposits DECIMAL(13, 2) NOT NULL,".
             "num_withdrawals SMALLINT UNSIGNED NOT NULL,".
-            "total_withdrawals DECIMAL(13, 4) NOT NULL,".
+            "total_withdrawals DECIMAL(13, 2) NOT NULL,".
             "games_created INT UNSIGNED NOT NULL,".
             "games_joined INT UNSIGNED NOT NULL,".
             "games_started INT UNSIGNED NOT NULL,".
-            "total_buy_in DECIMAL(13, 4) NOT NULL,".
+            "total_buy_in DECIMAL(13, 2) NOT NULL,".
             "total_won DECIMAL(13, 4) NOT NULL,".
             "total_lost DECIMAL(13, 4) NOT NULL,".
             "sequence_number INT UNSIGNED NOT NULL," .
@@ -447,7 +451,7 @@ function cm_setupDatabase() {
             "INDEX( player_1_id )," .
             "player_2_id INT UNSIGNED NOT NULL," .
             "INDEX( player_2_id )," .
-            "dollar_amount DECIMAL(13, 4) NOT NULL,".
+            "dollar_amount DECIMAL(13, 2) NOT NULL,".
             "INDEX( dollar_amount )," .
             // 36-cell square, numbers from 1 to 36, separated by #
             // character
@@ -485,7 +489,7 @@ function cm_setupDatabase() {
             "max_concurrent_connections INT UNSIGNED NOT NULL DEFAULT 0," .
 
             "game_count INT UNSIGNED NOT NULL DEFAULT 0,".
-            "total_buy_in DECIMAL(13, 4) NOT NULL DEFAULT 0 ".
+            "total_buy_in DECIMAL(13, 2) NOT NULL DEFAULT 0 ".
             ") ENGINE = INNODB;";
         
 
@@ -2451,6 +2455,60 @@ function cm_leaveGame() {
 
     cm_queryDatabase( "COMMIT;" );
     
+    echo "OK";
+    }
+
+
+
+function cm_listGames() {
+    if( ! cm_verifyTransaction() ) {
+        return;
+        }
+
+    $user_id = cm_getUserID();
+
+    cm_queryDatabase( "SET AUTOCOMMIT=0" );
+    
+    cm_endOldGames( $user_id );
+    
+    cm_queryDatabase( "COMMIT;" );
+
+    cm_queryDatabase( "SET AUTOCOMMIT=1" );
+
+    
+    $skip = cm_requestFilter( "skip", "/\d+/", 0 );
+    
+    $limit = cm_requestFilter( "limit", "/\d+/", 10 );
+
+
+    global $tableNamePrefix;
+
+    // get one extra, beyond requested limit, to detect presence
+    // of additional pages beyond limit  
+    $query_limit = $limit + 1;
+    
+    $query = "SELECT game_id, dollar_amount FROM $tableNamePrefix"."games ".
+        "ORDER BY dollar_amount ASC ".
+        "LIMIT $skip, $query_limit;";
+
+    $result = cm_queryDatabase( $query );
+    
+    $numRows = mysql_numrows( $result );
+
+
+    for( $i=0; $i < $numRows && $i < $limit; $i++ ) {
+        $game_id = mysql_result( $result, $i, "game_id" );
+        $dollar_amount = mysql_result( $result, $i, "dollar_amount" );
+
+        echo "$game_id#$dollar_amount\n";
+        }
+
+    if( $numRows > $limit ) {
+        echo "1#$skip\n";
+        }
+    else {
+        echo "0#$skip\n";
+        }
     echo "OK";
     }
 

@@ -103,9 +103,9 @@ void WithdrawPage::step() {
 
         // parse response
 
-        int numParts = getNumResponseParts();
+        int numLines = getNumResponseParts();
         
-        for( int i = 0; i<numParts; i++ ) {
+        for( int i = 0; i<numLines; i++ ) {
             
             char *line = getResponse( i );
 

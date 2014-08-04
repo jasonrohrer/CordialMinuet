@@ -1,30 +1,53 @@
-#include "GamePage.h"
+#include "ServerActionPage.h"
 
 
 
 #include "minorGems/ui/event/ActionListener.h"
+#include "minorGems/util/SimpleVector.h"
 
 
 #include "TextButton.h"
 
 
-class MenuPage : public GamePage, public ActionListener {
+typedef struct GameRecord {
+        char *gameID;
+        double dollarAmount;
+    } GameRecord;
+
+
+
+class MenuPage : public ServerActionPage, public ActionListener {
         
     public:
         MenuPage();
+        ~MenuPage();
         
         virtual void actionPerformed( GUIComponent *inTarget );
         
         virtual void draw( doublePair inViewCenter, 
                            double inViewSize );
-
-
+        
+        virtual void step();
+  
+        virtual void makeActive( char inFresh );
+      
     protected:
         
         TextButton mDepositButton;
         TextButton mWithdrawButton;
         TextButton mNewGameButton;
 
+        TextButton mPrevButton;
+        TextButton mNextButton;
+        
+        SimpleVector<GameRecord> mListedGames;
+        
+        int mLimit;
+        int mSkip;
 
-
+        char mResponseProcessed;
+        
+        SimpleVector<TextButton*> mGameButtons;
+        
+        void clearListedGames();
     };

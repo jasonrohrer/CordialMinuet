@@ -132,6 +132,14 @@ waitingStart "WAITING FOR OPPONENT"
 
 
 
+prevPage "LESS $"
+nextPage "MORE $"
+
+
+
+
+
+
 
 
 pauseMessage1 "[ENTER] TO RESUME"
