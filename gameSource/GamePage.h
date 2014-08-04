@@ -147,7 +147,13 @@ class GamePage : public PageComponent {
             return false;
             }
         
-
+        // subclasses can override this to block orange warning color
+        // on status icon when we're past the 1/2 retry time point
+        // (if this call returns true, only the red retry color will be shown)
+        virtual char noWarningColor() {
+            return false;
+            }
+        
 
         // override this from PageComponent to show waiting status
         virtual void setWaiting( char inWaiting,

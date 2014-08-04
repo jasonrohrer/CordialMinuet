@@ -420,3 +420,16 @@ OK
 
 This call is for game creators who are waiting for an opponent to join
 their game.
+
+
+
+
+=== Call:
+server.php?action=leave_game
+          &user_id=[id number]
+          &sequence_number=[number]
+          &account_hmac=[hmac-sha1, hex-encoded]  
+
+Returns:
+OK
+

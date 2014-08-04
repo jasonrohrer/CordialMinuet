@@ -247,8 +247,10 @@ void GamePage::base_draw( doublePair inViewCenter,
                 case 0:
                     break;
                 case 1:
-                    g = 0.4666;
-                    b = 0;
+                    if( ! noWarningColor() ) {    
+                        g = 0.4666;
+                        b = 0;
+                        }
                     break;
                 default:
                     g = 0;

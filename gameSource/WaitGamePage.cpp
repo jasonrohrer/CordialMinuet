@@ -5,6 +5,8 @@
 #include "message.h"
 #include "accountHmac.h"
 
+#include "serialWebRequests.h"
+
 
 #include "minorGems/game/Font.h"
 #include "minorGems/game/game.h"
@@ -61,6 +63,10 @@ WaitGamePage::~WaitGamePage() {
 
 void WaitGamePage::actionPerformed( GUIComponent *inTarget ) {
     if( inTarget == &mCancelButton ) {
+        if( mWebRequest != -1 ) {
+            clearWebRequestSerial( mWebRequest );
+            mWebRequest = -1;
+            }
         setSignal( "back" );
         }
     }

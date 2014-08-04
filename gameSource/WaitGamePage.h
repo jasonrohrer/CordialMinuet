@@ -28,6 +28,14 @@ class WaitGamePage : public ServerActionPage, public ActionListener {
                            double inViewSize );
         
         virtual void step();
+
+        
+        // override from GamePage to hide orange warning color
+        // (because passing our 1/2 retry time is normal when we're waiting)
+        virtual char noWarningColor() {
+            return true;
+            }
+        
         
     protected:
 

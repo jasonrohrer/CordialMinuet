@@ -182,7 +182,8 @@ if( $shutdownMode &&
       $action == "send_us_check" ||
       $action == "account_transfer" ||
       $action == "create_games" ||
-      $action == "wait_game_start" ) ) {
+      $action == "wait_game_start" ||
+      $action == "leave_game" ) ) {
     
     echo "SHUTDOWN";
     global $shutdownMessage;
@@ -227,6 +228,9 @@ else if( $action == "create_game" ) {
     }
 else if( $action == "wait_game_start" ) {
     cm_waitGameStart();
+    }
+else if( $action == "leave_game" ) {
+    cm_leaveGame();
     }
 else if( $action == "check_for_flush" ) {
     cm_checkForFlush();
@@ -2430,6 +2434,26 @@ function cm_waitGameStart() {
             }
         }
     }
+
+
+
+
+function cm_leaveGame() {
+    if( ! cm_verifyTransaction() ) {
+        return;
+        }
+
+    $user_id = cm_getUserID();
+
+    cm_queryDatabase( "SET AUTOCOMMIT=0" );
+    
+    cm_endOldGames( $user_id );
+
+    cm_queryDatabase( "COMMIT;" );
+    
+    echo "OK";
+    }
+
 
 
 

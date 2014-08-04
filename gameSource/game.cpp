@@ -92,6 +92,7 @@ AccountTransferPage *accountTransferPage;
 DepositDisplayPage *withdrawalDisplayPage;
 CreateGamePage *createGamePage;
 WaitGamePage *waitGamePage;
+ServerActionPage *leaveGamePage;
 
 
 // position of view in world
@@ -489,15 +490,19 @@ void initFrameDrawer( int inWidth, int inHeight, int inTargetFrameRate,
 
     depositDisplayPage = new DepositDisplayPage();
     existingAccountPage = new ExistingAccountPage();
+    
     withdrawPage = new WithdrawPage();
     sendCheckPage = new SendCheckPage();
     accountTransferPage = new AccountTransferPage();
-    createGamePage = new CreateGamePage();
-    waitGamePage = new WaitGamePage();
-    
-    
+
     withdrawalDisplayPage = new DepositDisplayPage();
     withdrawalDisplayPage->setWithdraw( true );
+
+    createGamePage = new CreateGamePage();
+    waitGamePage = new WaitGamePage();
+        
+    leaveGamePage = new ServerActionPage( "leave_game" );
+
 
     currentGamePage = getServerURLPage;
 
@@ -537,6 +542,7 @@ void freeFrameDrawer() {
     delete withdrawalDisplayPage;
     delete createGamePage;
     delete waitGamePage;
+    delete leaveGamePage;
     
 
     if( shutdownMessage != NULL ) {
@@ -1207,6 +1213,19 @@ void drawFrame( char inUpdate ) {
             else if( createGamePage->checkSignal( "created" ) ) {
                 
                 currentGamePage = waitGamePage;
+                currentGamePage->base_makeActive( true );
+                }
+            }
+        else if( currentGamePage == waitGamePage ) {
+            if( waitGamePage->checkSignal( "back" ) ) {
+                printf( "Waiting cancelled\n" );
+                currentGamePage = leaveGamePage;
+                currentGamePage->base_makeActive( true );
+                }
+            }
+        else if( currentGamePage == leaveGamePage ) {
+            if( leaveGamePage->isResponseReady() ) {
+                currentGamePage = menuPage;
                 currentGamePage->base_makeActive( true );
                 }
             }
