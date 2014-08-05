@@ -52,6 +52,13 @@ NumberPicker::NumberPicker( Font *inDisplayFont,
             nextX -= spacing;
             }
         
+        if( mMaxMainDigits > 4 &&
+            ( i - mMaxFractionDigits ) != 0 &&
+            ( i - mMaxFractionDigits ) % 3 == 0 ) {
+            
+            // leave room for comma
+            nextX -= spacing;
+            }
 
         mUpButtons[i] =  new SpriteButton( "numberUp.tga", 
                                            nextX, spacing,
@@ -99,9 +106,41 @@ NumberPicker::~NumberPicker() {
     }
 
 
+double NumberPicker::getMaxPossible() {
+
+    int *tempDigits = new int[ mMaxTotalDigits ];
+    memcpy( tempDigits, mDigits, mMaxTotalDigits * sizeof( int ) );
+
+    for( int i=0; i<mMaxTotalDigits; i++ ) {
+        tempDigits[i] = 9;
+        }
+    
+    double value = getValue( tempDigits );
+    
+    delete [] tempDigits;
+
+    return value;
+    }
+
+
 
 void NumberPicker::setMax( double inMax ) {
-    mMax = inMax;
+    // truncate it to our fractional range
+    double factor = pow( 10, mMaxFractionDigits );
+
+    mMax = floor( inMax * factor ) / factor;
+
+    //mMax = inMax;
+
+    printf( "Passed max:  %f, floored max: %f\n", inMax, mMax );
+
+    
+    double maxPossible = getMaxPossible();
+    
+    if( mMax > maxPossible ) {
+        mMax = maxPossible;
+        }
+    
 
     double oldValue = getValue();
     
@@ -163,7 +202,7 @@ void NumberPicker::setValue( double inValue, int inDigits[] ) {
     double roundedValue = inValue + roundingTerm;
 
     for( int i=0; i<mMaxTotalDigits; i++ ) {
-        inDigits[i] = ( (int)( roundedValue * factor ) ) % 10;
+        inDigits[i] = (int)( fmod( floor( roundedValue * factor ), 10 ) );
         
         factor /= 10;
         }
@@ -306,6 +345,18 @@ void NumberPicker::draw() {
 
             nextX -= spacing;
             }
+
+        if( mMaxMainDigits > 4 &&
+            ( i - mMaxFractionDigits ) != 0 &&
+            ( i - mMaxFractionDigits ) % 3 == 0 ) {
+            
+            doublePair pos = { nextX, 0 };
+            
+            mFont->drawString( ",", pos );
+
+            nextX -= spacing;
+            }
+        
 
         doublePair pos = { nextX, 0 };
             

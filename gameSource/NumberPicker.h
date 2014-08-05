@@ -85,6 +85,7 @@ class NumberPicker : public PageComponent, public ActionListener {
         int getTweakedValue( int inDigitToTweak, int inTweakDelta );
         
         
+        double getMaxPossible();
     };
 
 
