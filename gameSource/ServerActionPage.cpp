@@ -239,8 +239,14 @@ void ServerActionPage::step() {
                      
                 printf( "Web result = %s\n", result );
    
-                
                 char errorParsed = false;
+                
+                if( strcmp( result, "" ) == 0 ) {
+                    mStatusError = true;
+                    setStatus( "err_badServerResponse", true );
+                    errorParsed = true;
+                    }
+                
                 
                 for( int i=0; i<mErrorStringList.size(); i++ ) {
                     if( strstr( result, 
