@@ -95,15 +95,51 @@ void DepositDisplayPage::draw( doublePair inViewCenter,
 
     char fullPrecision = false;
     
-    char *valueString = formatBalance( mOldBalance, false, &fullPrecision );
+    char *oldBalanceString = 
+        formatBalance( mOldBalance, false, &fullPrecision );
 
-    double xOffset = 2 * mainFont->getFontHeight() + 
-        mainFont->measureString( valueString );
+    char *deletaString = formatBalance( mDeltaAmount, fullPrecision );
+
+
+    // estimate new balance for width measurements
+    double newBalanceEstimate = mOldBalance;
     
+    if( mWithdraw ) {
+        newBalanceEstimate -= mDeltaAmount;
+        }
+    else {
+        newBalanceEstimate += mDeltaAmount;
+        }
+    
+    char *newBalanceEstimateString = 
+        formatBalance( newBalanceEstimate, fullPrecision );
+
+
+    double maxWidth = mainFont->measureString( oldBalanceString );
+    
+    double otherWidth = mainFont->measureString( deletaString );
+    
+    if( otherWidth > maxWidth ) {
+        maxWidth = otherWidth;
+        }
+    
+    otherWidth = mainFont->measureString( newBalanceEstimateString );
+    
+    if( otherWidth > maxWidth ) {
+        maxWidth = otherWidth;
+        }
+    
+    delete [] newBalanceEstimateString;
+
+
+    double xOffset = 2 * mainFont->getFontHeight() + maxWidth;
+        
+
+
     pos.x = xOffset;
-    mainFont->drawString( valueString, pos, alignRight );
+    mainFont->drawString( oldBalanceString, pos, alignRight );
     
-    delete [] valueString;
+    delete [] oldBalanceString;
 
     pos.x = 0;
     pos.y -= 64;
@@ -116,12 +152,10 @@ void DepositDisplayPage::draw( doublePair inViewCenter,
 
     mainFont->drawString( translate( amountKey ), pos, alignRight );
     
-    valueString = formatBalance( mDeltaAmount, fullPrecision );
-    
     pos.x = xOffset;
-    mainFont->drawString( valueString, pos, alignRight );
+    mainFont->drawString( deletaString, pos, alignRight );
     
-    delete [] valueString;
+    delete [] deletaString;
     
     pos.x = 0;
     pos.y -= 64;
@@ -131,8 +165,9 @@ void DepositDisplayPage::draw( doublePair inViewCenter,
 
     if( isResponseReady() ) {
         
-        valueString = formatBalance( getResponseDouble( "dollarBalance" ),
-                                     fullPrecision );
+        char *valueString = 
+            formatBalance( getResponseDouble( "dollarBalance" ),
+                           fullPrecision );
     
         pos.x = xOffset;
         mainFont->drawString( valueString, pos, alignRight );

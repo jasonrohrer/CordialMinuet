@@ -76,6 +76,11 @@ double Button::getWidth() {
     }
 
 
+double Button::getHeight() {
+    return mHigh;
+    }
+
+
 
 void Button::clearState() {
     mHover = false;

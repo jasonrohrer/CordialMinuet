@@ -33,9 +33,9 @@ void MenuPage::clearListedGames() {
 
 MenuPage::MenuPage()
         : ServerActionPage( "list_games", true ),
-          mDepositButton( mainFont, -150, 250, 
+          mDepositButton( mainFont, -210, 260, 
                           translate( "deposit" ) ),
-          mWithdrawButton( mainFont, 150, 250, 
+          mWithdrawButton( mainFont, 210, 260, 
                          translate( "withdraw" ) ),
           mNewGameButton( mainFont, 0, -128, 
                           translate( "newGame" ) ),
@@ -43,7 +43,7 @@ MenuPage::MenuPage()
                        translate( "prevPage" ) ),
           mNextButton( mainFont, 150, -128, 
                        translate( "nextPage" ) ),
-          mLimit( 10 ),
+          mLimit( 9 ),
           mSkip( 0 ),
           mResponseProcessed( false ) {
 
@@ -66,13 +66,13 @@ MenuPage::MenuPage()
     mNextButton.setVisible( false );
 
 
-    double y = 128;
+    double y = 100;
     double x = -200;
     
     for( int i=0; i<mLimit; i++ ) {
         
-        if( i % 3 == 0 ) {
-            y -= 128;
+        if( i != 0 && i % 3 == 0 ) {
+            y -= 96;
             x = -200;
             }
         
@@ -87,8 +87,53 @@ MenuPage::MenuPage()
 
         mGameButtons.push_back( button );
 
-        x += 128;
+        x += 200;
         }
+    
+    
+    /*
+    double topGap = 333 - ( mWithdrawButton.getPosition().y + 
+                            0.5 * mWithdrawButton.getHeight() );
+    */
+
+    double sideGap = 21;
+
+    mWithdrawButton.setPosition( 333 - sideGap 
+                                 - mWithdrawButton.getWidth() / 2, 
+                                 mWithdrawButton.getPosition().y );
+
+    
+    // tweak dep/withdraw button position
+    
+    double depositWidth = mDepositButton.getWidth();
+    double withdrawWidth = mWithdrawButton.getWidth();
+    
+    double extra = ( withdrawWidth - depositWidth ) / 2;
+    
+    doublePair depositPos = mDepositButton.getPosition();
+    
+    mDepositButton.setPosition( depositPos.x + extra, depositPos.y );
+    
+
+    
+
+    
+    double gap = 333 + mDepositButton.getPosition().x 
+        - 0.5 * mDepositButton.getWidth();
+    
+    
+    if( gap < sideGap ) {
+        
+        double diff = sideGap - gap;
+        
+
+    
+        doublePair depositPos = mDepositButton.getPosition();
+        
+        mDepositButton.setPosition( depositPos.x + diff, 
+                                    depositPos.y );
+        }
+        
     }
 
 
@@ -96,7 +141,7 @@ MenuPage::MenuPage()
 MenuPage::~MenuPage() {
     
     for( int i=0; i<mGameButtons.size(); i++ ) {
-        delete *( mGameButtons.getElement( i ) );
+        delete mGameButtons.getElementDirect( i );
         }
     }
 
@@ -151,22 +196,58 @@ void MenuPage::actionPerformed( GUIComponent *inTarget ) {
         
 void MenuPage::draw( doublePair inViewCenter, 
                      double inViewSize ) {
+
+
+    doublePair pos = mDepositButton.getPosition();
+    
     
     char *balanceString = formatBalance( userBalance );
     
-    doublePair pos = { 0, 250 };
+    double balanceWidth = mainFont->measureString( balanceString );
+    
+    double buttonGap = 
+        mWithdrawButton.getPosition().x - 
+        mDepositButton.getPosition().x;
+    
+    buttonGap -= mWithdrawButton.getWidth() / 2;
+    buttonGap -= mDepositButton.getWidth() / 2;
+    
+    if( buttonGap < balanceWidth + 2 * mainFont->getCharSpacing() ) {
+        // not enough room, move down below buttons
+        pos.y -= 64;
+        }
+        
+    pos.x = 0;
     
     drawMessage( balanceString, pos );
 
     delete [] balanceString;
 
-    char *gameCountString = autoSprintf( "%d listed games",
-                                         mListedGames.size() );
-    pos.y = 100;
+
+    if( mListedGames.size() > 0 ) {    
+        pos.x = 0;
+        pos.y = mGameButtons.getElementDirect( 0 )->getPosition().y + 64;
+        
+        drawMessage( "gameList", pos );
+        }
     
-    drawMessage( gameCountString, pos );
-    delete [] gameCountString;
     }
+
+
+// if we have x items to show, we should use buttonsToUse[x] elements
+// as the index order for our buttons
+static int buttonsToUse[9][9] = 
+{ 
+    { 1, 0, 0, 0, 0, 0, 0, 0, 0 }, 
+    { 1, 4, 0, 0, 0, 0, 0, 0, 0 }, 
+    { 0, 1, 2, 0, 0, 0, 0, 0, 0 }, 
+    { 0, 1, 2, 4, 0, 0, 0, 0, 0 }, 
+    { 0, 1, 2, 4, 7, 0, 0, 0, 0 }, 
+    { 0, 1, 2, 3, 4, 5, 0, 0, 0 }, 
+    { 0, 1, 2, 3, 4, 5, 7, 0, 0 }, 
+    { 0, 1, 2, 3, 4, 5, 6, 8, 0 }, 
+    { 0, 1, 2, 3, 4, 5, 6, 7, 8 } 
+    };
 
 
 
@@ -182,6 +263,8 @@ void MenuPage::step() {
 
         int numLines = getNumResponseParts();
         
+        int numGames = numLines - 1;
+
         for( int i = 0; i<numLines; i++ ) {
             
             char *line = getResponse( i );
@@ -202,9 +285,10 @@ void MenuPage::step() {
                     
                     sscanf( parts[1], "%lf", &( r.dollarAmount ) );
                     
-                    mListedGames.push_back( r );
-
-                    TextButton *button = *( mGameButtons.getElement( i ) );
+                    
+                    int b = buttonsToUse[numGames - 1][i];
+                    
+                    TextButton *button = mGameButtons.getElementDirect( b );
                     
                     button->setVisible( true );
                     
@@ -214,6 +298,10 @@ void MenuPage::step() {
                     button->setLabelText( dollarString );
 
                     delete [] dollarString;
+
+                    r.button = button;
+                    
+                    mListedGames.push_back( r );
                     }
                 else {
                     // last line is not a game

@@ -35,7 +35,7 @@ extern double transferCost;
 CreateGamePage::CreateGamePage()
         : ServerActionPage( "create_game" ),
           mAmountPicker( mainFont, 34, 75, 6, 2, 
-                         translate( "buyIn" ) ),
+                         translate( "$" ) ),
           mCreateButton( mainFont, 150, -200, 
                          translate( "create" ) ),
           mCancelButton( mainFont, -150, -200, 
@@ -148,8 +148,15 @@ void CreateGamePage::makeFieldsActive() {
 
 void CreateGamePage::draw( doublePair inViewCenter, 
                           double inViewSize ) {
-        
     
+    doublePair pos = mAmountPicker.getPosition();
+    
+    pos.y += 96;
+    
+    pos.x += 3;
+
+    setDrawColor( 1, 1, 1, 1 );
+    mainFont->drawString( translate( "buyIn" ), pos, alignRight );
     }
 
 

@@ -12,6 +12,7 @@
 typedef struct GameRecord {
         char *gameID;
         double dollarAmount;
+        TextButton *button;
     } GameRecord;
 
 

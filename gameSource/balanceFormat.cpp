@@ -6,6 +6,75 @@
 
 
 
+// adds grouping commas
+// inString deleted by this call (or returned directly)
+static char *addCommas( char *inString ) {
+    
+    int periodPosition =  0;
+    
+    int length = strlen( inString );
+    
+    for( int i=0; i<length; i++ ) {
+        if( inString[i] == '.' ) {
+            periodPosition = i;
+            break;
+            }
+        }
+
+    // ignore $
+    int wholeDigitLength = periodPosition - 1;
+    
+    if( wholeDigitLength < 5 ) {
+        // no commas
+        return inString;
+        }
+    
+    int numCommas = wholeDigitLength / 3;
+    
+    if( wholeDigitLength % 3 == 0 ) {
+        numCommas --;
+        }
+    
+    char *newString = new char[ length + numCommas + 1 ];
+    newString[ length + numCommas ] = '\0';
+    
+
+    int newPos = length + numCommas - 1;
+    
+    int oldPos = length - 1;
+    
+    while( oldPos >= periodPosition ) {
+        newString[newPos] = inString[oldPos];
+        
+        oldPos --;
+        newPos --;
+        }
+    
+    int batchCount = 0;
+    
+    while( oldPos >= 0 ) {
+        
+        newString[newPos] = inString[oldPos];
+
+        oldPos --;
+        newPos --;
+
+        batchCount ++;
+        
+        if( oldPos >= 0 && inString[oldPos] != '$' && batchCount == 3 ) {
+            newString[newPos] = ',';
+            newPos --;
+            
+            batchCount = 0;
+            }
+        }
+
+    delete [] inString;
+    return newString;
+    }
+
+
+
 char *formatBalance( double inBalance, 
                      char inForceFullPrecision,
                      char *outFullPrecision ) {
@@ -21,7 +90,7 @@ char *formatBalance( double inBalance,
         if( outFullPrecision != NULL ) {
             *outFullPrecision = true;
             }
-        return valueString;
+        return addCommas( valueString );
         }
     
     // else 00 at end, and precision not forced
@@ -33,6 +102,6 @@ char *formatBalance( double inBalance,
         *outFullPrecision = false;
         }
     
-    return valueString;
+    return addCommas( valueString );
     }
 

@@ -33,7 +33,8 @@ class Button : public PageComponent, public ActionListenerList {
 
         
         virtual double getWidth();
-        
+        virtual double getHeight();
+
 
         // defaults to
         // ( 0.828, 0.647, 0.212, 1 ) for drag-over
