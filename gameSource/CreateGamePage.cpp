@@ -34,7 +34,7 @@ extern double transferCost;
 
 CreateGamePage::CreateGamePage()
         : ServerActionPage( "create_game" ),
-          mAmountPicker( mainFont, 34, 75, 6, 2, 
+          mAmountPicker( mainFont, 96, 75, 9, 2, 
                          translate( "$" ) ),
           mCreateButton( mainFont, 150, -200, 
                          translate( "create" ) ),
@@ -136,6 +136,14 @@ void CreateGamePage::makeActive( char inFresh ) {
 
     mAmountPicker.setMin( 0.01 );
     mAmountPicker.setMax( userBalance );
+
+    // make room in case of huge balance
+    if( userBalance < 9999999 ) {
+        mAmountPicker.setPosition( 34, mAmountPicker.getPosition().y );
+        }
+    else {
+        mAmountPicker.setPosition( 96, mAmountPicker.getPosition().y );
+        }
     }
 
 
