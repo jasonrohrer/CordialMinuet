@@ -138,6 +138,9 @@ prevPage "LESS $"
 nextPage "MORE $"
 
 
+joinButtonTip "JOIN FOR %s"
+ 
+
 
 
 

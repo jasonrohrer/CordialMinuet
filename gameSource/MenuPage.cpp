@@ -37,11 +37,11 @@ MenuPage::MenuPage()
                           translate( "deposit" ) ),
           mWithdrawButton( mainFont, 210, 260, 
                          translate( "withdraw" ) ),
-          mNewGameButton( mainFont, 0, -128, 
+          mNewGameButton( mainFont, 0, -220, 
                           translate( "newGame" ) ),
-          mPrevButton( mainFont, -150, -128, 
+          mPrevButton( mainFont, -200, -188, 
                        translate( "prevPage" ) ),
-          mNextButton( mainFont, 150, -128, 
+          mNextButton( mainFont, 200, -188, 
                        translate( "nextPage" ) ),
           mLimit( 9 ),
           mSkip( 0 ),
@@ -50,15 +50,23 @@ MenuPage::MenuPage()
     addComponent( &mDepositButton );
     addComponent( &mWithdrawButton );
     addComponent( &mNewGameButton );
+    addComponent( &mPrevButton );
+    addComponent( &mNextButton );
+    
     
     setButtonStyle( &mDepositButton );
     setButtonStyle( &mWithdrawButton );
     setButtonStyle( &mNewGameButton );
+    setButtonStyle( &mPrevButton );
+    setButtonStyle( &mNextButton );
     
+
 
     mDepositButton.addActionListener( this );
     mWithdrawButton.addActionListener( this );
     mNewGameButton.addActionListener( this );
+    mPrevButton.addActionListener( this );
+    mNextButton.addActionListener( this );
 
     setActionParameter( "limit", mLimit );
     setActionParameter( "skip", mSkip );
@@ -157,11 +165,6 @@ void MenuPage::actionPerformed( GUIComponent *inTarget ) {
         }
     if( inTarget == &mNewGameButton ) {
         setSignal( "newGame" );
-        }
-    if( inTarget == &mNextButton ) {
-        mSkip += mLimit;
-        setActionParameter( "skip", mSkip );
-        startRequest();
         }
     if( inTarget == &mNextButton ) {
         mSkip += mLimit;
@@ -292,11 +295,52 @@ void MenuPage::step() {
                     
                     button->setVisible( true );
                     
-                    char *dollarString = autoSprintf( "$%.2f", 
-                                                      r.dollarAmount );
+                    char *dollarString = formatBalance( r.dollarAmount );
                     
-                    button->setLabelText( dollarString );
+      
+                    char *tip = autoSprintf( translate( "joinButtonTip" ),
+                                             dollarString );
+                    
+                    button->setMouseOverTip( tip );
 
+                    delete [] tip;
+
+                    if( r.dollarAmount < 10000 ) {
+                        
+                        button->setLabelText( dollarString );
+                        }
+                    else {
+                        // too big to display on button
+                        char sizeChar = 'K';
+                        
+                        double trimmedAmount = r.dollarAmount / 1000;
+                        
+                        if( trimmedAmount >= 1000 ) {
+                            sizeChar = 'M';
+                            trimmedAmount = trimmedAmount / 1000;
+                            }
+
+                        if( trimmedAmount >= 1000 ) {
+                            sizeChar = 'B';
+                            trimmedAmount = trimmedAmount / 1000;
+                            }
+                        
+                        if( trimmedAmount >= 1000 ) {
+                            sizeChar = 'T';
+                            trimmedAmount = trimmedAmount / 1000;
+                            }
+                        
+                        char *trimmedString = autoSprintf( "$%.0f %c",
+                                                           trimmedAmount,
+                                                           sizeChar );
+
+                        button->setLabelText( trimmedString );
+
+                        delete [] trimmedString;
+                        }
+                    
+
+                        
                     delete [] dollarString;
 
                     r.button = button;
