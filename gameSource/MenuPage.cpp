@@ -305,7 +305,7 @@ void MenuPage::step() {
 
                     delete [] tip;
 
-                    if( r.dollarAmount < 10000 ) {
+                    if( r.dollarAmount < 1000 ) {
                         
                         button->setLabelText( dollarString );
                         }
@@ -330,7 +330,18 @@ void MenuPage::step() {
                             trimmedAmount = trimmedAmount / 1000;
                             }
                         
-                        char *trimmedString = autoSprintf( "$%.0f %c",
+                        
+                        const char *formatString = "$%.0f %c";
+                        
+                        if( trimmedAmount < 10 ) {
+                            formatString = "$%.1f %c";
+                            trimmedAmount = floor( 10 * trimmedAmount ) / 10;
+                            }
+                        else {
+                            trimmedAmount = floor( trimmedAmount );
+                            }
+
+                        char *trimmedString = autoSprintf( formatString,
                                                            trimmedAmount,
                                                            sizeChar );
 
