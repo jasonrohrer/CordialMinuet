@@ -1226,7 +1226,6 @@ function cm_makeDeposit() {
 
     // else we're good
 
-    $dollar_balance += $dollar_amount;
     
 
     // fee is taken out of amount actually deposited, but we
@@ -1265,7 +1264,7 @@ function cm_makeDeposit() {
             $query = "INSERT INTO $tableNamePrefix". "users SET ".
                 "account_key = '$account_key', ".
                 "email = '$email', ".
-                "dollar_balance = '$dollar_balance', ".
+                "dollar_balance = '$dollar_amount', ".
                 "num_deposits = 1, ".
                 "total_deposits = '$dollar_amount', ".
                 "num_withdrawals = 0, ".
@@ -1295,7 +1294,7 @@ function cm_makeDeposit() {
                 }
             }
 
-
+        $dollar_balance = $dollar_amount;
 
         // for presentation to user
         
@@ -1351,7 +1350,7 @@ function cm_makeDeposit() {
         $response = "0\n#\nOK";
         
         $query = "UPDATE $tableNamePrefix". "users SET ".
-            "dollar_balance = '$dollar_balance', ".
+            "dollar_balance = dollar_balance + $dollar_amount, ".
             "num_deposits = num_deposits + 1, ".
             "total_deposits = total_deposits + '$dollar_amount', ".
             "last_request_tag = '$request_tag', ".
@@ -1362,6 +1361,13 @@ function cm_makeDeposit() {
         global $remoteIP;
         cm_log( "Deposit of \$$dollar_amount for user $user_id ($email) by ".
                 "$remoteIP" );
+
+        $query = "SELECT dollar_balance FROM $tableNamePrefix"."users ".
+            "WHERE user_id = $user_id;";
+        $result = cm_queryDatabase( $query );
+
+        $dollar_balance = mysql_result( $result, 0, "dollar_balance" );
+        
         
         cm_queryDatabase( "COMMIT;" );
         cm_queryDatabase( "SET AUTOCOMMIT=1" );
@@ -1744,8 +1750,6 @@ function cm_sendUSCheck() {
 
     // else we're good
 
-    $dollar_balance -= $dollar_amount;
-
 
     // we found "price" field in LOB response
     // it may differ from what we charged the user for their check
@@ -1769,7 +1773,7 @@ function cm_sendUSCheck() {
     $response = "OK";
         
     $query = "UPDATE $tableNamePrefix". "users SET ".
-        "dollar_balance = '$dollar_balance', ".
+        "dollar_balance = dollar_balance - $dollar_amount, ".
         "request_sequence_number = $request_sequence_number + 1, ".
         "num_withdrawals = num_withdrawals + 1, ".
         // track amount they receive by check
@@ -1911,8 +1915,7 @@ function cm_accountTransfer() {
 
     
     $transfer_amount = $dollar_amount - $transferCost;
-    $transfer_amount_string = number_format( $transfer_amount, 2 );
-
+    
 
     $query = "SELECT COUNT(*) FROM $tableNamePrefix"."users ".
         "WHERE email = '$recipient_email' and blocked = 0;";
@@ -1927,12 +1930,11 @@ function cm_accountTransfer() {
         }
 
     // first, withdraw from sender
-    $dollar_balance = $dollar_balance - $dollar_amount;
     
     $response = "OK";
         
     $query = "UPDATE $tableNamePrefix"."users SET ".
-        "dollar_balance = '$dollar_balance', ".
+        "dollar_balance = dollar_balance - $dollar_amount, ".
         "request_sequence_number = $request_sequence_number + 1, ".
         "num_withdrawals = num_withdrawals + 1, ".
         // track amount recipient receives
