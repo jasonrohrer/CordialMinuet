@@ -89,6 +89,7 @@ void DepositDisplayPage::draw( doublePair inViewCenter,
     
     doublePair pos = { 0, 0 };
     
+    pos.x = -64;
     pos.y += 64;
     
     mainFont->drawString( translate( "oldBalance" ), pos, alignRight );
@@ -132,7 +133,7 @@ void DepositDisplayPage::draw( doublePair inViewCenter,
     delete [] newBalanceEstimateString;
 
 
-    double xOffset = 2 * mainFont->getFontHeight() + maxWidth;
+    double xOffset = 2 * mainFont->getFontHeight() + maxWidth - 64;
         
 
 
@@ -141,7 +142,7 @@ void DepositDisplayPage::draw( doublePair inViewCenter,
     
     delete [] oldBalanceString;
 
-    pos.x = 0;
+    pos.x = -64;
     pos.y -= 64;
 
     const char *amountKey = "addedAmount";
@@ -157,7 +158,7 @@ void DepositDisplayPage::draw( doublePair inViewCenter,
     
     delete [] deletaString;
     
-    pos.x = 0;
+    pos.x = -64;
     pos.y -= 64;
  
     mainFont->drawString( translate( "newBalance" ), pos, alignRight );
