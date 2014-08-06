@@ -33,7 +33,7 @@ extern double transferCost;
 
 
 CreateGamePage::CreateGamePage()
-        : ServerActionPage( "create_game" ),
+        : ServerActionPage( "join_game" ),
           mAmountPicker( mainFont, 96, 75, 9, 2, 
                          translate( "$" ) ),
           mCreateButton( mainFont, 150, -200, 
@@ -71,20 +71,9 @@ CreateGamePage::~CreateGamePage() {
 void CreateGamePage::actionPerformed( GUIComponent *inTarget ) {
     if( inTarget == &mCreateButton ) {
         setStatus( NULL, false );
-
-        setActionParameter( "request_sequence_number", serverSequenceNumber );
         
-        char *pureKey = getPureAccountKey();
-        
-        char *hmacKey = autoSprintf( "%s%d", pureKey, serverSequenceNumber );
-        delete [] pureKey;
 
-        char *tagString = autoSprintf( "%d", time( NULL ) );
-        char *request_tag = hmac_sha1( hmacKey, tagString );
-        delete [] tagString;
-
-        setActionParameter( "request_tag", request_tag );
-        delete [] request_tag;
+        setupRequestParameterSecurity();
         
         
         double dollarAmount = mAmountPicker.getValue();
@@ -92,10 +81,8 @@ void CreateGamePage::actionPerformed( GUIComponent *inTarget ) {
         char *dollarAmountString = autoSprintf( "%.2f", dollarAmount );
         
         setParametersFromString( "dollar_amount", 
-                                 dollarAmountString, hmacKey );
+                                 dollarAmountString );
         delete [] dollarAmountString;
-        
-        delete [] hmacKey;
         
         mCreateButton.setVisible( false );
         mCancelButton.setVisible( false );

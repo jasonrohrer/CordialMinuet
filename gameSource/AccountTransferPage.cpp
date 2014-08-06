@@ -84,22 +84,9 @@ void AccountTransferPage::actionPerformed( GUIComponent *inTarget ) {
     if( inTarget == &mTransferButton ) {
         setStatus( NULL, false );
 
-        setActionParameter( "request_sequence_number", serverSequenceNumber );
+        setupRequestParameterSecurity();
         
-        char *pureKey = getPureAccountKey();
-        
-        char *hmacKey = autoSprintf( "%s%d", pureKey, serverSequenceNumber );
-        delete [] pureKey;
-
-        char *tagString = autoSprintf( "%d", time( NULL ) );
-        char *request_tag = hmac_sha1( hmacKey, tagString );
-        delete [] tagString;
-
-        setActionParameter( "request_tag", request_tag );
-        delete [] request_tag;
-        
-        
-        setParametersFromField( "recipient_email", &mEmailField, hmacKey );
+        setParametersFromField( "recipient_email", &mEmailField );
                 
 
         double dollarAmount = mAmountPicker.getValue();
@@ -107,10 +94,8 @@ void AccountTransferPage::actionPerformed( GUIComponent *inTarget ) {
         char *dollarAmountString = autoSprintf( "%.2f", dollarAmount );
         
         setParametersFromString( "dollar_amount", 
-                                 dollarAmountString, hmacKey );
+                                 dollarAmountString );
         delete [] dollarAmountString;
-        
-        delete [] hmacKey;
         
         mTransferButton.setVisible( false );
         mCancelButton.setVisible( false );

@@ -12,9 +12,13 @@
 #include "serialWebRequests.h"
 #include "accountHmac.h"
 
+#include <time.h>
+
+
 extern char *serverURL;
 
 extern int userID;
+extern int serverSequenceNumber;
 
 
 
@@ -27,7 +31,8 @@ ServerActionPage::ServerActionPage( const char *inActionName,
           mNumResponseParts( inRequiredNumResponseParts ),
           mWebRequest( -1 ), mResponseReady( false ),
           mMinimumResponseSeconds( 0 ),
-          mRequestStartTime( 0 ) {
+          mRequestStartTime( 0 ),
+          mParameterHmacKey( NULL ) {
     
     for( int i=0; i<mNumResponseParts; i++ ) {
         mResponsePartNames.push_back( 
@@ -46,7 +51,8 @@ ServerActionPage::ServerActionPage( const char *inActionName,
           mNumResponseParts( -1 ),
           mWebRequest( -1 ), mResponseReady( false ),
           mMinimumResponseSeconds( 0 ),
-          mRequestStartTime( 0 ) {
+          mRequestStartTime( 0 ),
+          mParameterHmacKey( NULL ) {
     
     addServerErrorString( "DENIED", "requestDenied" );
     }
@@ -72,6 +78,11 @@ ServerActionPage::~ServerActionPage() {
     
     for( int i=0; i<mErrorStringList.size(); i++ ) {
         delete [] *( mErrorStringList.getElement( i ) );
+        }
+    
+    if( mParameterHmacKey != NULL ) {
+        delete [] mParameterHmacKey;
+        mParameterHmacKey = NULL;
         }
     }
 
@@ -408,12 +419,11 @@ void ServerActionPage::setMinimumResponseTime( double inSeconds ) {
 
 
 void ServerActionPage::setParametersFromField( const char *inParamName,
-                                               TextField *inField,
-                                               const char *inHmacKey ) {
+                                               TextField *inField ) {
     
     char *value = inField->getText();
 
-    setParametersFromString( inParamName, value, inHmacKey );
+    setParametersFromString( inParamName, value );
     
     delete [] value;
     }
@@ -421,10 +431,14 @@ void ServerActionPage::setParametersFromField( const char *inParamName,
 
 
 void ServerActionPage::setParametersFromString( const char *inParamName,
-                                               const char *inString,
-                                               const char *inHmacKey ) {
+                                               const char *inString ) {
     
-    char *value_hmac = hmac_sha1( inHmacKey, inString );
+    if( mParameterHmacKey == NULL ) {
+        printf( "HmacKey not set before calling setParametersFromString\n" );
+        return;
+        }
+    
+    char *value_hmac = hmac_sha1( mParameterHmacKey, inString );
         
     char *encodedValue = URLUtils::urlEncode( (char *)inString );
     
@@ -438,3 +452,27 @@ void ServerActionPage::setParametersFromString( const char *inParamName,
     delete [] value_hmac;
     }
 
+
+
+
+void ServerActionPage::setupRequestParameterSecurity() {    
+
+    setActionParameter( "request_sequence_number", serverSequenceNumber );
+        
+    char *pureKey = getPureAccountKey();
+    
+    if( mParameterHmacKey != NULL ) {
+        delete [] mParameterHmacKey;
+        mParameterHmacKey = NULL;
+        }
+    
+    mParameterHmacKey = autoSprintf( "%s%d", pureKey, serverSequenceNumber );
+    delete [] pureKey;
+
+    char *tagString = autoSprintf( "%d", time( NULL ) );
+    char *request_tag = hmac_sha1( mParameterHmacKey, tagString );
+    delete [] tagString;
+
+    setActionParameter( "request_tag", request_tag );
+    delete [] request_tag;
+    }

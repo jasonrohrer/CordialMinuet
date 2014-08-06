@@ -125,28 +125,16 @@ SendCheckPage::~SendCheckPage() {
 void SendCheckPage::actionPerformed( GUIComponent *inTarget ) {
     if( inTarget == &mSendCheckButton ) {
         setStatus( NULL, false );
-
-        setActionParameter( "request_sequence_number", serverSequenceNumber );
         
-        char *pureKey = getPureAccountKey();
+        setupRequestParameterSecurity();
+                
         
-        char *hmacKey = autoSprintf( "%s%d", pureKey, serverSequenceNumber );
-        delete [] pureKey;
-
-        char *tagString = autoSprintf( "%d", time( NULL ) );
-        char *request_tag = hmac_sha1( hmacKey, tagString );
-        delete [] tagString;
-
-        setActionParameter( "request_tag", request_tag );
-        delete [] request_tag;
-        
-        
-        setParametersFromField( "name", &mNameField, hmacKey );
-        setParametersFromField( "address1", &mAddress1Field, hmacKey );
-        setParametersFromField( "address2", &mAddress2Field, hmacKey );
-        setParametersFromField( "city", &mCityField, hmacKey );
-        setParametersFromField( "state", &mStateField, hmacKey );
-        setParametersFromField( "zip", &mZipField, hmacKey );
+        setParametersFromField( "name", &mNameField );
+        setParametersFromField( "address1", &mAddress1Field );
+        setParametersFromField( "address2", &mAddress2Field );
+        setParametersFromField( "city", &mCityField );
+        setParametersFromField( "state", &mStateField );
+        setParametersFromField( "zip", &mZipField );
         
 
         double dollarAmount = mAmountPicker.getValue();
@@ -154,10 +142,9 @@ void SendCheckPage::actionPerformed( GUIComponent *inTarget ) {
         char *dollarAmountString = autoSprintf( "%.2f", dollarAmount );
         
         setParametersFromString( "dollar_amount", 
-                                 dollarAmountString, hmacKey );
+                                 dollarAmountString );
         delete [] dollarAmountString;
-        
-        delete [] hmacKey;
+
         
         mSendCheckButton.setVisible( false );
         mCancelButton.setVisible( false );

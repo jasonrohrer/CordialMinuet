@@ -91,6 +91,17 @@ class ServerActionPage : public GamePage {
         void setMinimumResponseTime( double inSeconds );
 
 
+        // call this before adding hmac-signed parameters below
+        void setupRequestParameterSecurity();
+        
+        
+        // for two-parameter, hmac-signed parameters
+        void setParametersFromField( const char *inParamName,
+                                     TextField *inField );
+        
+        void setParametersFromString( const char *inParamName,
+                                      const char *inString );
+
     protected:
         
         void startRequest();
@@ -120,15 +131,11 @@ class ServerActionPage : public GamePage {
         
         double mRequestStartTime;
 
+
+        char *mParameterHmacKey;
         
-        // for two-parameter, hmac-signed parameters
-        void setParametersFromField( const char *inParamName,
-                                     TextField *inField,
-                                     const char *inHmacKey );
-        
-        void setParametersFromString( const char *inParamName,
-                                      const char *inString,
-                                      const char *inHmacKey );
+
+
     };
 
         
