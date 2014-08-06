@@ -412,11 +412,22 @@ void ServerActionPage::setParametersFromField( const char *inParamName,
                                                const char *inHmacKey ) {
     
     char *value = inField->getText();
-    char *value_hmac = hmac_sha1( inHmacKey, value );
-        
-    char *encodedValue = URLUtils::urlEncode( value );
-    delete [] value;
 
+    setParametersFromString( inParamName, value, inHmacKey );
+    
+    delete [] value;
+    }
+
+
+
+void ServerActionPage::setParametersFromString( const char *inParamName,
+                                               const char *inString,
+                                               const char *inHmacKey ) {
+    
+    char *value_hmac = hmac_sha1( inHmacKey, inString );
+        
+    char *encodedValue = URLUtils::urlEncode( (char *)inString );
+    
     setActionParameter( inParamName, encodedValue );
     delete [] encodedValue;
         

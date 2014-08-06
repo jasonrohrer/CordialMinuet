@@ -120,10 +120,15 @@ class ServerActionPage : public GamePage {
         
         double mRequestStartTime;
 
+        
         // for two-parameter, hmac-signed parameters
         void setParametersFromField( const char *inParamName,
                                      TextField *inField,
                                      const char *inHmacKey );
+        
+        void setParametersFromString( const char *inParamName,
+                                      const char *inString,
+                                      const char *inHmacKey );
     };
 
         

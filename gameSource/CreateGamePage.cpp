@@ -91,14 +91,9 @@ void CreateGamePage::actionPerformed( GUIComponent *inTarget ) {
         
         char *dollarAmountString = autoSprintf( "%.2f", dollarAmount );
         
-        char *dollarAmountHmac = hmac_sha1( hmacKey, 
-                                            dollarAmountString );
-        
-        setActionParameter( "dollar_amount", dollarAmountString );
+        setParametersFromString( "dollar_amount", 
+                                 dollarAmountString, hmacKey );
         delete [] dollarAmountString;
-
-        setActionParameter( "dollar_amount_hmac", dollarAmountHmac );
-        delete [] dollarAmountHmac;
         
         delete [] hmacKey;
         
