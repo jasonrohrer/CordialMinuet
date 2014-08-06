@@ -423,7 +423,7 @@ function cm_setupDatabase() {
             "last_action_time DATETIME NOT NULL," .
             "last_request_tag CHAR(40) NOT NULL,".
             "last_request_response TEXT NOT NULL,".
-            "blocked TINYINT NOT NULL ) ENGINE = INNODB;";
+            "blocked TINYINT UNSIGNED NOT NULL ) ENGINE = INNODB;";
 
         $result = cm_queryDatabase( $query );
 
@@ -453,6 +453,7 @@ function cm_setupDatabase() {
             "INDEX( player_2_id )," .
             "dollar_amount DECIMAL(13, 2) NOT NULL,".
             "INDEX( dollar_amount )," .
+            "started TINYINT UNSIGNED NOT NULL,".
             // 36-cell square, numbers from 1 to 36, separated by #
             // character
             "game_square CHAR(125) NOT NULL,".
@@ -2255,6 +2256,7 @@ function cm_createGame() {
             "player_1_id = '$user_id'," .
             "player_2_id = 0," .
             "dollar_amount = '$dollar_amount',".
+            "started = 0,".
             "game_square = '$square',".
             "first_user_moves = '',".
             "second_user_moves = '',".
@@ -2488,6 +2490,7 @@ function cm_listGames() {
     $query_limit = $limit + 1;
     
     $query = "SELECT game_id, dollar_amount FROM $tableNamePrefix"."games ".
+        "WHERE player_2_id = 0 AND started = 0 ".
         "ORDER BY dollar_amount ASC ".
         "LIMIT $skip, $query_limit;";
 
