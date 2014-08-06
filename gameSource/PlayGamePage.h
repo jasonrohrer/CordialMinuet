@@ -13,12 +13,12 @@
 
 
 
-class WaitGamePage : public ServerActionPage, public ActionListener {
+class PlayGamePage : public ServerActionPage, public ActionListener {
         
     public:
-        WaitGamePage();
+        PlayGamePage();
         
-        ~WaitGamePage();
+        ~PlayGamePage();
         
         
         virtual void actionPerformed( GUIComponent *inTarget );
@@ -38,7 +38,7 @@ class WaitGamePage : public ServerActionPage, public ActionListener {
         
         
     protected:
-
-        TextButton mCancelButton;                
+           
+        int *mGameBoard;
         
     };

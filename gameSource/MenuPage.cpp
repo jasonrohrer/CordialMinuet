@@ -45,7 +45,8 @@ MenuPage::MenuPage()
                        translate( "nextPage" ) ),
           mLimit( 9 ),
           mSkip( 0 ),
-          mResponseProcessed( false ) {
+          mResponseProcessed( false ),
+          mJoinedGameDollarAmount( 0 ) {
 
     addComponent( &mDepositButton );
     addComponent( &mWithdrawButton );
@@ -160,13 +161,13 @@ void MenuPage::actionPerformed( GUIComponent *inTarget ) {
     if( inTarget == &mDepositButton ) {
         setSignal( "deposit" );
         }
-    if( inTarget == &mWithdrawButton ) {
+    else if( inTarget == &mWithdrawButton ) {
         setSignal( "withdraw" );
         }
-    if( inTarget == &mNewGameButton ) {
+    else if( inTarget == &mNewGameButton ) {
         setSignal( "newGame" );
         }
-    if( inTarget == &mNextButton ) {
+    else if( inTarget == &mNextButton ) {
         mSkip += mLimit;
         setActionParameter( "skip", mSkip );
         
@@ -178,7 +179,7 @@ void MenuPage::actionPerformed( GUIComponent *inTarget ) {
         mResponseProcessed = false;
         startRequest();
         }
-    if( inTarget == &mPrevButton ) {
+    else if( inTarget == &mPrevButton ) {
         mSkip -= mLimit;
         if( mSkip < 0 ) {
             mSkip = 0;
@@ -193,6 +194,21 @@ void MenuPage::actionPerformed( GUIComponent *inTarget ) {
         mResponseProcessed = false;
         startRequest();
         }
+    else {
+        for( int i=0; i<mListedGames.size(); i++ ) {
+            GameRecord *r = mListedGames.getElement( i );
+            
+            if( r->button == inTarget ) {
+                
+                mJoinedGameDollarAmount = r->dollarAmount;
+                
+                setSignal( "join" );
+
+                break;
+                }
+            }
+        }
+    
     }
 
     
@@ -278,101 +294,96 @@ void MenuPage::step() {
 
             delete [] line;
 
-            if( numParts == 2 ) {
-                
-                if( i != numLines - 1 ) {
+            if( numParts == 1 && i != numLines - 1 ) {
                     
-                    GameRecord r;
-                    r.gameID = stringDuplicate( parts[0] );
-                
+                GameRecord r;
                     
-                    sscanf( parts[1], "%lf", &( r.dollarAmount ) );
+                sscanf( parts[0], "%lf", &( r.dollarAmount ) );
                     
                     
-                    int b = buttonsToUse[numGames - 1][i];
+                int b = buttonsToUse[numGames - 1][i];
                     
-                    TextButton *button = mGameButtons.getElementDirect( b );
+                TextButton *button = mGameButtons.getElementDirect( b );
                     
-                    button->setVisible( true );
+                button->setVisible( true );
                     
-                    char *dollarString = formatBalance( r.dollarAmount );
+                char *dollarString = formatBalance( r.dollarAmount );
                     
       
-                    char *tip = autoSprintf( translate( "joinButtonTip" ),
-                                             dollarString );
+                char *tip = autoSprintf( translate( "joinButtonTip" ),
+                                         dollarString );
                     
-                    button->setMouseOverTip( tip );
+                button->setMouseOverTip( tip );
 
-                    delete [] tip;
+                delete [] tip;
 
-                    if( r.dollarAmount < 1000 ) {
+                if( r.dollarAmount < 1000 ) {
                         
-                        button->setLabelText( dollarString );
-                        }
-                    else {
-                        // too big to display on button
-                        char sizeChar = 'K';
-                        
-                        double trimmedAmount = r.dollarAmount / 1000;
-                        
-                        if( trimmedAmount >= 1000 ) {
-                            sizeChar = 'M';
-                            trimmedAmount = trimmedAmount / 1000;
-                            }
-
-                        if( trimmedAmount >= 1000 ) {
-                            sizeChar = 'B';
-                            trimmedAmount = trimmedAmount / 1000;
-                            }
-                        
-                        if( trimmedAmount >= 1000 ) {
-                            sizeChar = 'T';
-                            trimmedAmount = trimmedAmount / 1000;
-                            }
-                        
-                        
-                        const char *formatString = "$%.0f %c";
-                        
-                        if( trimmedAmount < 10 ) {
-                            formatString = "$%.1f %c";
-                            trimmedAmount = floor( 10 * trimmedAmount ) / 10;
-                            }
-                        else {
-                            trimmedAmount = floor( trimmedAmount );
-                            }
-
-                        char *trimmedString = autoSprintf( formatString,
-                                                           trimmedAmount,
-                                                           sizeChar );
-
-                        button->setLabelText( trimmedString );
-
-                        delete [] trimmedString;
-                        }
-                    
-
-                        
-                    delete [] dollarString;
-
-                    r.button = button;
-                    
-                    mListedGames.push_back( r );
+                    button->setLabelText( dollarString );
                     }
                 else {
-                    // last line is not a game
-                    
-                    int morePages;
-                    sscanf( parts[0], "%d", &morePages );
-                    
-                    if( morePages ) {
-                        mNextButton.setVisible( true );
+                    // too big to display on button
+                    char sizeChar = 'K';
+                        
+                    double trimmedAmount = r.dollarAmount / 1000;
+                        
+                    if( trimmedAmount >= 1000 ) {
+                        sizeChar = 'M';
+                        trimmedAmount = trimmedAmount / 1000;
                         }
-                    
-                    sscanf( parts[1], "%d", &mSkip );
-                    
-                    if( mSkip > 0 ) {
-                        mPrevButton.setVisible( true );
+
+                    if( trimmedAmount >= 1000 ) {
+                        sizeChar = 'B';
+                        trimmedAmount = trimmedAmount / 1000;
                         }
+                        
+                    if( trimmedAmount >= 1000 ) {
+                        sizeChar = 'T';
+                        trimmedAmount = trimmedAmount / 1000;
+                        }
+                        
+                        
+                    const char *formatString = "$%.0f %c";
+                        
+                    if( trimmedAmount < 10 ) {
+                        formatString = "$%.1f %c";
+                        trimmedAmount = floor( 10 * trimmedAmount ) / 10;
+                        }
+                    else {
+                        trimmedAmount = floor( trimmedAmount );
+                        }
+
+                    char *trimmedString = autoSprintf( formatString,
+                                                       trimmedAmount,
+                                                       sizeChar );
+
+                    button->setLabelText( trimmedString );
+
+                    delete [] trimmedString;
+                    }
+                    
+
+                        
+                delete [] dollarString;
+
+                r.button = button;
+                    
+                mListedGames.push_back( r );
+                }
+            else if( numParts == 2 ) {
+                // last line is not a game
+                    
+                int morePages;
+                sscanf( parts[0], "%d", &morePages );
+                    
+                if( morePages ) {
+                    mNextButton.setVisible( true );
+                    }
+                    
+                sscanf( parts[1], "%d", &mSkip );
+                    
+                if( mSkip > 0 ) {
+                    mPrevButton.setVisible( true );
                     }
                 }
             
@@ -403,3 +414,11 @@ void MenuPage::makeActive( char inFresh ) {
     mResponseProcessed = false;
     startRequest();
     }
+
+
+
+double MenuPage::getJoinedGameDollarAmount() {
+    return mJoinedGameDollarAmount;
+    }
+
+

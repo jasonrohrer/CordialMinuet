@@ -65,6 +65,7 @@ CustomRandomSource randSource( 34957197 );
 #include "AccountTransferPage.h"
 #include "CreateGamePage.h"
 #include "WaitGamePage.h"
+#include "PlayGamePage.h"
 
 
 #include "serialWebRequests.h"
@@ -93,6 +94,8 @@ DepositDisplayPage *withdrawalDisplayPage;
 CreateGamePage *createGamePage;
 WaitGamePage *waitGamePage;
 ServerActionPage *leaveGamePage;
+ServerActionPage *joinGamePage;
+PlayGamePage *playGamePage;
 
 
 // position of view in world
@@ -503,6 +506,11 @@ void initFrameDrawer( int inWidth, int inHeight, int inTargetFrameRate,
         
     leaveGamePage = new ServerActionPage( "leave_game" );
 
+    joinGamePage = new ServerActionPage( "join_game" );
+
+
+    playGamePage = new PlayGamePage();
+
 
     currentGamePage = getServerURLPage;
 
@@ -543,6 +551,8 @@ void freeFrameDrawer() {
     delete createGamePage;
     delete waitGamePage;
     delete leaveGamePage;
+    delete joinGamePage;
+    delete playGamePage;
     
 
     if( shutdownMessage != NULL ) {
@@ -1148,6 +1158,20 @@ void drawFrame( char inUpdate ) {
                 currentGamePage = createGamePage;
                 currentGamePage->base_makeActive( true );
                 }
+            else if( menuPage->checkSignal( "join" ) ) {
+                double dollarAmount = menuPage->getJoinedGameDollarAmount();
+                
+                char *dollarString = autoSprintf( "%.2f", dollarAmount );
+                
+                joinGamePage->setupRequestParameterSecurity();
+                
+                joinGamePage->setParametersFromString( "dollar_amount",
+                                                       dollarString );
+                delete [] dollarString;
+                
+                currentGamePage = joinGamePage;
+                currentGamePage->base_makeActive( true );
+                }
             }
         else if( currentGamePage == withdrawPage ) {
             if( withdrawPage->checkSignal( "back" ) ) {
@@ -1222,10 +1246,20 @@ void drawFrame( char inUpdate ) {
                 currentGamePage = leaveGamePage;
                 currentGamePage->base_makeActive( true );
                 }
+            else if( waitGamePage->checkSignal( "started" ) ) {
+                currentGamePage = playGamePage;
+                currentGamePage->base_makeActive( true );
+                }
             }
         else if( currentGamePage == leaveGamePage ) {
             if( leaveGamePage->isResponseReady() ) {
                 currentGamePage = menuPage;
+                currentGamePage->base_makeActive( true );
+                }
+            }
+        else if( currentGamePage == joinGamePage ) {
+            if( joinGamePage->isResponseReady() ) {
+                currentGamePage = waitGamePage;
                 currentGamePage->base_makeActive( true );
                 }
             }

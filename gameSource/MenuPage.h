@@ -31,7 +31,9 @@ class MenuPage : public ServerActionPage, public ActionListener {
         virtual void step();
   
         virtual void makeActive( char inFresh );
-      
+        
+        double getJoinedGameDollarAmount();
+
     protected:
         
         TextButton mDepositButton;
@@ -51,4 +53,7 @@ class MenuPage : public ServerActionPage, public ActionListener {
         SimpleVector<TextButton*> mGameButtons;
         
         void clearListedGames();
+
+
+        double mJoinedGameDollarAmount;
     };

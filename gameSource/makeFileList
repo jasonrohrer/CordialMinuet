@@ -44,6 +44,7 @@ SendCheckPage.cpp \
 AccountTransferPage.cpp \
 CreateGamePage.cpp \
 WaitGamePage.cpp \
+PlayGamePage.cpp \
 
 
 

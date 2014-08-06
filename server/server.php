@@ -184,7 +184,8 @@ if( $shutdownMode &&
       $action == "create_games" ||
       $action == "wait_game_start" ||
       $action == "leave_game" ||
-      $action == "list_games" ) ) {
+      $action == "list_games" ||
+      $action == "get_game_state" ) ) {
     
     echo "SHUTDOWN";
     global $shutdownMessage;
@@ -224,8 +225,8 @@ else if( $action == "send_us_check" ) {
 else if( $action == "account_transfer" ) {
     cm_accountTransfer();
     }
-else if( $action == "create_game" ) {
-    cm_createGame();
+else if( $action == "join_game" ) {
+    cm_joinGame();
     }
 else if( $action == "wait_game_start" ) {
     cm_waitGameStart();
@@ -235,6 +236,9 @@ else if( $action == "leave_game" ) {
     }
 else if( $action == "list_games" ) {
     cm_listGames();
+    }
+else if( $action == "get_game_state" ) {
+    cm_getGameState();
     }
 else if( $action == "check_for_flush" ) {
     cm_checkForFlush();
@@ -2136,7 +2140,7 @@ function cm_getNewSquare() {
 
 
 
-function cm_createGame() {
+function cm_joinGame() {
     if( ! cm_verifyTransaction() ) {
         return;
         }
@@ -2167,7 +2171,7 @@ function cm_createGame() {
 
     
     if( $numRows == 0 ) {
-        cm_log( "cm_accountTransfer, user $user_id not found" );
+        cm_log( "cm_joinGame, user $user_id not found" );
         cm_transactionDeny();
         return;
         }
@@ -2186,7 +2190,7 @@ function cm_createGame() {
 
 
     if( $request_sequence_number < $old_request_sequence_number ) {
-        cm_log( "cm_createGame, stale request sequence number" );
+        cm_log( "cm_joinGame, stale request sequence number" );
         cm_transactionDeny();
         return;
         }
@@ -2202,7 +2206,7 @@ function cm_createGame() {
 
 
     if( $dollar_amount > $dollar_balance ) {
-        cm_log( "cm_createGame, balance too low for requested game" );
+        cm_log( "cm_joinGame, balance too low for requested game" );
         cm_transactionDeny();
         return;
         }
@@ -2212,6 +2216,79 @@ function cm_createGame() {
         
     cm_endOldGames( $user_id );
 
+
+
+    
+    // does a game already exist with this value?
+
+    $query = "SELECT semaphore_key, player_1_id, game_id ".
+        "FROM $tableNamePrefix"."games ".
+        "WHERE player_1_id != 0 AND player_2_id = 0 AND started = 0 ".
+        "AND dollar_amount = '$dollar_amount' ".
+        "LIMIT 1 FOR UPDATE;";
+
+    $result = cm_queryDatabase( $query );
+
+    
+    $numRows = mysql_numrows( $result );
+
+    
+    if( $numRows == 1 ) {
+        // one exists already
+
+        // join it
+        $game_id = mysql_result( $result, 0, "game_id" );
+        $player_1_id = mysql_result( $result, 0, "player_1_id" );
+        $semaphore_key = mysql_result( $result, 0, "semaphore_key" );
+
+        $query = "UPDATE $tableNamePrefix"."games ".
+            "SET player_2_id = '$user_id', started = 1 ".
+            "WHERE game_id = '$game_id';";
+        
+        cm_queryDatabase( $query );
+
+
+        // game has started now, subtract from both balances
+        $query = "UPDATE $tableNamePrefix"."users ".
+            "SET dollar_balance = dollar_balance + $dollar_amount, ".
+            "games_started = games_started + 1, ".
+            "total_buy_in = total_buy_in + $dollar_amount ".
+            "WHERE user_id = '$player_1_id' OR user_id = '$user_id';";
+        cm_queryDatabase( $query );
+
+        $query = "UPDATE $tableNamePrefix"."users ".
+            "SET games_joined = games_joined + 1 ".
+            "WHERE user_id = '$user_id';";
+        cm_queryDatabase( $query );
+
+        
+        $response = "OK";
+        
+        $query = "UPDATE $tableNamePrefix"."users SET ".
+            "last_request_response = '$response', ".
+            "last_request_tag = '$request_tag' ".
+            "WHERE user_id = '$user_id';";
+
+        cm_queryDatabase( $query );
+
+
+        // wake up opponent who may be waiting
+        semSignal( $semaphore_key );
+        
+    
+        cm_queryDatabase( "COMMIT;" );
+        cm_queryDatabase( "SET AUTOCOMMIT=1" );
+        
+        echo $response;
+
+        return;
+        }
+
+
+    
+    // else, create a new one
+
+    
 
     // don't subtract from their balance yet
     // wait until both join
@@ -2369,9 +2446,10 @@ function cm_waitGameStart() {
 
     cm_queryDatabase( "SET AUTOCOMMIT=0" );
     
-    $query = "SELECT semaphore_key, player_2_id ".
+    $query = "SELECT semaphore_key, started ".
         "FROM $tableNamePrefix"."games ".
-        "WHERE player_1_id = '$user_id' FOR UPDATE;";
+        "WHERE player_1_id = '$user_id' OR player_2_id = '$user_id' ".
+        "FOR UPDATE;";
 
     $result = cm_queryDatabase( $query );
 
@@ -2386,9 +2464,9 @@ function cm_waitGameStart() {
         }
 
     $semaphore_key = mysql_result( $result, 0, "semaphore_key" );
-    $player_2_id = mysql_result( $result, 0, "player_2_id" );
-
-    if( $player_2_id != 0 ) {
+    $started = mysql_result( $result, 0, "started" );
+    
+    if( $started != 0 ) {
         echo "started\nOK";
         return;
         }
@@ -2491,7 +2569,7 @@ function cm_listGames() {
     // of additional pages beyond limit  
     $query_limit = $limit + 1;
     
-    $query = "SELECT game_id, dollar_amount FROM $tableNamePrefix"."games ".
+    $query = "SELECT dollar_amount FROM $tableNamePrefix"."games ".
         "WHERE player_2_id = 0 AND started = 0 ".
         "ORDER BY dollar_amount ASC ".
         "LIMIT $skip, $query_limit;";
@@ -2502,10 +2580,9 @@ function cm_listGames() {
 
 
     for( $i=0; $i < $numRows && $i < $limit; $i++ ) {
-        $game_id = mysql_result( $result, $i, "game_id" );
         $dollar_amount = mysql_result( $result, $i, "dollar_amount" );
 
-        echo "$game_id#$dollar_amount\n";
+        echo "$dollar_amount\n";
         }
 
     if( $numRows > $limit ) {
@@ -2516,6 +2593,112 @@ function cm_listGames() {
         }
     echo "OK";
     }
+
+
+
+function cm_swapSquare( $inSquare ) {
+    $squareParts = preg_split( "/#/", $inSquare );
+
+    $swappedParts = array();
+
+    for( $x=0; $x<6; $x++ ) {
+        
+        for( $y=5; $y>=0; $y-- ) {
+
+            $i = $y * 6 + $x;
+
+            $swappedParts[] = $squareParts[$i];
+            }
+        }
+    return implode( "#", $swappedParts );
+    }
+
+
+
+
+function cm_getGameState() {
+    if( ! cm_verifyTransaction() ) {
+        return;
+        }
+
+    $user_id = cm_getUserID();
+
+
+    global $tableNamePrefix;
+
+
+    /*
+"game_square CHAR(125) NOT NULL,".
+            "first_user_moves CHAR(11) NOT NULL,".
+            "second_user_moves CHAR(11) NOT NULL,".
+            "move_deadline DATETIME NOT NULL,".
+            "player_1_coins TINYINT UNSIGNED NOT NULL, ".
+            "player_2_coins TINYINT UNSIGNED NOT NULL, ".
+            "player_1_pot_coins TINYINT UNSIGNED NOT NULL, ".
+            "player_2_pot_coins TINYINT UNSIGNED NOT NULL, ".
+     */
+    
+    $query = "SELECT player_1_id, player_2_id,".
+        "game_square, player_1_coins, player_2_coins, ".
+        "player_1_pot_coins, player_2_pot_coins ".
+        "FROM $tableNamePrefix"."games ".
+        "WHERE player_1_id = '$user_id' OR player_2_id = '$user_id';";
+
+    $result = cm_queryDatabase( $query );
+    
+    $numRows = mysql_numrows( $result );
+
+    if( $numRows != 1 ) {
+        cm_transactionDeny();
+        return;
+        }
+    
+    $player_1_id = mysql_result( $result, 0, "player_1_id" );
+    $player_2_id = mysql_result( $result, 0, "player_2_id" );
+    $game_square = mysql_result( $result, 0, "game_square" );
+
+    $player_1_coins = mysql_result( $result, 0, "player_1_coins" );
+    $player_2_coins = mysql_result( $result, 0, "player_2_coins" );
+
+    $player_1_pot_coins = mysql_result( $result, 0, "player_1_pot_coins" );
+    $player_2_pot_coins = mysql_result( $result, 0, "player_2_pot_coins" );
+
+    $running = 1;
+    if( $player_1_id == 0 || $player_2_id == 0 ) {
+        $running = 0;
+        }
+
+    $your_coins = $player_1_coins;
+    $your_pot_coins = $player_1_pot_coins;
+
+    $their_coins = $player_2_coins;
+    $their_pot_coins = $player_2_pot_coins;
+
+    if( $player_2_id == $user_id ) {
+
+        $your_coins = $player_2_coins;
+        $your_pot_coins = $player_2_pot_coins;
+        
+        $their_coins = $player_1_coins;
+        $their_pot_coins = $player_1_pot_coins;
+
+        $game_square = cm_swapSquare( $game_square );
+        }
+
+    echo "$running\n";    
+    echo "$game_square\n";
+    echo "$your_coins\n";
+    echo "$their_coins\n";
+    echo "$your_pot_coins\n";
+    echo "$their_pot_coins\n";
+    echo "OK";
+    }
+
+
+
+
+
+
 
 
 

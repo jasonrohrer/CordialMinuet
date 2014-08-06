@@ -86,6 +86,39 @@ ServerActionPage::~ServerActionPage() {
         }
     }
 
+
+
+void ServerActionPage::setActionName( const char *inActionName ) {
+    delete [] mActionName;
+    mActionName = stringDuplicate( inActionName );
+    }
+
+
+
+void ServerActionPage::clearActionParameters() {
+    mActionParameterNames.deallocateStringElements();
+    mActionParameterValues.deallocateStringElements();
+    }
+
+
+void ServerActionPage::setResponsePartNames( 
+    int inRequiredNumResponseParts,
+    const char *inResponsePartNames[] ) {
+    
+    mResponsePartNames.deallocateStringElements();
+    mResponseParts.deallocateStringElements();
+
+    mNumResponseParts = inRequiredNumResponseParts;
+    
+    if( mNumResponseParts != -1 ) {
+    
+        for( int i=0; i<mNumResponseParts; i++ ) {
+            mResponsePartNames.push_back( 
+                stringDuplicate( inResponsePartNames[i] ) );
+            }
+        }
+    }
+
         
 
 void ServerActionPage::setActionParameter( const char *inParameterName,

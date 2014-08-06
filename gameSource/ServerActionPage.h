@@ -32,6 +32,18 @@ class ServerActionPage : public GamePage {
         virtual ~ServerActionPage();
         
 
+        void setActionName( const char *inActionName );
+        
+        
+        // clears old response part names
+        // if inRequiredNumResponseParts is -1 
+        // (and inResponsePartNames is NULL)
+        // then response will be allowed to have a variable number of parts
+        void setResponsePartNames( int inRequiredNumResponseParts,
+                                   const char *inResponsePartNames[] );
+        
+
+
         void setActionParameter( const char *inParameterName,
                                  const char *inParameterValue );
         
@@ -42,6 +54,9 @@ class ServerActionPage : public GamePage {
                                  double inParameterValue );
         
         
+        void clearActionParameters();
+        
+
         // defaults to true
         void setAttachAccountHmac( char inShouldAttach );
 
