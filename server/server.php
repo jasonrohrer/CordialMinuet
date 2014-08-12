@@ -181,7 +181,7 @@ if( $shutdownMode &&
       $action == "get_withdrawal_methods" ||
       $action == "send_us_check" ||
       $action == "account_transfer" ||
-      $action == "create_games" ||
+      $action == "join_games" ||
       $action == "wait_game_start" ||
       $action == "leave_game" ||
       $action == "list_games" ||
@@ -2250,7 +2250,7 @@ function cm_joinGame() {
 
         // game has started now, subtract from both balances
         $query = "UPDATE $tableNamePrefix"."users ".
-            "SET dollar_balance = dollar_balance + $dollar_amount, ".
+            "SET dollar_balance = dollar_balance - $dollar_amount, ".
             "games_started = games_started + 1, ".
             "total_buy_in = total_buy_in + $dollar_amount ".
             "WHERE user_id = '$player_1_id' OR user_id = '$user_id';";
