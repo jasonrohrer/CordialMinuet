@@ -7,6 +7,7 @@
 
 #include "minorGems/game/Font.h"
 #include "minorGems/game/game.h"
+#include "minorGems/game/drawUtils.h"
 
 #include "minorGems/util/stringUtils.h"
 
@@ -19,6 +20,14 @@ extern Font *mainFont;
 const char *gameStatePartNames[6] = { "running", "boardLayout", 
                                       "yourCoins", "theirCoins", 
                                       "yourPotCoins", "theirPotCoins" };
+
+
+static int cellSize = 70;
+static int borderWidth = 2;
+    
+static int cellCenterStart = ( ( cellSize + borderWidth ) * 5 ) / 2;
+
+
 
 PlayGamePage::PlayGamePage()
         : ServerActionPage( "get_game_state", 6, gameStatePartNames ),
@@ -56,20 +65,37 @@ void PlayGamePage::actionPerformed( GUIComponent *inTarget ) {
 void PlayGamePage::draw( doublePair inViewCenter, 
                           double inViewSize ) {
     
-    doublePair pos = { -160, 160 };
+
+    
+    doublePair pos = { - cellCenterStart, cellCenterStart };
     
     if( mGameBoard != NULL ) {
         
+        setDrawColor( 1, 1, 1, 1 );
+        
+        doublePair center  = {0,0};
+        drawSquare( center, 
+                    ( (cellSize + borderWidth) * 6 ) /  2 + borderWidth / 2 );
+        
+
         for( int y=0; y<6; y++ ) {
-            pos.x = -160;
+            pos.x = -cellCenterStart;
             for( int x=0; x<6; x++ ) {
                 
+                setDrawColor( 0, 0, 0, 1 );
+                
+                drawSquare( pos, cellSize/2 );
+
                 char *number = autoSprintf( "%d", mGameBoard[y*6 + x] );
             
+                // tweak y down a bit as baseline offset for font
+                pos.y -= 3;
                 drawMessage( number, pos );
-                pos.x += 64;            
+                pos.y += 3;
+
+                pos.x += cellSize + borderWidth;            
                 }
-            pos.y -= 64;
+            pos.y -= cellSize + borderWidth;
             }
         }
     
