@@ -11,6 +11,12 @@
 
 
 
+typedef enum GameMessageState {
+    gettingState,
+    sendingMove,
+    waitingMove
+    } GameMessageState;
+
 
 
 class PlayGamePage : public ServerActionPage, public ActionListener {
@@ -20,7 +26,10 @@ class PlayGamePage : public ServerActionPage, public ActionListener {
         
         ~PlayGamePage();
         
-        
+
+        virtual void makeActive( char inFresh );
+
+    
         virtual void actionPerformed( GUIComponent *inTarget );
         
         
@@ -44,4 +53,17 @@ class PlayGamePage : public ServerActionPage, public ActionListener {
         // ours first
         int mPlayerCoins[2];
         int mPotCoins[2];
+
+
+        TextButton mCommitButton;
+        
+
+        TextButton *mColumnButtons[6];
+
+
+        int mColumnChoiceForUs;
+        int mColumnChoiceForThem;
+
+        GameMessageState mMessageState;
+        
     };

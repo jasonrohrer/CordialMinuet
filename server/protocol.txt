@@ -499,3 +499,36 @@ running is 0 or 1 (0 if they leave)
 board_layout are the 36 numerical squares of the board separated by #
 
 
+
+
+
+=== Call:
+server.php?action=make_move
+          &user_id=[id number]
+          &sequence_number=[number]
+          &account_hmac=[hmac-sha1, hex-encoded]  
+		  &our_column=[column 1 - 6]
+		  &their_column=[column 1 - 6]
+
+Returns:
+OK
+
+
+
+
+=== Call:
+server.php?action=wait_move
+          &user_id=[id number]
+          &sequence_number=[number]
+          &account_hmac=[hmac-sha1, hex-encoded]  
+
+
+Returns:
+move_ready
+OK
+
+or
+waiting
+OK
+
+This call is for waiting for your opponent to move

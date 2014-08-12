@@ -21,23 +21,64 @@ const char *gameStatePartNames[6] = { "running", "boardLayout",
                                       "yourCoins", "theirCoins", 
                                       "yourPotCoins", "theirPotCoins" };
 
+const char *waitMovePartNames[1] = { "status" };
+
 
 static int cellSize = 70;
 static int borderWidth = 2;
     
 static int cellCenterStart = ( ( cellSize + borderWidth ) * 5 ) / 2;
 
+static int cellXOffset = cellSize + borderWidth;
+
+
+static void setUsColor() {
+    setDrawColor( 0, 0.75, 0, 1 );
+    }
+
+static void setThemColor() {
+    setDrawColor( 0.75, 0, 0, 1 );
+    }
+
 
 
 PlayGamePage::PlayGamePage()
         : ServerActionPage( "get_game_state", 6, gameStatePartNames ),
-          mGameBoard( NULL ) {
+          mGameBoard( NULL ),
+          mCommitButton( mainFont, 0, -288, translate( "commit" ) ),
+          mColumnChoiceForUs( -1 ), mColumnChoiceForThem( -1 ) {
     
     for( int i=0; i<2; i++ ) {
         mPlayerCoins[i] = -1;
         mPotCoins[i] = -1;
         }
 
+    double y = cellCenterStart + cellXOffset;
+    double x = -cellCenterStart;
+    
+    for( int i=0; i<6; i++ ) {
+        mColumnButtons[i] = 
+            new TextButton( mainFont, x, y, "+" );
+        
+        addComponent( mColumnButtons[i] );
+        
+        
+        setButtonStyle( mColumnButtons[i] );
+    
+
+        mColumnButtons[i]->addActionListener( this );
+    
+        x += cellXOffset;
+        }
+    
+
+    addComponent( &mCommitButton );
+    
+
+    setButtonStyle( &mCommitButton );
+    
+
+    mCommitButton.addActionListener( this );
     }
 
 
@@ -46,14 +87,107 @@ PlayGamePage::~PlayGamePage() {
     if( mGameBoard != NULL ) {
         delete [] mGameBoard;
         }
+
+    for( int i=0; i<6; i++ ) {
+        delete mColumnButtons[i];
+        }
+    }
+
+
+
+void PlayGamePage::makeActive( char inFresh ) {
+    if( !inFresh ) {
+        return;
+        }
+
+    mCommitButton.setVisible( false );
+    
+
+    setActionName( "get_game_state" );
+    setResponsePartNames( 6, gameStatePartNames );
+
+    clearActionParameters();
+    
+    mMessageState = gettingState;
+    
+    startRequest();
     }
 
 
 
 
 
-
 void PlayGamePage::actionPerformed( GUIComponent *inTarget ) {
+    
+    for( int i=0; i<6; i++ ) {
+        if( inTarget == mColumnButtons[i] ) {
+            
+            
+            
+            if( mColumnChoiceForUs == i ) {
+                mColumnChoiceForUs = -1;
+                mColumnButtons[i]->setLabelText( "+" );
+                }
+            else if( mColumnChoiceForThem == i ) {
+                mColumnChoiceForThem = -1;
+                mColumnButtons[i]->setLabelText( "+" );
+                }
+            else if( mColumnChoiceForUs == -1 ) {
+                mColumnChoiceForUs = i;
+                mColumnButtons[i]->setLabelText( "x" );
+                }
+            else if( mColumnChoiceForThem == -1 ) {
+                mColumnChoiceForThem = i;
+                mColumnButtons[i]->setLabelText( "x" );
+                }
+
+            
+            if( mColumnChoiceForUs != -1 &&
+                mColumnChoiceForThem != -1 ) {
+                
+                for( int j=0; j<6; j++ ) {
+                    if( j != mColumnChoiceForUs && 
+                        j != mColumnChoiceForThem ) {
+                        
+                        mColumnButtons[j]->setVisible( false );
+                        }
+                    }
+                mCommitButton.setVisible( true );
+                }
+            else {
+                for( int j=0; j<6; j++ ) {
+                    if( j != mColumnChoiceForUs && 
+                        j != mColumnChoiceForThem ) {
+                        
+                        mColumnButtons[j]->setVisible( true );
+                        }
+                    }
+                mCommitButton.setVisible( false );
+                }
+
+
+            }
+        }
+
+    if( inTarget == &mCommitButton ) {
+        
+        mCommitButton.setVisible( false );
+    
+        clearActionParameters();
+        
+        setActionName( "make_move" );
+        setResponsePartNames( -1, NULL );
+        
+        setActionParameter( "our_column", mColumnChoiceForUs );
+        setActionParameter( "their_column", mColumnChoiceForThem );
+        
+        mColumnButtons[mColumnChoiceForUs]->setVisible( false );
+        mColumnButtons[mColumnChoiceForThem]->setVisible( false );
+
+        mMessageState = sendingMove;
+        
+        startRequest();
+        }
     }
 
 
@@ -90,10 +224,22 @@ void PlayGamePage::draw( doublePair inViewCenter,
             
                 // tweak y down a bit as baseline offset for font
                 pos.y -= 3;
-                drawMessage( number, pos );
+
+                if( x == mColumnChoiceForUs ) {
+                    setUsColor();
+                    }
+                else if( x == mColumnChoiceForThem ) {
+                    setThemColor();
+                    }
+                else {
+                    setDrawColor( 1, 1, 1, 1 );
+                    }
+                
+                mainFont->drawString( number, 
+                                      pos, alignCenter );
                 pos.y += 3;
 
-                pos.x += cellSize + borderWidth;            
+                pos.x += cellXOffset;            
                 }
             pos.y -= cellSize + borderWidth;
             }
@@ -106,8 +252,8 @@ void PlayGamePage::draw( doublePair inViewCenter,
         pos.y = 288;
         
         char *number = autoSprintf( "%d", mPlayerCoins[0] );
-        
-        setDrawColor( 0, .75, 0, 1 );
+
+        setUsColor();
         
         mainFont->drawString( number, 
                               pos, alignRight );
@@ -127,8 +273,8 @@ void PlayGamePage::draw( doublePair inViewCenter,
 
         number = autoSprintf( "%d", mPlayerCoins[1] );
         
-        setDrawColor( .75, 0, 0, 1 );
-        
+        setThemColor();
+                
         mainFont->drawString( number, 
                               pos, alignRight );
         delete [] number;
@@ -151,7 +297,28 @@ void PlayGamePage::draw( doublePair inViewCenter,
 void PlayGamePage::step() {
     ServerActionPage::step();
 
-    if( isResponseReady() ) {
+    if( ! isResponseReady() ) {
+        return;
+        }
+    
+    
+    
+    if( mMessageState == sendingMove ) {
+        
+        // move sent
+        
+        // wait for opponent's move
+
+        clearActionParameters();
+        
+        setActionName( "wait_move" );
+        setResponsePartNames( 1, waitMovePartNames );
+
+        mMessageState = waitingMove;
+        
+        startRequest();
+        }
+    else if( mMessageState == gettingState ) {
 
         mPlayerCoins[0] = getResponseInt( "yourCoins" );
         mPlayerCoins[1] = getResponseInt( "theirCoins" );
@@ -181,7 +348,32 @@ void PlayGamePage::step() {
         delete [] parts;
 
         }
+    else if( mMessageState == waitingMove ) {
+        char *status = getResponse( "status" );
+
+        if( strcmp( status, "move_ready" ) == 0 ) {
+            
+            // get the new game state
+            setActionName( "get_game_state" );
+            setResponsePartNames( 6, gameStatePartNames );
+
+            clearActionParameters();
+    
+            mMessageState = gettingState;
+            
+            startRequest();
+            }
+        else if( strcmp( status, "waiting" ) == 0 ) {
+            // keep waiting
+            startRequest();
+            }
+        
+        delete [] status;
+        }
+    
+
     }
+
 
 
 
