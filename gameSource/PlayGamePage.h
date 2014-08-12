@@ -41,4 +41,7 @@ class PlayGamePage : public ServerActionPage, public ActionListener {
            
         int *mGameBoard;
         
+        // ours first
+        int mPlayerCoins[2];
+        int mPotCoins[2];
     };

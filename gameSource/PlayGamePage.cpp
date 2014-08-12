@@ -23,7 +23,11 @@ const char *gameStatePartNames[6] = { "running", "boardLayout",
 PlayGamePage::PlayGamePage()
         : ServerActionPage( "get_game_state", 6, gameStatePartNames ),
           mGameBoard( NULL ) {
-
+    
+    for( int i=0; i<2; i++ ) {
+        mPlayerCoins[i] = -1;
+        mPotCoins[i] = -1;
+        }
 
     }
 
@@ -52,24 +56,66 @@ void PlayGamePage::actionPerformed( GUIComponent *inTarget ) {
 void PlayGamePage::draw( doublePair inViewCenter, 
                           double inViewSize ) {
     
-    doublePair pos = { -288, 288 };
+    doublePair pos = { -160, 160 };
     
     if( mGameBoard != NULL ) {
         
         for( int y=0; y<6; y++ ) {
-            pos.x = -288;
+            pos.x = -160;
             for( int x=0; x<6; x++ ) {
                 
                 char *number = autoSprintf( "%d", mGameBoard[y*6 + x] );
             
                 drawMessage( number, pos );
-                pos.x += 96;            
+                pos.x += 64;            
                 }
-            pos.y -= 96;
+            pos.y -= 64;
             }
         }
     
+    
+    if( mPlayerCoins[0] != -1 ) {
+        // draw coins
+        pos.x = -264;
+        pos.y = 288;
         
+        char *number = autoSprintf( "%d", mPlayerCoins[0] );
+        
+        setDrawColor( 0, .75, 0, 1 );
+        
+        mainFont->drawString( number, 
+                              pos, alignRight );
+        delete [] number;
+
+
+        pos.y = 32;
+        number = autoSprintf( "%d", mPotCoins[0] );
+
+        mainFont->drawString( number, 
+                              pos, alignRight );
+        delete [] number;
+
+
+
+        pos.y = -288;
+
+        number = autoSprintf( "%d", mPlayerCoins[1] );
+        
+        setDrawColor( .75, 0, 0, 1 );
+        
+        mainFont->drawString( number, 
+                              pos, alignRight );
+        delete [] number;
+
+
+        pos.y = -32;
+        number = autoSprintf( "%d", mPotCoins[1] );
+
+        mainFont->drawString( number, 
+                              pos, alignRight );
+        delete [] number;
+        }
+    
 
     //drawMessage( "test messag", pos );    
     }
@@ -80,6 +126,13 @@ void PlayGamePage::step() {
     ServerActionPage::step();
 
     if( isResponseReady() ) {
+
+        mPlayerCoins[0] = getResponseInt( "yourCoins" );
+        mPlayerCoins[1] = getResponseInt( "theirCoins" );
+
+        mPotCoins[0] = getResponseInt( "yourPotCoins" );
+        mPotCoins[1] = getResponseInt( "theirPotCoins" );
+
         char *gameBoardString = getResponse( "boardLayout" );
         
         int numParts;
