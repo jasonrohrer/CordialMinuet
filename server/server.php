@@ -2728,13 +2728,22 @@ function cm_printGameState( $inHideOpponentSecretMoves = true ) {
         }
 
     // never show more of their moves than what we've committed so far
+    // in either direction.  Move lists are always the same length
     if( $your_moves == "#" ) {
         $their_moves = "#";
+        }
+    if( $their_moves == "#" ) {
+        $your_moves = "#";
         }
     else if( strlen( $your_moves ) < strlen( $their_moves ) ) {
 
         // trim
         $their_moves = substr( $their_moves, 0, strlen( $your_moves ) );
+        }
+    else if( strlen( $their_moves ) < strlen( $your_moves ) ) {
+
+        // trim
+        $your_moves = substr( $your_moves, 0, strlen( $their_moves ) );
         }
     
     

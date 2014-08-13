@@ -500,6 +500,15 @@ running is 0 or 1 (0 if they leave)
 
 board_layout are the 36 numerical squares of the board separated by #
 
+Move lists are a series of up to 6 column or row indices, each in range [0,5]
+separated by #.  Empty lists are represented by a single #.
+
+Note that move lists are truncated to show only the amount of moves that
+both players have committed so far.  So, if you make a move, and are waiting
+for the other player to move, and call get_game_state, your move won't be
+included in the response, because the other player hasn't submitted a matching
+move yet.
+
 
 
 

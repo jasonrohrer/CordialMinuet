@@ -12,6 +12,7 @@
 
 
 typedef enum GameMessageState {
+    responseProcessed,
     gettingState,
     sendingMove,
     waitingMove
@@ -65,5 +66,13 @@ class PlayGamePage : public ServerActionPage, public ActionListener {
         int mColumnChoiceForThem;
 
         GameMessageState mMessageState;
+        
+
+        char mColumnUsed[6];
+        char mRowUsed[6];
+        
+        // square indexes, or -1 for unknown
+        int mOurWonSquares[3];
+        int mTheirWonSquares[3];
         
     };

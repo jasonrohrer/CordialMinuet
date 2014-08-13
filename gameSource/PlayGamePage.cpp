@@ -18,9 +18,9 @@ extern Font *mainFont;
 
 
 const char *gameStatePartNames[8] = { "running", "boardLayout", 
-                                      "yourCoins", "theirCoins", 
-                                      "yourPotCoins", "theirPotCoins",
-                                      "yourMoves", "theirMoves" };
+                                      "ourCoins", "theirCoins", 
+                                      "ourPotCoins", "theirPotCoins",
+                                      "ourMoves", "theirMoves" };
 
 const char *waitMovePartNames[1] = { "status" };
 
@@ -103,6 +103,18 @@ void PlayGamePage::makeActive( char inFresh ) {
 
     mCommitButton.setVisible( false );
     
+    if( mGameBoard != NULL ) {
+        delete [] mGameBoard;
+        mGameBoard = NULL;
+        }
+
+    
+    for( int i=0; i<6; i++ ) {
+        mColumnButtons[i]->setVisible( false );
+        }
+    mColumnChoiceForUs = -1;
+    mColumnChoiceForThem = -1;
+    
 
     setActionName( "get_game_state" );
     setResponsePartNames( 8, gameStatePartNames );
@@ -148,7 +160,8 @@ void PlayGamePage::actionPerformed( GUIComponent *inTarget ) {
                 
                 for( int j=0; j<6; j++ ) {
                     if( j != mColumnChoiceForUs && 
-                        j != mColumnChoiceForThem ) {
+                        j != mColumnChoiceForThem &&
+                        ! mColumnUsed[j] ) {
                         
                         mColumnButtons[j]->setVisible( false );
                         }
@@ -158,7 +171,8 @@ void PlayGamePage::actionPerformed( GUIComponent *inTarget ) {
             else {
                 for( int j=0; j<6; j++ ) {
                     if( j != mColumnChoiceForUs && 
-                        j != mColumnChoiceForThem ) {
+                        j != mColumnChoiceForThem &&
+                        ! mColumnUsed[j] ) {
                         
                         mColumnButtons[j]->setVisible( true );
                         }
@@ -238,6 +252,9 @@ void PlayGamePage::draw( doublePair inViewCenter,
                 
                 mainFont->drawString( number, 
                                       pos, alignCenter );
+
+                delete [] number;
+                
                 pos.y += 3;
 
                 pos.x += cellXOffset;            
@@ -295,6 +312,18 @@ void PlayGamePage::draw( doublePair inViewCenter,
 
 
 
+// returns -1 if the int is ?
+int stringToInt( const char *inString ) {
+    
+    int returnValue = -1;
+    
+    sscanf( inString, "%d", &returnValue );
+
+    return returnValue;
+    }
+
+
+
 void PlayGamePage::step() {
     ServerActionPage::step();
 
@@ -321,10 +350,10 @@ void PlayGamePage::step() {
         }
     else if( mMessageState == gettingState ) {
 
-        mPlayerCoins[0] = getResponseInt( "yourCoins" );
+        mPlayerCoins[0] = getResponseInt( "ourCoins" );
         mPlayerCoins[1] = getResponseInt( "theirCoins" );
 
-        mPotCoins[0] = getResponseInt( "yourPotCoins" );
+        mPotCoins[0] = getResponseInt( "ourPotCoins" );
         mPotCoins[1] = getResponseInt( "theirPotCoins" );
 
         char *gameBoardString = getResponse( "boardLayout" );
@@ -332,6 +361,9 @@ void PlayGamePage::step() {
         int numParts;
         char **parts = split( gameBoardString, "#", &numParts );
         
+        delete [] gameBoardString;
+        
+
         if( numParts == 36 ) {
             if( mGameBoard != NULL ) {
                 delete [] mGameBoard;
@@ -348,6 +380,109 @@ void PlayGamePage::step() {
             }
         delete [] parts;
 
+
+        char *ourMoves = getResponse( "ourMoves" );
+        char *theirMoves = getResponse( "theirMoves" );
+        
+        for( int i=0; i<6; i++ ) {
+            mRowUsed[i] = false;
+            mColumnUsed[i] = false;
+            }
+        for( int i=0; i<3; i++ ) {
+            mOurWonSquares[i] = -1;
+            mTheirWonSquares[i] = -1;
+            }
+        
+        if( strcmp( ourMoves, "#" ) != 0 ) {
+            // some moves submitted
+            
+            int numOurParts;
+            char **ourParts = split( ourMoves, "#", &numOurParts );
+
+            int numTheirParts;
+            char **theirParts = split( theirMoves, "#", &numTheirParts );
+            
+            if( numTheirParts != numOurParts ) {
+                mStatusError = true;
+                setStatus( "err_badServerResponse", true );
+                }
+            else {
+                
+                for( int i=0; i<numOurParts; i++ ) {
+                    int ourChoice = stringToInt( ourParts[i] );
+                    int theirChoice = stringToInt( theirParts[i] );
+                    
+                    if( ourChoice != -1 ) {
+                        mColumnUsed[ourChoice] = true;
+                        }
+                    if( theirChoice != -1 ) {
+                        mRowUsed[theirChoice] = true;
+                        }
+                    }
+                
+                
+                int ourWonSquareCount = 0;
+                int theirWonSquareCount = 0;
+                
+                for( int i=0; i<numOurParts; i += 2 ) {
+                    
+                    int ourSelfChoice = stringToInt( ourParts[i] );
+                    int ourOtherChoice = stringToInt( ourParts[i+1] );
+                    
+                    int theirSelfChoice = stringToInt( theirParts[i] );
+                    int theirOtherChoice = stringToInt( theirParts[i+1] );
+
+                    if( ourSelfChoice != -1 &&
+                        theirOtherChoice != -1 ) {
+                        
+                        int ourWonIndex = theirOtherChoice * 6 + ourSelfChoice;
+                        
+                        mOurWonSquares[ ourWonSquareCount ] =
+                            ourWonIndex;
+                        
+                        ourWonSquareCount ++;
+                        }
+                    
+                    if( theirSelfChoice != -1 &&
+                        ourOtherChoice != -1 ) {
+                        
+                        int theirWonIndex = 
+                            theirSelfChoice * 6 + ourOtherChoice;
+                        
+                        mTheirWonSquares[ theirWonSquareCount ] =
+                            theirWonIndex;
+                        
+                        theirWonSquareCount ++;
+                        }
+                    
+                    
+                    }
+                }
+            
+            for( int i=0; i<numOurParts; i++ ) {
+                delete [] ourParts[i];
+                }
+            delete [] ourParts;
+            
+            for( int i=0; i<numTheirParts; i++ ) {
+                delete [] theirParts[i];
+                }
+            delete [] theirParts;
+            
+
+            }
+        delete [] ourMoves;
+        delete [] theirMoves;
+
+        mColumnChoiceForUs = -1;
+        mColumnChoiceForThem = -1;
+
+        for( int i=0; i<6; i++ ) {
+            mColumnButtons[i]->setVisible( ! mColumnUsed[i] );
+            mColumnButtons[i]->setLabelText( "+" );
+            }
+        
+        mMessageState = responseProcessed;
         }
     else if( mMessageState == waitingMove ) {
         char *status = getResponse( "status" );
