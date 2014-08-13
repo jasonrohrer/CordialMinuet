@@ -490,6 +490,8 @@ your_coins
 their_coins
 your_pot_coins
 their_pot_coins
+your_moves
+their_moves
 OK
 
 
@@ -507,8 +509,8 @@ server.php?action=make_move
           &user_id=[id number]
           &sequence_number=[number]
           &account_hmac=[hmac-sha1, hex-encoded]  
-		  &our_column=[column 1 - 6]
-		  &their_column=[column 1 - 6]
+		  &our_column=[column 0 - 5]
+		  &their_column=[column 0 - 5]
 
 Returns:
 OK

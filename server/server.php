@@ -2349,8 +2349,8 @@ function cm_joinGame() {
             "dollar_amount = '$dollar_amount',".
             "started = 0,".
             "game_square = '$square',".
-            "player_1_moves = '',".
-            "player_2_moves = '',".
+            "player_1_moves = '#',".
+            "player_2_moves = '#',".
             "move_deadline = CURRENT_TIMESTAMP, ".
             "player_1_coins = $cm_gameCoins, ".
             "player_2_coins = $cm_gameCoins, ".
@@ -2633,6 +2633,16 @@ function cm_getGameState() {
         return;
         }
 
+    cm_printGameState( true );
+    }
+
+
+
+
+// assumes transaction is verified already
+function cm_printGameState( $inHideOpponentSecretMoves = true ) {
+    
+
     $user_id = cm_getUserID();
 
 
@@ -2642,7 +2652,8 @@ function cm_getGameState() {
     
     $query = "SELECT player_1_id, player_2_id,".
         "game_square, player_1_coins, player_2_coins, ".
-        "player_1_pot_coins, player_2_pot_coins ".
+        "player_1_pot_coins, player_2_pot_coins, ".
+        "player_1_moves, player_2_moves ".
         "FROM $tableNamePrefix"."games ".
         "WHERE player_1_id = '$user_id' OR player_2_id = '$user_id';";
 
@@ -2665,6 +2676,10 @@ function cm_getGameState() {
     $player_1_pot_coins = mysql_result( $result, 0, "player_1_pot_coins" );
     $player_2_pot_coins = mysql_result( $result, 0, "player_2_pot_coins" );
 
+    $player_1_moves = mysql_result( $result, 0, "player_1_moves" );
+    $player_2_moves = mysql_result( $result, 0, "player_2_moves" );
+
+    
     $running = 1;
     if( $player_1_id == 0 || $player_2_id == 0 ) {
         $running = 0;
@@ -2676,6 +2691,9 @@ function cm_getGameState() {
     $their_coins = $player_2_coins;
     $their_pot_coins = $player_2_pot_coins;
 
+    $your_moves = $player_1_moves;
+    $their_moves = $player_2_moves;
+    
     if( $player_2_id == $user_id ) {
 
         $your_coins = $player_2_coins;
@@ -2685,14 +2703,49 @@ function cm_getGameState() {
         $their_pot_coins = $player_1_pot_coins;
 
         $game_square = cm_swapSquare( $game_square );
+
+        $your_moves = $player_2_moves;
+        $their_moves = $player_1_moves;
         }
 
+
+    if( $inHideOpponentSecretMoves ) {
+        // replace moves they made for themselves with ?
+
+        if( $their_moves != "#" ) {
+            
+            $moves = preg_split( "/#/", $their_moves );
+
+            $numMoves = count( $moves );
+
+            for( $i=0; $i<$numMoves; $i++ ) {
+                if( $i % 2 == 0 ) {
+                    $moves[$i] = "?";
+                    }
+                }
+            $their_moves = implode( "#", $moves );
+            }
+        }
+
+    // never show more of their moves than what we've committed so far
+    if( $your_moves == "#" ) {
+        $their_moves = "#";
+        }
+    else if( strlen( $your_moves ) < strlen( $their_moves ) ) {
+
+        // trim
+        $their_moves = substr( $their_moves, 0, strlen( $your_moves ) );
+        }
+    
+    
     echo "$running\n";    
     echo "$game_square\n";
     echo "$your_coins\n";
     echo "$their_coins\n";
     echo "$your_pot_coins\n";
     echo "$their_pot_coins\n";
+    echo "$your_moves\n";
+    echo "$their_moves\n";
     echo "OK";
     }
 
@@ -2707,9 +2760,9 @@ function cm_makeMove() {
     $user_id = cm_getUserID();
 
     
-    $our_column = cm_requestFilter( "our_column", "/[0-9]/", "0" );
+    $our_column = cm_requestFilter( "our_column", "/[0-5]/", "0" );
 
-    $their_column = cm_requestFilter( "their_column", "/[0-9]/", "0" );
+    $their_column = cm_requestFilter( "their_column", "/[0-5]/", "0" );
     
 
     global $tableNamePrefix;
@@ -2761,9 +2814,14 @@ function cm_makeMove() {
         }
     
     
-    if( $our_moves != "" ) {
+    if( $our_moves != "#" ) {
         $our_moves = $our_moves . "#";
         }
+    else {
+        // clear placeholder pound sign to make room for first move
+        $our_moves = "";
+        }
+    
     
     $our_moves = $our_moves . $our_column . "#" .$their_column;
 

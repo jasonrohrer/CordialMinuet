@@ -17,9 +17,10 @@ extern Font *mainFont;
 
 
 
-const char *gameStatePartNames[6] = { "running", "boardLayout", 
+const char *gameStatePartNames[8] = { "running", "boardLayout", 
                                       "yourCoins", "theirCoins", 
-                                      "yourPotCoins", "theirPotCoins" };
+                                      "yourPotCoins", "theirPotCoins",
+                                      "yourMoves", "theirMoves" };
 
 const char *waitMovePartNames[1] = { "status" };
 
@@ -43,7 +44,7 @@ static void setThemColor() {
 
 
 PlayGamePage::PlayGamePage()
-        : ServerActionPage( "get_game_state", 6, gameStatePartNames ),
+        : ServerActionPage( "get_game_state", 8, gameStatePartNames ),
           mGameBoard( NULL ),
           mCommitButton( mainFont, 0, -288, translate( "commit" ) ),
           mColumnChoiceForUs( -1 ), mColumnChoiceForThem( -1 ) {
@@ -104,7 +105,7 @@ void PlayGamePage::makeActive( char inFresh ) {
     
 
     setActionName( "get_game_state" );
-    setResponsePartNames( 6, gameStatePartNames );
+    setResponsePartNames( 8, gameStatePartNames );
 
     clearActionParameters();
     
@@ -355,7 +356,7 @@ void PlayGamePage::step() {
             
             // get the new game state
             setActionName( "get_game_state" );
-            setResponsePartNames( 6, gameStatePartNames );
+            setResponsePartNames( 8, gameStatePartNames );
 
             clearActionParameters();
     
