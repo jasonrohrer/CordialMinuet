@@ -70,9 +70,27 @@ class PlayGamePage : public ServerActionPage, public ActionListener {
 
         char mColumnUsed[6];
         char mRowUsed[6];
+
+
+        // choices are -1 for choices not made yet
+        
+        // our column choices
+        // us, them, us, them, us, them
+        int mOurChoices[6];
+
+        // their row choices
+        // us, us, us, them, them, them
+        // (because we only find out their "them" choices at very end
+        int mTheirChoices[6];
+        
         
         // square indexes, or -1 for unknown
         int mOurWonSquares[3];
         int mTheirWonSquares[3];
         
+
+        char mOurPossibleScores[106];
+        char mTheirPossibleScores[106];
+
+        void computePossibleScores();
     };

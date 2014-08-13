@@ -411,6 +411,8 @@ void PlayGamePage::step() {
         for( int i=0; i<6; i++ ) {
             mRowUsed[i] = false;
             mColumnUsed[i] = false;
+            mOurChoices[i] = -1;
+            mTheirChoices[i] = -1;
             }
         for( int i=0; i<3; i++ ) {
             mOurWonSquares[i] = -1;
@@ -432,15 +434,24 @@ void PlayGamePage::step() {
                 }
             else {
                 
+                int ourChoiceIndex = 0;
+                int theirChoiceIndex = 0;
+
                 for( int i=0; i<numOurParts; i++ ) {
                     int ourChoice = stringToInt( ourParts[i] );
                     int theirChoice = stringToInt( theirParts[i] );
                     
                     if( ourChoice != -1 ) {
                         mColumnUsed[ourChoice] = true;
+                        
+                        mOurChoices[ ourChoiceIndex ] = ourChoice;
+                        ourChoiceIndex++;
                         }
                     if( theirChoice != -1 ) {
                         mRowUsed[theirChoice] = true;
+                        
+                        mTheirChoices[ theirChoiceIndex ] = theirChoice;
+                        theirChoiceIndex++;
                         }
                     }
                 
@@ -506,6 +517,8 @@ void PlayGamePage::step() {
             mColumnButtons[i]->setLabelText( "+" );
             }
         
+        computePossibleScores();
+
         mMessageState = responseProcessed;
         }
     else if( mMessageState == waitingMove ) {
@@ -532,6 +545,219 @@ void PlayGamePage::step() {
         }
     
 
+    }
+
+
+
+
+
+
+static void callOnAllPerm( int *inValuesToPermute, 
+                           int inNumValues, int inNumSkip,
+                           void inProcessPermutationCallback( 
+                               int *inValues,
+                               int inNumValues,
+                               void *inExtraParam ),
+                           void *inExtraParam ) {
+
+    if( inNumSkip >= inNumValues ) {
+        inProcessPermutationCallback( inValuesToPermute, inNumValues,
+                                      inExtraParam );
+        return;
+        }
+    
+
+    // pick value to stick in spot at inNumSkip
+    
+    for( int i=inNumSkip; i<inNumValues; i++ ) {
+        
+        int temp = inValuesToPermute[inNumSkip];
+        inValuesToPermute[ inNumSkip ] = inValuesToPermute[i];
+        inValuesToPermute[i] = temp;
+        
+        callOnAllPerm( inValuesToPermute, inNumValues, inNumSkip+1,
+                       inProcessPermutationCallback, inExtraParam );
+        // revert
+        inValuesToPermute[i] = inValuesToPermute[ inNumSkip ];
+        inValuesToPermute[ inNumSkip ] = temp;
+        }
+    }
+
+
+
+typedef struct ScoreSearchRecord {
+        int *gameBoard;
+        
+        char *ourPossibleScores;
+        char *theirPossibleScores;
+        
+        int *ourChoices;
+        int *theirChoices;
+
+        int testOurChoices[6];
+
+    } ScoreSearchRecord;
+
+
+
+// p1's full move list is in ScoreSearchRecord
+// p2's full move list is inValues
+//
+// result stored in record
+static void getScoreForBothPlayerMoves( int *inValues, 
+                                        int inNumValues,
+                                        void *inExtraParam ) {
+
+    ScoreSearchRecord *record = (ScoreSearchRecord*)inExtraParam;
+
+    // our scores
+    int ourScore = 0;
+    for( int i=0; i<3; i++ ) {
+        int y = inValues[i];
+        int x = record->testOurChoices[ i*2 ];
+        
+        ourScore += record->gameBoard[ y * 6 + x ];
+        }
+    
+    record->ourPossibleScores[ourScore] = true;
+
+    
+    // their scores
+    int theirScore = 0;
+    for( int i=0; i<3; i++ ) {
+        int y = inValues[i + 3];
+        int x = record->testOurChoices[ 1 + i*2 ];
+        
+        theirScore += record->gameBoard[ y * 6 + x ];        
+        }
+
+    record->theirPossibleScores[theirScore] = true;
+        
+
+    }
+
+
+
+// returns numToSkip (already fixed choices in source
+// fills in remaining choices in order (for input to permutation function)
+
+static int fillInExtraChoices( int *inSourceChoices, int *inDestChoices ) {
+    
+    memcpy( inDestChoices, inSourceChoices, 6 * sizeof( int ) );
+
+    // remaining rows can be used
+    int numToSkip = 0;
+    
+    for( int i=0; i<6; i++ ) {
+        if( inDestChoices[i] != -1 ) {
+            numToSkip++;
+            }
+        }
+    
+    int nextIndex = numToSkip;
+    
+    for( int i=0; i<6; i++ ) {
+        
+        char alreadyUsed = false;
+        for( int j=0; j<6; j++ ) {
+            if( inDestChoices[j] == i ) {
+                alreadyUsed = true;
+                break;
+                }
+            }
+        
+        if( !alreadyUsed ) {
+            inDestChoices[nextIndex] = i;
+            nextIndex++;
+            }
+        }
+
+    return numToSkip;
+    }
+
+
+
+
+
+// inValues are our fixed move
+// their choices so far are in inExtraParam as a ScoreSearchRecord
+static void testAllTheirMovesWithFixedOurMove( int *inValues, 
+                                               int inNumValues,
+                                               void *inExtraParam ) {
+        
+    ScoreSearchRecord *record = (ScoreSearchRecord*)inExtraParam;
+    
+    memcpy( record->testOurChoices, inValues,
+            sizeof( int ) * inNumValues );
+    
+    
+    int theirChoices[6];
+
+    int numToSkip = fillInExtraChoices( record->theirChoices,
+                                        theirChoices );
+        
+    callOnAllPerm( theirChoices, 6, numToSkip,
+                   getScoreForBothPlayerMoves,
+                   inExtraParam );
+    }
+
+
+
+
+
+void PlayGamePage::computePossibleScores() {
+    for( int i=0; i<106; i++ ) {
+        mOurPossibleScores[i] = false;
+        mTheirPossibleScores[i] = false;
+        }
+    
+
+    ScoreSearchRecord record;
+    record.gameBoard = mGameBoard;
+    record.ourPossibleScores = mOurPossibleScores;
+    record.theirPossibleScores = mTheirPossibleScores;
+    record.ourChoices = mOurChoices;
+    record.theirChoices = mTheirChoices;
+    
+
+    int ourChoices[6];
+
+    int numToSkip = fillInExtraChoices( record.ourChoices,
+                                        ourChoices );
+        
+    callOnAllPerm( ourChoices, 6, numToSkip,
+                   testAllTheirMovesWithFixedOurMove,
+                   (void*)( &record ) );
+    
+
+    /*
+    static void callOnAllPerm( int *inValuesToPermute, 
+                           int inNumValues, int inNumSkip,
+                           void inProcessPermutationCallback( 
+                               int *inValues,
+                               int inNumValues,
+                               void *inExtraParam ),
+                           void *inExtraParam )
+    */  
+
+    printf( "Possible scores:\n" );
+    
+    for( int i=0; i<106; i++ ) {
+        if( mOurPossibleScores[i] ) {
+            printf( " %d\t", i );
+            }
+        else if( mTheirPossibleScores[i] ) {
+            printf( "\t" );
+            }
+        
+        if( mTheirPossibleScores[i] ) {
+            printf( " %d\n", i );
+            }
+        else if( mOurPossibleScores[i] ) {
+            printf( "\n" );
+            }
+        }
+    printf( "\n\n" );
     }
 
 
