@@ -226,13 +226,28 @@ void PlayGamePage::draw( doublePair inViewCenter,
         drawSquare( center, 
                     ( (cellSize + borderWidth) * 6 ) /  2 + borderWidth / 2 );
         
-
+        int cellIndex = 0;
+        
         for( int y=0; y<6; y++ ) {
             pos.x = -cellCenterStart;
             for( int x=0; x<6; x++ ) {
                 
                 setDrawColor( 0, 0, 0, 1 );
                 
+                
+                char winningSquare = false;
+                
+                for( int i=0; i<3; i++ ) {
+                    if( cellIndex == mOurWonSquares[i] ) {
+                        setUsColor();
+                        winningSquare = true;
+                        }
+                    else if( cellIndex == mTheirWonSquares[i] ) {
+                        setThemColor();
+                        winningSquare = true;
+                        }
+                    }
+
                 drawSquare( pos, cellSize/2 );
 
                 char *number = autoSprintf( "%d", mGameBoard[y*6 + x] );
@@ -246,10 +261,17 @@ void PlayGamePage::draw( doublePair inViewCenter,
                 else if( x == mColumnChoiceForThem ) {
                     setThemColor();
                     }
-                else {
-                    setDrawColor( 1, 1, 1, 1 );
+                else {    
+                    if( ! winningSquare &&
+                        ( mColumnUsed[x] || mRowUsed[y] ) ) {
+                        setDrawColor( 1, 1, 1, 0.25 );
+                        }
+                    else {
+                        setDrawColor( 1, 1, 1, 1 );
+                        }
                     }
-                
+                    
+
                 mainFont->drawString( number, 
                                       pos, alignCenter );
 
@@ -257,7 +279,9 @@ void PlayGamePage::draw( doublePair inViewCenter,
                 
                 pos.y += 3;
 
-                pos.x += cellXOffset;            
+                pos.x += cellXOffset;
+                
+                cellIndex ++;
                 }
             pos.y -= cellSize + borderWidth;
             }

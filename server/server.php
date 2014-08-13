@@ -2709,15 +2709,24 @@ function cm_printGameState( $inHideOpponentSecretMoves = true ) {
         }
 
 
-    if( $inHideOpponentSecretMoves ) {
-        // replace moves they made for themselves with ?
 
-        if( $their_moves != "#" ) {
+    if( $their_moves != "#" ) {
             
-            $moves = preg_split( "/#/", $their_moves );
+        $moves = preg_split( "/#/", $their_moves );
 
-            $numMoves = count( $moves );
+        $numMoves = count( $moves );
 
+        if( $user_id == $player_1_id ) {
+            
+            // row 5 is our column 0
+            for( $i=0; $i<$numMoves; $i++ ) {
+                $moves[$i] = 5 - $moves[$i];
+                }
+            }
+        
+        
+        if( $inHideOpponentSecretMoves ) {
+            // replace moves they made for themselves with ?
             for( $i=0; $i<$numMoves; $i++ ) {
                 if( $i % 2 == 0 ) {
                     $moves[$i] = "?";
