@@ -2,6 +2,7 @@
 
 #include "buttonStyle.h"
 #include "message.h"
+#include "whiteSprites.h"
 
 
 
@@ -47,7 +48,9 @@ PlayGamePage::PlayGamePage()
         : ServerActionPage( "get_game_state", 8, gameStatePartNames ),
           mGameBoard( NULL ),
           mCommitButton( mainFont, 0, -288, translate( "commit" ) ),
-          mColumnChoiceForUs( -1 ), mColumnChoiceForThem( -1 ) {
+          mColumnChoiceForUs( -1 ), mColumnChoiceForThem( -1 ),
+          mScorePipSprite( loadWhiteSprite( "scorePip.tga" ) ),
+          mScorePipExtraSprite( loadWhiteSprite( "scorePipExtra.tga" ) ){
     
     for( int i=0; i<2; i++ ) {
         mPlayerCoins[i] = -1;
@@ -92,6 +95,9 @@ PlayGamePage::~PlayGamePage() {
     for( int i=0; i<6; i++ ) {
         delete mColumnButtons[i];
         }
+    
+    freeSprite( mScorePipSprite );
+    freeSprite( mScorePipExtraSprite );
     }
 
 
@@ -285,6 +291,39 @@ void PlayGamePage::draw( doublePair inViewCenter,
                 }
             pos.y -= cellSize + borderWidth;
             }
+
+        
+        
+        // draw score pips
+        doublePair pos;
+        pos.y = - ( 105 * 5 ) / 2;
+        pos.x = 300;
+        
+        for( int i=0; i<105; i++ ) {
+            pos.x = 300;
+            
+            setUsColor();
+            if( mOurPossibleScoresFromTheirPerspective[i] ) {
+                setDrawFade( 0.75 );
+                drawSprite( mScorePipSprite, pos );
+                }
+            if( mOurPossibleScores[i] ) {
+                setDrawFade( 1 );
+                pos.x -= 2;
+                drawSprite( mScorePipExtraSprite, pos );
+                pos.x += 2;
+                }
+            
+            pos.x += 16;
+
+            setThemColor();
+            if( mTheirPossibleScores[i] ) {
+                drawSprite( mScorePipSprite, pos );
+                }
+            
+            pos.y += 5;
+            }
+        
         }
     
     

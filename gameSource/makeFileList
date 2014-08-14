@@ -57,6 +57,8 @@ graphics/loading3.tga \
 graphics/responseWarning.tga \
 graphics/numberUp.tga \
 graphics/numberDown.tga \
+graphics/scorePip.tga \
+graphics/scorePipExtra.tga \
 
 
 

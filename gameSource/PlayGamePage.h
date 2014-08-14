@@ -95,4 +95,7 @@ class PlayGamePage : public ServerActionPage, public ActionListener {
         char mOurPossibleScoresFromTheirPerspective[106];
 
         void computePossibleScores();
+
+        SpriteHandle mScorePipSprite;
+        SpriteHandle mScorePipExtraSprite;
     };
