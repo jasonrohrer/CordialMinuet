@@ -590,11 +590,21 @@ typedef struct ScoreSearchRecord {
         
         char *ourPossibleScores;
         char *theirPossibleScores;
+
+        char *ourPossibleScoresFromTheirPerspective;
         
         int *ourChoices;
         int *theirChoices;
 
         int testOurChoices[6];
+
+        // if true, testOurChoices (and our choices passed in as inValues)
+        // are in {us, them, us, them, us, them} order
+        // if false, choices are in {them, them, them, us, us, us } order
+        //
+        // if false, processing callbacks will tally scores only into
+        // ourPossibleScoresFromTheirPerspective
+        char ourChoicesInterleaved;
 
     } ScoreSearchRecord;
 
@@ -610,29 +620,45 @@ static void getScoreForBothPlayerMoves( int *inValues,
 
     ScoreSearchRecord *record = (ScoreSearchRecord*)inExtraParam;
 
-    // our scores
-    int ourScore = 0;
-    for( int i=0; i<3; i++ ) {
-        int y = inValues[i];
-        int x = record->testOurChoices[ i*2 ];
+    
+    if( record->ourChoicesInterleaved ) {
+
+        // our scores
+        int ourScore = 0;
+        for( int i=0; i<3; i++ ) {
+            int y = inValues[i];
+            int x = record->testOurChoices[ i*2 ];
         
-        ourScore += record->gameBoard[ y * 6 + x ];
+            ourScore += record->gameBoard[ y * 6 + x ];
+            }
+        
+        record->ourPossibleScores[ourScore] = true;
+        
+        
+        // their scores
+        int theirScore = 0;
+        for( int i=0; i<3; i++ ) {
+            int y = inValues[i + 3];
+            int x = record->testOurChoices[ 1 + i*2 ];
+            
+            theirScore += record->gameBoard[ y * 6 + x ];        
+            }
+        
+        record->theirPossibleScores[theirScore] = true;
+        }
+    else {
+        // only compute our score range from their perspective
+        int ourScore = 0;
+        for( int i=0; i<3; i++ ) {
+            int y = inValues[i];
+            int x = record->testOurChoices[ i + 3 ];
+        
+            ourScore += record->gameBoard[ y * 6 + x ];
+            }
+        
+        record->ourPossibleScoresFromTheirPerspective[ourScore] = true;
         }
     
-    record->ourPossibleScores[ourScore] = true;
-
-    
-    // their scores
-    int theirScore = 0;
-    for( int i=0; i<3; i++ ) {
-        int y = inValues[i + 3];
-        int x = record->testOurChoices[ 1 + i*2 ];
-        
-        theirScore += record->gameBoard[ y * 6 + x ];        
-        }
-
-    record->theirPossibleScores[theirScore] = true;
-        
 
     }
 
@@ -709,6 +735,8 @@ void PlayGamePage::computePossibleScores() {
     for( int i=0; i<106; i++ ) {
         mOurPossibleScores[i] = false;
         mTheirPossibleScores[i] = false;
+        
+        mOurPossibleScoresFromTheirPerspective[i] = false;
         }
     
 
@@ -716,10 +744,16 @@ void PlayGamePage::computePossibleScores() {
     record.gameBoard = mGameBoard;
     record.ourPossibleScores = mOurPossibleScores;
     record.theirPossibleScores = mTheirPossibleScores;
+    record.ourPossibleScoresFromTheirPerspective = 
+        mOurPossibleScoresFromTheirPerspective;
     record.ourChoices = mOurChoices;
     record.theirChoices = mTheirChoices;
-    
+    record.ourChoicesInterleaved = true;
 
+
+
+    // first, compute our possible scores from our perspective,
+    // and their possible scores, given what we know about them
     int ourChoices[6];
 
     int numToSkip = fillInExtraChoices( record.ourChoices,
@@ -729,6 +763,35 @@ void PlayGamePage::computePossibleScores() {
                    testAllTheirMovesWithFixedOurMove,
                    (void*)( &record ) );
     
+
+
+
+    // now compute our possible scores from their perspective
+    int ourChoicesTheirPerspective[6];
+    
+    // order is {them, them, them, us, us, us}
+    // fill in our choices for them (which they know)
+    int j = 0;
+    for( int i=1; i<6; i+=2 ) {
+        ourChoicesTheirPerspective[j] = record.ourChoices[i];
+        j++;
+        }
+    // leave our choices for us empty (they don't know them)
+    ourChoicesTheirPerspective[3] = -1;
+    ourChoicesTheirPerspective[4] = -1;
+    ourChoicesTheirPerspective[5] = -1;
+    
+
+    numToSkip = fillInExtraChoices( ourChoicesTheirPerspective,
+                                    ourChoices );
+
+    record.ourChoicesInterleaved = false;
+    
+
+    callOnAllPerm( ourChoices, 6, numToSkip,
+                   testAllTheirMovesWithFixedOurMove,
+                   (void*)( &record ) );
+
 
     /*
     static void callOnAllPerm( int *inValuesToPermute, 
@@ -743,17 +806,34 @@ void PlayGamePage::computePossibleScores() {
     printf( "Possible scores:\n" );
     
     for( int i=0; i<106; i++ ) {
+        
+        char lineHere = 
+            mOurPossibleScores[i] ||
+            mOurPossibleScoresFromTheirPerspective[i] ||
+            mTheirPossibleScores[i];
+
+        if( ! lineHere ) {
+            continue;
+            }
+        
         if( mOurPossibleScores[i] ) {
             printf( " %d\t", i );
             }
-        else if( mTheirPossibleScores[i] ) {
+        else {
             printf( "\t" );
             }
         
+        if( mOurPossibleScoresFromTheirPerspective[i] ) {
+            printf( " %d\t", i );
+            }
+        else {
+            printf( "\t" );
+            }
+
         if( mTheirPossibleScores[i] ) {
             printf( " %d\n", i );
             }
-        else if( mOurPossibleScores[i] ) {
+        else {
             printf( "\n" );
             }
         }

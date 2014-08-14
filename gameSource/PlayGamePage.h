@@ -91,6 +91,8 @@ class PlayGamePage : public ServerActionPage, public ActionListener {
 
         char mOurPossibleScores[106];
         char mTheirPossibleScores[106];
+        
+        char mOurPossibleScoresFromTheirPerspective[106];
 
         void computePossibleScores();
     };
