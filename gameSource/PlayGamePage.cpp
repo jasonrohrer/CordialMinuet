@@ -144,6 +144,13 @@ void PlayGamePage::actionPerformed( GUIComponent *inTarget ) {
     for( int i=0; i<6; i++ ) {
         if( inTarget == mColumnButtons[i] ) {
             
+            int numMovesAlreadyMade = 0;
+            for( int j=0; j<6; j++ ) {
+                if( mOurChoices[j] != -1 ) {
+                    numMovesAlreadyMade++;
+                    }
+                }
+
             
             
             if( mColumnChoiceForUs == i ) {
@@ -157,6 +164,20 @@ void PlayGamePage::actionPerformed( GUIComponent *inTarget ) {
             else if( mColumnChoiceForUs == -1 ) {
                 mColumnChoiceForUs = i;
                 mColumnButtons[i]->setLabelText( "x" );
+               
+                if( numMovesAlreadyMade == 4 ) {
+                    // choose both at same time
+                    
+                    for( int j=0; j<6; j++ ) {
+                        if( j != mColumnChoiceForUs && 
+                            ! mColumnUsed[j] ) {
+                            // force last unpicked column to them
+                            mColumnChoiceForThem = j;
+                            mColumnButtons[j]->setLabelText( "x" );
+                            break;
+                            }
+                        }
+                    }
                 }
             else if( mColumnChoiceForThem == -1 ) {
                 mColumnChoiceForThem = i;
@@ -178,12 +199,27 @@ void PlayGamePage::actionPerformed( GUIComponent *inTarget ) {
                 mCommitButton.setVisible( true );
                 }
             else {
+                
+                if( numMovesAlreadyMade == 4 ) {
+                    // last two moves are exclusive, essentially
+                    // one choice
+                    
+                    // both chosen at same time
+                    
+                    // if both not chosen, turn both off
+
+                    mColumnChoiceForUs = -1;
+                    mColumnChoiceForThem = -1;
+                    }
+                
+
                 for( int j=0; j<6; j++ ) {
                     if( j != mColumnChoiceForUs && 
                         j != mColumnChoiceForThem &&
                         ! mColumnUsed[j] ) {
                         
                         mColumnButtons[j]->setVisible( true );
+                        mColumnButtons[j]->setLabelText( "+" );
                         }
                     }
                 mCommitButton.setVisible( false );
