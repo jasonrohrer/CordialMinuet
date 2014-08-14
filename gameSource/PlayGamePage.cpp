@@ -186,7 +186,7 @@ void PlayGamePage::actionPerformed( GUIComponent *inTarget ) {
                 mCommitButton.setVisible( false );
                 }
 
-
+            computePossibleScores();
             }
         }
 
@@ -791,13 +791,39 @@ void PlayGamePage::computePossibleScores() {
 
 
 
+    // fill in our uncommitted choices too
+    int ourUncommittedChoices[6];
+    
+    memcpy( ourUncommittedChoices, record.ourChoices, 6 * sizeof( int ) );
+    
+    
+    int numToSkip = 0;
+    for( int i=0; i<6; i++ ) {
+        if( ourUncommittedChoices[i] != -1 ) {
+            numToSkip++;
+            }
+        }
+    if( numToSkip < 5 ) {
+        ourUncommittedChoices[numToSkip] = mColumnChoiceForUs;
+        numToSkip++;
+        }
+    // don't stick in our choice for them if we have no choice for us
+    // for first computation, choices must come in pairs or partial pairs
+    if( mColumnChoiceForUs != -1 && numToSkip < 6 ) {
+        ourUncommittedChoices[numToSkip] = mColumnChoiceForThem;
+        }
+
+
+
     // first, compute our possible scores from our perspective,
     // and their possible scores, given what we know about them
     int ourChoices[6];
 
-    int numToSkip = fillInExtraChoices( record.ourChoices,
-                                        ourChoices );
-        
+
+    numToSkip = fillInExtraChoices( ourUncommittedChoices,
+                                    ourChoices );
+    
+
     callOnAllPerm( ourChoices, 6, numToSkip,
                    testAllTheirMovesWithFixedOurMove,
                    (void*)( &record ) );
@@ -812,9 +838,23 @@ void PlayGamePage::computePossibleScores() {
     // fill in our choices for them (which they know)
     int j = 0;
     for( int i=1; i<6; i+=2 ) {
-        ourChoicesTheirPerspective[j] = record.ourChoices[i];
+        ourChoicesTheirPerspective[j] = ourUncommittedChoices[i];
         j++;
         }
+    
+    
+    for( int j=0; j<3; j++ ) {
+        if( ourChoicesTheirPerspective[j] == mColumnChoiceForThem ) {
+            // already present, don't add it
+            break;
+            }
+        if( ourChoicesTheirPerspective[j] == -1 ) {
+            // add in our final uncommitted choice for them
+            ourChoicesTheirPerspective[j] = mColumnChoiceForThem;
+            break;
+            }
+        }
+    
     // leave our choices for us empty (they don't know them)
     ourChoicesTheirPerspective[3] = -1;
     ourChoicesTheirPerspective[4] = -1;
@@ -830,53 +870,6 @@ void PlayGamePage::computePossibleScores() {
     callOnAllPerm( ourChoices, 6, numToSkip,
                    testAllTheirMovesWithFixedOurMove,
                    (void*)( &record ) );
-
-
-    /*
-    static void callOnAllPerm( int *inValuesToPermute, 
-                           int inNumValues, int inNumSkip,
-                           void inProcessPermutationCallback( 
-                               int *inValues,
-                               int inNumValues,
-                               void *inExtraParam ),
-                           void *inExtraParam )
-    */  
-
-    printf( "Possible scores:\n" );
-    
-    for( int i=0; i<106; i++ ) {
-        
-        char lineHere = 
-            mOurPossibleScores[i] ||
-            mOurPossibleScoresFromTheirPerspective[i] ||
-            mTheirPossibleScores[i];
-
-        if( ! lineHere ) {
-            continue;
-            }
-        
-        if( mOurPossibleScores[i] ) {
-            printf( " %d\t", i );
-            }
-        else {
-            printf( "\t" );
-            }
-        
-        if( mOurPossibleScoresFromTheirPerspective[i] ) {
-            printf( " %d\t", i );
-            }
-        else {
-            printf( "\t" );
-            }
-
-        if( mTheirPossibleScores[i] ) {
-            printf( " %d\n", i );
-            }
-        else {
-            printf( "\n" );
-            }
-        }
-    printf( "\n\n" );
     }
 
 
