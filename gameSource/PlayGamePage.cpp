@@ -300,10 +300,10 @@ void PlayGamePage::draw( doublePair inViewCenter,
                 // tweak y down a bit as baseline offset for font
                 pos.y -= 3;
 
-                if( x == mColumnChoiceForUs ) {
+                if( x == mColumnChoiceForUs && ! mRowUsed[y] ) {
                     setUsColor();
                     }
-                else if( x == mColumnChoiceForThem ) {
+                else if( x == mColumnChoiceForThem && ! mRowUsed[y] ) {
                     setThemColor();
                     }
                 else {    
