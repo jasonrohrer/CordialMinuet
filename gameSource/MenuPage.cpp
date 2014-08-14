@@ -17,10 +17,6 @@ extern Font *mainFont;
 
 
 void MenuPage::clearListedGames() {
-    for( int i=0; i<mListedGames.size(); i++ ) {
-        GameRecord *r = mListedGames.getElement( i );
-        delete [] r->gameID;
-        }
     mListedGames.deleteAll();
 
     for( int i=0; i<mGameButtons.size(); i++ ) {
