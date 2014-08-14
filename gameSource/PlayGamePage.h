@@ -20,6 +20,28 @@ typedef enum GameMessageState {
 
 
 
+#define MAX_SCORE_RANGE 106
+#define NUM_CACHE_RECORDS 43
+
+typedef struct PossibleScoreCacheRecord {
+        // -1 if record not populated
+        int recordAge;
+        
+        int ourChoices[6];
+        int theirChoices[6];
+        
+        int columnChoiceForUs;
+        int columnChoiceForThem;
+        
+        char ourPossibleScores[106];
+        char theirPossibleScores[106];
+        
+        char ourPossibleScoresFromTheirPerspective[106];
+
+    } PossibleScoreCacheRecord;
+
+
+
 class PlayGamePage : public ServerActionPage, public ActionListener {
         
     public:
@@ -89,13 +111,30 @@ class PlayGamePage : public ServerActionPage, public ActionListener {
         int mTheirWonSquares[3];
         
 
-        char mOurPossibleScores[106];
-        char mTheirPossibleScores[106];
+        char mOurPossibleScores[MAX_SCORE_RANGE];
+        char mTheirPossibleScores[MAX_SCORE_RANGE];
         
-        char mOurPossibleScoresFromTheirPerspective[106];
+        char mOurPossibleScoresFromTheirPerspective[MAX_SCORE_RANGE];
 
         void computePossibleScores();
 
         SpriteHandle mScorePipSprite;
         SpriteHandle mScorePipExtraSprite;
+
+        
+        int mCurrentCacheAge;
+        
+        PossibleScoreCacheRecord mCacheRecords[ NUM_CACHE_RECORDS ];
+        
+        void clearCacheRecords();
+
+        // store the current possible scores into the cache
+        void storeCacheRecord();
+
+        // loads possible scores from the cache, if a record
+        // for this move configuration exists.
+        // If not, returns false
+        char loadCacheRecord();
+        
+
     };

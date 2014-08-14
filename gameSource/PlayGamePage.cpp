@@ -83,6 +83,8 @@ PlayGamePage::PlayGamePage()
     
 
     mCommitButton.addActionListener( this );
+
+    clearCacheRecords();
     }
 
 
@@ -113,7 +115,8 @@ void PlayGamePage::makeActive( char inFresh ) {
         delete [] mGameBoard;
         mGameBoard = NULL;
         }
-
+    
+    clearCacheRecords();
     
     for( int i=0; i<6; i++ ) {
         mColumnButtons[i]->setVisible( false );
@@ -771,13 +774,19 @@ static void testAllTheirMovesWithFixedOurMove( int *inValues,
 
 
 void PlayGamePage::computePossibleScores() {
-    for( int i=0; i<106; i++ ) {
+    for( int i=0; i<MAX_SCORE_RANGE; i++ ) {
         mOurPossibleScores[i] = false;
         mTheirPossibleScores[i] = false;
         
         mOurPossibleScoresFromTheirPerspective[i] = false;
         }
     
+    if( loadCacheRecord() ) {
+        // cached!
+        return;
+        }
+    
+
 
     ScoreSearchRecord record;
     record.gameBoard = mGameBoard;
@@ -870,7 +879,114 @@ void PlayGamePage::computePossibleScores() {
     callOnAllPerm( ourChoices, 6, numToSkip,
                    testAllTheirMovesWithFixedOurMove,
                    (void*)( &record ) );
+
+    storeCacheRecord();
     }
+
+
+
+
+void PlayGamePage::clearCacheRecords() {
+    for( int i=0; i<NUM_CACHE_RECORDS; i++ ) {
+        mCacheRecords[i].recordAge = -1;
+        }
+    mCurrentCacheAge = 0;
+    }
+
+
+
+void PlayGamePage::storeCacheRecord() {
+    int r = -1;
+    int oldestAge = mCurrentCacheAge;
+
+    // empty record?  or oldest?
+    for( int i=0; i<NUM_CACHE_RECORDS; i++ ) {
+        if( mCacheRecords[i].recordAge == -1 ) {
+            r = i;
+            break;
+            }
+        else {
+            if( mCacheRecords[i].recordAge < oldestAge ) {
+                oldestAge =  mCacheRecords[i].recordAge;
+                r = i;
+                }
+            }
+        }
+    
+    mCacheRecords[r].recordAge = mCurrentCacheAge;
+    mCurrentCacheAge ++;
+
+    memcpy( mCacheRecords[r].ourChoices, mOurChoices, 6 * sizeof( int ) );
+    memcpy( mCacheRecords[r].theirChoices, mTheirChoices, 6 * sizeof( int ) );
+    
+    mCacheRecords[r].columnChoiceForUs = mColumnChoiceForUs;
+    mCacheRecords[r].columnChoiceForThem = mColumnChoiceForThem;
+    
+
+    memcpy( mCacheRecords[r].ourPossibleScores, 
+            mOurPossibleScores, MAX_SCORE_RANGE );
+    
+    memcpy( mCacheRecords[r].theirPossibleScores, 
+            mTheirPossibleScores, MAX_SCORE_RANGE );
+    
+    memcpy( mCacheRecords[r].ourPossibleScoresFromTheirPerspective, 
+            mOurPossibleScoresFromTheirPerspective, 
+            MAX_SCORE_RANGE );
+    }
+
+
+
+char PlayGamePage::loadCacheRecord() {
+    char found = false;
+    
+    for( int r=0; r<NUM_CACHE_RECORDS; r++ ) {
+        if( mCacheRecords[r].recordAge == -1 ) {
+            continue;
+            }
+
+        if( mCacheRecords[r].columnChoiceForUs != mColumnChoiceForUs
+            ||
+            mCacheRecords[r].columnChoiceForThem != mColumnChoiceForThem ) {
+            
+            continue;
+            }
+        
+        char match = true;
+        
+        for( int c=0; c<6; c++ ) {
+            if( mCacheRecords[r].ourChoices[c] != mOurChoices[c]
+                ||
+                mCacheRecords[r].theirChoices[c] != mTheirChoices[c] ) {
+                match = false;
+                break;
+                }
+            }
+        
+        if( !match ) {
+            continue;
+            }
+        
+        
+        found = true;
+        
+        memcpy( mOurPossibleScores, mCacheRecords[r].ourPossibleScores, 
+                MAX_SCORE_RANGE );
+    
+        memcpy( mTheirPossibleScores, mCacheRecords[r].theirPossibleScores, 
+                MAX_SCORE_RANGE );
+    
+        memcpy( mOurPossibleScoresFromTheirPerspective, 
+                mCacheRecords[r].ourPossibleScoresFromTheirPerspective, 
+                MAX_SCORE_RANGE );
+
+        mCacheRecords[r].recordAge = mCurrentCacheAge;
+        mCurrentCacheAge++;
+        }    
+    
+    return found;
+    }
+
+
 
 
 
