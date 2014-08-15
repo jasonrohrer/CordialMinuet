@@ -282,6 +282,9 @@ void PlayGamePage::draw( doublePair inViewCenter,
                 
                 char winningSquare = false;
                 
+                char theirPossibleWin = false;
+
+
                 for( int i=0; i<3; i++ ) {
                     if( cellIndex == mOurWonSquares[i] ) {
                         setUsColor();
@@ -293,7 +296,37 @@ void PlayGamePage::draw( doublePair inViewCenter,
                         }
                     }
 
+                                        
+                char theirPossibleWinBlocked = false;
+                for( int i=0; i<3; i++ ) {
+                    if( y == mTheirChoices[i] ) {
+                        theirPossibleWinBlocked = true;
+                        break;
+                        }
+                    }
+                        
+                            
+                if( ! theirPossibleWinBlocked ) {
+                    
+                    for( int j=0; j<3; j++ ) {
+                        if( x == mOurChoices[ j * 2 + 1 ] ) {
+                            theirPossibleWin = true;
+                            break;
+                            }
+                        }
+                    }
+                
+                
+
                 drawSquare( pos, cellSize/2 );
+
+
+                if( theirPossibleWin && !winningSquare ) {
+                    setThemColor();
+                    setDrawFade( 0.5 );
+                    drawSquare( pos, cellSize/2 );
+                    }
+
 
                 char *number = autoSprintf( "%d", mGameBoard[y*6 + x] );
             
@@ -307,7 +340,7 @@ void PlayGamePage::draw( doublePair inViewCenter,
                     setThemColor();
                     }
                 else {    
-                    if( ! winningSquare &&
+                    if( ! winningSquare && ! theirPossibleWin &&
                         ( mColumnUsed[x] || mRowUsed[y] ) ) {
                         setDrawColor( 1, 1, 1, 0.25 );
                         }
