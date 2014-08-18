@@ -129,6 +129,7 @@ class PlayGamePage : public ServerActionPage, public ActionListener {
 
         SpriteHandle mScorePipSprite;
         SpriteHandle mScorePipExtraSprite;
+        SpriteHandle mScorePipEmptySprite;
 
         
         int mCurrentCacheAge;

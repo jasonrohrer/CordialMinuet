@@ -52,7 +52,8 @@ PlayGamePage::PlayGamePage()
           mCommitButton( mainFont, 0, -288, translate( "commit" ) ),
           mColumnChoiceForUs( -1 ), mColumnChoiceForThem( -1 ),
           mScorePipSprite( loadWhiteSprite( "scorePip.tga" ) ),
-          mScorePipExtraSprite( loadWhiteSprite( "scorePipExtra.tga" ) ) {
+          mScorePipExtraSprite( loadWhiteSprite( "scorePipExtra.tga" ) ),
+          mScorePipEmptySprite( loadWhiteSprite( "scorePipEmpty.tga" ) ) {
     
     for( int i=0; i<2; i++ ) {
         mPlayerCoins[i] = -1;
@@ -116,6 +117,7 @@ PlayGamePage::~PlayGamePage() {
     
     freeSprite( mScorePipSprite );
     freeSprite( mScorePipExtraSprite );
+    freeSprite( mScorePipEmptySprite );
     }
 
 
@@ -391,6 +393,8 @@ void PlayGamePage::draw( doublePair inViewCenter,
         // draw score pips
         
         for( int i=0; i<MAX_SCORE_RANGE; i++ ) {
+            char empty = true;
+            
             doublePair pos = mScorePipPositions[i];
 
             char drawHighlight = false;
@@ -403,6 +407,8 @@ void PlayGamePage::draw( doublePair inViewCenter,
                 setUsColor();
                 setDrawFade( 0.75 );
                 drawSprite( mScorePipSprite, pos );
+                
+                empty = false;
 
                 if( drawHighlight ) {
                     setDrawColor( 1, 1, 1, mScorePipLabelFade * 0.5 );
@@ -414,6 +420,8 @@ void PlayGamePage::draw( doublePair inViewCenter,
                 pos.x -= 2;
                 drawSprite( mScorePipExtraSprite, pos );
                 
+                empty = false;
+
                 if( drawHighlight ) {
                     setDrawColor( 1, 1, 1, mScorePipLabelFade * 0.5 );
                     drawSprite( mScorePipExtraSprite, pos );
@@ -428,11 +436,21 @@ void PlayGamePage::draw( doublePair inViewCenter,
             if( mTheirPossibleScores[i] ) {
                 setThemColor();
                 drawSprite( mScorePipSprite, pos );
+                
+                empty = false;
 
                 if( drawHighlight ) {
                     setDrawColor( 1, 1, 1, mScorePipLabelFade * 0.5 );
                     drawSprite( mScorePipSprite, pos );
                     }
+                }
+
+            if( empty && drawHighlight ) {
+                setDrawColor( 1, 1, 1, 0.35 );
+                
+                pos.x -= 9;
+                
+                drawSprite( mScorePipEmptySprite, pos );
                 }
             }
         
@@ -462,8 +480,23 @@ void PlayGamePage::draw( doublePair inViewCenter,
             
             delete [] scoreString;
             }
-            
+        
 
+
+        int ourScore = 0;
+        for( int i=0; i<3; i++ ) {
+            if( mOurWonSquares[i] != -1 ) {
+                ourScore += mGameBoard[ mOurWonSquares[i] ];
+                }
+            }
+
+        setDrawColor( 1, 1, 1, 1 );
+        doublePair pos = { 319, 300 };
+        char *scoreString = autoSprintf( "%d", ourScore );
+        
+        mainFont->drawString( scoreString, pos, alignRight );
+        
+        delete [] scoreString;
         }
     
     
@@ -1146,15 +1179,11 @@ void PlayGamePage::pointerMove( float inX, float inY ) {
     
         if( fabs( pos.y - inY ) <= 2 ) {
             
-            if( mOurPossibleScoresFromTheirPerspective[i] ||
-                mTheirPossibleScores[i] ||
-                mOurPossibleScores[i] ) {
-                // something to mouse-over here
+            // something to mouse-over here
                 
 
-                mScorePipToLabel = i;
-                mScorePipLabelFadeDelta = 1;
-                }
+            mScorePipToLabel = i;
+            mScorePipLabelFadeDelta = 1;
             
             break;
             }
