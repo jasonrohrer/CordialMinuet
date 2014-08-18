@@ -187,6 +187,7 @@ if( $shutdownMode &&
       $action == "list_games" ||
       $action == "get_game_state" ||
       $action == "make_move" ||
+      $action == "make_bet" ||
       $action == "wait_move" ) ) {
     
     echo "SHUTDOWN";
@@ -244,6 +245,9 @@ else if( $action == "get_game_state" ) {
     }
 else if( $action == "make_move" ) {
     cm_makeMove();
+    }
+else if( $action == "make_bet" ) {
+    cm_makeBet();
     }
 else if( $action == "wait_move" ) {
     cm_waitMove();
@@ -471,6 +475,8 @@ function cm_setupDatabase() {
             "game_square CHAR(125) NOT NULL,".
             "player_1_moves CHAR(11) NOT NULL,".
             "player_2_moves CHAR(11) NOT NULL,".
+            "player_1_bet_made TINYINT UNSIGNED NOT NULL,".
+            "player_2_bet_made TINYINT UNSIGNED NOT NULL,".
             "move_deadline DATETIME NOT NULL,".
             "player_1_coins TINYINT UNSIGNED NOT NULL, ".
             "player_2_coins TINYINT UNSIGNED NOT NULL, ".
@@ -2254,7 +2260,9 @@ function cm_joinGame() {
             "player_1_coins = player_1_coins - 1, ".
             "player_2_coins = player_2_coins - 1, ".
             "player_1_pot_coins = player_1_pot_coins + 1, ".
-            "player_2_pot_coins = player_2_pot_coins + 1 ".
+            "player_2_pot_coins = player_2_pot_coins + 1, ".
+            // buy-ins are done, ready for first moves to be made
+            "player_1_bet_made = 1, player_2_bet_made = 1 ".
             "WHERE game_id = '$game_id';";
         
         cm_queryDatabase( $query );
@@ -2351,6 +2359,8 @@ function cm_joinGame() {
             "game_square = '$square',".
             "player_1_moves = '#',".
             "player_2_moves = '#',".
+            "player_1_bet_made = 0,".
+            "player_2_bet_made = 0,".
             "move_deadline = CURRENT_TIMESTAMP, ".
             "player_1_coins = $cm_gameCoins, ".
             "player_2_coins = $cm_gameCoins, ".
@@ -2791,7 +2801,10 @@ function cm_makeMove() {
     $query = "SELECT player_1_id, player_2_id,".
         "player_1_moves, player_2_moves, semaphore_key ".
         "FROM $tableNamePrefix"."games ".
-        "WHERE player_1_id = '$user_id' OR player_2_id = '$user_id' ".
+        "WHERE ( player_1_id = '$user_id' OR player_2_id = '$user_id' )".
+        "AND player_1_bet_made = 1 AND player_2_bet_made = 1 ".
+        "AND player_1_pot_coins = player_2_pot_coins ".
+        "AND started = 1 ".
         "FOR UPDATE;";
 
     $result = cm_queryDatabase( $query );
@@ -2799,7 +2812,8 @@ function cm_makeMove() {
     $numRows = mysql_numrows( $result );
 
     if( $numRows != 1 ) {
-        cm_log( "Making a move for a game that doesn't exist" );
+        cm_log( "Making a move for a game that doesn't exist ".
+                "(or maybe game is in betting phases, so moves forbidden)" );
         cm_transactionDeny();
         return;
         }
@@ -2851,10 +2865,125 @@ function cm_makeMove() {
         $player_2_moves = $our_moves;
         }
 
+    $betsMade = 1;
+
+    if( strlen( $player_1_moves ) == strlen( $player_2_moves ) ) {
+        // get ready for next betting round
+        $betsMade = 0;
+        }
+    
 
     $query = "UPDATE $tableNamePrefix"."games ".
         "SET player_1_moves = '$player_1_moves', ".
-        "player_2_moves = '$player_2_moves' ".
+        "player_2_moves = '$player_2_moves', ".
+        "player_1_bet_made = '$betsMade', ".
+        "player_2_bet_made = '$betsMade' ".
+        "WHERE player_1_id = '$user_id' OR player_2_id = '$user_id';";
+    
+
+    $result = cm_queryDatabase( $query );
+    
+    cm_queryDatabase( "COMMIT;" );
+
+    
+    // if they are waiting, they can stop waiting
+    semSignal( $semaphore_key );
+    
+    echo "OK";
+    }
+
+
+
+
+function cm_makeBet() {
+    if( ! cm_verifyTransaction() ) {
+        return;
+        }
+
+    $user_id = cm_getUserID();
+
+    
+    $bet = cm_requestFilter( "bet", "/[0-9]+/", "0" );
+
+    global $tableNamePrefix;
+
+
+    cm_queryDatabase( "SET AUTOCOMMIT=0" );
+    
+    $query = "SELECT player_1_id, player_2_id,".
+        "player_1_coins, player_2_coins, ".
+        "player_1_bet_made, player_2_bet_made, ".
+        "player_1_pot_coins, player_2_pot_coins, semaphore_key ".
+        "FROM $tableNamePrefix"."games ".
+        "WHERE player_1_id = '$user_id' OR player_2_id = '$user_id' ".
+        "FOR UPDATE;";
+
+    $result = cm_queryDatabase( $query );
+    
+    $numRows = mysql_numrows( $result );
+
+    if( $numRows != 1 ) {
+        cm_log( "Making a bet for a game that doesn't exist" );
+        cm_transactionDeny();
+        return;
+        }
+    
+    $player_1_id = mysql_result( $result, 0, "player_1_id" );
+    $player_2_id = mysql_result( $result, 0, "player_2_id" );
+
+    $player_1_coins = mysql_result( $result, 0, "player_1_coins" );
+    $player_2_coins = mysql_result( $result, 0, "player_2_coins" );
+
+    $player_1_bet_made = mysql_result( $result, 0, "player_1_bet_made" );
+    $player_2_bet_made = mysql_result( $result, 0, "player_2_bet_made" );
+
+    
+    $player_1_pot_coins = mysql_result( $result, 0, "player_1_pot_coins" );
+    $player_2_pot_coins = mysql_result( $result, 0, "player_2_pot_coins" );
+
+    $semaphore_key = mysql_result( $result, 0, "semaphore_key" );
+
+
+    $ourCoins;
+    $ourPotCoins;
+    if( $player_1_id == $user_id ) {
+        $ourCoins = $player_1_coins;
+        $ourPotCoins = $player_1_pot_coins;
+        }
+    else {
+        $ourCoins = $player_2_coins;
+        $ourPotCoins = $player_2_pot_coins;
+        }
+
+    if( $bet > $ourCoins ) {
+        cm_log( "Bet of $bet exceeds player's available coins" );
+        cm_transactionDeny();
+        return;
+        }
+
+    $ourPotCoins += $bet;
+    $ourCoins -= $bet;
+    
+
+    if( $player_1_id == $user_id ) {
+        $player_1_coins =  $ourCoins;
+        $player_1_pot_coins =  $ourPotCoins;
+        $player_1_bet_made = 1;
+        }
+    else {
+        $player_2_coins =  $ourCoins;
+        $player_2_pot_coins =  $ourPotCoins;
+        $player_2_bet_made = 1;
+        }
+
+
+    $query = "UPDATE $tableNamePrefix"."games ".
+        "SET player_1_coins = '$player_1_coins', ".
+        "player_2_coins = '$player_2_coins', ".
+        "player_1_bet_made = '$player_1_bet_made', ".
+        "player_2_bet_made = '$player_2_bet_made', ".
+        "player_1_pot_coins = '$player_1_pot_coins', ".
+        "player_2_pot_coins = '$player_2_pot_coins' ".
         "WHERE player_1_id = '$user_id' OR player_2_id = '$user_id';";
     
 
@@ -2877,15 +3006,25 @@ function cm_waitMove() {
     if( ! cm_verifyTransaction() ) {
         return;
         }
+
+    cm_waitMoveInternall( true );
+    }
+
+
+
+function cm_waitMoveInternall( $inWaitOnSemaphore ) {
     
-    global $tableNamePrefix ;
+    global $tableNamePrefix;
 
         
     $user_id = cm_getUserID();
 
     cm_queryDatabase( "SET AUTOCOMMIT=0" );
     
-    $query = "SELECT semaphore_key, player_1_moves, player_2_moves ".
+    $query = "SELECT player_1_id, player_2_id, ".
+        "semaphore_key, player_1_moves, player_2_moves, ".
+        "player_1_pot_coins, player_2_pot_coins, ".
+        "player_1_bet_made, player_2_bet_made ".
         "FROM $tableNamePrefix"."games ".
         "WHERE player_1_id = '$user_id' OR player_2_id = '$user_id' ".
         "FOR UPDATE;";
@@ -2902,15 +3041,40 @@ function cm_waitMove() {
         return;
         }
 
+    $player_1_id = mysql_result( $result, 0, "player_1_id" );
+    $player_2_id = mysql_result( $result, 0, "player_2_id" );
+
+    $player_1_pot_coins = mysql_result( $result, 0, "player_1_pot_coins" );
+    $player_2_pot_coins = mysql_result( $result, 0, "player_2_pot_coins" );
+    
     $semaphore_key = mysql_result( $result, 0, "semaphore_key" );
     $player_1_moves = mysql_result( $result, 0, "player_1_moves" );
     $player_2_moves = mysql_result( $result, 0, "player_2_moves" );
+
+    $player_1_bet_made = mysql_result( $result, 0, "player_1_bet_made" );
+    $player_2_bet_made = mysql_result( $result, 0, "player_2_bet_made" );
+
     
-    if( strlen( $player_2_moves ) == strlen( $player_1_moves ) ) {
+    $ourPotCoins;
+    $theirPotCoins;
+
+    if( $player_1_id == $user_id ) {
+        $ourPotCoins = $player_1_pot_coins;
+        $theirPotCoins = $player_2_pot_coins;
+        }
+    else {
+        $ourPotCoins = $player_2_pot_coins;
+        $theirPotCoins = $player_1_pot_coins;
+        }
+    
+    
+    if( strlen( $player_2_moves ) == strlen( $player_1_moves ) &&
+        $player_1_bet_made == $player_2_bet_made &&
+        $theirPotCoins >= $ourPotCoins ) {
         echo "move_ready\nOK";
         return;
         }
-    else {
+    else if( $inWaitOnSemaphore ) {
         global $waitTimeout;
 
         semLock( $semaphore_key );
@@ -2925,37 +3089,19 @@ function cm_waitMove() {
             return;
             }
         else {
-
-            $query = "SELECT player_1_moves, player_2_moves ".
-                "FROM $tableNamePrefix"."games ".
-                "WHERE player_1_id = '$user_id' OR player_2_id = '$user_id';";
-            
-            $result = cm_queryDatabase( $query );
-
-
-            $numRows = mysql_numrows( $result );
-
-    
-            if( $numRows == 0 ) {
-                cm_log( "Waiting on move for a game that doesn't exist" );
-                cm_transactionDeny();
-                return;
-                }
-
-            $player_1_moves = mysql_result( $result, 0, "player_1_moves" );
-            $player_2_moves = mysql_result( $result, 0, "player_2_moves" );
-    
-            if( strlen( $player_2_moves ) == strlen( $player_1_moves ) ) {
-                echo "move_ready\nOK";
-                return;
-                }
-            else {
-                // sem signaled but move still not ready?
-                echo "waiting\nOK";
-                return;
-                }
-            
+            // don't re-wait on the semaphore this time,
+            // but re-perform the same tests to check if the move is ready 
+            cm_waitMoveInternall( false );
             }
+        }
+    
+    else {
+        // we're waiting, but not supposed to block on semaphore
+        // (maybe we already woke up from waiting on it)
+        echo "waiting\nOK";
+        
+        cm_queryDatabase( "COMMIT;" );
+        return;
         }
     }
 

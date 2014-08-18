@@ -542,4 +542,17 @@ or
 waiting
 OK
 
-This call is for waiting for your opponent to move
+This call is for waiting for your opponent to move (or bet
+
+
+
+
+=== Call:
+server.php?action=make_bet
+          &user_id=[id number]
+          &sequence_number=[number]
+          &account_hmac=[hmac-sha1, hex-encoded]  
+		  &bet=[number of coins to add to pot]
+
+Returns:
+OK

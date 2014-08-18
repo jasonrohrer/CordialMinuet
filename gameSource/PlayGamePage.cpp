@@ -50,6 +50,8 @@ PlayGamePage::PlayGamePage()
         : ServerActionPage( "get_game_state", 8, gameStatePartNames ),
           mGameBoard( NULL ),
           mCommitButton( mainFont, 0, -288, translate( "commit" ) ),
+          mBetButton( mainFont, 0, -288, translate( "bet" ) ),
+          mBetPicker( mainFont, -264, 160, 3, 0, "" ),
           mColumnChoiceForUs( -1 ), mColumnChoiceForThem( -1 ),
           mScorePipSprite( loadWhiteSprite( "scorePip.tga" ) ),
           mScorePipExtraSprite( loadWhiteSprite( "scorePipExtra.tga" ) ),
@@ -80,12 +82,16 @@ PlayGamePage::PlayGamePage()
     
 
     addComponent( &mCommitButton );
+    addComponent( &mBetButton );
+    addComponent( &mBetPicker );
     
 
     setButtonStyle( &mCommitButton );
+    setButtonStyle( &mBetButton );
     
 
     mCommitButton.addActionListener( this );
+    mBetButton.addActionListener( this );
 
     clearCacheRecords();
 
@@ -134,7 +140,10 @@ void PlayGamePage::makeActive( char inFresh ) {
 
 
     mCommitButton.setVisible( false );
+    mBetButton.setVisible( false );
     
+    mBetPicker.setVisible( false );
+
     if( mGameBoard != NULL ) {
         delete [] mGameBoard;
         mGameBoard = NULL;
@@ -269,6 +278,24 @@ void PlayGamePage::actionPerformed( GUIComponent *inTarget ) {
         mColumnButtons[mColumnChoiceForThem]->setVisible( false );
 
         mMessageState = sendingMove;
+        
+        startRequest();
+        }
+
+    if( inTarget == &mBetButton ) {
+        
+        mBetButton.setVisible( false );
+    
+        clearActionParameters();
+        
+        setActionName( "make_bet" );
+        setResponsePartNames( -1, NULL );
+        
+        setActionParameter( "bet", (int)( mBetPicker.getValue() ) );
+        
+        mBetPicker.setVisible( false );
+        
+        mMessageState = sendingBet;
         
         startRequest();
         }
@@ -584,7 +611,24 @@ void PlayGamePage::step() {
         
         startRequest();
         }
-    else if( mMessageState == gettingState ) {
+    else if( mMessageState == sendingBet ) {
+        
+        // bet sent
+        
+        // wait for opponent's bet
+
+        clearActionParameters();
+        
+        setActionName( "wait_move" );
+        setResponsePartNames( 1, waitMovePartNames );
+
+        mMessageState = waitingBet;
+        
+        startRequest();
+        }
+    else if( mMessageState == gettingState ||
+             mMessageState == gettingStatePostMove ||
+             mMessageState == gettingStatePostBet ) {
 
         mPlayerCoins[0] = getResponseInt( "ourCoins" );
         mPlayerCoins[1] = getResponseInt( "theirCoins" );
@@ -724,16 +768,33 @@ void PlayGamePage::step() {
         mColumnChoiceForUs = -1;
         mColumnChoiceForThem = -1;
 
-        for( int i=0; i<6; i++ ) {
-            mColumnButtons[i]->setVisible( ! mColumnUsed[i] );
-            mColumnButtons[i]->setLabelText( "+" );
+
+        if( mMessageState == gettingState 
+            ||
+            ( mMessageState == gettingStatePostBet &&
+              mPotCoins[0] == mPotCoins[1] ) ) {
+            
+            for( int i=0; i<6; i++ ) {
+                mColumnButtons[i]->setVisible( ! mColumnUsed[i] );
+                mColumnButtons[i]->setLabelText( "+" );
+                }
+            }
+        else {
+            // betting time
+            mBetPicker.setVisible( true );
+            
+            mBetPicker.setMax( mPlayerCoins[0] );
+            mBetPicker.setMin( 0 );
+            
+            mBetButton.setVisible( true );
             }
         
         computePossibleScores();
 
         mMessageState = responseProcessed;
         }
-    else if( mMessageState == waitingMove ) {
+    else if( mMessageState == waitingMove ||
+             mMessageState == waitingBet ) {
         char *status = getResponse( "status" );
 
         if( strcmp( status, "move_ready" ) == 0 ) {
@@ -744,7 +805,12 @@ void PlayGamePage::step() {
 
             clearActionParameters();
     
-            mMessageState = gettingState;
+            if( mMessageState == waitingMove ) {
+                mMessageState = gettingStatePostMove;
+                }
+            else {
+                mMessageState = gettingStatePostBet;
+                }
             
             startRequest();
             }

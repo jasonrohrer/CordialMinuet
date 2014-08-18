@@ -142,6 +142,7 @@ joinButtonTip "JOIN FOR %s"
  
 
 commit "COMMIT"
+bet "BET"
 
 
 
