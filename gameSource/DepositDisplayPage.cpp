@@ -10,6 +10,7 @@
 
 
 extern Font *mainFont;
+extern Font *numbersFontFixed;
 
 
 extern double userBalance;
@@ -116,15 +117,15 @@ void DepositDisplayPage::draw( doublePair inViewCenter,
         formatBalance( newBalanceEstimate, fullPrecision );
 
 
-    double maxWidth = mainFont->measureString( oldBalanceString );
+    double maxWidth = numbersFontFixed->measureString( oldBalanceString );
     
-    double otherWidth = mainFont->measureString( deletaString );
+    double otherWidth = numbersFontFixed->measureString( deletaString );
     
     if( otherWidth > maxWidth ) {
         maxWidth = otherWidth;
         }
     
-    otherWidth = mainFont->measureString( newBalanceEstimateString );
+    otherWidth = numbersFontFixed->measureString( newBalanceEstimateString );
     
     if( otherWidth > maxWidth ) {
         maxWidth = otherWidth;
@@ -138,7 +139,7 @@ void DepositDisplayPage::draw( doublePair inViewCenter,
 
 
     pos.x = xOffset;
-    mainFont->drawString( oldBalanceString, pos, alignRight );
+    numbersFontFixed->drawString( oldBalanceString, pos, alignRight );
     
     delete [] oldBalanceString;
 
@@ -151,10 +152,10 @@ void DepositDisplayPage::draw( doublePair inViewCenter,
         amountKey = "withdrawAmount";
         }
 
-    mainFont->drawString( translate( amountKey ), pos, alignRight );
+    numbersFontFixed->drawString( translate( amountKey ), pos, alignRight );
     
     pos.x = xOffset;
-    mainFont->drawString( deletaString, pos, alignRight );
+    numbersFontFixed->drawString( deletaString, pos, alignRight );
     
     delete [] deletaString;
     
@@ -171,7 +172,7 @@ void DepositDisplayPage::draw( doublePair inViewCenter,
                            fullPrecision );
     
         pos.x = xOffset;
-        mainFont->drawString( valueString, pos, alignRight );
+        numbersFontFixed->drawString( valueString, pos, alignRight );
     
         delete [] valueString;
         }
