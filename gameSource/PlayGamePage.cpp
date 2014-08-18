@@ -15,6 +15,8 @@
 
 
 extern Font *mainFont;
+extern Font *numbersFontFixed;
+extern double frameRateFactor;
 
 
 
@@ -50,7 +52,7 @@ PlayGamePage::PlayGamePage()
           mCommitButton( mainFont, 0, -288, translate( "commit" ) ),
           mColumnChoiceForUs( -1 ), mColumnChoiceForThem( -1 ),
           mScorePipSprite( loadWhiteSprite( "scorePip.tga" ) ),
-          mScorePipExtraSprite( loadWhiteSprite( "scorePipExtra.tga" ) ){
+          mScorePipExtraSprite( loadWhiteSprite( "scorePipExtra.tga" ) ) {
     
     for( int i=0; i<2; i++ ) {
         mPlayerCoins[i] = -1;
@@ -85,6 +87,20 @@ PlayGamePage::PlayGamePage()
     mCommitButton.addActionListener( this );
 
     clearCacheRecords();
+
+    doublePair pos;
+    pos.y = - ( (MAX_SCORE_RANGE - 1) * 5 ) / 2;
+    pos.x = 300;
+    
+    for( int i=0; i<MAX_SCORE_RANGE; i++ ) {
+        mScorePipPositions[i] = pos;
+        
+        pos.y += 5;
+        }
+    
+    mScorePipToLabel = -1;
+    mScorePipLabelFade = 0;
+    mScorePipLabelFadeDelta = -1;
     }
 
 
@@ -108,6 +124,12 @@ void PlayGamePage::makeActive( char inFresh ) {
     if( !inFresh ) {
         return;
         }
+
+
+    mScorePipToLabel = -1;
+    mScorePipLabelFade = 0;
+    mScorePipLabelFadeDelta = -1;
+
 
     mCommitButton.setVisible( false );
     
@@ -367,35 +389,81 @@ void PlayGamePage::draw( doublePair inViewCenter,
         
         
         // draw score pips
-        doublePair pos;
-        pos.y = - ( 105 * 5 ) / 2;
-        pos.x = 300;
         
-        for( int i=0; i<105; i++ ) {
-            pos.x = 300;
-            
-            setUsColor();
+        for( int i=0; i<MAX_SCORE_RANGE; i++ ) {
+            doublePair pos = mScorePipPositions[i];
+
+            char drawHighlight = false;
+            if( mScorePipToLabel == i &&
+                mScorePipLabelFade > 0 ) {
+                drawHighlight = true;
+                }
+
             if( mOurPossibleScoresFromTheirPerspective[i] ) {
+                setUsColor();
                 setDrawFade( 0.75 );
                 drawSprite( mScorePipSprite, pos );
+
+                if( drawHighlight ) {
+                    setDrawColor( 1, 1, 1, mScorePipLabelFade * 0.5 );
+                    drawSprite( mScorePipSprite, pos );
+                    }
                 }
             if( mOurPossibleScores[i] ) {
-                setDrawFade( 1 );
+                setUsColor();
                 pos.x -= 2;
                 drawSprite( mScorePipExtraSprite, pos );
+                
+                if( drawHighlight ) {
+                    setDrawColor( 1, 1, 1, mScorePipLabelFade * 0.5 );
+                    drawSprite( mScorePipExtraSprite, pos );
+                    }
+                
                 pos.x += 2;
                 }
             
             pos.x += 16;
 
-            setThemColor();
-            if( mTheirPossibleScores[i] ) {
-                drawSprite( mScorePipSprite, pos );
-                }
             
-            pos.y += 5;
+            if( mTheirPossibleScores[i] ) {
+                setThemColor();
+                drawSprite( mScorePipSprite, pos );
+
+                if( drawHighlight ) {
+                    setDrawColor( 1, 1, 1, mScorePipLabelFade * 0.5 );
+                    drawSprite( mScorePipSprite, pos );
+                    }
+                }
             }
         
+        if( mScorePipToLabel != -1 &&
+            ( mScorePipLabelFade > 0 ||
+              mScorePipLabelFadeDelta > 0 ) ) {
+            
+            mScorePipLabelFade += 
+                mScorePipLabelFadeDelta * .05 * frameRateFactor;
+
+            if( mScorePipLabelFade > 1 ) {
+                mScorePipLabelFade = 1;
+                }
+            else if ( mScorePipLabelFade < 0 ) {
+                mScorePipLabelFade = 0;
+                }
+
+            char *scoreString = autoSprintf( "%d", mScorePipToLabel );
+            
+            setDrawColor( 1, 1, 1, mScorePipLabelFade );
+            
+            doublePair pos = mScorePipPositions[mScorePipToLabel];
+
+            pos.x -= 20;
+
+            numbersFontFixed->drawString( scoreString, pos, alignRight );
+            
+            delete [] scoreString;
+            }
+            
+
         }
     
     
@@ -1053,6 +1121,46 @@ char PlayGamePage::loadCacheRecord() {
         }    
     
     return found;
+    }
+
+
+
+void PlayGamePage::pointerMove( float inX, float inY ) {
+    mScorePipLabelFadeDelta = -1;
+    
+    doublePair pos = mScorePipPositions[0];
+    
+    if( inX > pos.x + 31 ||
+        inX < pos.x - 64 ) {
+        return;
+        }
+    
+    if( inY < mScorePipPositions[0].y - 2 ||
+        inY > mScorePipPositions[MAX_SCORE_RANGE-1].y + 2 ) {
+        return;
+        }
+        
+
+    for( int i=0; i<MAX_SCORE_RANGE; i++ ) {
+        doublePair pos = mScorePipPositions[i];
+    
+        if( fabs( pos.y - inY ) <= 2 ) {
+            
+            if( mOurPossibleScoresFromTheirPerspective[i] ||
+                mTheirPossibleScores[i] ||
+                mOurPossibleScores[i] ) {
+                // something to mouse-over here
+                
+
+                mScorePipToLabel = i;
+                mScorePipLabelFadeDelta = 1;
+                }
+            
+            break;
+            }
+        }
+    
+    
     }
 
 

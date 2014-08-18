@@ -68,9 +68,11 @@ class PlayGamePage : public ServerActionPage, public ActionListener {
             return true;
             }
         
+        virtual void pointerMove( float inX, float inY );
+        
         
     protected:
-           
+        
         int *mGameBoard;
         
         // ours first
@@ -115,6 +117,13 @@ class PlayGamePage : public ServerActionPage, public ActionListener {
         char mTheirPossibleScores[MAX_SCORE_RANGE];
         
         char mOurPossibleScoresFromTheirPerspective[MAX_SCORE_RANGE];
+
+        doublePair mScorePipPositions[MAX_SCORE_RANGE];
+        
+        int mScorePipToLabel;
+        float mScorePipLabelFade;
+        float mScorePipLabelFadeDelta;
+
 
         void computePossibleScores();
 
