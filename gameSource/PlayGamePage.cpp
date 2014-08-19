@@ -211,7 +211,7 @@ void PlayGamePage::actionPerformed( GUIComponent *inTarget ) {
                             ! mColumnUsed[j] ) {
                             // force last unpicked column to them
                             mColumnChoiceForThem = j;
-                            mColumnButtons[j]->setLabelText( "x" );
+                            mColumnButtons[j]->setVisible( false );
                             break;
                             }
                         }
