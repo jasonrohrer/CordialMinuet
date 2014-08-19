@@ -51,7 +51,7 @@ PlayGamePage::PlayGamePage()
           mGameBoard( NULL ),
           mCommitButton( mainFont, 0, -288, translate( "commit" ) ),
           mBetButton( mainFont, 0, -288, translate( "bet" ) ),
-          mBetPicker( mainFont, -264, 160, 3, 0, "" ),
+          mBetPicker( mainFont, -64, -288, 3, 0, "" ),
           mColumnChoiceForUs( -1 ), mColumnChoiceForThem( -1 ),
           mScorePipSprite( loadWhiteSprite( "scorePip.tga" ) ),
           mScorePipExtraSprite( loadWhiteSprite( "scorePipExtra.tga" ) ),
@@ -784,8 +784,20 @@ void PlayGamePage::step() {
             mBetPicker.setVisible( true );
             
             mBetPicker.setMax( mPlayerCoins[0] );
-            mBetPicker.setMin( 0 );
             
+            int minBet = mPotCoins[1] - mPotCoins[0];
+            
+            if( minBet < 0 ) {
+                minBet = 0;
+                }
+            if( minBet > mPlayerCoins[0] ) {
+                minBet = mPlayerCoins[0];
+                }
+            
+            mBetPicker.setMin( minBet );
+            
+            mBetPicker.setValue( minBet );
+
             mBetButton.setVisible( true );
             }
         
