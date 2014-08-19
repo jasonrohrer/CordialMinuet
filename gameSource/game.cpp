@@ -1514,14 +1514,13 @@ void drawString( const char *inString, char inForceCenter ) {
         // stick messages in corner
         messagePos.x -= viewWidth / 2;
         
-        messagePos.x +=  0.25;
+        messagePos.x +=  20;
     
 
     
         messagePos.y += (viewWidth * viewHeightFraction) /  2;
     
-        messagePos.y -= 0.4375;
-        messagePos.y -= 0.5;
+        messagePos.y -= 32;
 
         align = alignLeft;
         }
@@ -1541,7 +1540,7 @@ void drawString( const char *inString, char inForceCenter ) {
         
 
         mainFont->drawString( lines[i], messagePos, align );
-        messagePos.y -= 0.75;
+        messagePos.y -= 32;
         
         delete [] lines[i];
         }
