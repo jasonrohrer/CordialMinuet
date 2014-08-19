@@ -525,6 +525,14 @@ Returns:
 OK
 
 
+NOTE:
+Moves can only be made after matching bets (or start-of-round buy-ins) have
+been made, and only one move can be made per player.
+
+After each pair of moves (from each player, after wait_move returns move_ready
+and the move is apparent in the get_game_state result), bets must be made.
+
+
 
 
 === Call:
@@ -535,14 +543,28 @@ server.php?action=wait_move
 
 
 Returns:
+
+waiting
+OK
+
+or
 move_ready
 OK
 
 or
-waiting
+opponent_folded
 OK
 
-This call is for waiting for your opponent to move (or bet
+or
+opponent_left
+OK
+
+
+This call is for waiting for your opponent to move (or bet).
+
+folded is only returned when waiting for an opponent to bet.
+It means the next round has started and will be returned by the next
+call to get_game_state.
 
 
 
@@ -556,3 +578,38 @@ server.php?action=make_bet
 
 Returns:
 OK
+
+
+NOTE:
+Bets can only be made between sets of committed moves from both players.
+Bets can be 0, but still must be made using make_bet.
+
+Bets cannot exceed the opponent's non-pot coin balance.
+
+wait_move is used to wait for opponent's bet.
+
+If opponent's bet matches ours, betting is over and the next move must
+be made.
+
+If opponent's bet is higher, we must bet again to match it (or bet even
+higher), or fold.
+
+
+
+
+
+=== Call:
+server.php?action=fold_bet
+          &user_id=[id number]
+          &sequence_number=[number]
+          &account_hmac=[hmac-sha1, hex-encoded]  
+
+Returns:
+OK
+
+Instead of matching the opponent's higher bet with make_bet, folds and gives
+up on the round, allowing opponent to win all pot coins.
+
+Only possible when opponent has put more coins in the pot than us, where we
+would be required to bet more to continue (for example, if opponent bet 0 after
+the last move, we cannot call fold_bet). 

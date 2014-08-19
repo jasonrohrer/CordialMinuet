@@ -51,6 +51,7 @@ PlayGamePage::PlayGamePage()
           mGameBoard( NULL ),
           mCommitButton( mainFont, 0, -288, translate( "commit" ) ),
           mBetButton( mainFont, 0, -288, translate( "bet" ) ),
+          mFoldButton( mainFont, 120, -288, translate( "fold" ) ),
           mBetPicker( mainFont, -64, -288, 3, 0, "" ),
           mColumnChoiceForUs( -1 ), mColumnChoiceForThem( -1 ),
           mScorePipSprite( loadWhiteSprite( "scorePip.tga" ) ),
@@ -83,15 +84,18 @@ PlayGamePage::PlayGamePage()
 
     addComponent( &mCommitButton );
     addComponent( &mBetButton );
+    addComponent( &mFoldButton );
     addComponent( &mBetPicker );
     
 
     setButtonStyle( &mCommitButton );
     setButtonStyle( &mBetButton );
+    setButtonStyle( &mFoldButton );
     
 
     mCommitButton.addActionListener( this );
     mBetButton.addActionListener( this );
+    mFoldButton.addActionListener( this );
 
     clearCacheRecords();
 
@@ -141,6 +145,7 @@ void PlayGamePage::makeActive( char inFresh ) {
 
     mCommitButton.setVisible( false );
     mBetButton.setVisible( false );
+    mFoldButton.setVisible( false );
     
     mBetPicker.setVisible( false );
 
@@ -281,23 +286,42 @@ void PlayGamePage::actionPerformed( GUIComponent *inTarget ) {
         
         startRequest();
         }
-
-    if( inTarget == &mBetButton ) {
+    else if( inTarget == &mBetButton ) {
         
         mBetButton.setVisible( false );
-    
+        mFoldButton.setVisible( false );
+        
         clearActionParameters();
         
         setActionName( "make_bet" );
         setResponsePartNames( -1, NULL );
         
-        setActionParameter( "bet", (int)( mBetPicker.getValue() ) );
-        
-        mPotCoins[0] += (int)( mBetPicker.getValue() );
+        int bet = (int)( mBetPicker.getValue() );
 
+        setActionParameter( "bet", bet );
+        
+        mPotCoins[0] += bet;
+        mPlayerCoins[0] -= bet;
+        
         mBetPicker.setVisible( false );
         
         mMessageState = sendingBet;
+        
+        startRequest();
+        }
+    else if( inTarget == &mFoldButton ) {
+        
+        mBetButton.setVisible( false );
+        mFoldButton.setVisible( false );
+        
+        clearActionParameters();
+        
+        setActionName( "fold_bet" );
+        setResponsePartNames( -1, NULL );
+        
+        mBetPicker.setVisible( false );
+        
+        mMessageState = sendingFold;
         
         startRequest();
         }
@@ -628,6 +652,19 @@ void PlayGamePage::step() {
         
         startRequest();
         }
+    else if( mMessageState == sendingFold ) {
+        
+        // fold sent
+        
+        // new game started
+        setActionName( "get_game_state" );
+        setResponsePartNames( 8, gameStatePartNames );
+        
+        clearActionParameters();
+        mMessageState = gettingState;
+        
+        startRequest();
+        }
     else if( mMessageState == gettingState ||
              mMessageState == gettingStatePostMove ||
              mMessageState == gettingStatePostBet ) {
@@ -784,8 +821,16 @@ void PlayGamePage::step() {
         else {
             // betting time
             mBetPicker.setVisible( true );
-            
-            mBetPicker.setMax( mPlayerCoins[0] );
+
+            // we can't bet more than our opponent can afford
+            int max = mPlayerCoins[1] + mPotCoins[1] - mPotCoins[0];
+
+            // we can't bet more than we can afford
+            if( mPlayerCoins[0] < max ) {
+                max = mPlayerCoins[0];
+                }
+
+            mBetPicker.setMax( max );
             
             int minBet = mPotCoins[1] - mPotCoins[0];
             
@@ -801,6 +846,9 @@ void PlayGamePage::step() {
             mBetPicker.setValue( minBet );
 
             mBetButton.setVisible( true );
+            if( minBet > 0 ) {
+                mFoldButton.setVisible( true );
+                }
             }
         
         computePossibleScores();
@@ -825,6 +873,16 @@ void PlayGamePage::step() {
             else {
                 mMessageState = gettingStatePostBet;
                 }
+            
+            startRequest();
+            }
+        else if( strcmp( status, "opponent_folded" ) == 0 ) {
+            // start of new round
+            setActionName( "get_game_state" );
+            setResponsePartNames( 8, gameStatePartNames );
+
+            clearActionParameters();
+            mMessageState = gettingState;
             
             startRequest();
             }

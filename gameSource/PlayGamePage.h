@@ -18,6 +18,7 @@ typedef enum GameMessageState {
     gettingStatePostBet,
     sendingMove,
     sendingBet,
+    sendingFold,
     waitingMove,
     waitingBet
     } GameMessageState;
@@ -86,6 +87,7 @@ class PlayGamePage : public ServerActionPage, public ActionListener {
 
         TextButton mCommitButton;
         TextButton mBetButton;
+        TextButton mFoldButton;
 
         NumberPicker mBetPicker;
         
