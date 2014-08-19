@@ -141,6 +141,10 @@ void NumberPicker::setMax( double inMax ) {
         mMax = maxPossible;
         }
     
+    if( mMax < mMin ) {
+        setMin( mMax );
+        }
+
 
     double oldValue = getValue();
     
@@ -187,6 +191,11 @@ void NumberPicker::setMax( double inMax ) {
 
 void NumberPicker::setMin( double inMin ) {
     mMin = inMin;
+
+    if( mMax < inMin ) {
+        setMax( inMin );
+        }
+
     setValue( getValue() );
     }
 
