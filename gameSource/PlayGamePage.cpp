@@ -293,6 +293,8 @@ void PlayGamePage::actionPerformed( GUIComponent *inTarget ) {
         
         setActionParameter( "bet", (int)( mBetPicker.getValue() ) );
         
+        mPotCoins[0] += (int)( mBetPicker.getValue() );
+
         mBetPicker.setVisible( false );
         
         mMessageState = sendingBet;
