@@ -2667,6 +2667,7 @@ function cm_printGameState( $inHideOpponentSecretMoves = true ) {
     $query = "SELECT player_1_id, player_2_id,".
         "game_square, player_1_coins, player_2_coins, ".
         "player_1_pot_coins, player_2_pot_coins, ".
+        "player_1_bet_made, player_2_bet_made, ".
         "player_1_moves, player_2_moves ".
         "FROM $tableNamePrefix"."games ".
         "WHERE player_1_id = '$user_id' OR player_2_id = '$user_id';";
@@ -2689,6 +2690,9 @@ function cm_printGameState( $inHideOpponentSecretMoves = true ) {
 
     $player_1_pot_coins = mysql_result( $result, 0, "player_1_pot_coins" );
     $player_2_pot_coins = mysql_result( $result, 0, "player_2_pot_coins" );
+
+    $player_1_bet_made = mysql_result( $result, 0, "player_1_bet_made" );
+    $player_2_bet_made = mysql_result( $result, 0, "player_2_bet_made" );
 
     $player_1_moves = mysql_result( $result, 0, "player_1_moves" );
     $player_2_moves = mysql_result( $result, 0, "player_2_moves" );
@@ -2737,17 +2741,36 @@ function cm_printGameState( $inHideOpponentSecretMoves = true ) {
                 $moves[$i] = 5 - $moves[$i];
                 }
             }
+
         
+        $reveal = false;
+
+        if( $numMoves == 6 &&
+            $player_1_pot_coins == $player_2_pot_coins &&
+            $player_1_bet_made && $player_2_bet_made ) {
+
+            $movesUs = preg_split( "/#/", $your_moves );
+
+            $numMovesUs = count( $movesUs );
+
+            if( $numMovesUs == 6 ) {
+                // game round done
+                $reveal = true;
+                }
+            }
+
         
-        if( $inHideOpponentSecretMoves ) {
+        if( $inHideOpponentSecretMoves && ! $reveal ) {
+            
             // replace moves they made for themselves with ?
             for( $i=0; $i<$numMoves; $i++ ) {
                 if( $i % 2 == 0 ) {
                     $moves[$i] = "?";
                     }
                 }
-            $their_moves = implode( "#", $moves );
             }
+        
+        $their_moves = implode( "#", $moves );
         }
 
     // never show more of their moves than what we've committed so far

@@ -349,6 +349,13 @@ void PlayGamePage::draw( doublePair inViewCenter,
                     ( (cellSize + borderWidth) * 6 ) /  2 + borderWidth / 2 );
         
         int cellIndex = 0;
+
+        char finalReveal = false;
+
+        if( mTheirWonSquares[0] != -1 ) {
+            finalReveal = true;
+            }
+        
         
         for( int y=0; y<6; y++ ) {
             pos.x = -cellCenterStart;
@@ -383,7 +390,7 @@ void PlayGamePage::draw( doublePair inViewCenter,
                     }
                         
                             
-                if( ! theirPossibleWinBlocked ) {
+                if( ! theirPossibleWinBlocked && ! finalReveal ) {
                     
                     for( int j=0; j<3; j++ ) {
                         if( x == mOurChoices[ j * 2 + 1 ] ) {
@@ -550,6 +557,25 @@ void PlayGamePage::draw( doublePair inViewCenter,
         mainFont->drawString( scoreString, pos, alignRight );
         
         delete [] scoreString;
+
+
+        if( finalReveal ) {
+            int theirScore = 0;
+            for( int i=0; i<3; i++ ) {
+                if( mTheirWonSquares[i] != -1 ) {
+                    theirScore += mGameBoard[ mTheirWonSquares[i] ];
+                    }
+                }
+
+            setDrawColor( 1, 1, 1, 1 );
+            doublePair pos = { 319, -300 };
+            char *scoreString = autoSprintf( "%d", theirScore );
+            
+            mainFont->drawString( scoreString, pos, alignRight );
+        
+            delete [] scoreString;
+            }
+        
         }
     
     
@@ -730,7 +756,10 @@ void PlayGamePage::step() {
             else {
                 
                 int ourChoiceIndex = 0;
-                int theirChoiceIndex = 0;
+
+                // their choice for them comes first, which might be ?
+                // we store them in us, us, us, them, them, them order locally
+                int theirChoiceMapping[6] = { 3, 0, 4, 1, 5, 2 };
 
                 for( int i=0; i<numOurParts; i++ ) {
                     int ourChoice = stringToInt( ourParts[i] );
@@ -744,10 +773,9 @@ void PlayGamePage::step() {
                         }
                     if( theirChoice != -1 ) {
                         mRowUsed[theirChoice] = true;
-                        
-                        mTheirChoices[ theirChoiceIndex ] = theirChoice;
-                        theirChoiceIndex++;
                         }
+                    
+                    mTheirChoices[ theirChoiceMapping[i] ] = theirChoice;
                     }
                 
                 
@@ -1177,6 +1205,17 @@ void PlayGamePage::computePossibleScores() {
     ourChoicesTheirPerspective[4] = -1;
     ourChoicesTheirPerspective[5] = -1;
     
+    
+    // unless reveal has happened
+    if( mTheirWonSquares[0] != -1 ) {
+        int j = 3;
+        for( int i=0; i<6; i+=2 ) {
+            ourChoicesTheirPerspective[j] = ourUncommittedChoices[i];
+            j++;
+            }
+        }
+    
+
 
     numToSkip = fillInExtraChoices( ourChoicesTheirPerspective,
                                     ourChoices );
