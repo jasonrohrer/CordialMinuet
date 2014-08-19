@@ -1,8 +1,11 @@
 #include "ServerActionPage.h"
 
+#include "minorGems/game/game.h"
+
 #include "minorGems/util/SimpleVector.h"
 #include "minorGems/util/stringUtils.h"
-#include "minorGems/system/Time.h"
+
+#include "minorGems/util/stringUtils.h"
 
 #include "minorGems/crypto/hashes/sha1.h"
 
@@ -242,7 +245,7 @@ void ServerActionPage::startRequest() {
 
     mResponseReady = false;
     
-    mRequestStartTime = Time::getCurrentTime();
+    mRequestStartTime = game_time( NULL );
 
     setWaiting( true );
     }
@@ -256,7 +259,7 @@ void ServerActionPage::step() {
         
         
         if( mMinimumResponseSeconds > 0 &&
-            Time::getCurrentTime() -  mRequestStartTime 
+            game_time( NULL ) -  mRequestStartTime 
             < mMinimumResponseSeconds ) {
             
             // wait to process result
@@ -445,7 +448,7 @@ char *ServerActionPage::getResponse( int inPartNumber ) {
 
 
 
-void ServerActionPage::setMinimumResponseTime( double inSeconds ) {
+void ServerActionPage::setMinimumResponseTime( unsigned int inSeconds ) {
     mMinimumResponseSeconds = inSeconds;
     }
 

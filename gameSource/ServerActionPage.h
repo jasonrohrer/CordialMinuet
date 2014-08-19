@@ -103,7 +103,7 @@ class ServerActionPage : public GamePage {
         // and flagged with isResponseReady
         // (To allow user to read messages during server action, like
         //  "Logging in...")
-        void setMinimumResponseTime( double inSeconds );
+        void setMinimumResponseTime( unsigned int inSeconds );
 
 
         // call this before adding hmac-signed parameters below
@@ -142,9 +142,9 @@ class ServerActionPage : public GamePage {
         char mResponseReady;
 
 
-        double mMinimumResponseSeconds;
+        unsigned int mMinimumResponseSeconds;
         
-        double mRequestStartTime;
+        unsigned int mRequestStartTime;
 
 
         char *mParameterHmacKey;
