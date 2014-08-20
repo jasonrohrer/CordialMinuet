@@ -4,6 +4,8 @@
 #include "message.h"
 #include "whiteSprites.h"
 
+#include "serialWebRequests.h"
+
 
 
 #include "minorGems/game/Font.h"
@@ -52,6 +54,7 @@ PlayGamePage::PlayGamePage()
           mCommitButton( mainFont, 0, -288, translate( "commit" ) ),
           mBetButton( mainFont, 0, -288, translate( "bet" ) ),
           mFoldButton( mainFont, 120, -288, translate( "fold" ) ),
+          mLeaveButton( mainFont, -128, -288, translate( "leave" ) ),
           mBetPicker( mainFont, -64, -288, 3, 0, "" ),
           mColumnChoiceForUs( -1 ), mColumnChoiceForThem( -1 ),
           mScorePipSprite( loadWhiteSprite( "scorePip.tga" ) ),
@@ -87,17 +90,20 @@ PlayGamePage::PlayGamePage()
     addComponent( &mCommitButton );
     addComponent( &mBetButton );
     addComponent( &mFoldButton );
+    addComponent( &mLeaveButton );
     addComponent( &mBetPicker );
     
 
     setButtonStyle( &mCommitButton );
     setButtonStyle( &mBetButton );
     setButtonStyle( &mFoldButton );
+    setButtonStyle( &mLeaveButton );
     
 
     mCommitButton.addActionListener( this );
     mBetButton.addActionListener( this );
     mFoldButton.addActionListener( this );
+    mLeaveButton.addActionListener( this );
 
     clearCacheRecords();
 
@@ -149,6 +155,8 @@ void PlayGamePage::makeActive( char inFresh ) {
     mBetButton.setVisible( false );
     mFoldButton.setVisible( false );
     
+    mLeaveButton.setVisible( true );
+
     mBetPicker.setVisible( false );
 
     if( mGameBoard != NULL ) {
@@ -156,6 +164,9 @@ void PlayGamePage::makeActive( char inFresh ) {
         mGameBoard = NULL;
         }
     
+    mPlayerCoins[0] = -1;
+    mPlayerCoins[1] = -1;
+
     clearCacheRecords();
     
     for( int i=0; i<6; i++ ) {
@@ -237,6 +248,7 @@ void PlayGamePage::actionPerformed( GUIComponent *inTarget ) {
                         }
                     }
                 mCommitButton.setVisible( true );
+                mLeaveButton.setVisible( false );
                 }
             else {
                 
@@ -263,6 +275,7 @@ void PlayGamePage::actionPerformed( GUIComponent *inTarget ) {
                         }
                     }
                 mCommitButton.setVisible( false );
+                mLeaveButton.setVisible( true );
                 }
 
             computePossibleScores();
@@ -272,6 +285,7 @@ void PlayGamePage::actionPerformed( GUIComponent *inTarget ) {
     if( inTarget == &mCommitButton ) {
         
         mCommitButton.setVisible( false );
+        mLeaveButton.setVisible( true );
     
         clearActionParameters();
         
@@ -292,7 +306,8 @@ void PlayGamePage::actionPerformed( GUIComponent *inTarget ) {
         
         mBetButton.setVisible( false );
         mFoldButton.setVisible( false );
-        
+        mLeaveButton.setVisible( true );
+
         clearActionParameters();
         
         setActionName( "make_bet" );
@@ -315,6 +330,7 @@ void PlayGamePage::actionPerformed( GUIComponent *inTarget ) {
         
         mBetButton.setVisible( false );
         mFoldButton.setVisible( false );
+        mLeaveButton.setVisible( true );
         
         clearActionParameters();
         
@@ -326,6 +342,14 @@ void PlayGamePage::actionPerformed( GUIComponent *inTarget ) {
         mMessageState = sendingFold;
         
         startRequest();
+        }
+    else if( inTarget == &mLeaveButton ) {
+        setSignal( "back" );
+        
+        if( mWebRequest != -1 ) {
+            clearWebRequestSerial( mWebRequest );
+            mWebRequest = -1;
+            }
         }
     }
 
@@ -597,9 +621,12 @@ void PlayGamePage::draw( doublePair inViewCenter,
 
         pos.y = 32;
         number = autoSprintf( "%d", mPotCoins[0] );
-
-        mainFont->drawString( number, 
-                              pos, alignRight );
+        
+        if( mRunning ) {
+            mainFont->drawString( number, 
+                                  pos, alignRight );
+            }
+        
         delete [] number;
 
 
@@ -609,17 +636,23 @@ void PlayGamePage::draw( doublePair inViewCenter,
         number = autoSprintf( "%d", mPlayerCoins[1] );
         
         setThemColor();
-                
-        mainFont->drawString( number, 
-                              pos, alignRight );
+        
+        if( mRunning ) {
+            mainFont->drawString( number, 
+                                  pos, alignRight );
+            }
+
         delete [] number;
 
 
         pos.y = -32;
         number = autoSprintf( "%d", mPotCoins[1] );
+        
+        if( mRunning ) {
+            mainFont->drawString( number, 
+                                  pos, alignRight );
+            }
 
-        mainFont->drawString( number, 
-                              pos, alignRight );
         delete [] number;
         }
     
@@ -725,7 +758,8 @@ void PlayGamePage::step() {
     else if( mMessageState == gettingState ||
              mMessageState == gettingStatePostMove ||
              mMessageState == gettingStatePostBet ) {
-
+        
+        mRunning = getResponseInt( "running" );
         mPlayerCoins[0] = getResponseInt( "ourCoins" );
         mPlayerCoins[1] = getResponseInt( "theirCoins" );
 
@@ -866,8 +900,11 @@ void PlayGamePage::step() {
         mColumnChoiceForUs = -1;
         mColumnChoiceForThem = -1;
 
-
-        if( mMessageState == gettingState 
+        
+        if( ! mRunning ) {
+            mLeaveButton.setVisible( true );
+            }
+        else if( mMessageState == gettingState 
             ||
             ( mMessageState == gettingStatePostBet &&
               mPotCoins[0] == mPotCoins[1] ) ) {
@@ -914,6 +951,7 @@ void PlayGamePage::step() {
             if( minBet > 0 ) {
                 mFoldButton.setVisible( true );
                 }
+            mLeaveButton.setVisible( false );
             }
         
         computePossibleScores();
@@ -954,6 +992,18 @@ void PlayGamePage::step() {
             mMessageState = gettingState;
             
             startRequest();
+            }
+        else if( strcmp( status, "opponent_left" ) == 0 ) {
+            // get final state
+            setActionName( "get_game_state" );
+            setResponsePartNames( 8, gameStatePartNames );
+
+            clearActionParameters();
+            mMessageState = gettingState;
+            
+            startRequest();
+            
+            mLeaveButton.setVisible( true );
             }
         else if( strcmp( status, "waiting" ) == 0 ) {
             // keep waiting

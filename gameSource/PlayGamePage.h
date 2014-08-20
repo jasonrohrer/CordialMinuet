@@ -80,6 +80,8 @@ class PlayGamePage : public ServerActionPage, public ActionListener {
         
     protected:
         
+        char mRunning;
+
         int *mGameBoard;
         
         // ours first
@@ -90,6 +92,7 @@ class PlayGamePage : public ServerActionPage, public ActionListener {
         TextButton mCommitButton;
         TextButton mBetButton;
         TextButton mFoldButton;
+        TextButton mLeaveButton;
 
         NumberPicker mBetPicker;
         

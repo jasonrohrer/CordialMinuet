@@ -1241,7 +1241,6 @@ void drawFrame( char inUpdate ) {
             }
         else if( currentGamePage == waitGamePage ) {
             if( waitGamePage->checkSignal( "back" ) ) {
-                printf( "Waiting cancelled\n" );
                 currentGamePage = leaveGamePage;
                 currentGamePage->base_makeActive( true );
                 }
@@ -1259,6 +1258,12 @@ void drawFrame( char inUpdate ) {
         else if( currentGamePage == joinGamePage ) {
             if( joinGamePage->isResponseReady() ) {
                 currentGamePage = waitGamePage;
+                currentGamePage->base_makeActive( true );
+                }
+            }
+        else if( currentGamePage == playGamePage ) {
+            if( playGamePage->checkSignal( "back" ) ) {
+                currentGamePage = leaveGamePage;
                 currentGamePage->base_makeActive( true );
                 }
             }

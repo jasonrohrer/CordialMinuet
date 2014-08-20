@@ -2011,8 +2011,11 @@ function cm_endOldGames( $user_id ) {
     global $tableNamePrefix;
     
     $query = "SELECT game_id, semaphore_key, player_1_id, player_2_id, ".
+        "game_square, ".
         "dollar_amount, player_1_coins, player_2_coins, ".
-        "player_1_pot_coins, player_2_pot_coins ".
+        "player_1_pot_coins, player_2_pot_coins, ".
+        "player_1_moves, player_2_moves, ".
+        "player_1_bet_made, player_2_bet_made ".
         "FROM $tableNamePrefix"."games ".
         "WHERE player_1_id = '$user_id' OR player_2_id = '$user_id' ".
         "FOR UPDATE;";
@@ -2030,6 +2033,8 @@ function cm_endOldGames( $user_id ) {
         $player_1_id = mysql_result( $result, $i, "player_1_id" );
         $player_2_id = mysql_result( $result, $i, "player_2_id" );
 
+        $game_square = mysql_result( $result, $i, "game_square" );
+
         $old_player_1_id = $player_1_id;
         $old_player_2_id = $player_2_id;
         
@@ -2044,14 +2049,77 @@ function cm_endOldGames( $user_id ) {
         $player_2_pot_coins =
             mysql_result( $result, $i, "player_2_pot_coins" );
 
+
+        $player_1_moves = mysql_result( $result, $i, "player_1_moves" );
+        $player_2_moves = mysql_result( $result, $i, "player_2_moves" );
+
+        $player_1_bet_made = mysql_result( $result, $i, "player_1_bet_made" );
+        $player_2_bet_made = mysql_result( $result, $i, "player_2_bet_made" );
+
+        $player_1_move_list = preg_split( "/#/", $player_1_moves );
+        $player_2_move_list = preg_split( "/#/", $player_2_moves );
         
-        if( $player_1_id == $user_id ) {
+        $player_1_move_count = count( $player_1_move_list );
+        $player_2_move_count = count( $player_2_move_list );
+
+
+        if( $player_1_id != 0 &&
+            $player_2_id != 0 &&
+            $player_1_move_count == 6 &&
+            $player_2_move_count == 6 &&
+            $player_1_bet_made &&
+            $player_2_bet_made ) {
+
+            // player leaving at the end of a round
+
+            $loserID = cm_computeLoser( $game_square,
+                                    $player_1_id, $player_2_id,
+                                    $player_1_moves, $player_2_moves );
+            $tie = false;
+            
+            if( $loserID == -1 ) {
+                $loserID = $player_1_id;
+                $tie = true;
+                }
+
+            if( $tie ) {
+                $player_1_coins += $player_1_pot_coins;
+                $player_2_coins += $player_2_pot_coins;
+                }
+            else {
+                $pot = $player_1_pot_coins + $player_2_pot_coins;
+
+                global $housePotFraction;
+                
+                $houseCoins = floor( $pot * $housePotFraction );
+                
+                $pot -= $houseCoins;
+
+
+                if( $player_1_id == $loserID ) {
+                    $player_2_coins += $pot;
+                    }
+                else {
+                    $player_1_coins += $pot;
+                    }
+                }
+
+            if( $player_1_id == $user_id ) {
+                $player_1_id = 0;
+                }
+            else {
+                $player_2_id = 0;
+                }
+            }
+        
+        // else player leaving in middle
+        else if( $player_1_id == $user_id ) {
             $player_1_id = 0;
 
             // whole pot to player 2
             $player_2_coins += $player_2_pot_coins + $player_1_pot_coins;
             }
-        if( $player_2_id == $user_id ) {
+        else if( $player_2_id == $user_id ) {
             $player_2_id = 0;
             
             // whole pot to player 1
@@ -2072,6 +2140,15 @@ function cm_endOldGames( $user_id ) {
         
         $house_payout =
             ( $house_coins * $dollar_amount ) / $cm_gameCoins;
+
+
+        // now that payouts computed, any that have left take their coins
+        if( $player_1_id == 0 ) {
+            $player_1_coins = 0;
+            }
+        else if( $player_2_id == 0 ) {
+            $player_2_coins = 0;
+            }
         
         
         $query = "UPDATE $tableNamePrefix"."games ".
@@ -3304,6 +3381,46 @@ function cm_makeRoundLoser( $inLoserID, $inTie = false ) {
 
 
 
+// returns losing user_id or -1 on tie
+function cm_computeLoser( $game_square, $player_1_id, $player_2_id,
+                          $player_1_moves, $player_2_moves ) {
+
+    $game_cells = preg_split( "/#/", $game_square );
+        
+    $player_1_move_list = preg_split( "/#/", $player_1_moves );
+    $player_2_move_list = preg_split( "/#/", $player_2_moves );
+    
+    // compute score to find out who won
+    $p1Score = 0;
+    $p2Score = 0;
+
+    for( $i=0; $i<3; $i++ ) {
+        $p1SelfChoice = $player_1_move_list[ $i * 2 ];
+        $p1OtherChoice = $player_1_move_list[ $i * 2 + 1 ];
+        
+        $p2SelfChoice = 5 - $player_2_move_list[ $i * 2 ];
+        $p2OtherChoice = 5 - $player_2_move_list[ $i * 2 + 1 ];
+        
+        $p1Score += $game_cells[ $p2OtherChoice * 6 + $p1SelfChoice ];
+        $p2Score += $game_cells[ $p2SelfChoice * 6 + $p1OtherChoice ];
+        
+        }
+    
+        
+    if( $p1Score < $p2Score ) {
+        return $player_1_id;
+        }
+    else if( $p1Score > $p2Score ) {
+        return $player_2_id;
+        }
+    else {
+        return -1;
+        }
+    }
+
+
+
+
 
 function cm_endRound() {
     if( ! cm_verifyTransaction() ) {
@@ -3391,40 +3508,16 @@ function cm_endRound() {
     
     if( $player_1_ended_round && $player_2_ended_round ) {
 
-        $game_cells = preg_split( "/#/", $game_square );
-        
-    
-        // compute score to find out who won
-        $p1Score = 0;
-        $p2Score = 0;
-
-        for( $i=0; $i<3; $i++ ) {
-            $p1SelfChoice = $player_1_move_list[ $i * 2 ];
-            $p1OtherChoice = $player_1_move_list[ $i * 2 + 1 ];
-            
-            $p2SelfChoice = 5 - $player_2_move_list[ $i * 2 ];
-            $p2OtherChoice = 5 - $player_2_move_list[ $i * 2 + 1 ];
-            
-            $p1Score += $game_cells[ $p2OtherChoice * 6 + $p1SelfChoice ];
-            $p2Score += $game_cells[ $p2SelfChoice * 6 + $p1OtherChoice ];
-
-            }
-
-        
-        $loserID;
+        $loserID = cm_computeLoser( $game_square,
+                                    $player_1_id, $player_2_id,
+                                    $player_1_moves, $player_2_moves );
         $tie = false;
-        
-        if( $p1Score < $p2Score ) {
+
+        if( $loserID == -1 ) {
             $loserID = $player_1_id;
-            }
-        else {
-            $loserID = $player_2_id;
-            }
-        
-        if( $p1Score == $p2Score ) {
             $tie = true;
             }
-        
+
         
         cm_makeRoundLoser( $loserID, $tie );
         }
@@ -3524,7 +3617,7 @@ function cm_waitMoveInternall( $inWaitOnSemaphore ) {
         }
     
 
-    if( $player_1_id == -1 || $player_2_id == -1 ) {
+    if( $player_1_id == 0 || $player_2_id == 0 ) {
         echo "opponent_left\nOK";
         return;
         }
@@ -4092,7 +4185,7 @@ function cm_generateHeader() {
 
     
     $query = "SELECT 2 * SUM( dollar_amount ) FROM $tableNamePrefix"."games ".
-        "WHERE player_1_id != -1 AND player_2_id != -1;";
+        "WHERE player_1_id != 0 AND player_2_id != 0;";
     $result = cm_queryDatabase( $query );
 
     $totalLiveBuyIns = mysql_result( $result, 0, 0 );
