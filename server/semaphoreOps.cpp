@@ -242,12 +242,13 @@ int main( int inNumArgs, char **inArgs ) {
 void usage() {
     printf( "Usage:  semaphoreOps key op [timeout_ms]\n\n" );
     printf( "op can be these values:     \n"
-            "initLock lock  unlock  wait   signal\n\n" );
+            "initLock lock  unlock  wait   signal  remove\n\n" );
     printf( "The optional timeout_ms is a timeout in milliseconds\n"
             "and it is only used for the wait op.\n\n" );
     printf( "Example:  semaphoreOps 19282 initLock\n" );
     printf( "Example:  semaphoreOps 19282 lock\n" );
     printf( "Example:  semaphoreOps 19282 wait\n" );
+    printf( "Example:  semaphoreOps 19282 remove\n" );
     printf( "Example:  semaphoreOps 19282 wait 5000\n\n" );
 
     printf( "On success, call exits without printing anything.\n"
