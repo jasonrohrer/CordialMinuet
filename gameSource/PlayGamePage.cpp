@@ -905,7 +905,14 @@ void PlayGamePage::step() {
         mColumnChoiceForThem = -1;
 
         
-        if( ! mRunning ) {
+        if( ! mRunning || 
+            mPotCoins[0] == 0 ||
+            mPotCoins[1] == 0 ) {
+            
+            // one player left or either down to 0
+
+            // game over
+
             mLeaveButton.setVisible( true );
             }
         else if( mMessageState == gettingState 

@@ -1251,7 +1251,7 @@ void drawFrame( char inUpdate ) {
             }
         else if( currentGamePage == leaveGamePage ) {
             if( leaveGamePage->isResponseReady() ) {
-                currentGamePage = menuPage;
+                currentGamePage = getBalancePage;
                 currentGamePage->base_makeActive( true );
                 }
             }
