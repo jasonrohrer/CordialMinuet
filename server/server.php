@@ -470,9 +470,8 @@ function cm_setupDatabase() {
         // to prevent replay attacks
         $query =
             "CREATE TABLE $tableName(" .
-            "game_id CHAR(40) NOT NULL PRIMARY KEY," .
+            "game_id BIGINT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT," .
             "creation_time DATETIME NOT NULL,".
-            "INDEX( game_id ),".
             "player_1_id INT UNSIGNED NOT NULL," .
             "INDEX( player_1_id )," .
             "player_2_id INT UNSIGNED NOT NULL," .
@@ -2447,66 +2446,31 @@ function cm_joinGame() {
     // add game to the game table
 
 
-    // watch for game_id collisions
-    $errorNumber = 1062;    
-    $madeGame = false;
-
-    $salt = 0;
-
-    $tryCount = 0;
-
     global $cm_gameCoins;
     
-    while( $tryCount < 10 && ! $madeGame && $errorNumber == 1062 ) {
-        
-        $query = "INSERT INTO $tableNamePrefix"."games SET ".
-            "game_id = ".
-            "   SHA1( CONCAT( '$user_id', ".
-            "                 '$square', '$salt', CURRENT_TIMESTAMP ) ), ".
-            "creation_time = CURRENT_TIMESTAMP, ".
-            "player_1_id = '$user_id'," .
-            "player_2_id = 0," .
-            "dollar_amount = '$dollar_amount',".
-            "started = 0,".
-            "game_square = '$square',".
-            "player_1_moves = '#',".
-            "player_2_moves = '#',".
-            "player_1_bet_made = 0,".
-            "player_2_bet_made = 0,".
-            "player_1_ended_round = 0,".
-            "player_2_ended_round = 0,".
-            "move_deadline = CURRENT_TIMESTAMP, ".
-            "player_1_coins = $cm_gameCoins, ".
-            "player_2_coins = $cm_gameCoins, ".
-            "player_1_pot_coins = 0, ".
-            "player_2_pot_coins = 0, ".
-            "semaphore_key = '$semaphore_key';";
-        $result = mysql_query( $query );
+    $query = "INSERT INTO $tableNamePrefix"."games SET ".
+        // game_id is auto-increment
+        "creation_time = CURRENT_TIMESTAMP, ".
+        "player_1_id = '$user_id'," .
+        "player_2_id = 0," .
+        "dollar_amount = '$dollar_amount',".
+        "started = 0,".
+        "game_square = '$square',".
+        "player_1_moves = '#',".
+        "player_2_moves = '#',".
+        "player_1_bet_made = 0,".
+        "player_2_bet_made = 0,".
+        "player_1_ended_round = 0,".
+        "player_2_ended_round = 0,".
+        "move_deadline = CURRENT_TIMESTAMP, ".
+        "player_1_coins = $cm_gameCoins, ".
+        "player_2_coins = $cm_gameCoins, ".
+        "player_1_pot_coins = 0, ".
+        "player_2_pot_coins = 0, ".
+        "semaphore_key = '$semaphore_key';";
+    $result = mysql_query( $query );
 
-        if( $result ) {
-            $madeGame = true;
-            }
-        else {
-            $errorNumber = mysql_errno();
-
-
-            if( $errorNumber != 1062 ) {
-                cm_fatalError(
-                    "Database query failed:<BR>$query<BR><BR>" .
-                    mysql_error() );
-                }
-            else {
-                $errorMessage = mysql_error();
-                
-                cm_log( "Game ID collision.  ".
-                        "Error: [$errorNumber] $errorMessage " );
-                
-                $salt ++;
-                $tryCount ++;
-                }
-            }
-        }
-
+    
     $query = "SELECT game_id, semaphore_key ".
         "FROM $tableNamePrefix"."games ".
         "WHERE player_1_id = '$user_id';";
