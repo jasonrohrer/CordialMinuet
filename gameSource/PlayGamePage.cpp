@@ -300,6 +300,7 @@ void PlayGamePage::actionPerformed( GUIComponent *inTarget ) {
 
         mMessageState = sendingMove;
         
+        setupRequestParameterSecurity();
         startRequest();
         }
     else if( inTarget == &mBetButton ) {
@@ -324,6 +325,7 @@ void PlayGamePage::actionPerformed( GUIComponent *inTarget ) {
         
         mMessageState = sendingBet;
         
+        setupRequestParameterSecurity();
         startRequest();
         }
     else if( inTarget == &mFoldButton ) {
@@ -341,6 +343,7 @@ void PlayGamePage::actionPerformed( GUIComponent *inTarget ) {
         
         mMessageState = sendingFold;
         
+        setupRequestParameterSecurity();
         startRequest();
         }
     else if( inTarget == &mLeaveButton ) {
@@ -684,6 +687,7 @@ void PlayGamePage::step() {
         
         mMessageState = sendingEnd;
         
+        setupRequestParameterSecurity();
         startRequest();
         mRoundEnding = false;
         }

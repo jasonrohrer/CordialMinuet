@@ -2897,6 +2897,10 @@ function cm_makeMove() {
         return;
         }
 
+    if( cm_handleRepeatResponse() ) {
+        return;
+        }
+    
     $user_id = cm_getUserID();
 
     
@@ -3024,12 +3028,25 @@ function cm_makeMove() {
     $result = cm_queryDatabase( $query );
     
     cm_queryDatabase( "COMMIT;" );
+    cm_queryDatabase( "SET AUTOCOMMIT = 1;" );
 
     
     // if they are waiting, they can stop waiting
     semSignal( $semaphore_key );
+
     
-    echo "OK";
+    $response = "OK";
+
+    $request_tag = cm_requestFilter( "request_tag", "/[A-F0-9]+/i", "" );
+    
+    $query = "UPDATE $tableNamePrefix"."users SET ".
+        "last_request_response = '$response', ".
+        "last_request_tag = '$request_tag' ".
+        "WHERE user_id = '$user_id';";
+
+    cm_queryDatabase( $query );
+    
+    echo $response;
     }
 
 
@@ -3040,6 +3057,10 @@ function cm_makeBet() {
         return;
         }
 
+    if( cm_handleRepeatResponse() ) {
+        return;
+        }
+    
     $user_id = cm_getUserID();
 
     
@@ -3170,12 +3191,23 @@ function cm_makeBet() {
     $result = cm_queryDatabase( $query );
     
     cm_queryDatabase( "COMMIT;" );
-
+    cm_queryDatabase( "SET AUTOCOMMIT = 1;" );
     
     // if they are waiting, they can stop waiting
     semSignal( $semaphore_key );
+
+    $response = "OK";
+
+    $request_tag = cm_requestFilter( "request_tag", "/[A-F0-9]+/i", "" );
     
-    echo "OK";
+    $query = "UPDATE $tableNamePrefix"."users SET ".
+        "last_request_response = '$response', ".
+        "last_request_tag = '$request_tag' ".
+        "WHERE user_id = '$user_id';";
+
+    cm_queryDatabase( $query );
+    
+    echo $response;
     }
 
 
@@ -3183,6 +3215,10 @@ function cm_makeBet() {
 
 function cm_foldBet() {
     if( ! cm_verifyTransaction() ) {
+        return;
+        }
+    
+    if( cm_handleRepeatResponse() ) {
         return;
         }
 
@@ -3236,12 +3272,23 @@ function cm_foldBet() {
 
     
     cm_queryDatabase( "COMMIT;" );
-
+    cm_queryDatabase( "SET AUTOCOMMIT = 1;" );
     
     // if they are waiting, they can stop waiting
     semSignal( $semaphore_key );
+
+    $response = "OK";
+
+    $request_tag = cm_requestFilter( "request_tag", "/[A-F0-9]+/i", "" );
     
-    echo "OK";
+    $query = "UPDATE $tableNamePrefix"."users SET ".
+        "last_request_response = '$response', ".
+        "last_request_tag = '$request_tag' ".
+        "WHERE user_id = '$user_id';";
+
+    cm_queryDatabase( $query );
+    
+    echo $response;
     }
 
 
@@ -3427,6 +3474,10 @@ function cm_endRound() {
         return;
         }
     
+    if( cm_handleRepeatResponse() ) {
+        return;
+        }
+    
     $user_id = cm_getUserID();
 
     global $tableNamePrefix;
@@ -3533,12 +3584,23 @@ function cm_endRound() {
 
     
     cm_queryDatabase( "COMMIT;" );
-
+    cm_queryDatabase( "SET AUTOCOMMIT = 1;" );
     
     // if they are waiting, they can stop waiting
     semSignal( $semaphore_key );
+
+    $response = "OK";
+
+    $request_tag = cm_requestFilter( "request_tag", "/[A-F0-9]+/i", "" );
     
-    echo "OK";
+    $query = "UPDATE $tableNamePrefix"."users SET ".
+        "last_request_response = '$response', ".
+        "last_request_tag = '$request_tag' ".
+        "WHERE user_id = '$user_id';";
+
+    cm_queryDatabase( $query );
+    
+    echo $response;
     }
 
 
