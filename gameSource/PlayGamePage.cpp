@@ -56,7 +56,9 @@ PlayGamePage::PlayGamePage()
           mColumnChoiceForUs( -1 ), mColumnChoiceForThem( -1 ),
           mScorePipSprite( loadWhiteSprite( "scorePip.tga" ) ),
           mScorePipExtraSprite( loadWhiteSprite( "scorePipExtra.tga" ) ),
-          mScorePipEmptySprite( loadWhiteSprite( "scorePipEmpty.tga" ) ) {
+          mScorePipEmptySprite( loadWhiteSprite( "scorePipEmpty.tga" ) ),
+          mRoundEnding( false ), 
+          mRoundEndTime( 0 ) {
     
     for( int i=0; i<2; i++ ) {
         mPlayerCoins[i] = -1;
@@ -640,6 +642,20 @@ int stringToInt( const char *inString ) {
 
 
 void PlayGamePage::step() {
+
+    if( mRoundEnding && mRoundEndTime < game_time( NULL ) ) {
+        clearActionParameters();
+        
+        setActionName( "end_round" );
+        setResponsePartNames( -1, NULL );
+        
+        mMessageState = sendingEnd;
+        
+        startRequest();
+        mRoundEnding = false;
+        }
+    
+
     ServerActionPage::step();
 
     if( ! isResponseReady() ) {
@@ -688,6 +704,21 @@ void PlayGamePage::step() {
         
         clearActionParameters();
         mMessageState = gettingState;
+        
+        startRequest();
+        }
+    else if( mMessageState == sendingEnd ) {
+        
+        // end sent
+        
+        // wait for opponent's end
+
+        clearActionParameters();
+        
+        setActionName( "wait_move" );
+        setResponsePartNames( 1, waitMovePartNames );
+
+        mMessageState = waitingEnd;
         
         startRequest();
         }
@@ -845,6 +876,12 @@ void PlayGamePage::step() {
                 mColumnButtons[i]->setVisible( ! mColumnUsed[i] );
                 mColumnButtons[i]->setLabelText( "+" );
                 }
+
+            if( mTheirWonSquares[0] != -1 ) {
+                // reveal has happened
+                mRoundEnding = true;
+                mRoundEndTime = game_time( NULL ) + 5;
+                }
             }
         else {
             // betting time
@@ -884,7 +921,8 @@ void PlayGamePage::step() {
         mMessageState = responseProcessed;
         }
     else if( mMessageState == waitingMove ||
-             mMessageState == waitingBet ) {
+             mMessageState == waitingBet ||
+             mMessageState == waitingEnd ) {
         char *status = getResponse( "status" );
 
         if( strcmp( status, "move_ready" ) == 0 ) {
@@ -898,13 +936,16 @@ void PlayGamePage::step() {
             if( mMessageState == waitingMove ) {
                 mMessageState = gettingStatePostMove;
                 }
-            else {
+            else if( mMessageState == waitingBet ) {
                 mMessageState = gettingStatePostBet;
+                }
+            else {
+                mMessageState = gettingState;
                 }
             
             startRequest();
             }
-        else if( strcmp( status, "opponent_folded" ) == 0 ) {
+        else if( strcmp( status, "round_ended" ) == 0 ) {
             // start of new round
             setActionName( "get_game_state" );
             setResponsePartNames( 8, gameStatePartNames );

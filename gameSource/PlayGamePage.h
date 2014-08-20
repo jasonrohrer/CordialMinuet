@@ -19,8 +19,10 @@ typedef enum GameMessageState {
     sendingMove,
     sendingBet,
     sendingFold,
+    sendingEnd,
     waitingMove,
-    waitingBet
+    waitingBet,
+    waitingEnd
     } GameMessageState;
 
 
@@ -155,5 +157,8 @@ class PlayGamePage : public ServerActionPage, public ActionListener {
         // If not, returns false
         char loadCacheRecord();
         
+        
 
+        char mRoundEnding;
+        int mRoundEndTime;
     };

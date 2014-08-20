@@ -552,7 +552,7 @@ move_ready
 OK
 
 or
-opponent_folded
+round_ended
 OK
 
 or
@@ -562,9 +562,15 @@ OK
 
 This call is for waiting for your opponent to move (or bet).
 
-folded is only returned when waiting for an opponent to bet.
-It means the next round has started and will be returned by the next
-call to get_game_state.
+
+round_ended expected after calling end_round, once opponent has ended round 
+too.
+
+round_ended in the middle of a round, when waiting for a bet from opponent,
+means the opponent folded.
+
+In either case, it means the next round has started and will be returned by the
+next call to get_game_state.
 
 
 
@@ -613,3 +619,22 @@ up on the round, allowing opponent to win all pot coins.
 Only possible when opponent has put more coins in the pot than us, where we
 would be required to bet more to continue (for example, if opponent bet 0 after
 the last move, we cannot call fold_bet). 
+
+
+
+
+=== Call:
+server.php?action=end_round
+          &user_id=[id number]
+          &sequence_number=[number]
+          &account_hmac=[hmac-sha1, hex-encoded]  
+
+Returns:
+OK
+
+After three moves from each player, and interspersed bets, and final bets,
+get_game_state returns the final reveal.  After this, both players must call
+end_round and then wait_move to wait for their opponent to end_round.
+
+After that, the next call to get_game_state will return the new, starting state
+for the next round.

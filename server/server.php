@@ -189,6 +189,7 @@ if( $shutdownMode &&
       $action == "make_move" ||
       $action == "make_bet" ||
       $action == "fold_bet" ||
+      $action == "end_round" ||
       $action == "wait_move" ) ) {
     
     echo "SHUTDOWN";
@@ -252,6 +253,9 @@ else if( $action == "make_bet" ) {
     }
 else if( $action == "fold_bet" ) {
     cm_foldBet();
+    }
+else if( $action == "end_round" ) {
+    cm_endRound();
     }
 else if( $action == "wait_move" ) {
     cm_waitMove();
@@ -481,6 +485,8 @@ function cm_setupDatabase() {
             "player_2_moves CHAR(11) NOT NULL,".
             "player_1_bet_made TINYINT UNSIGNED NOT NULL,".
             "player_2_bet_made TINYINT UNSIGNED NOT NULL,".
+            "player_1_ended_round TINYINT UNSIGNED NOT NULL,".
+            "player_2_ended_round TINYINT UNSIGNED NOT NULL,".
             "move_deadline DATETIME NOT NULL,".
             "player_1_coins TINYINT UNSIGNED NOT NULL, ".
             "player_2_coins TINYINT UNSIGNED NOT NULL, ".
@@ -2365,6 +2371,8 @@ function cm_joinGame() {
             "player_2_moves = '#',".
             "player_1_bet_made = 0,".
             "player_2_bet_made = 0,".
+            "player_1_ended_round = 0,".
+            "player_2_ended_round = 0,".
             "move_deadline = CURRENT_TIMESTAMP, ".
             "player_1_coins = $cm_gameCoins, ".
             "player_2_coins = $cm_gameCoins, ".
@@ -2826,6 +2834,8 @@ function cm_makeMove() {
     cm_queryDatabase( "SET AUTOCOMMIT=0" );
     
     $query = "SELECT player_1_id, player_2_id,".
+        "player_1_bet_made, player_2_bet_made, ".
+        "player_1_pot_coins, player_2_pot_coins, ".
         "player_1_moves, player_2_moves, semaphore_key ".
         "FROM $tableNamePrefix"."games ".
         "WHERE ( player_1_id = '$user_id' OR player_2_id = '$user_id' )".
@@ -2848,6 +2858,12 @@ function cm_makeMove() {
     $player_1_id = mysql_result( $result, 0, "player_1_id" );
     $player_2_id = mysql_result( $result, 0, "player_2_id" );
 
+    $player_1_bet_made = mysql_result( $result, 0, "player_1_bet_made" );
+    $player_2_bet_made = mysql_result( $result, 0, "player_2_bet_made" );
+
+    $player_1_pot_coins = mysql_result( $result, 0, "player_1_pot_coins" );
+    $player_2_pot_coins = mysql_result( $result, 0, "player_2_pot_coins" );
+    
     $player_1_moves = mysql_result( $result, 0, "player_1_moves" );
     $player_2_moves = mysql_result( $result, 0, "player_2_moves" );
 
@@ -2865,6 +2881,15 @@ function cm_makeMove() {
         $their_moves = $player_1_moves;
         }
 
+    if( ! $player_1_bet_made || ! $player_2_bet_made ||
+        $player_1_pot_coins != $player_2_pot_coins ) {
+        cm_log( "Making a move when it's time for betting, ".
+                "blocked" );
+        cm_transactionDeny();
+        return;
+        }
+
+    
 
     if( strlen( $our_moves ) > strlen( $their_moves ) ) {
         cm_log( "Making another move when we're waiting for their move, ".
@@ -3092,9 +3117,6 @@ function cm_foldBet() {
     cm_queryDatabase( "SET AUTOCOMMIT=0" );
     
     $query = "SELECT player_1_id, player_2_id,".
-        "game_square, ".
-        "player_1_coins, player_2_coins, ".
-        "player_1_bet_made, player_2_bet_made, ".
         "player_1_pot_coins, player_2_pot_coins, semaphore_key ".
         "FROM $tableNamePrefix"."games ".
         "WHERE player_1_id = '$user_id' OR player_2_id = '$user_id' ".
@@ -3112,15 +3134,6 @@ function cm_foldBet() {
     
     $player_1_id = mysql_result( $result, 0, "player_1_id" );
     $player_2_id = mysql_result( $result, 0, "player_2_id" );
-
-    $game_square = mysql_result( $result, 0, "game_square" );
-
-    $player_1_coins = mysql_result( $result, 0, "player_1_coins" );
-    $player_2_coins = mysql_result( $result, 0, "player_2_coins" );
-
-    $player_1_bet_made = mysql_result( $result, 0, "player_1_bet_made" );
-    $player_2_bet_made = mysql_result( $result, 0, "player_2_bet_made" );
-
     
     $player_1_pot_coins = mysql_result( $result, 0, "player_1_pot_coins" );
     $player_2_pot_coins = mysql_result( $result, 0, "player_2_pot_coins" );
@@ -3141,9 +3154,75 @@ function cm_foldBet() {
         return;
         }
 
+    
+    cm_makeRoundLoser( $user_id );
+
+    
+    cm_queryDatabase( "COMMIT;" );
+
+    
+    // if they are waiting, they can stop waiting
+    semSignal( $semaphore_key );
+    
+    echo "OK";
+    }
+
+
+
+
+// makes one player a loser (or ties) and handles coin distribution
+// starts a new game after, if possible
+// assumes autocommit is off and caller will commit after
+// $inTie forces all pot coins to be returned
+function cm_makeRoundLoser( $inLoserID, $inTie = false ) {
+    global $tableNamePrefix;
+
+
+    cm_queryDatabase( "SET AUTOCOMMIT=0" );
+    
+    $query = "SELECT player_1_id, player_2_id,".
+        "game_square, ".
+        "player_1_coins, player_2_coins, ".
+        "player_1_bet_made, player_2_bet_made, ".
+        "player_1_pot_coins, player_2_pot_coins ".
+        "FROM $tableNamePrefix"."games ".
+        "WHERE player_1_id = '$inLoserID' OR player_2_id = '$inLoserID' ".
+        "FOR UPDATE;";
+
+    $result = cm_queryDatabase( $query );
+    
+    $numRows = mysql_numrows( $result );
+
+    if( $numRows != 1 ) {
+        cm_log( "Making a round loser for a game that doesn't exist" );
+        cm_transactionDeny();
+        return;
+        }
+    
+    $player_1_id = mysql_result( $result, 0, "player_1_id" );
+    $player_2_id = mysql_result( $result, 0, "player_2_id" );
+
+    $game_square = mysql_result( $result, 0, "game_square" );
+
+    $player_1_coins = mysql_result( $result, 0, "player_1_coins" );
+    $player_2_coins = mysql_result( $result, 0, "player_2_coins" );
+
+    $player_1_bet_made = mysql_result( $result, 0, "player_1_bet_made" );
+    $player_2_bet_made = mysql_result( $result, 0, "player_2_bet_made" );
+
+    
+    $player_1_pot_coins = mysql_result( $result, 0, "player_1_pot_coins" );
+    $player_2_pot_coins = mysql_result( $result, 0, "player_2_pot_coins" );
+
+    
     global $housePotFraction;
 
-    if( $player_1_id == $user_id ) {
+    if( $inTie ) {
+        $player_1_coins += $player_1_pot_coins;
+        $player_2_coins += $player_2_pot_coins;
+        // house takes nothing
+        }
+    else if( $player_1_id == $inLoserID ) {
 
         $extra = $player_2_pot_coins - $player_1_pot_coins;
 
@@ -3214,11 +3293,151 @@ function cm_foldBet() {
         "player_2_pot_coins = '$player_2_pot_coins', ".
         "player_1_moves = '#', ".
         "player_2_moves = '#', ".
+        "player_1_ended_round = '0', ".
+        "player_2_ended_round = '0', ".
         "game_square = '$game_square' ".
-        "WHERE player_1_id = '$user_id' OR player_2_id = '$user_id';";
+        "WHERE player_1_id = '$inLoserID' OR player_2_id = '$inLoserID';";
     
 
     $result = cm_queryDatabase( $query );
+    }
+
+
+
+
+function cm_endRound() {
+    if( ! cm_verifyTransaction() ) {
+        return;
+        }
+    
+    $user_id = cm_getUserID();
+
+    global $tableNamePrefix;
+
+
+    cm_queryDatabase( "SET AUTOCOMMIT=0" );
+    
+    $query = "SELECT player_1_id, player_2_id,".
+        "game_square, ".
+        "player_1_bet_made, player_2_bet_made, ".
+        "player_1_moves, player_2_moves, ".
+        "player_1_ended_round, player_2_ended_round, ".
+        "player_1_pot_coins, player_2_pot_coins, semaphore_key ".
+        "FROM $tableNamePrefix"."games ".
+        "WHERE player_1_id = '$user_id' OR player_2_id = '$user_id' ".
+        "FOR UPDATE;";
+
+    $result = cm_queryDatabase( $query );
+    
+    $numRows = mysql_numrows( $result );
+
+    if( $numRows != 1 ) {
+        cm_log( "Ending round for a game that doesn't exist" );
+        cm_transactionDeny();
+        return;
+        }
+    
+    $player_1_id = mysql_result( $result, 0, "player_1_id" );
+    $player_2_id = mysql_result( $result, 0, "player_2_id" );
+
+    $game_square = mysql_result( $result, 0, "game_square" );
+    
+    $player_1_pot_coins = mysql_result( $result, 0, "player_1_pot_coins" );
+    $player_2_pot_coins = mysql_result( $result, 0, "player_2_pot_coins" );
+
+    $player_1_bet_made = mysql_result( $result, 0, "player_1_bet_made" );
+    $player_2_bet_made = mysql_result( $result, 0, "player_2_bet_made" );
+
+    $player_1_moves = mysql_result( $result, 0, "player_1_moves" );
+    $player_2_moves = mysql_result( $result, 0, "player_2_moves" );
+
+    $player_1_ended_round = mysql_result( $result, 0, "player_1_ended_round" );
+    $player_2_ended_round = mysql_result( $result, 0, "player_2_ended_round" );
+
+    $semaphore_key = mysql_result( $result, 0, "semaphore_key" );
+
+
+    $player_1_move_list = preg_split( "/#/", $player_1_moves );
+    $player_2_move_list = preg_split( "/#/", $player_2_moves );
+
+    $player_1_move_count = count( $player_1_move_list );
+    $player_2_move_count = count( $player_2_move_list );
+             
+    if( $player_1_move_count != 6
+        ||
+        $player_2_move_count != 6
+        ||
+        ( $user_id == $player_1_id && $player_1_ended_round )
+        ||
+        ( $user_id == $player_2_id && $player_2_ended_round )
+        ||
+        $player_1_pot_coins != $player_2_pot_coins
+        ||
+        ! $player_1_bet_made || ! $player_2_bet_made ) {
+
+        cm_log( "Ending round when ending not allowed " );
+        cm_transactionDeny();
+        return;
+        }
+
+
+    if( $user_id == $player_1_id ) {
+        $player_1_ended_round = 1;
+        }
+    else {
+        $player_2_ended_round = 1;
+        }
+
+    
+    if( $player_1_ended_round && $player_2_ended_round ) {
+
+        $game_cells = preg_split( "/#/", $game_square );
+        
+    
+        // compute score to find out who won
+        $p1Score = 0;
+        $p2Score = 0;
+
+        for( $i=0; $i<3; $i++ ) {
+            $p1SelfChoice = $player_1_move_list[ $i * 2 ];
+            $p1OtherChoice = $player_1_move_list[ $i * 2 + 1 ];
+            
+            $p2SelfChoice = 5 - $player_2_move_list[ $i * 2 ];
+            $p2OtherChoice = 5 - $player_2_move_list[ $i * 2 + 1 ];
+            
+            $p1Score += $game_cells[ $p2OtherChoice * 6 + $p1SelfChoice ];
+            $p2Score += $game_cells[ $p2SelfChoice * 6 + $p1OtherChoice ];
+
+            }
+
+        
+        $loserID;
+        $tie = false;
+        
+        if( $p1Score < $p2Score ) {
+            $loserID = $player_1_id;
+            }
+        else {
+            $loserID = $player_2_id;
+            }
+        
+        if( $p1Score == $p2Score ) {
+            $tie = true;
+            }
+        
+        
+        cm_makeRoundLoser( $loserID, $tie );
+        }
+    else {
+        $query = "UPDATE $tableNamePrefix"."games ".
+            "SET player_1_ended_round = '$player_1_ended_round', ".
+            "player_2_ended_round = '$player_2_ended_round' ".
+            "WHERE player_1_id = '$user_id' OR player_2_id = '$user_id';";
+    
+
+        $result = cm_queryDatabase( $query );
+        }
+
     
     cm_queryDatabase( "COMMIT;" );
 
@@ -3228,6 +3447,9 @@ function cm_foldBet() {
     
     echo "OK";
     }
+
+
+
 
 
 
@@ -3254,7 +3476,8 @@ function cm_waitMoveInternall( $inWaitOnSemaphore ) {
     $query = "SELECT player_1_id, player_2_id, ".
         "semaphore_key, player_1_moves, player_2_moves, ".
         "player_1_pot_coins, player_2_pot_coins, ".
-        "player_1_bet_made, player_2_bet_made ".
+        "player_1_bet_made, player_2_bet_made, ".
+        "player_1_ended_round, player_2_ended_round ".
         "FROM $tableNamePrefix"."games ".
         "WHERE player_1_id = '$user_id' OR player_2_id = '$user_id' ".
         "FOR UPDATE;";
@@ -3284,6 +3507,9 @@ function cm_waitMoveInternall( $inWaitOnSemaphore ) {
     $player_1_bet_made = mysql_result( $result, 0, "player_1_bet_made" );
     $player_2_bet_made = mysql_result( $result, 0, "player_2_bet_made" );
 
+    $player_1_ended_round = mysql_result( $result, 0, "player_1_ended_round" );
+    $player_2_ended_round = mysql_result( $result, 0, "player_2_ended_round" );
+
     
     $ourPotCoins;
     $theirPotCoins;
@@ -3303,8 +3529,9 @@ function cm_waitMoveInternall( $inWaitOnSemaphore ) {
         return;
         }
     else if( strlen( $player_2_moves ) == strlen( $player_1_moves ) &&
-        $player_1_bet_made == $player_2_bet_made &&
-        $theirPotCoins >= $ourPotCoins ) {
+             $player_1_bet_made == $player_2_bet_made &&
+             $player_1_ended_round == $player_2_ended_round &&
+             $theirPotCoins >= $ourPotCoins ) {
 
         if( $player_1_moves != "#" ) {
             
@@ -3312,8 +3539,9 @@ function cm_waitMoveInternall( $inWaitOnSemaphore ) {
             }
         else {
             // move lists empty, can't be a move ready or a bet ready
-            // opponent must have folded
-            echo "opponent_folded\nOK";
+            // 
+            // opponent must have folded or round ended
+            echo "round_ended\nOK";
             }
         return;
         }
