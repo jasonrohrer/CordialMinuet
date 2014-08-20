@@ -19,7 +19,7 @@ DEPENDS = ${RANDOM_H} ${RANDOM_CPP} ${CURVE_H} ${CURVE_CPP} \
 ${ENCODING_H} ${ENCODING_CPP}
 
 
-all: curve25519GenKeys curve25519GenKeyPair curve25519GenSharedKey semaphoreOps
+all: curve25519GenKeys curve25519GenKeyPair curve25519GenSharedKey semaphoreOps getMagicSquare6
 
 curve25519GenKeys: curve25519GenKeys.cpp ${DEPENDS}
 	g++ -I${MG_PATH} -o curve25519GenKeys curve25519GenKeys.cpp ${RANDOM_CPP} ${CURVE_CPP} ${ENCODING_CPP}
@@ -33,3 +33,8 @@ curve25519GenSharedKey: curve25519GenSharedKey.cpp ${DEPENDS}
 
 semaphoreOps:  semaphoreOps.cpp
 	g++ -o semaphoreOps semaphoreOps.cpp
+
+
+
+getMagicSquare6: getMagicSquare6.cpp magicSquare6.cpp magicSquare6.h
+	g++ -I${MG_PATH} -o getMagicSquare6 getMagicSquare6.cpp magicSquare6.cpp

@@ -380,7 +380,9 @@ function cm_setupDatabase() {
             "CREATE TABLE $tableName(" .
             "last_flush_time DATETIME NOT NULL, ".
             "house_dollar_balance DECIMAL(13, 4) NOT NULL, ".
-            "house_withdrawals DECIMAL(13, 4) NOT NULL ) ENGINE = INNODB;";
+            "house_withdrawals DECIMAL(13, 4) NOT NULL, ".
+            "next_magic_square_seed BIGINT UNSIGNED NOT NULL ".
+            ") ENGINE = INNODB;";
 
         $result = cm_queryDatabase( $query );
 
@@ -2229,13 +2231,36 @@ function cm_endOldGames( $user_id ) {
 
 
 // for now, give everyone the same square
+// assumes autocommit is off and caller will commit after
 function cm_getNewSquare() {
-    return "20#31#15#11#32#2".
-        "#7#5#36#34#16#13". 
-        "#18#23#27#6#12#25".
-        "#17#8#22#29#14#21".
-        "#19#35#1#28#4#24".
-        "#30#9#10#3#33#26";
+    global $tableNamePrefix;
+
+    
+    // have it wrap around at the 32-bit unsigned max
+    // because getMagicSquare6 takes a 32-bit unsigned seed.
+    
+    // we store it as a BIGINT to keep it from getting stuck on the same
+    // square after four billion games
+    $query = "SELECT next_magic_square_seed % 4294967296 ".
+        "FROM $tableNamePrefix".
+        "server_globals FOR UPDATE;";
+
+    $result = cm_queryDatabase( $query );
+
+    $next_magic_square_seed =
+        mysql_result( $result, 0, 0 );
+    
+    $query = "UPDATE $tableNamePrefix". "server_globals SET ".
+            "next_magic_square_seed = next_magic_square_seed + 1;";
+    cm_queryDatabase( $query );
+
+    $output = array();
+    exec( $curlCallString, $output );
+    
+    exec( "./getMagicSquare6 $next_magic_square_seed", $output );
+    
+    
+    return $output[0];
     }
 
 
