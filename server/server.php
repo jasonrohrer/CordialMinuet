@@ -1314,8 +1314,9 @@ function cm_makeDeposit() {
                 $found_unused = 1;
 
                 global $remoteIP;
-                cm_log( "Account key $account_key created by $remoteIP, ".
-                        "initial deposit \$$dollar_amount" );
+                cm_log( "Account key $account_key created by $email from ".
+                        "$remoteIP, ".
+                        "initial deposit \$$dollar_amount (\$$fee fee)" );
                 }
             else {
                 cm_log( "Duplicate ids?  Error:  " . mysql_error() );
