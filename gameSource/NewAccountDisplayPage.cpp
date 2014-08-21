@@ -40,7 +40,7 @@ NewAccountDisplayPage::NewAccountDisplayPage()
 void NewAccountDisplayPage::actionPerformed( GUIComponent *inTarget ) {
     if( inTarget == &mCopyToClipboardButton ) {
         
-        char *accountString = autoSprintf( "%s\n%s", userEmail, accountKey );
+        char *accountString = autoSprintf( "%s  %s", userEmail, accountKey );
         
         setClipboardText( accountString );
         

@@ -344,6 +344,11 @@ void DepositPage::makeActive( char inFresh ) {
         return;
         }
     
+    if( userEmail != NULL ) {
+        mEmailField.setText( userEmail );
+        mEmailField.cursorReset();
+        }
+
     setStatus( NULL, true );
 
     
