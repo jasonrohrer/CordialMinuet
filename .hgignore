@@ -9,3 +9,4 @@ syntax: glob
 gameSource/recordedGames/*
 gameSource/screenShots/*
 gameSource/testUser/*
+build/source/CordialMinuet_v*
