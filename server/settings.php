@@ -262,7 +262,7 @@ $minDeposit = "2.00";
 
 
 
-$housePotFraction = 0.05;
+$housePotFraction = 0.10;
 
 
 ?>
