@@ -2256,8 +2256,7 @@ function cm_getNewSquare() {
     cm_queryDatabase( $query );
 
     $output = array();
-    exec( $curlCallString, $output );
-    
+
     exec( "./getMagicSquare6 $next_magic_square_seed", $output );
     
     
