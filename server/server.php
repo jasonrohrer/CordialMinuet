@@ -389,7 +389,8 @@ function cm_setupDatabase() {
         echo "<B>$tableName</B> table created<BR>";
 
         // create one row
-        $query = "INSERT INTO $tableName VALUES ( CURRENT_TIMESTAMP, 0, 0 );";
+        $query = "INSERT INTO $tableName ".
+            "VALUES ( CURRENT_TIMESTAMP, 0, 0, 1977 );";
         $result = cm_queryDatabase( $query );
         }
     else {
