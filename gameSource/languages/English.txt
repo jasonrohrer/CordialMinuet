@@ -139,6 +139,7 @@ nextPage "MORE $"
 
 
 joinButtonTip "JOIN FOR %s"
+cannotJoinButtonTip "CANNOT AFFORD %s"
  
 
 commit "COMMIT"

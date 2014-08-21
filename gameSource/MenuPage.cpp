@@ -196,10 +196,13 @@ void MenuPage::actionPerformed( GUIComponent *inTarget ) {
             
             if( r->button == inTarget ) {
                 
-                mJoinedGameDollarAmount = r->dollarAmount;
+                if( r->dollarAmount <= userBalance ) {
+                    
+                    mJoinedGameDollarAmount = r->dollarAmount;
                 
-                setSignal( "join" );
-
+                    setSignal( "join" );
+                    }
+                
                 break;
                 }
             }
@@ -304,9 +307,24 @@ void MenuPage::step() {
                 button->setVisible( true );
                     
                 char *dollarString = formatBalance( r.dollarAmount );
+                
+                const char *tipKey = "joinButtonTip";
+                
+                if( r.dollarAmount > userBalance ) {
+                    tipKey = "cannotJoinButtonTip";
                     
-      
-                char *tip = autoSprintf( translate( "joinButtonTip" ),
+                    button->setHoverColor( 1, 1, 1, 0.5 );
+                    button->setNoHoverColor( 1, 1, 1, 0.5 );
+                    button->setDragOverColor( 1, 1, 1, 0.5 );
+                    }
+                else {
+                    button->setHoverColor( 1, 1, 1, 1 );
+                    button->setNoHoverColor( 1, 1, 1, 1 );
+                    button->setDragOverColor( 1, 1, 1, 1 );
+                    }
+                
+
+                char *tip = autoSprintf( translate( tipKey ),
                                          dollarString );
                     
                 button->setMouseOverTip( tip );
