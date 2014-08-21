@@ -1,0 +1,43 @@
+#!/bin/sh
+
+#
+# Modification History
+#
+# 2007-November-12   Jason Rohrer
+# Copied from Cultivation build.
+#
+
+
+if [ $# -lt 3 ] ; then
+   echo "Usage: $0 release_name unix_platform_name path_to_SDL.framework"
+   exit 1
+fi
+
+
+rm -rf mac
+
+
+./makeBaseDistributionFolder $1
+
+
+mv base mac
+
+
+cp -r macOSX/CordialMinuet.app mac/CordialMinuet_$1/CordialMinuet.app
+cp ../gameSource/CordialMinuet mac/CordialMinuet_$1/CordialMinuet.app/Contents/MacOS
+
+rm -r mac/CordialMinuet_$1/CordialMinuet.app/Contents/MacOS/empty.txt
+rm -r mac/CordialMinuet_$1/CordialMinuet.app/Contents/Frameworks/empty.txt
+
+# install SDL framework
+cp -r $3 mac/CordialMinuet_$1/CordialMinuet.app/Contents/Frameworks/
+
+cd mac
+tar cf "CordialMinuet_$1_$2.tar" CordialMinuet_$1
+gzip "CordialMinuet_$1_$2.tar"
+
+
+
+
+
+

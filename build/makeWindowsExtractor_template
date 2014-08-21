@@ -1,0 +1,7 @@
+
+
+7z a -tzip CordialMinuet_%version%_Windows.zip CordialMinuet_%version% -r
+
+makesfx.exe /zip="CordialMinuet_%version%_Windows.zip" /sfx="CordialMinuet_%version%_Windows.exe" /title="Cordial Minuet %version%" /website="http://cordialminuet.com" /intro="This will extract the game." /defaultpath="$curdir$" /icon="..\win32\icon_installer.ico"
+
+pause
