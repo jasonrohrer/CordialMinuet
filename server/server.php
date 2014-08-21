@@ -1215,7 +1215,7 @@ function cm_makeDeposit() {
         cm_queryDatabase( "COMMIT;" );
         cm_queryDatabase( "SET AUTOCOMMIT=1" );
         
-        cm_log( "PAYMENT_FAILED for $email, ".
+        cm_log( "PAYMENT_FAILED for $email (amount \$$dollar_amount), ".
                 "stripe error:\n$outputString" );
         return;
         }
