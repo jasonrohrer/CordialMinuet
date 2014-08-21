@@ -144,13 +144,14 @@ DepositPage::DepositPage()
     
 
     // for testing
+    /*
     mCardNumberField.setText( "4242424242424242" );
     //mCardNumberField.setText( "4000000000000002" );
     mEmailField.setText( "jasonrohrer@fastmail.fm" );
     mExpireMonthField.setText( "11" );
     mExpireYearField.setText( "2015" );
     mCVCField.setText( "137" );
-
+    */
 
     addServerErrorString( "ACCOUNT_EXISTS", "accountExists" );
     addServerErrorString( "PAYMENT_FAILED", "paymentFailed" );

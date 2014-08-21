@@ -102,12 +102,14 @@ SendCheckPage::SendCheckPage()
     
     
     // for testing
+    /*
     mNameField.setText( "Jason Rohrer" );
     mAddress1Field.setText( "1208 L St." );
     mAddress2Field.setText( "" );
     mCityField.setText( "Davis" );
     mStateField.setText( "CA" );
     mZipField.setText( "95616" );
+    */
 
     addServerErrorString( "CHECK_FAILED", "checkFailed" );
     }
