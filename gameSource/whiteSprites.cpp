@@ -17,11 +17,6 @@ SpriteHandle loadWhiteSprite( const char *inTGAFileName,
     
     int numPixels = width * height;
     
-    double *channels[3];
-    
-    for( int c=0; c<3; c++ ) {
-        channels[c] = spriteImage->getChannel( c );
-        }
     
     Image rgbaImage( width, height, 4, false );
     

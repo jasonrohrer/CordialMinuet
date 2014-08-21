@@ -33,7 +33,7 @@ const char *waitMovePartNames[1] = { "status" };
 static int cellSize = 70;
 static int borderWidth = 2;
     
-static int cellCenterStart = ( ( cellSize + borderWidth ) * 5 ) / 2;
+static double cellCenterStart = ( ( cellSize + borderWidth ) * 5 ) / 2;
 
 static int cellXOffset = cellSize + borderWidth;
 
