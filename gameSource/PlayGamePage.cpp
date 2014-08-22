@@ -920,10 +920,23 @@ void PlayGamePage::step() {
             ( mMessageState == gettingStatePostBet &&
               mPotCoins[0] == mPotCoins[1] ) ) {
             
+            int numUsedColumns = 0;
+            
             for( int i=0; i<6; i++ ) {
                 mColumnButtons[i]->setVisible( ! mColumnUsed[i] );
                 mColumnButtons[i]->setLabelText( "+" );
+                
+                if( mColumnUsed[i] ) {
+                    numUsedColumns ++;
+                    }
                 }
+            
+            if( numUsedColumns == 0 ) {
+                // new round just started, new grid
+                // possible score cache is stale
+                clearCacheRecords();
+                }
+
 
             if( mTheirWonSquares[0] != -1 ) {
                 // reveal has happened
