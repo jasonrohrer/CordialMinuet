@@ -1273,19 +1273,9 @@ function cm_makeDeposit() {
 
     
 
-    // fee is taken out of amount actually deposited, but we
-    // don't pass this onto player.
-
-    // instead, count it as a withdrawal (an automatic one)
-    // from the house balance.
-    
-    if( $fee != 0 ) {
-        $query = "UPDATE $tableNamePrefix". "server_globals SET ".
-            "house_dollar_balance = house_dollar_balance - $fee, ".
-            "house_withdrawals = house_withdrawals + $fee;";
-        cm_queryDatabase( $query );
-        }
-    
+    // fee is taken out of amount actually deposited, pass this on
+    // to player
+    $deposit_net = $dollar_amount - $fee;
     
     
     
@@ -1309,9 +1299,9 @@ function cm_makeDeposit() {
             $query = "INSERT INTO $tableNamePrefix". "users SET ".
                 "account_key = '$account_key', ".
                 "email = '$email', ".
-                "dollar_balance = '$dollar_amount', ".
+                "dollar_balance = '$deposit_net', ".
                 "num_deposits = 1, ".
-                "total_deposits = '$dollar_amount', ".
+                "total_deposits = '$deposit_net', ".
                 "num_withdrawals = 0, ".
                 "total_withdrawals = 0, ".
                 "total_won = 0, ".
@@ -1331,7 +1321,8 @@ function cm_makeDeposit() {
                 global $remoteIP;
                 cm_log( "Account key $account_key created by $email from ".
                         "$remoteIP, ".
-                        "initial deposit \$$dollar_amount (\$$fee fee)" );
+                        "initial deposit \$$dollar_amount (\$$fee fee), ".
+                        "net \$$deposit_net" );
                 }
             else {
                 cm_log( "Duplicate ids?  Error:  " . mysql_error() );
@@ -1340,7 +1331,7 @@ function cm_makeDeposit() {
                 }
             }
 
-        $dollar_balance = $dollar_amount;
+        $dollar_balance = $deposit_net;
 
         // for presentation to user
         
@@ -1396,16 +1387,17 @@ function cm_makeDeposit() {
         $response = "0\n#\nOK";
         
         $query = "UPDATE $tableNamePrefix". "users SET ".
-            "dollar_balance = dollar_balance + $dollar_amount, ".
+            "dollar_balance = dollar_balance + $deposit_net, ".
             "num_deposits = num_deposits + 1, ".
-            "total_deposits = total_deposits + '$dollar_amount', ".
+            "total_deposits = total_deposits + '$deposit_net', ".
             "last_request_tag = '$request_tag', ".
             "last_request_response = '$response' ".
             "WHERE user_id = $user_id;";
         cm_queryDatabase( $query );
 
         global $remoteIP;
-        cm_log( "Deposit of \$$dollar_amount (\$$fee fee) for ".
+        cm_log( "Deposit of \$$dollar_amount (\$$fee fee), ".
+                "net \$$deposit_net for ".
                 "user $user_id ($email) by $remoteIP" );
 
         $query = "SELECT dollar_balance FROM $tableNamePrefix"."users ".
@@ -1427,10 +1419,13 @@ function cm_makeDeposit() {
 
     $balanceString = cm_formatBalanceForDisplay( $dollar_balance );
     $amountString = cm_formatBalanceForDisplay( $dollar_amount );
+    $netString = cm_formatBalanceForDisplay( $deposit_net );
+    $feeString = cm_formatBalanceForDisplay( $fee );
     
     
     $message =
-        "You successfully deposited $amountString into your ".
+        "You successfully deposited $netString ".
+        "($feeString fee, total charge $amountString) into your ".
         "CORDIAL MINUET account.  Your new balance is $balanceString.\n\n".
         "Here are your account details:\n\n".
         "Email:  $email\n".

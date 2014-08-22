@@ -1131,7 +1131,7 @@ void drawFrame( char inUpdate ) {
                 }
             else if( depositPage->checkSignal( "existingAccount" ) ) {
                 depositDisplayPage->setDeltaAmount( 
-                    depositPage->getDepositAmount() );
+                    depositPage->getDepositNetAmount() );
                 
                 currentGamePage = depositDisplayPage;
                 currentGamePage->base_makeActive( true );

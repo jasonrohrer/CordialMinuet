@@ -571,8 +571,8 @@ void DepositPage::step() {
 
 
 
-double DepositPage::getDepositAmount() {
-    return mAmountPicker.getValue();
+double DepositPage::getDepositNetAmount() {
+    return mAmountPicker.getValue() - mFee;
     }
 
 

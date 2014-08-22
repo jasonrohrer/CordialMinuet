@@ -98,10 +98,9 @@ void DepositDisplayPage::draw( doublePair inViewCenter,
     char fullPrecision = false;
     
     char *oldBalanceString = 
-        formatBalance( mOldBalance, false, &fullPrecision, true );
+        formatBalance( mOldBalance, false, &fullPrecision );
 
-    char *deltaString = formatBalance( mDeltaAmount, fullPrecision, 
-                                       NULL, true );
+    char *deltaString = formatBalance( mDeltaAmount, fullPrecision );
 
 
     // estimate new balance for width measurements
@@ -115,7 +114,7 @@ void DepositDisplayPage::draw( doublePair inViewCenter,
         }
     
     char *newBalanceEstimateString = 
-        formatBalance( newBalanceEstimate, fullPrecision, NULL, true );
+        formatBalance( newBalanceEstimate, fullPrecision );
 
 
     double maxWidth = numbersFontFixed->measureString( oldBalanceString );
@@ -172,7 +171,7 @@ void DepositDisplayPage::draw( doublePair inViewCenter,
         
         char *valueString = 
             formatBalance( getResponseDouble( "dollarBalance" ),
-                           fullPrecision, NULL, true );
+                           fullPrecision );
     
         pos.x = xOffset;
         pos.y -= 64;
