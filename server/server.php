@@ -177,6 +177,7 @@ if( $shutdownMode &&
     ( $action == "check_required_version" ||
       $action == "check_user" ||
       $action == "check_hmac" ||
+      $action == "get_deposit_fees" ||
       $action == "make_deposit" ||
       $action == "get_withdrawal_methods" ||
       $action == "send_us_check" ||
@@ -217,6 +218,9 @@ else if( $action == "check_hmac" ) {
     }
 else if( $action == "get_balance" ) {
     cm_getBalance();
+    }
+else if( $action == "get_deposit_fees" ) {
+    cm_getDepositFees();
     }
 else if( $action == "make_deposit" ) {
     cm_makeDeposit();
@@ -962,6 +966,17 @@ function cm_formatBalanceForDisplay( $inDollars ) {
 
 
 
+function cm_getDepositFees() {
+    global $stripeFlatFee, $stripePercentage;
+
+    echo "$stripeFlatFee\n";
+    echo "$stripePercentage\n";
+    echo "OK";
+    }
+
+
+
+
 function cm_makeDeposit() {
     $email = cm_requestFilter( "email", "/[A-Z0-9._%+-]+@[A-Z0-9.-]+/i" );
 
@@ -1390,8 +1405,8 @@ function cm_makeDeposit() {
         cm_queryDatabase( $query );
 
         global $remoteIP;
-        cm_log( "Deposit of \$$dollar_amount for user $user_id ($email) by ".
-                "$remoteIP" );
+        cm_log( "Deposit of \$$dollar_amount (\$$fee fee) for ".
+                "user $user_id ($email) by $remoteIP" );
 
         $query = "SELECT dollar_balance FROM $tableNamePrefix"."users ".
             "WHERE user_id = $user_id;";

@@ -78,6 +78,11 @@ $stripeChargeDescription =
 "Deposit for Jason Rohrer's Cordial Minuet game for ";
 
 
+$stripeFlatFee = 0.30;
+$stripePercentage = 2.9;
+
+
+
 
 // settings for lob.com check-mailing service
 $lobURL = "https://api.lob.com/v1/checks";

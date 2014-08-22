@@ -37,6 +37,8 @@ invalid "INVALID"
 
 addMoney "DEPOSIT $"
 
+feeDisplay "(%s FEE)"
+
 err_encryption "ENCRYPTION FAILED"
 
 

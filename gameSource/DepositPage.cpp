@@ -3,6 +3,7 @@
 #include "buttonStyle.h"
 
 #include "message.h"
+#include "balanceFormat.h"
 
 
 #include "minorGems/game/Font.h"
@@ -31,6 +32,9 @@ extern char *accountKey;
 
 extern char gamePlayingBack;
 
+
+extern double depositFlatFee;
+extern double depositPercentage;
 
 
 
@@ -78,7 +82,7 @@ const char *makeDepositPartNames[2] = { "newAccount", "encryptedAccountKey" };
 DepositPage::DepositPage()
         : ServerActionPage( "make_deposit",
                             2, makeDepositPartNames ),
-          mAmountPicker( mainFont, 34, 201, 4, 2, translate( "addMoney" ) ),
+          mAmountPicker( mainFont, 176, 201, 6, 2, translate( "addMoney" ) ),
           mEmailField( mainFont, 0, 126, 10, false, 
                        translate( "email" ),
                        NULL,
@@ -96,7 +100,7 @@ DepositPage::DepositPage()
                             translate( "expYear" ),
                              // allow only numbers
                              "0123456789" ),
-          mCVCField( mainFont, 0, -66, 4, true,
+          mCVCField( mainFont, -100, -66, 4, true,
                      translate( "cvc" ),
                      // allow only numbers
                      "0123456789" ),
@@ -123,6 +127,7 @@ DepositPage::DepositPage()
 
     addComponent( &mAmountPicker );
     
+    mAmountPicker.addActionListener( this );
     
     mAmountPicker.setMin( 2 );
     mAmountPicker.setValue( 5.00 );
@@ -328,7 +333,26 @@ void DepositPage::actionPerformed( GUIComponent *inTarget ) {
     else if( inTarget == &mCancelButton ) {
         setSignal( "back" );
         }
+    else if( inTarget == &mAmountPicker ) {
+        recomputeFee();
+        }
     }
+
+
+
+void DepositPage::recomputeFee() {
+    mFee = 
+        depositFlatFee + depositPercentage * mAmountPicker.getValue() / 100;
+
+    // round to nearest cent
+    mFee *= 100;
+    
+    mFee += 0.5;
+    
+    // back to decimal form
+    mFee = floor( mFee ) / 100;
+    }
+
 
 
 
@@ -348,6 +372,11 @@ void DepositPage::makeActive( char inFresh ) {
         mEmailField.setText( userEmail );
         mEmailField.cursorReset();
         }
+
+    
+    recomputeFee();
+    
+
 
     setStatus( NULL, true );
 
@@ -393,6 +422,24 @@ void DepositPage::makeFieldsActive() {
 
 void DepositPage::draw( doublePair inViewCenter, 
                                double inViewSize ) {
+
+
+    doublePair feePos = mCVCField.getPosition();
+    
+    feePos.x = 276;
+    
+    char *feeString = formatBalance( mFee );
+
+    char *feeMessage = autoSprintf( translate( "feeDisplay" ), feeString );
+
+    delete [] feeString;
+
+    setDrawColor( 1, 1, 1, 1 );
+    mainFont->drawString( feeMessage, 
+                          feePos, alignRight );
+    
+    delete [] feeMessage;
+    
         
     doublePair labelPos = { 0, 264 };
     drawMessage( "secure", labelPos, false );    

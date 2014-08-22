@@ -11,7 +11,8 @@
 
 
 
-class NumberPicker : public PageComponent, public ActionListener {
+class NumberPicker : public PageComponent, public ActionListener, 
+                     public ActionListenerList {
     
     public:
 

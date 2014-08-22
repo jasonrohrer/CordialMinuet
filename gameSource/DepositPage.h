@@ -84,4 +84,8 @@ class DepositPage : public ServerActionPage, public ActionListener {
 
         char mResponseProcessed;
         
+        
+        void recomputeFee();
+        
+        double mFee;
     };

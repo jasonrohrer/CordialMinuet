@@ -127,6 +127,21 @@ dollar_balance is dollars in ASCII floating point
 
 
 
+=== Call:
+server.php?action=get_deposit_fees
+
+Returns:
+flat_fee
+percentage
+OK
+
+flat_fee is in decimal format as dollars and cents 
+(example:  0.30 means 30 cents)
+
+percentage is in decimal format as percentage points
+(example:  2.9 means 2.9%)
+
+
 
 
 

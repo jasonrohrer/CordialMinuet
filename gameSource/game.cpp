@@ -80,6 +80,7 @@ FinalMessagePage *finalMessagePage;
 ServerActionPage *getServerURLPage;
 ServerActionPage *getRequiredVersionPage;
 AccountCheckPage *accountCheckPage;
+ServerActionPage *getDepositFeesPage;
 DepositPage *depositPage;
 NewAccountDisplayPage *newAccountDisplayPage;
 ServerActionPage *getBalancePage;
@@ -198,6 +199,9 @@ int userID = -1;
 char *accountKey = NULL;
 // each new request to server must use next sequence number
 int serverSequenceNumber = 0;
+
+double depositFlatFee = 0;
+double depositPercentage = 0;
 
 double userBalance = 0;
 double checkCost = 0;
@@ -477,8 +481,17 @@ void initFrameDrawer( int inWidth, int inHeight, int inTargetFrameRate,
     
     getRequiredVersionPage = new ServerActionPage( "check_required_version", 
                                                    2, resultNamesB, false );
-
+    
     accountCheckPage = new AccountCheckPage();
+    
+    
+    const char *resultNamesD[2] = { "flatFee",
+                                    "percentage" };
+    
+    getDepositFeesPage = new ServerActionPage( "get_deposit_fees", 
+                                               2, resultNamesD, false );
+
+
     depositPage = new DepositPage();
     newAccountDisplayPage = new NewAccountDisplayPage();
 
@@ -537,6 +550,7 @@ void freeFrameDrawer() {
     delete getServerURLPage;
     delete getRequiredVersionPage;
     delete accountCheckPage;
+    delete getDepositFeesPage;
     delete depositPage;
     delete newAccountDisplayPage;
     delete getBalancePage;
@@ -1085,6 +1099,19 @@ void drawFrame( char inUpdate ) {
                 currentGamePage->base_makeActive( true );
                 }
             }
+        else if( currentGamePage == getDepositFeesPage ) {
+            if( getDepositFeesPage->isResponseReady() ) {
+                
+
+                depositFlatFee = 
+                    getDepositFeesPage->getResponseDouble( "flatFee" );
+                depositPercentage = 
+                    getDepositFeesPage->getResponseDouble( "percentage" );
+                
+                currentGamePage = depositPage;
+                currentGamePage->base_makeActive( true );
+                }
+            }
         else if( currentGamePage == depositPage ) {
             if( depositPage->checkSignal( "back" ) ) {
 
@@ -1143,7 +1170,7 @@ void drawFrame( char inUpdate ) {
         else if( currentGamePage == menuPage ) {
             if( menuPage->checkSignal( "deposit" ) ) {
                 
-                currentGamePage = depositPage;
+                currentGamePage = getDepositFeesPage;
                 depositPage->setEmailFieldCanFocus( false );
                 currentGamePage->base_makeActive( true );
                 }

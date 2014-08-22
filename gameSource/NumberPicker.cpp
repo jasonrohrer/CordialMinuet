@@ -406,7 +406,8 @@ void NumberPicker::actionPerformed( GUIComponent *inTarget ) {
                 }
             }
         }
-    printf( "New value = %f\n", getValue() );
     setValue( getValue() );
+    
+    fireActionPerformed( this );
     }
 
