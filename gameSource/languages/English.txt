@@ -95,7 +95,7 @@ transferNote "WORLDWIDE RESIDENTS:##(%s)"
 transferBalanceLow "(BALANCE TOO LOW FOR TRANSFER)" 
 
 
-withdrawMoney "WITDRAW $"
+withdrawMoney "WITHDRAW $"
 
 name "NAME"
 address1 "ADDRESS"

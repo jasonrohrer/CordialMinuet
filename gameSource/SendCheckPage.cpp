@@ -33,7 +33,7 @@ extern double checkCost;
 
 SendCheckPage::SendCheckPage()
         : ServerActionPage( "send_us_check", true),
-          mAmountPicker( mainFont, 34, 201, 4, 2, 
+          mAmountPicker( mainFont, 176, 201, 6, 2, 
                          translate( "withdrawMoney" ) ),
           mNameField( mainFont, 33, 126, 12, false, 
                       translate( "name" ),

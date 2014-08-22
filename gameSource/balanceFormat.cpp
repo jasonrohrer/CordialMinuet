@@ -24,7 +24,7 @@ static char *addCommas( char *inString ) {
     // ignore $
     int wholeDigitLength = periodPosition - 1;
     
-    if( wholeDigitLength < 5 ) {
+    if( wholeDigitLength < 4 ) {
         // no commas
         return inString;
         }

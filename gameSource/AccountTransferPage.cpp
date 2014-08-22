@@ -34,7 +34,7 @@ extern double transferCost;
 
 AccountTransferPage::AccountTransferPage()
         : ServerActionPage( "account_transfer", true),
-          mAmountPicker( mainFont, 34, 75, 4, 2, 
+          mAmountPicker( mainFont, 176, 75, 6, 2, 
                          translate( "transferMoney" ) ),
           mEmailField( mainFont, 33, 0, 12, false, 
                        translate( "email" ),

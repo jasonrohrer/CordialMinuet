@@ -90,17 +90,18 @@ void DepositDisplayPage::draw( doublePair inViewCenter,
     
     doublePair pos = { 0, 0 };
     
-    pos.x = -64;
-    pos.y += 64;
+    pos.x = 0;
+    pos.y += 192;
     
     mainFont->drawString( translate( "oldBalance" ), pos, alignRight );
 
     char fullPrecision = false;
     
     char *oldBalanceString = 
-        formatBalance( mOldBalance, false, &fullPrecision );
+        formatBalance( mOldBalance, false, &fullPrecision, true );
 
-    char *deletaString = formatBalance( mDeltaAmount, fullPrecision );
+    char *deltaString = formatBalance( mDeltaAmount, fullPrecision, 
+                                       NULL, true );
 
 
     // estimate new balance for width measurements
@@ -114,12 +115,12 @@ void DepositDisplayPage::draw( doublePair inViewCenter,
         }
     
     char *newBalanceEstimateString = 
-        formatBalance( newBalanceEstimate, fullPrecision );
+        formatBalance( newBalanceEstimate, fullPrecision, NULL, true );
 
 
     double maxWidth = numbersFontFixed->measureString( oldBalanceString );
     
-    double otherWidth = numbersFontFixed->measureString( deletaString );
+    double otherWidth = numbersFontFixed->measureString( deltaString );
     
     if( otherWidth > maxWidth ) {
         maxWidth = otherWidth;
@@ -134,16 +135,17 @@ void DepositDisplayPage::draw( doublePair inViewCenter,
     delete [] newBalanceEstimateString;
 
 
-    double xOffset = 2 * mainFont->getFontHeight() + maxWidth - 64;
+    double xOffset = maxWidth / 2;
         
 
 
     pos.x = xOffset;
+    pos.y -= 64;
     numbersFontFixed->drawString( oldBalanceString, pos, alignRight );
     
     delete [] oldBalanceString;
 
-    pos.x = -64;
+    pos.x = 0;
     pos.y -= 64;
 
     const char *amountKey = "addedAmount";
@@ -155,11 +157,12 @@ void DepositDisplayPage::draw( doublePair inViewCenter,
     numbersFontFixed->drawString( translate( amountKey ), pos, alignRight );
     
     pos.x = xOffset;
-    numbersFontFixed->drawString( deletaString, pos, alignRight );
+    pos.y -= 64;
+    numbersFontFixed->drawString( deltaString, pos, alignRight );
     
-    delete [] deletaString;
+    delete [] deltaString;
     
-    pos.x = -64;
+    pos.x = 0;
     pos.y -= 64;
  
     mainFont->drawString( translate( "newBalance" ), pos, alignRight );
@@ -169,9 +172,10 @@ void DepositDisplayPage::draw( doublePair inViewCenter,
         
         char *valueString = 
             formatBalance( getResponseDouble( "dollarBalance" ),
-                           fullPrecision );
+                           fullPrecision, NULL, true );
     
         pos.x = xOffset;
+        pos.y -= 64;
         numbersFontFixed->drawString( valueString, pos, alignRight );
     
         delete [] valueString;
