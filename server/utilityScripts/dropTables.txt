@@ -1,0 +1,6 @@
+drop table minuetServer_games;
+drop table minuetServer_log;
+drop table minuetServer_server_globals;
+drop table minuetServer_server_stats;
+drop table minuetServer_user_stats;
+drop table minuetServer_users;
