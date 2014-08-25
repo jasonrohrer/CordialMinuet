@@ -4,7 +4,7 @@
 
 
 <font size=7>CORDIAL MINUET</FONT><br>
-A two-player online STRATEGY game played for REAL MONEY by <a href="http://hcsoftware.sf.net/jason-rohrer">JASON ROHRER</a><br>
+A two-player ONLINE STRATEGY GAME played for REAL MONEY by <a href="http://hcsoftware.sf.net/jason-rohrer">JASON ROHRER</a><br>
 
 
 <table border=0>
@@ -53,7 +53,7 @@ Take two ounces of human fat, one ounce of oil of nerves, one ounce of oil of la
 <tr>
 <td align=justify>
 
-Have you ever wanted all of the POWER with none of the RESPONSIBILITY?  Did you know that you can make HAIL STOP by simply saying the RIGHT WORDS?  Have you often dreamed of exercising MENTAL SKILL on your HOME COMPUTER to win REAL MONEY?  Many people, in fact most people, are still waiting for the HARPOON OF TIME to spear the WHALE OF TRUTH.<br>
+Have you ever wanted all of the POWER with none of the RESPONSIBILITY?  Did you know that you can make HAIL STOP by simply saying the RIGHT WORDS?  Would you like to SUMMON ASTAROTH to your bedchamber using nothing more than INEXPENSIVE ITEMS found in your kitchen pantry?  Have you often dreamed of exercising MENTAL SKILL on your HOME COMPUTER to win REAL MONEY?  These and many other astounding things are possible, and it's EASIER THAN YOU THINK.  Many people, in fact most people, are still waiting for the HARPOON OF TIME to spear the WHALE OF TRUTH.<br>
 <br>
 The fact that you are READING these words means you may suspect that this strike is NEVER GOING TO HAPPEN.  Unlike the UNWASHED MASSES, you might have always felt like SOMETHING WAS GOING ON.  Is it possible to wake up each morning, look in the mirror, and announce with conviction that TODAY IS THE DAY, and most importantly, BE RIGHT?  There is only ONE WAY to find out.<br>
 <br>
@@ -74,6 +74,10 @@ If you answered YES to all, any, or even none of these, YOU may be one of the FE
 </table>
 
 <img src="diagram.png" width=400 height=405 border=0>
+
+
+<img src="testCordial" width=500 height=62 border=0>
+
 
 
 </td>
@@ -101,7 +105,7 @@ If you answered YES to all, any, or even none of these, YOU may be one of the FE
 <br>
 
 <u>A secret to win a fortune in games where numbers are foretold.</u><br>
-cut with a scissor small slips of paper, on each of which you should write a number;  you can make as many numbers as you wish.  put all these slips in a large box, such that the numbers are facing down.  take a spider, first trap it in a glass bottle for half an hour, then smash it with the magic wand, saying, "<i>Mihi prosint numera per Dominum Deum nostrum!</i>"  The spider will curl up and pretend to be dead, but it will not be.  Grab it, sprinkle it with holy water, and trap it in the box, wher it must remain one entire night.  whereupon, opening the box, you will observer the little slips of paper have turned, and those nubmers will be the good ones, and they will have luck at games.
+Cut with a scissor small slips of paper, on each of which you should write a number;  you can make as many numbers as you wish.  put all these slips in a large box, such that the numbers are facing down.  take a spider, first trap it in a glass bottle for half an hour, then smash it with the magic wand, saying, "<i>Mihi prosint numera per Dominum Deum nostrum!</i>"  The spider will curl up and pretend to be dead, but it will not be.  Grab it, sprinkle it with holy water, and trap it in the box, wher it must remain one entire night.  whereupon, opening the box, you will observer the little slips of paper have turned, and those nubmers will be the good ones, and they will have luck at games.
 
 
 </td>
