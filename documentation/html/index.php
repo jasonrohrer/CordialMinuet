@@ -11,14 +11,16 @@ A two-player online STRATEGY game played for REAL MONEY by <a href="http://hcsof
 
 <tr>
 
-<td width=200 align=justify valign=top>
+<td width=200 align=justify valign=middle>
 <img src="sidebarSpacer.png" width=200 height=1>
-<br>
-<br>
+
+<center>
+<img src="sigil1.png" width=82 height=35>
+<img src="sigil2.png" width=27 height=27>
+</center>
+
 <u>To make a husband faithful.</u><br>
 Take the marrow from the left leg of a wolf, and with it fill a case of St. Lucia wood.  Wrap the case with a piece of velvet, and carry it with you.  If you are reasonable and not too demanding, your husband will love no one but you.
-<br>
-
 <br>
 
 <br>
@@ -64,11 +66,14 @@ If you answered YES to all, any, or even none of these, YOU may be one of the FE
 
 </td>
 
-<td width=200 align=justify valign=top>
+<td width=200 align=justify valign=middle>
 <img src="sidebarSpacer.png" width=200 height=1>
-<br>
-<br>
 
+<center>
+<img src="sigil3.png" width=43 height=23>
+<img src="sigil4.png" width=39 height=26>
+<img src="sigil5.png" width=35 height=26>
+</center>
 
 <u>A secret to win a fortune in games where numbers are foretold.</u><br>
 cut with a scissor small slips of paper, on each of which you should write a number;  you can make as many numbers as you wish.  put all these slips in a large box, such that the numbers are facing down.  take a spider, first trap it in a glass bottle for half an hour, then smash it with the magic wand, saying, "<i>Mihi prosint numera per Dominum Deum nostrum!</i>"  The spider will curl up and pretend to be dead, but it will not be.  Grab it, sprinkle it with holy water, and trap it in the box, wher it must remain one entire night.  whereupon, opening the box, you will observer the little slips of paper have turned, and those nubmers will be the good ones, and they will have luck at games.
