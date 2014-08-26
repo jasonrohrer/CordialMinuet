@@ -76,7 +76,11 @@ If you answered YES to all, any, or even none of these, YOU may be one of the FE
 <img src="diagram.png" width=400 height=405 border=0>
 
 
-<img src="testCordial" width=500 height=62 border=0>
+<img src="cordialTiles.jpg" width=500 height=58 border=0><br>
+<img src="milderTiles.jpg" width=500 height=58 border=0><br>
+<img src="outlaidTiles.jpg" width=500 height=57 border=0><br>
+<img src="corditeTiles.jpg" width=500 height=58 border=0><br>
+<img src="guessTiles.jpg" width=500 height=60 border=0><br>
 
 
 
