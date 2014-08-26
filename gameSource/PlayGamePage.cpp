@@ -47,6 +47,8 @@ static void setThemColor() {
     }
 
 
+static doublePair lastMousePos = { 0, 0 };
+
 
 PlayGamePage::PlayGamePage()
         : ServerActionPage( "get_game_state", 8, gameStatePartNames ),
@@ -60,6 +62,9 @@ PlayGamePage::PlayGamePage()
           mScorePipSprite( loadWhiteSprite( "scorePip.tga" ) ),
           mScorePipExtraSprite( loadWhiteSprite( "scorePipExtra.tga" ) ),
           mScorePipEmptySprite( loadWhiteSprite( "scorePipEmpty.tga" ) ),
+          mParchmentSprite( loadSprite( "parchment.tga", false ) ),
+          mRedWatercolorSprite( loadSprite( "redWatercolor.tga", false ) ),
+          mBlueWatercolorSprite( loadSprite( "blueWatercolor.tga", false ) ),
           mRoundEnding( false ), 
           mRoundEndTime( 0 ) {
     
@@ -359,6 +364,8 @@ void PlayGamePage::actionPerformed( GUIComponent *inTarget ) {
 
 
 
+float leftEnd = 0;
+float rightEnd = 0;
 
 
 
@@ -658,9 +665,49 @@ void PlayGamePage::draw( doublePair inViewCenter,
 
         delete [] number;
         }
-    
 
+    doublePair parchPos = { 0, 0 };
+    
+    setDrawColor( 1, 1, 1, 1 );
+
+    drawSprite( mParchmentSprite, parchPos );
+    
+    toggleMultiplicativeBlend( true );
+
+    drawSprite( mRedWatercolorSprite, parchPos );
+    
+    parchPos.y += 32;
+    parchPos.x += 32;
+    drawSprite( mBlueWatercolorSprite, parchPos );
+    
+    FloatColor spriteColors[4];
+    
+    for( int i=0; i<4; i++ ) {
+        float value = leftEnd;
+        if( i == 1 || i == 2 ) {
+            value = rightEnd;
+            }
+        spriteColors[i].r = value;
+        spriteColors[i].g = value;
+        spriteColors[i].b = value;
+        spriteColors[i].a = 1;
+        }
+    
+    toggleAdditiveTextureColoring( true );
+    drawSprite( mBlueWatercolorSprite, lastMousePos, spriteColors );
+    toggleAdditiveTextureColoring( false );
+
+    toggleMultiplicativeBlend( false );
     //drawMessage( "test messag", pos );    
+
+    if( leftEnd > 0 ) {
+        leftEnd -= 0.02;
+        }
+    else if( rightEnd > 0 ) {
+        rightEnd -= 0.02;
+        }
+    
+        
     }
 
 
@@ -1451,6 +1498,12 @@ char PlayGamePage::loadCacheRecord() {
 
 
 void PlayGamePage::pointerMove( float inX, float inY ) {
+    lastMousePos.x = inX;
+    lastMousePos.y = inY;
+    
+    leftEnd = 1;
+    rightEnd = 1;
+
     mScorePipLabelFadeDelta = -1;
     
     doublePair pos = mScorePipPositions[0];

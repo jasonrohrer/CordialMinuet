@@ -145,6 +145,11 @@ class PlayGamePage : public ServerActionPage, public ActionListener {
         SpriteHandle mScorePipExtraSprite;
         SpriteHandle mScorePipEmptySprite;
 
+        SpriteHandle mParchmentSprite;
+        SpriteHandle mRedWatercolorSprite;
+        SpriteHandle mBlueWatercolorSprite;
+        
+
         
         int mCurrentCacheAge;
         
