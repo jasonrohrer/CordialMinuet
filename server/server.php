@@ -1411,6 +1411,14 @@ function cm_makeDeposit() {
         cm_queryDatabase( "SET AUTOCOMMIT=1" );
         
         echo $response;
+
+        
+        // for presentation to user (in email that we send below)
+        
+        // break into "-" separated chunks of 5 digits
+        $account_key_chunks = str_split( $account_key, 5 );
+
+        $account_key = implode( "-", $account_key_chunks );
         }
 
     // got here
