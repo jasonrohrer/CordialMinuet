@@ -1080,7 +1080,14 @@ void drawFrame( char inUpdate ) {
             }
         else if( currentGamePage == accountCheckPage ) {
             if( accountCheckPage->checkSignal( "newAccount" ) ) {
-                currentGamePage = depositPage;
+                currentGamePage = getDepositFeesPage;
+                
+                if( userEmail != NULL ) {
+                    delete [] userEmail;
+                    userEmail = NULL;
+                    }
+                depositPage->setEmailFieldCanFocus( true );
+                
                 currentGamePage->base_makeActive( true );
                 }
             else if( accountCheckPage->checkSignal( "existingAccount" ) ) {
