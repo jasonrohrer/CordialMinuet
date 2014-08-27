@@ -481,7 +481,7 @@ function cm_setupDatabase() {
             "INDEX( player_1_id )," .
             "player_2_id INT UNSIGNED NOT NULL," .
             "INDEX( player_2_id )," .
-            "dollar_amount DECIMAL(13, 2) NOT NULL,".
+            "dollar_amount DECIMAL(11, 2) NOT NULL,".
             "INDEX( dollar_amount )," .
             "started TINYINT UNSIGNED NOT NULL,".
             // 36-cell square, numbers from 1 to 36, separated by #
