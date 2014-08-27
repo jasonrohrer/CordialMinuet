@@ -670,6 +670,15 @@ void DepositPage::switchFields( int inDir ) {
             else if( next < 0 ) {
                 next = NUM_DEPOSIT_FIELDS - 1;
                 }
+            
+            if( !mEmailFieldCanFocus && mFields[next] == &mEmailField ) {
+                next += inDir;
+                
+                if( next < 0 ) {
+                    next = NUM_DEPOSIT_FIELDS - 1;
+                    }
+                }
+                
             mFields[next]->focus();
             return;
             }
