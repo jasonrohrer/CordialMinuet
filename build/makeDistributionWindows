@@ -23,7 +23,7 @@ mv base windows
 
 
 
-cp ../gameSource/CordialMinuet.exe windows/CordialMinuet_$1/
+cp ../gameSource/CORDIAL_MINUET.exe windows/CordialMinuet_$1/
 
 cp win32/*.dll windows/CordialMinuet_$1/
 
