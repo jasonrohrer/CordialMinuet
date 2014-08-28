@@ -77,6 +77,7 @@ class PlayGamePage : public ServerActionPage, public ActionListener {
         
         virtual void pointerMove( float inX, float inY );
         
+        virtual void keyDown( unsigned char inASCII );
         
     protected:
         
@@ -144,6 +145,8 @@ class PlayGamePage : public ServerActionPage, public ActionListener {
         SpriteHandle mScorePipSprite;
         SpriteHandle mScorePipExtraSprite;
         SpriteHandle mScorePipEmptySprite;
+
+        char mShowWatercolorDemo;
 
         SpriteHandle mParchmentSprite;
         SpriteHandle mRedWatercolorSprite;

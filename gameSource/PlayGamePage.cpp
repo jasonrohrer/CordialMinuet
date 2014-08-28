@@ -62,6 +62,7 @@ PlayGamePage::PlayGamePage()
           mScorePipSprite( loadWhiteSprite( "scorePip.tga" ) ),
           mScorePipExtraSprite( loadWhiteSprite( "scorePipExtra.tga" ) ),
           mScorePipEmptySprite( loadWhiteSprite( "scorePipEmpty.tga" ) ),
+          mShowWatercolorDemo( false ),
           mParchmentSprite( loadSprite( "parchment.tga", false ) ),
           mRedWatercolorSprite( loadSprite( "redWatercolor.tga", false ) ),
           mBlueWatercolorSprite( loadSprite( "blueWatercolor.tga", false ) ),
@@ -666,45 +667,48 @@ void PlayGamePage::draw( doublePair inViewCenter,
         delete [] number;
         }
 
-    doublePair parchPos = { 0, 0 };
+    if( mShowWatercolorDemo ) {
+        
+        doublePair parchPos = { 0, 0 };
     
-    setDrawColor( 1, 1, 1, 1 );
+        setDrawColor( 1, 1, 1, 1 );
 
-    drawSprite( mParchmentSprite, parchPos );
+        drawSprite( mParchmentSprite, parchPos );
     
-    toggleMultiplicativeBlend( true );
+        toggleMultiplicativeBlend( true );
 
-    drawSprite( mRedWatercolorSprite, parchPos );
+        drawSprite( mRedWatercolorSprite, parchPos );
     
-    parchPos.y += 32;
-    parchPos.x += 32;
-    drawSprite( mBlueWatercolorSprite, parchPos );
+        parchPos.y += 32;
+        parchPos.x += 32;
+        drawSprite( mBlueWatercolorSprite, parchPos );
     
-    FloatColor spriteColors[4];
+        FloatColor spriteColors[4];
     
-    for( int i=0; i<4; i++ ) {
-        float value = leftEnd;
-        if( i == 1 || i == 2 ) {
-            value = rightEnd;
+        for( int i=0; i<4; i++ ) {
+            float value = leftEnd;
+            if( i == 1 || i == 2 ) {
+                value = rightEnd;
+                }
+            spriteColors[i].r = value;
+            spriteColors[i].g = value;
+            spriteColors[i].b = value;
+            spriteColors[i].a = 1;
             }
-        spriteColors[i].r = value;
-        spriteColors[i].g = value;
-        spriteColors[i].b = value;
-        spriteColors[i].a = 1;
-        }
     
-    toggleAdditiveTextureColoring( true );
-    drawSprite( mBlueWatercolorSprite, lastMousePos, spriteColors );
-    toggleAdditiveTextureColoring( false );
+        toggleAdditiveTextureColoring( true );
+        drawSprite( mBlueWatercolorSprite, lastMousePos, spriteColors );
+        toggleAdditiveTextureColoring( false );
 
-    toggleMultiplicativeBlend( false );
-    //drawMessage( "test messag", pos );    
+        toggleMultiplicativeBlend( false );
+        //drawMessage( "test messag", pos );    
 
-    if( leftEnd > 0 ) {
-        leftEnd -= 0.02;
-        }
-    else if( rightEnd > 0 ) {
-        rightEnd -= 0.02;
+        if( leftEnd > 0 ) {
+            leftEnd -= 0.02;
+            }
+        else if( rightEnd > 0 ) {
+            rightEnd -= 0.02;
+            }
         }
     
         
@@ -1535,6 +1539,14 @@ void PlayGamePage::pointerMove( float inX, float inY ) {
         }
     
     
+    }
+
+
+
+void PlayGamePage::keyDown( unsigned char inASCII ) {
+    if( inASCII == 'w' || inASCII == 'W' ) {
+        mShowWatercolorDemo = ! mShowWatercolorDemo;
+        }
     }
 
 
