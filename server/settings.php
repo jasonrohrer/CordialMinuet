@@ -101,7 +101,7 @@ $lobCheckNote = "Withdrawal from Jason Rohrer's Cordial Minuet game for ";
 
 $checkMethodAvailable = 1;
 
-$transferMethodAvailable = 1;
+$transferMethodAvailable = 0;
 
 $transferCost = "0.00";
 

@@ -320,6 +320,8 @@ else if( preg_match( "/server\.php/", $_SERVER[ "SCRIPT_NAME" ] ) ) {
         cm_doesTableExist( $tableNamePrefix."server_globals" ) &&
         cm_doesTableExist( $tableNamePrefix."log" ) &&
         cm_doesTableExist( $tableNamePrefix."users" ) &&
+        cm_doesTableExist( $tableNamePrefix."deposits" ) &&
+        cm_doesTableExist( $tableNamePrefix."withdrawals" ) &&
         cm_doesTableExist( $tableNamePrefix."games" ) &&
         cm_doesTableExist( $tableNamePrefix."server_stats" ) &&
         cm_doesTableExist( $tableNamePrefix."user_stats" );
@@ -465,14 +467,61 @@ function cm_setupDatabase() {
         }
 
 
+    $tableName = $tableNamePrefix . "deposits";
+    if( ! cm_doesTableExist( $tableName ) ) {
+        $query =
+            "CREATE TABLE $tableName(" .
+            "deposit_id BIGINT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT," .
+            "user_id INT UNSIGNED NOT NULL," .
+            "INDEX( user_id )," .
+            "deposit_time DATETIME NOT NULL," .
+            "INDEX( deposit_time )," .
+            // the amount charged to them, including fees
+            "dollar_amount DECIMAL(13, 2) NOT NULL ) ENGINE = INNODB;";
+
+        $result = cm_queryDatabase( $query );
+
+        echo "<B>$tableName</B> table created<BR>";
+        }
+    else {
+        echo "<B>$tableName</B> table already exists<BR>";
+        }
+
+
+    // for now, this table only tracks mailed checks
+    $tableName = $tableNamePrefix . "withdrawals";
+    if( ! cm_doesTableExist( $tableName ) ) {
+
+        $query =
+            "CREATE TABLE $tableName(" .
+            "withdrawal_id BIGINT UNSIGNED NOT NULL ".
+            "              PRIMARY KEY AUTO_INCREMENT," .
+            "user_id INT UNSIGNED NOT NULL," .
+            "INDEX( user_id )," .
+            "withdrawal_time DATETIME NOT NULL," .
+            "INDEX( withdrawal_time )," .
+            // the amount sent to them, excluding fee
+            "dollar_amount DECIMAL(13, 2) NOT NULL, ".
+            "name VARCHAR(255) NOT NULL," .
+            "address1 VARCHAR(255) NOT NULL," .
+            "address2 VARCHAR(255) NOT NULL," .
+            "city VARCHAR(255) NOT NULL," .
+            "state CHAR(2) NOT NULL," .
+            "zip VARCHAR(10) NOT NULL ) ENGINE = INNODB;";
+
+        $result = cm_queryDatabase( $query );
+
+        echo "<B>$tableName</B> table created<BR>";
+        }
+    else {
+        echo "<B>$tableName</B> table already exists<BR>";
+        }
+
+
 
     $tableName = $tableNamePrefix . "games";
     if( ! cm_doesTableExist( $tableName ) ) {
 
-        // this table contains general info about each user
-        //
-        // sequence number used and incremented with each client request
-        // to prevent replay attacks
         $query =
             "CREATE TABLE $tableName(" .
             "game_id BIGINT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT," .
@@ -1318,6 +1367,8 @@ function cm_makeDeposit() {
             if( $result ) {
                 $found_unused = 1;
 
+                $user_id = mysql_insert_id();
+                
                 global $remoteIP;
                 cm_log( "Account key $account_key created by $email from ".
                         "$remoteIP, ".
@@ -1423,6 +1474,17 @@ function cm_makeDeposit() {
 
     // got here
     // deposit happened
+
+    
+    // log it, including fees (whole amount charged to them)
+
+    $query = "INSERT INTO $tableNamePrefix"."deposits ".
+        "SET user_id = '$user_id', deposit_time = CURRENT_TIMESTAMP, ".
+        "dollar_amount = '$dollar_amount'; ";
+    
+    $result = cm_queryDatabase( $query );
+    
+    
     // send email receipt
 
     $balanceString = cm_formatBalanceForDisplay( $dollar_balance );
@@ -1841,6 +1903,18 @@ function cm_sendUSCheck() {
     cm_queryDatabase( $query );
 
 
+    // log it, excluding fee (amount they will receive)
+
+    $query = "INSERT INTO $tableNamePrefix"."withdrawals ".
+        "SET user_id = '$user_id', withdrawal_time = CURRENT_TIMESTAMP, ".
+        "dollar_amount = '$check_amount', ".
+        "name = '$name', address1 = '$address1', address2 = '$address2', ".
+        "city = '$city', state = '$state', zip = '$zip'; ";
+    
+    $result = cm_queryDatabase( $query );
+
+    
+    
     global $remoteIP;
     cm_log( "Withdrawal of \$$dollar_amount for $email by ".
             "$remoteIP" );
