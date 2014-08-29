@@ -344,6 +344,13 @@ or request will be denined.
 Returns DENIED on account-level failures (not enough funds, etc).
 Returns CHECK_FAILED if request to mail check fails.
 
+Returns OVER_IRS_LIMIT response if the withdrawal cannot be made because
+the withdrawal would put the player over the yearly no-reporting (1099-MISC)
+limit AND the player's SSN hasn't be collected.  In this case, an email
+will be automatically sent to the player with further instructions.
+
+
+
 
 
 
