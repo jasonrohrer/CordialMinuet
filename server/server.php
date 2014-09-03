@@ -1972,9 +1972,8 @@ function cm_sendUSCheck() {
         "dollar_balance = dollar_balance - $dollar_amount, ".
         "request_sequence_number = $request_sequence_number + 1, ".
         "num_withdrawals = num_withdrawals + 1, ".
-        // track amount they receive by check
-        // check fee is added to house_balance below
-        "total_withdrawals = total_withdrawals + '$check_amount', ".
+        // track amount they took out (check plus fee)
+        "total_withdrawals = total_withdrawals + '$dollar_amount', ".
         "last_request_tag = '$request_tag', ".
         "last_request_response = '$response' ".
         "WHERE user_id = $user_id;";
