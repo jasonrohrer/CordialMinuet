@@ -4811,6 +4811,16 @@ function cm_showDetail() {
         "&user_id=$user_id&sequence_number=$sequence_number".
         "&account_hmac=$account_hmac\">".
         "Test Check List Export</a>]<br><br><br>";
+    echo "[<a href=\"server.php?action=export_check_list" .
+        "&flag=live".
+        "&user_id=$user_id&sequence_number=$sequence_number".
+        "&account_hmac=$account_hmac\">".
+        "Test Check List Export (live)</a>]<br><br><br>";
+    echo "[<a href=\"server.php?action=export_check_list" .
+        "&flag=test".
+        "&user_id=$user_id&sequence_number=$sequence_number".
+        "&account_hmac=$account_hmac\">".
+        "Test Check List Export (test)</a>]<br><br><br>";
     ?>
             <FORM ACTION="server.php" METHOD="post">
     <INPUT TYPE="hidden" NAME="action" VALUE="finish_check_export">
@@ -4819,6 +4829,8 @@ function cm_showDetail() {
     <INPUT TYPE="hidden" NAME="account_hmac" VALUE="<?php echo $account_hmac;?>">
                  
     Num in export: <INPUT TYPE="text" MAXLENGTH=10 SIZE=10 NAME="num_in_export"
+            VALUE=""><br>            
+    Flag: <INPUT TYPE="text" MAXLENGTH=10 SIZE=10 NAME="flag"
             VALUE=""><br>            
     <INPUT TYPE="Submit" VALUE="Finish Export">
     </FORM>
@@ -4939,6 +4951,15 @@ function cm_exportCheckList() {
 
     cm_queryDatabase( "SET AUTOCOMMIT = 0;" );
 
+
+    $flag = cm_requestFilter( "flag", "/[A-Za-z]+/i", "" );
+
+    $flagClause = "";
+
+    if( $flag != "" ) {
+        $flagClause = " AND flag = '$flag' ";
+        }
+    
     global $tableNamePrefix;
     
     $query = "SELECT withdrawal_id, flag, dollar_amount, ".
@@ -4946,7 +4967,7 @@ function cm_exportCheckList() {
         "province, country, " .
         "postal_code, country ".
         "FROM $tableNamePrefix"."withdrawals ".
-        "WHERE exported < 2 ".
+        "WHERE exported < 2 $flagClause".
         "FOR UPDATE;";
 
     $result = cm_queryDatabase( $query );
@@ -5021,25 +5042,38 @@ function cm_finishCheckExport() {
     cm_queryDatabase( "SET AUTOCOMMIT = 0;" );
 
 
+    
+    $flag = cm_requestFilter( "flag", "/[A-Za-z]+/i", "" );
+
+    $flagClause = "";
+
+    if( $flag != "" ) {
+        $flagClause = " AND flag = '$flag' ";
+        }
+
+    
     global $tableNamePrefix;
     
     $query = "SELECT COUNT(*)".
         "FROM $tableNamePrefix"."withdrawals ".
-        "WHERE exported = 1 ".
+        "WHERE exported = 1 $flagClause ".
         "FOR UPDATE;";
 
     $result = cm_queryDatabase( $query );
+
+    $count = mysql_result( $result, 0, 0 );
     
-    if( mysql_result( $result, 0, 0 ) != $num_in_export ) {
+    if( $count != $num_in_export ) {
         cm_log( "cm_finishCheckExport denied, ".
-                "num_in_export mismatch" );
+                "num_in_export mismatch ".
+                "(passed in $num_in_export, actual $count, $query)" );
         cm_transactionDeny();
         return;
         }
 
     $query = "UPDATE $tableNamePrefix"."withdrawals ".
         "SET exported = 2 ".
-        "WHERE exported = 1;";
+        "WHERE exported = 1 $flagClause;";
     
     cm_queryDatabase( $query );
     
