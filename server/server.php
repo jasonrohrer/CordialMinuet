@@ -275,6 +275,9 @@ else if( $action == "check_for_flush" ) {
 else if( $action == "show_data" ) {
     cm_showData();
     }
+else if( $action == "show_detail" ) {
+    cm_showDetail();
+    }
 else if( $action == "show_recent_user_emails" ) {
     cm_showRecentUserEmails();
     }
@@ -283,6 +286,9 @@ else if( $action == "show_stats" ) {
     }
 else if( $action == "block_user_id" ) {
     cm_blockUserID();
+    }
+else if( $action == "update_user" ) {
+    cm_updateUser();
     }
 else if( $action == "logout" ) {
     cm_logout();
@@ -460,6 +466,7 @@ function cm_setupDatabase() {
             "last_action_time DATETIME NOT NULL," .
             "last_request_tag CHAR(40) NOT NULL,".
             "last_request_response TEXT NOT NULL,".
+            "admin_level TINYINT UNSIGNED NOT NULL,".
             "blocked TINYINT UNSIGNED NOT NULL ) ENGINE = INNODB;";
 
         $result = cm_queryDatabase( $query );
@@ -1410,6 +1417,7 @@ function cm_makeDeposit() {
                 "last_action_time = CURRENT_TIMESTAMP, ".
                 "last_request_tag = '$request_tag', ".
                 "last_request_response = '', ".
+                "admin_level = 0, ".
                 "blocked = 0;";
             
             $result = mysql_query( $query );
@@ -4594,6 +4602,64 @@ function cm_showStats() {
 
 
 
+
+
+function cm_showDetail() {
+    cm_checkPassword( "show_detail" );
+
+    $user_id = cm_getUserID();
+    
+    echo "[<a href=\"server.php?action=show_data" .
+        "\">Main</a>]<br><br><br>";
+     
+    global $tableNamePrefix;
+
+    $query = "SELECT account_key, email, ".
+        "admin_level, blocked ".
+        "FROM $tableNamePrefix"."users ".
+        "WHERE user_id = '$user_id';";
+
+    $result = cm_queryDatabase( $query );
+    
+    $numRows = mysql_numrows( $result );
+
+    if( $numRows < 1 ) {
+        cm_operationError( "User ID $user_id not found" );
+        }
+    $row = mysql_fetch_array( $result, MYSQL_ASSOC );
+
+    $account_key = $row[ "account_key" ];
+    $admin_level = $row[ "admin_level" ];
+    $blocked = $row[ "blocked" ];
+    $email = $row[ "email" ];
+
+
+    echo "User ID: $user_id<br>\n";
+    echo "Account Key: $account_key<br>\n";
+
+    $blockedChecked = "";
+    if( $blocked ) {
+        $blockedChecked = "checked";
+        }
+?>
+            <FORM ACTION="server.php" METHOD="post">
+    <INPUT TYPE="hidden" NAME="action" VALUE="update_user">
+    <INPUT TYPE="hidden" NAME="user_id" VALUE="<?php echo $user_id;?>">
+    Email: <INPUT TYPE="text" MAXLENGTH=40 SIZE=30 NAME="email"
+            VALUE="<?php echo $email;?>"><br>            
+    Admin Level: <INPUT TYPE="text" MAXLENGTH=1 SIZE=2 NAME="admin_level"
+            VALUE="<?php echo $admin_level;?>"><br>            
+    Blocked <INPUT TYPE="checkbox" NAME="blocked" VALUE=1
+                 <?php echo $blockedChecked;?> ><br>
+    <INPUT TYPE="Submit" VALUE="Update">
+<?php
+
+    }
+
+
+
+
+
 function cm_blockUserID() {
     cm_checkPassword( "block_user_id" );
 
@@ -4605,7 +4671,7 @@ function cm_blockUserID() {
     $blocked = cm_requestFilter( "blocked", "/[01]/" );
 
     // don't touch admin
-    if( cm_updateUser_internal( $user_id, $blocked, -1 ) ) {
+    if( cm_updateUser_internal( $user_id, $blocked, -1, -1 ) ) {
         cm_showData();
         }
     }
@@ -4620,8 +4686,9 @@ function cm_updateUser() {
 
     $blocked = cm_requestFilter( "blocked", "/[1]/", "0" );
     $email = cm_requestFilter( "email", "/[A-Z0-9._%+-]+@[A-Z0-9.-]+/i" );
+    $admin_level = cm_requestFilter( "admin_level", "/[0-9]+/i" );
 
-    if( cm_updateUser_internal( $user_id, $blocked, $email ) ) {
+    if( cm_updateUser_internal( $user_id, $blocked, $email, $admin_level ) ) {
         cm_showDetail();
         }
     }
@@ -4630,7 +4697,7 @@ function cm_updateUser() {
 
 // set any to -1 to leave unchanged
 // returns 1 on success
-function cm_updateUser_internal( $user_id, $blocked, $email ) {
+function cm_updateUser_internal( $user_id, $blocked, $email, $admin_level ) {
     
     global $tableNamePrefix;
         
@@ -4639,7 +4706,7 @@ function cm_updateUser_internal( $user_id, $blocked, $email ) {
     
 
     
-    $query = "SELECT user_id, blocked, email ".
+    $query = "SELECT user_id, blocked, email, admin_level ".
         "FROM $tableNamePrefix"."users ".
         "WHERE user_id = '$user_id';";
     $result = cm_queryDatabase( $query );
@@ -4649,6 +4716,7 @@ function cm_updateUser_internal( $user_id, $blocked, $email ) {
     if( $numRows == 1 ) {
         $old_blocked = mysql_result( $result, 0, "blocked" );
         $old_email = mysql_result( $result, 0, "email" );
+        $old_admin_level = mysql_result( $result, 0, "admin_level" );
 
         if( $blocked == -1 ) {
             $blocked = $old_blocked;
@@ -4656,10 +4724,14 @@ function cm_updateUser_internal( $user_id, $blocked, $email ) {
         if( $email == -1 ) {
             $email = $old_email;
             }
+        if( $admin_level == -1 ) {
+            $admin_level = $old_admin_level;
+            }
         
         
         $query = "UPDATE $tableNamePrefix"."users SET " .
-            "blocked = '$blocked', email = '$email' " .
+            "blocked = '$blocked', email = '$email', ".
+            "admin_level = '$admin_level' " .
             "WHERE user_id = '$user_id';";
         
         $result = cm_queryDatabase( $query );

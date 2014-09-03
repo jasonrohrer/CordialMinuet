@@ -1,0 +1,3 @@
+ALTER TABLE minuetServer_users ADD admin_level TINYINT UNSIGNED NOT NULL AFTER last_request_response;
+
+UPDATE minuetServer_users SET admin_level = 0;
