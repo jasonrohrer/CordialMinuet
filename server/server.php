@@ -73,7 +73,7 @@ error_reporting( E_ALL );
 // page layout for web-based setup
 $setup_header = "
 <HTML>
-<HEAD><TITLE>Castle Doctrine Server Web-based setup</TITLE></HEAD>
+<HEAD><TITLE>Cordial Minuet Server Web-based setup</TITLE></HEAD>
 <BODY BGCOLOR=#FFFFFF TEXT=#000000 LINK=#0000FF VLINK=#FF0000>
 
 <CENTER>
