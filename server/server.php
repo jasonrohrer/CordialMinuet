@@ -176,6 +176,7 @@ global $shutdownMode;
 if( $shutdownMode &&
     ( $action == "check_required_version" ||
       $action == "check_user" ||
+      $action == "check_sequence_number" ||
       $action == "check_hmac" ||
       $action == "get_deposit_fees" ||
       $action == "make_deposit" ||
@@ -212,6 +213,9 @@ else if( $action == "check_required_version" ) {
     }
 else if( $action == "check_user" ) {
     cm_checkUser();
+    }
+else if( $action == "check_sequence_number" ) {
+    cm_checkSequenceNumber();
     }
 else if( $action == "check_hmac" ) {
     cm_checkHmac();
@@ -907,6 +911,52 @@ function cm_checkUser() {
         return;
         }
     }
+
+
+
+
+
+function cm_checkSequenceNumber() {
+    global $tableNamePrefix;
+
+    $user_id = cm_getUserID();
+    
+    $query = "SELECT sequence_number, blocked ".
+        "FROM $tableNamePrefix"."users ".
+        "WHERE user_id = '$user_id';";
+
+    $result = cm_queryDatabase( $query );
+    
+    $numRows = mysql_numrows( $result );
+
+    $blocked;
+    
+    if( $numRows > 0 ) {
+
+        $row = mysql_fetch_array( $result, MYSQL_ASSOC );
+    
+        $blocked = $row[ "blocked" ];
+        
+        $sequence_number = $row[ "sequence_number" ];
+
+        if( $blocked ) {
+            echo "DENIED";
+
+            cm_log( "checkSequenceNumber for $user_id DENIED, blocked" );
+            return;
+            }
+
+        
+        echo "$sequence_number OK";
+        }
+    else {
+        echo "DENIED";
+
+        cm_log( "checkSequenceNumber for $user_id DENIED, user not found" );
+        return;
+        }
+    }
+
 
 
 

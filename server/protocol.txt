@@ -54,7 +54,7 @@ Where:
 sequence_number is a dummy sequence number that is not verified to be
 as-of-yet unused (can be 0, for example).
 
-account_zero_hmac is the HMAC (see below) computed on sequence_number.
+account_hmac is the HMAC (see below) computed on sequence_number.
 This is not replay-proof, but it doesn't need to be, because it updates no
 server state, and userID is not secret. It allows clients to verify their 
 account key in one call.
@@ -94,6 +94,18 @@ Thus, the account key is never sent from the client to the server, yet the
 server can verify that the client making the transaction is indeed in 
 possession of the account key (which only one person in the world should have),
 as well as the proper version number.
+
+
+
+
+
+
+=== Call:
+server.php?action=get_sequence_number&user_id=[id number]
+
+Returns:
+sequenceNumber
+OK
 
 
 
