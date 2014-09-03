@@ -272,6 +272,9 @@ else if( $action == "check_for_flush" ) {
     cm_checkForFlush();
     echo "OK";
     }
+else if( $action == "make_account" ) {
+    cm_makeAccount();
+    }
 else if( $action == "show_data" ) {
     cm_showData();
     }
@@ -4519,6 +4522,52 @@ function cm_generateHeader() {
 
 
 
+function cm_makeAccount() {
+    cm_checkPassword( "make_account" );
+
+    global $tableNamePrefix;
+
+    $email = cm_requestFilter( "email", "/[A-Z0-9._%+-]+@[A-Z0-9.-]+/i", "" );
+
+    if( $email == "" ) {
+        echo "[<a href=\"server.php?action=show_data" .
+        "\">Main</a>]<br><br><br>";
+        
+        echo "Bad email address";
+        return;
+        }
+    
+    $salt = 0;
+    $account_key = cm_generateAccountKey( $email, $salt );
+
+            
+    // user_id auto-assigned (auto-increment)
+    $query = "INSERT INTO $tableNamePrefix". "users SET ".
+        "account_key = '$account_key', ".
+        "email = '$email', ".
+        "dollar_balance = 0, ".
+        "num_deposits = 0, ".
+        "total_deposits = 0, ".
+        "num_withdrawals = 0, ".
+        "total_withdrawals = 0, ".
+        "total_won = 0, ".
+        "total_lost = 0, ".
+        "sequence_number = 0, ".
+        "request_sequence_number = 0, ".
+        "last_action_time = CURRENT_TIMESTAMP, ".
+        "last_request_tag = '', ".
+        "last_request_response = '', ".
+        "admin_level = 0, ".
+        "blocked = 0;";
+            
+    $result = cm_queryDatabase( $query );
+
+    
+    cm_showData();
+    }
+
+
+
 function cm_showData() {
 
     global $tableNamePrefix, $remoteIP;
@@ -4562,9 +4611,29 @@ function cm_showData() {
     cm_showDataUserList();
     
 
+    echo "<hr>";
+
+        // put forms in a table
+    echo "<center><table border=1 cellpadding=10><tr>\n";
+        // form for force-creating a new account
+?>
+        <td>
+        Create new Account:<br>
+            <FORM ACTION="server.php" METHOD="post">
+    <INPUT TYPE="hidden" NAME="action" VALUE="make_account">
+             Email:
+    <INPUT TYPE="text" MAXLENGTH=40 SIZE=20 NAME="email"><br>
+    <INPUT TYPE="Submit" VALUE="Add">
+    </FORM>
+        </td>
+<?php
 
 
+    echo "</tr></table></center>\n";
 
+    
+    
+    echo "<hr>";
 
     echo "<hr>";
 
