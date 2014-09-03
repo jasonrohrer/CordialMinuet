@@ -23,14 +23,14 @@ rm -rf mac
 mv base mac
 
 
-cp -r macOSX/CordialMinuet.app mac/CordialMinuet_$1/CordialMinuet.app
-cp ../gameSource/CordialMinuet mac/CordialMinuet_$1/CordialMinuet.app/Contents/MacOS
+cp -r macOSX/CORDIAL_MINUET.app mac/CordialMinuet_$1/CORDIAL_MINUET.app
+cp ../gameSource/CORDIAL_MINUET mac/CordialMinuet_$1/CORDIAL_MINUET.app/Contents/MacOS
 
-rm -r mac/CordialMinuet_$1/CordialMinuet.app/Contents/MacOS/empty.txt
-rm -r mac/CordialMinuet_$1/CordialMinuet.app/Contents/Frameworks/empty.txt
+rm -r mac/CordialMinuet_$1/CORDIAL_MINUET.app/Contents/MacOS/empty.txt
+rm -r mac/CordialMinuet_$1/CORDIAL_MINUET.app/Contents/Frameworks/empty.txt
 
 # install SDL framework
-cp -r $3 mac/CordialMinuet_$1/CordialMinuet.app/Contents/Frameworks/
+cp -r $3 mac/CordialMinuet_$1/CORDIAL_MINUET.app/Contents/Frameworks/
 
 cd mac
 tar cf "CordialMinuet_$1_$2.tar" CordialMinuet_$1
