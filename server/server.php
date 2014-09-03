@@ -290,6 +290,12 @@ else if( $action == "block_user_id" ) {
 else if( $action == "update_user" ) {
     cm_updateUser();
     }
+else if( $action == "export_check_list" ) {
+    cm_exportCheckList();
+    }
+else if( $action == "finish_check_export" ) {
+    cm_finishCheckExport();
+    }
 else if( $action == "logout" ) {
     cm_logout();
     }
@@ -517,8 +523,13 @@ function cm_setupDatabase() {
             "address1 VARCHAR(255) NOT NULL," .
             "address2 VARCHAR(255) NOT NULL," .
             "city VARCHAR(255) NOT NULL," .
-            "state CHAR(2) NOT NULL," .
-            "zip VARCHAR(10) NOT NULL ) ENGINE = INNODB;";
+            "us_state CHAR(2) NOT NULL," .
+            "province VARCHAR(255) NOT NULL," .
+            "country VARCHAR(255) NOT NULL," .
+            "postal_code VARCHAR(16) NOT NULL, ".
+            "exported TINYINT UNSIGNED NOT NULL, ".
+            "INDEX( exported ),".
+            "flag VARCHAR(10) NOT NULL ) ENGINE = INNODB;";
 
         $result = cm_queryDatabase( $query );
 
@@ -1967,7 +1978,8 @@ function cm_sendUSCheck() {
         "SET user_id = '$user_id', withdrawal_time = CURRENT_TIMESTAMP, ".
         "dollar_amount = '$check_amount', ".
         "name = '$name', address1 = '$address1', address2 = '$address2', ".
-        "city = '$city', state = '$state', zip = '$zip'; ";
+        "city = '$city', us_state = '$state', postal_code = '$zip',".
+        "province = '', country='USA', exported = 0, flag='live'; ";
     
     $result = cm_queryDatabase( $query );
 
@@ -4091,6 +4103,27 @@ function cm_verifyTransaction( $inUserID = -1,
 
 
 
+function cm_getAdminLevel( $user_id ) {
+    global $tableNamePrefix;
+    
+    $query = "SELECT admin_level ".
+        "FROM $tableNamePrefix"."users ".
+        "WHERE user_id = '$user_id';";
+
+    $result = cm_queryDatabase( $query );
+
+
+    $numRows = mysql_numrows( $result );
+    if( $numRows < 1 ) {
+        return 0;
+        }
+
+    return mysql_result( $result, 0, 'admin_level' );
+    }
+
+
+
+
 function cm_logout() {
     cm_checkReferrer();
     cm_clearPasswordCookie();
@@ -4615,7 +4648,7 @@ function cm_showDetail() {
     global $tableNamePrefix;
 
     $query = "SELECT account_key, email, ".
-        "admin_level, blocked ".
+        "admin_level, sequence_number, blocked ".
         "FROM $tableNamePrefix"."users ".
         "WHERE user_id = '$user_id';";
 
@@ -4632,6 +4665,7 @@ function cm_showDetail() {
     $admin_level = $row[ "admin_level" ];
     $blocked = $row[ "blocked" ];
     $email = $row[ "email" ];
+    $sequence_number = $row[ "sequence_number" ];
 
 
     echo "User ID: $user_id<br>\n";
@@ -4652,8 +4686,34 @@ function cm_showDetail() {
     Blocked <INPUT TYPE="checkbox" NAME="blocked" VALUE=1
                  <?php echo $blockedChecked;?> ><br>
     <INPUT TYPE="Submit" VALUE="Update">
+    </FORM>
 <?php
 
+    echo "<hr>";
+
+    global $cm_accountHmacVersion;
+    
+    $account_hmac = cm_hmac_sha1( $account_key,
+                                  "$sequence_number" .
+                                 "$cm_accountHmacVersion" );
+    
+    echo "[<a href=\"server.php?action=export_check_list" .
+        "&user_id=$user_id&sequence_number=$sequence_number".
+        "&account_hmac=$account_hmac\">".
+        "Test Check List Export</a>]<br><br><br>";
+    ?>
+            <FORM ACTION="server.php" METHOD="post">
+    <INPUT TYPE="hidden" NAME="action" VALUE="finish_check_export">
+    <INPUT TYPE="hidden" NAME="user_id" VALUE="<?php echo $user_id;?>">
+    <INPUT TYPE="hidden" NAME="sequence_number" VALUE="<?php echo $sequence_number;?>">
+    <INPUT TYPE="hidden" NAME="account_hmac" VALUE="<?php echo $account_hmac;?>">
+                 
+    Num in export: <INPUT TYPE="text" MAXLENGTH=10 SIZE=10 NAME="num_in_export"
+            VALUE=""><br>            
+    <INPUT TYPE="Submit" VALUE="Finish Export">
+    </FORM>
+<?php
+    
     }
 
 
@@ -4748,6 +4808,133 @@ function cm_updateUser_internal( $user_id, $blocked, $email, $admin_level ) {
 
 
 
+
+function cm_exportCheckList() {
+    if( ! cm_verifyTransaction() ) {
+        return;
+        }
+
+    $user_id = cm_getUserID();
+
+
+    $admin_level = cm_getAdminLevel( $user_id );
+
+    if( $admin_level != 1 && $admin_level != 2 ) {
+        cm_log( "cm_exportCheckList denied, ".
+                "user has admin level $admin_level" );
+        cm_transactionDeny();
+        return;
+        }
+
+
+    cm_queryDatabase( "SET AUTOCOMMIT = 0;" );
+
+    global $tableNamePrefix;
+    
+    $query = "SELECT withdrawal_id, flag, dollar_amount, ".
+        "name, address1, address2, city, us_state, province, country, " .
+        "postal_code, country ".
+        "FROM $tableNamePrefix"."withdrawals ".
+        "WHERE exported < 2 ".
+        "FOR UPDATE;";
+
+    $result = cm_queryDatabase( $query );
+
+    $num_checks = mysql_numrows( $result );
+
+
+    echo "$num_checks\n";
+
+    for( $i=0; $i<$num_checks; $i++ ) {
+        $withdrawal_id = mysql_result( $result, $i, "withdrawal_id" );
+        $flag = mysql_result( $result, $i, "flag" );
+        $dollar_amount = mysql_result( $result, $i, "dollar_amount" );
+        $name = mysql_result( $result, $i, "name" );
+        $address1 = mysql_result( $result, $i, "address1" );
+        $address2 = mysql_result( $result, $i, "address2" );
+        $city = mysql_result( $result, $i, "city" );
+        $us_state = mysql_result( $result, $i, "us_state" );
+        $province = mysql_result( $result, $i, "province" );
+        $postal_code = mysql_result( $result, $i, "postal_code" );
+        $country = mysql_result( $result, $i, "country" );
+
+        echo "\"$withdrawal_id\",".
+            "\"$flag\",".
+            "\"$dollar_amount\",".
+            "\"$name\",".
+            "\"$address1\",".
+            "\"$address2\",".
+            "\"$city\",".
+            "\"$us_state\",".
+            "\"$province\",".
+            "\"$postal_code\",".
+            "\"$country\"\n";
+        }
+
+    $query = "UPDATE $tableNamePrefix"."withdrawals ".
+        "SET exported = 1 ".
+        "WHERE exported < 2;";
+
+
+    cm_queryDatabase( $query );
+    
+    cm_queryDatabase( "COMMIT;" );
+    cm_queryDatabase( "SET AUTOCOMMIT = 1;" );
+    
+    echo "OK";
+    }
+
+
+
+function cm_finishCheckExport() {
+    if( ! cm_verifyTransaction() ) {
+        return;
+        }
+
+    $user_id = cm_getUserID();
+
+
+    $admin_level = cm_getAdminLevel( $user_id );
+
+    if( $admin_level != 1 && $admin_level != 2 ) {
+        cm_log( "cm_exportCheckList denied, ".
+                "user has admin level $admin_level" );
+        cm_transactionDeny();
+        return;
+        }
+
+    $num_in_export = cm_requestFilter( "num_in_export", "/\d+/", 0 );
+
+    cm_queryDatabase( "SET AUTOCOMMIT = 0;" );
+
+
+    global $tableNamePrefix;
+    
+    $query = "SELECT COUNT(*)".
+        "FROM $tableNamePrefix"."withdrawals ".
+        "WHERE exported = 1 ".
+        "FOR UPDATE;";
+
+    $result = cm_queryDatabase( $query );
+    
+    if( mysql_result( $result, 0, 0 ) != $num_in_export ) {
+        cm_log( "cm_finishCheckExport denied, ".
+                "num_in_export mismatch" );
+        cm_transactionDeny();
+        return;
+        }
+
+    $query = "UPDATE $tableNamePrefix"."withdrawals ".
+        "SET exported = 2 ".
+        "WHERE exported = 1;";
+    
+    cm_queryDatabase( $query );
+    
+    cm_queryDatabase( "COMMIT;" );
+    cm_queryDatabase( "SET AUTOCOMMIT = 1;" );
+    
+    echo "OK";
+    }
 
 
 
