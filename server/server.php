@@ -519,6 +519,7 @@ function cm_setupDatabase() {
             "INDEX( withdrawal_time )," .
             // the amount sent to them, excluding fee
             "dollar_amount DECIMAL(13, 2) NOT NULL, ".
+            "email VARCHAR(255) NOT NULL," .
             "name VARCHAR(255) NOT NULL," .
             "address1 VARCHAR(255) NOT NULL," .
             "address2 VARCHAR(255) NOT NULL," .
@@ -1622,11 +1623,11 @@ function cm_getWithdrawalMethods() {
         return;
         }
 
-    global $checkMethodAvailable, $transferMethodAvailable, $lobCheckCost,
+    global $checkMethodAvailable, $transferMethodAvailable, $usCheckCost,
         $transferCost;
 
     if( $checkMethodAvailable ) {
-        echo "us_check#$lobCheckCost\n";
+        echo "us_check#$usCheckCost\n";
         }
     if( $transferMethodAvailable ) {
         echo "account_transfer#$transferCost\n";
@@ -1731,10 +1732,10 @@ function cm_sendUSCheck() {
         return;
         }
     
-    global $lobCheckCost;
+    global $usCheckCost;
     
     
-    if( $dollar_amount <= $lobCheckCost ) {
+    if( $dollar_amount <= $usCheckCost ) {
         cm_log( "cm_sendUSCheck withdrawal too small: \$$dollar_amount" );
         cm_transactionDeny();
         return;
@@ -1828,10 +1829,13 @@ function cm_sendUSCheck() {
         }
 
     
-    $check_amount = $dollar_amount - $lobCheckCost;
+    $check_amount = $dollar_amount - $usCheckCost;
     $check_amount_string = number_format( $check_amount, 2 );
     
-    
+
+
+    // no longer using Lob
+    /*
     cm_log( "Got a verfied [\$$check_amount_string] US check request to:\n".
             "$name\n".
             "$address1\n".
@@ -1845,7 +1849,7 @@ function cm_sendUSCheck() {
         $lobCheckNote, $lobBankAccount;
 
     $dollar_string = number_format( $dollar_amount, 2 );
-    $fee_string = number_format( $lobCheckCost, 2 );
+    $fee_string = number_format( $usCheckCost, 2 );
 
     
     $fullNote = $lobCheckNote .
@@ -1939,14 +1943,20 @@ function cm_sendUSCheck() {
     // house_dollar_balance should reflect how much we actually charged them,
     // because lob fees come out of a different account anyway
     
-    if( $price != $lobCheckCost ) {
+    if( $price != $usCheckCost ) {
         $message = "Lob check price has changed from server setting.  ".
-            "New Lob price: \$$price  Our setting: \$$lobCheckCost";
+            "New Lob price: \$$price  Our setting: \$$usCheckCost";
         
         cm_log( $message );
         
         cm_informAdmin( $message );
         }
+    */
+
+
+    // now all valid check requests are OK, because
+    // they are simply put in the withdrawal table to be pulled
+    // by the processor later.
     
     
 
@@ -1964,19 +1974,25 @@ function cm_sendUSCheck() {
         "WHERE user_id = $user_id;";
     cm_queryDatabase( $query );
 
+
+    /*
+     // No longer using Lob
+     // fees will be taken out of house account by new check processor
+    
     // since Lob fees are taken out of a separate bank account
     // (via debit card payment), count them as free money in the house account
     // this is how much WE charged the user for the check.
     $query = "UPDATE $tableNamePrefix". "server_globals SET ".
         "house_dollar_balance = house_dollar_balance + '$lobCheckCost';";
     cm_queryDatabase( $query );
-
+    */
 
     // log it, excluding fee (amount they will receive)
 
     $query = "INSERT INTO $tableNamePrefix"."withdrawals ".
         "SET user_id = '$user_id', withdrawal_time = CURRENT_TIMESTAMP, ".
         "dollar_amount = '$check_amount', ".
+        "email = '$email', ".
         "name = '$name', address1 = '$address1', address2 = '$address2', ".
         "city = '$city', us_state = '$state', postal_code = '$zip',".
         "province = '', country='USA', exported = 0, flag='live'; ";
@@ -1991,7 +2007,29 @@ function cm_sendUSCheck() {
     
     cm_queryDatabase( "COMMIT;" );
     cm_queryDatabase( "SET AUTOCOMMIT=1" );
-        
+
+
+
+    // send email receipt
+
+    $balanceString = cm_formatBalanceForDisplay( $dollar_balance );
+    $amountString = cm_formatBalanceForDisplay( $dollar_amount );
+    $netString = cm_formatBalanceForDisplay( $check_amount );
+    $feeString = cm_formatBalanceForDisplay( $fee );
+    
+    
+    $message =
+        "You successfully withdrew $netString ".
+        "($feeString fee, total withdrawl $amountString) from your ".
+        "CORDIAL MINUET account.  Your new balance is $balanceString.\n\n".
+        "Please allow a few weeks for your check to arrive in the mail.\n\n\n".
+        "Thanks for playing!\n".
+        "Jason\n\n";
+            
+    
+    cm_mail( $email, "Cordial Minuet Withdrawal Receipt",
+             $message );
+    
     echo $response;
     }
 
@@ -4832,7 +4870,8 @@ function cm_exportCheckList() {
     global $tableNamePrefix;
     
     $query = "SELECT withdrawal_id, flag, dollar_amount, ".
-        "name, address1, address2, city, us_state, province, country, " .
+        "email, name, address1, address2, city, us_state, ".
+        "province, country, " .
         "postal_code, country ".
         "FROM $tableNamePrefix"."withdrawals ".
         "WHERE exported < 2 ".
@@ -4849,6 +4888,7 @@ function cm_exportCheckList() {
         $withdrawal_id = mysql_result( $result, $i, "withdrawal_id" );
         $flag = mysql_result( $result, $i, "flag" );
         $dollar_amount = mysql_result( $result, $i, "dollar_amount" );
+        $email = mysql_result( $result, $i, "email" );
         $name = mysql_result( $result, $i, "name" );
         $address1 = mysql_result( $result, $i, "address1" );
         $address2 = mysql_result( $result, $i, "address2" );
@@ -4861,6 +4901,7 @@ function cm_exportCheckList() {
         echo "\"$withdrawal_id\",".
             "\"$flag\",".
             "\"$dollar_amount\",".
+            "\"$email\",".
             "\"$name\",".
             "\"$address1\",".
             "\"$address2\",".

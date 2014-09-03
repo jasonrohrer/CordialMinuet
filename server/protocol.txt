@@ -687,12 +687,12 @@ Returns a comma-delimited list of checks that haven't be marked as correctly
 exported yet, in this format:
 
 NUM_IN_LIST
-"Withdrawal ID","Flag","USD Amount","Name","Addr 1","Addr 2","City","US State","Province","Postal Code", "Country"
-"Withdrawal ID","Flag","USD Amount","Name","Addr 1","Addr 2","City","US State","Province","Postal Code", "Country"
-"Withdrawal ID","Flag","USD Amount","Name","Addr 1","Addr 2","City","US State","Province","Postal Code", "Country"
+"Withdrawal ID","Flag","USD Amount","Email","Name","Addr 1","Addr 2","City","US State","Province","Postal Code", "Country"
+"Withdrawal ID","Flag","USD Amount","Email","Name","Addr 1","Addr 2","City","US State","Province","Postal Code", "Country"
+"Withdrawal ID","Flag","USD Amount","Email","Name","Addr 1","Addr 2","City","US State","Province","Postal Code", "Country"
 ...
 ...
-"Withdrawal ID","Flag","USD Amount","Name","Addr 1","Addr 2","City","US State","Province","Postal Code", "Country"
+"Withdrawal ID","Flag","USD Amount","Email","Name","Addr 1","Addr 2","City","US State","Province","Postal Code", "Country"
 OK
 
 
