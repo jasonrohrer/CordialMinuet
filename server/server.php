@@ -296,6 +296,9 @@ else if( $action == "export_check_list" ) {
 else if( $action == "finish_check_export" ) {
     cm_finishCheckExport();
     }
+else if( $action == "add_test_check" ) {
+    cm_addTestCheck();
+    }
 else if( $action == "logout" ) {
     cm_logout();
     }
@@ -4975,6 +4978,57 @@ function cm_finishCheckExport() {
     cm_queryDatabase( "SET AUTOCOMMIT = 1;" );
     
     echo "OK";
+    }
+
+
+
+function cm_addTestCheck() {
+
+    $email = cm_requestFilter( "email", "/[A-Z0-9._%+-]+@[A-Z0-9.-]+/i" );
+    
+    $dollar_amount = cm_requestFilter(
+        "dollar_amount", "/[0-9]+[.][0-9][0-9]/i", "0.00" );
+
+    $name = cm_requestFilter(
+        "name", "/[A-Za-z.\-' ]+/i", "" );
+
+    
+    $address1 = cm_requestFilter(
+        "address1", "/[A-Za-z.\-' ,0-9#]+/i", "" );
+
+    $address2 = cm_requestFilter(
+        "address2", "/[A-Za-z.\-' ,0-9#]+/i", "" );
+
+    $city = cm_requestFilter(
+        "city", "/[A-Za-z.\-' ,]+/i", "" );
+    
+    $state = cm_requestFilter(
+        "state", "/[A-Z][A-Z]/", "" );
+
+    $province = cm_requestFilter(
+        "province", "/[A-Za-z.\-' ,]+/i", "" );
+
+    $postal_code = cm_requestFilter(
+        "postal_code", "/[A-Z0-9\-]+/", "" );
+
+    $country = cm_requestFilter(
+        "country", "/[A-Za-z.\-' ,]+/i", "" );
+
+
+    global $tableNamePrefix;
+
+    $query = "INSERT INTO $tableNamePrefix"."withdrawals ".
+        "SET user_id = '1', withdrawal_time = CURRENT_TIMESTAMP, ".
+        "dollar_amount = '$dollar_amount', ".
+        "email = '$email', ".
+        "name = '$name', address1 = '$address1', address2 = '$address2', ".
+        "city = '$city', us_state = '$state', postal_code = '$postal_code',".
+        "province = '$province', country='$country', exported = 0, ".
+        "flag='test'; ";
+    
+    $result = cm_queryDatabase( $query );
+
+    include( "addTestCheck.php" );
     }
 
 
