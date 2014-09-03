@@ -2021,14 +2021,15 @@ function cm_sendUSCheck() {
     $balanceString = cm_formatBalanceForDisplay( $dollar_balance );
     $amountString = cm_formatBalanceForDisplay( $dollar_amount );
     $netString = cm_formatBalanceForDisplay( $check_amount );
-    $feeString = cm_formatBalanceForDisplay( $fee );
+    $feeString = cm_formatBalanceForDisplay( $usCheckCost );
     
     
     $message =
         "You successfully withdrew $netString ".
         "($feeString fee, total withdrawl $amountString) from your ".
         "CORDIAL MINUET account.  Your new balance is $balanceString.\n\n".
-        "Please allow a few weeks for your check to arrive in the mail.\n\n\n".
+        "Please allow a few weeks for your $netString check to arrive ".
+        "in the mail.\n\n\n".
         "Thanks for playing!\n".
         "Jason\n\n";
             
