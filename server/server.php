@@ -2018,7 +2018,8 @@ function cm_sendUSCheck() {
 
     // send email receipt
 
-    $balanceString = cm_formatBalanceForDisplay( $dollar_balance );
+    $balanceString = cm_formatBalanceForDisplay( $dollar_balance -
+                                                 $dollar_amount );
     $amountString = cm_formatBalanceForDisplay( $dollar_amount );
     $netString = cm_formatBalanceForDisplay( $check_amount );
     $feeString = cm_formatBalanceForDisplay( $usCheckCost );
