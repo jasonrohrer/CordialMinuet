@@ -293,15 +293,6 @@ else if( $action == "block_user_id" ) {
 else if( $action == "update_user" ) {
     cm_updateUser();
     }
-else if( $action == "export_check_list" ) {
-    cm_exportCheckList();
-    }
-else if( $action == "finish_check_export" ) {
-    cm_finishCheckExport();
-    }
-else if( $action == "add_test_check" ) {
-    cm_addTestCheck();
-    }
 else if( $action == "logout" ) {
     cm_logout();
     }
@@ -535,10 +526,7 @@ function cm_setupDatabase() {
             "us_state CHAR(2) NOT NULL," .
             "province VARCHAR(255) NOT NULL," .
             "country VARCHAR(255) NOT NULL," .
-            "postal_code VARCHAR(16) NOT NULL, ".
-            "exported TINYINT UNSIGNED NOT NULL, ".
-            "INDEX( exported ),".
-            "flag VARCHAR(10) NOT NULL ) ENGINE = INNODB;";
+            "postal_code VARCHAR(16) NOT NULL ) ENGINE = INNODB;";
 
         $result = cm_queryDatabase( $query );
 
@@ -2004,7 +1992,7 @@ function cm_sendUSCheck() {
         "email = '$email', ".
         "name = '$name', address1 = '$address1', address2 = '$address2', ".
         "city = '$city', us_state = '$state', postal_code = '$zip',".
-        "province = '', country='USA', exported = 0, flag='live'; ";
+        "province = '', country='USA'; ";
     
     $result = cm_queryDatabase( $query );
 
@@ -4803,43 +4791,6 @@ function cm_showDetail() {
     <INPUT TYPE="Submit" VALUE="Update">
     </FORM>
 <?php
-
-    echo "<hr>";
-
-    global $cm_accountHmacVersion;
-    
-    $account_hmac = cm_hmac_sha1( $account_key,
-                                  "$sequence_number" .
-                                 "$cm_accountHmacVersion" );
-    
-    echo "[<a href=\"server.php?action=export_check_list" .
-        "&user_id=$user_id&sequence_number=$sequence_number".
-        "&account_hmac=$account_hmac\">".
-        "Test Check List Export</a>]<br><br><br>";
-    echo "[<a href=\"server.php?action=export_check_list" .
-        "&flag=live".
-        "&user_id=$user_id&sequence_number=$sequence_number".
-        "&account_hmac=$account_hmac\">".
-        "Test Check List Export (live)</a>]<br><br><br>";
-    echo "[<a href=\"server.php?action=export_check_list" .
-        "&flag=test".
-        "&user_id=$user_id&sequence_number=$sequence_number".
-        "&account_hmac=$account_hmac\">".
-        "Test Check List Export (test)</a>]<br><br><br>";
-    ?>
-            <FORM ACTION="server.php" METHOD="post">
-    <INPUT TYPE="hidden" NAME="action" VALUE="finish_check_export">
-    <INPUT TYPE="hidden" NAME="user_id" VALUE="<?php echo $user_id;?>">
-    <INPUT TYPE="hidden" NAME="sequence_number" VALUE="<?php echo $sequence_number;?>">
-    <INPUT TYPE="hidden" NAME="account_hmac" VALUE="<?php echo $account_hmac;?>">
-                 
-    Num in export: <INPUT TYPE="text" MAXLENGTH=10 SIZE=10 NAME="num_in_export"
-            VALUE=""><br>            
-    Flag: <INPUT TYPE="text" MAXLENGTH=10 SIZE=10 NAME="flag"
-            VALUE=""><br>            
-    <INPUT TYPE="Submit" VALUE="Finish Export">
-    </FORM>
-<?php
     
     }
 
@@ -4936,208 +4887,6 @@ function cm_updateUser_internal( $user_id, $blocked, $email, $admin_level ) {
 
 
 
-function cm_exportCheckList() {
-    if( ! cm_verifyTransaction() ) {
-        return;
-        }
-
-    $user_id = cm_getUserID();
-
-
-    $admin_level = cm_getAdminLevel( $user_id );
-
-    if( $admin_level != 1 && $admin_level != 2 ) {
-        cm_log( "cm_exportCheckList denied, ".
-                "user has admin level $admin_level" );
-        cm_transactionDeny();
-        return;
-        }
-
-
-    cm_queryDatabase( "SET AUTOCOMMIT = 0;" );
-
-
-    $flag = cm_requestFilter( "flag", "/[A-Za-z]+/i", "" );
-
-    $flagClause = "";
-
-    if( $flag != "" ) {
-        $flagClause = " AND flag = '$flag' ";
-        }
-    
-    global $tableNamePrefix;
-    
-    $query = "SELECT withdrawal_id, flag, dollar_amount, ".
-        "email, name, address1, address2, city, us_state, ".
-        "province, country, " .
-        "postal_code, country ".
-        "FROM $tableNamePrefix"."withdrawals ".
-        "WHERE exported < 2 $flagClause".
-        "FOR UPDATE;";
-
-    $result = cm_queryDatabase( $query );
-
-    $num_checks = mysql_numrows( $result );
-
-
-    echo "$num_checks\n";
-
-    for( $i=0; $i<$num_checks; $i++ ) {
-        $withdrawal_id = mysql_result( $result, $i, "withdrawal_id" );
-        $flag = mysql_result( $result, $i, "flag" );
-        $dollar_amount = mysql_result( $result, $i, "dollar_amount" );
-        $email = mysql_result( $result, $i, "email" );
-        $name = mysql_result( $result, $i, "name" );
-        $address1 = mysql_result( $result, $i, "address1" );
-        $address2 = mysql_result( $result, $i, "address2" );
-        $city = mysql_result( $result, $i, "city" );
-        $us_state = mysql_result( $result, $i, "us_state" );
-        $province = mysql_result( $result, $i, "province" );
-        $postal_code = mysql_result( $result, $i, "postal_code" );
-        $country = mysql_result( $result, $i, "country" );
-
-        echo "\"$withdrawal_id\",".
-            "\"$flag\",".
-            "\"$dollar_amount\",".
-            "\"$email\",".
-            "\"$name\",".
-            "\"$address1\",".
-            "\"$address2\",".
-            "\"$city\",".
-            "\"$us_state\",".
-            "\"$province\",".
-            "\"$postal_code\",".
-            "\"$country\"\n";
-        }
-
-    $query = "UPDATE $tableNamePrefix"."withdrawals ".
-        "SET exported = 1 ".
-        "WHERE exported < 2;";
-
-
-    cm_queryDatabase( $query );
-    
-    cm_queryDatabase( "COMMIT;" );
-    cm_queryDatabase( "SET AUTOCOMMIT = 1;" );
-    
-    echo "OK";
-    }
-
-
-
-function cm_finishCheckExport() {
-    if( ! cm_verifyTransaction() ) {
-        return;
-        }
-
-    $user_id = cm_getUserID();
-
-
-    $admin_level = cm_getAdminLevel( $user_id );
-
-    if( $admin_level != 1 && $admin_level != 2 ) {
-        cm_log( "cm_exportCheckList denied, ".
-                "user has admin level $admin_level" );
-        cm_transactionDeny();
-        return;
-        }
-
-    $num_in_export = cm_requestFilter( "num_in_export", "/\d+/", 0 );
-
-    cm_queryDatabase( "SET AUTOCOMMIT = 0;" );
-
-
-    
-    $flag = cm_requestFilter( "flag", "/[A-Za-z]+/i", "" );
-
-    $flagClause = "";
-
-    if( $flag != "" ) {
-        $flagClause = " AND flag = '$flag' ";
-        }
-
-    
-    global $tableNamePrefix;
-    
-    $query = "SELECT COUNT(*)".
-        "FROM $tableNamePrefix"."withdrawals ".
-        "WHERE exported = 1 $flagClause ".
-        "FOR UPDATE;";
-
-    $result = cm_queryDatabase( $query );
-
-    $count = mysql_result( $result, 0, 0 );
-    
-    if( $count != $num_in_export ) {
-        cm_log( "cm_finishCheckExport denied, ".
-                "num_in_export mismatch ".
-                "(passed in $num_in_export, actual $count, $query)" );
-        cm_transactionDeny();
-        return;
-        }
-
-    $query = "UPDATE $tableNamePrefix"."withdrawals ".
-        "SET exported = 2 ".
-        "WHERE exported = 1 $flagClause;";
-    
-    cm_queryDatabase( $query );
-    
-    cm_queryDatabase( "COMMIT;" );
-    cm_queryDatabase( "SET AUTOCOMMIT = 1;" );
-    
-    echo "OK";
-    }
-
-
-
-function cm_addTestCheck() {
-
-    $email = cm_requestFilter( "email", "/[A-Z0-9._%+-]+@[A-Z0-9.-]+/i" );
-    
-    $dollar_amount = cm_requestFilter(
-        "dollar_amount", "/[0-9]+[.][0-9][0-9]/i", "0.00" );
-
-    $name = cm_requestFilter(
-        "name", "/[A-Za-z.\-' ]+/i", "" );
-
-    
-    $address1 = cm_requestFilter(
-        "address1", "/[A-Za-z.\-' ,0-9#]+/i", "" );
-
-    $address2 = cm_requestFilter(
-        "address2", "/[A-Za-z.\-' ,0-9#]+/i", "" );
-
-    $city = cm_requestFilter(
-        "city", "/[A-Za-z.\-' ,]+/i", "" );
-    
-    $state = cm_requestFilter(
-        "state", "/[A-Z][A-Z]/", "" );
-
-    $province = cm_requestFilter(
-        "province", "/[A-Za-z.\-' ,]+/i", "" );
-
-    $postal_code = cm_requestFilter(
-        "postal_code", "/[A-Z0-9\-]+/", "" );
-
-    $country = cm_requestFilter(
-        "country", "/[A-Za-z.\-' ,]+/i", "" );
-
-
-    global $tableNamePrefix;
-
-    $query = "INSERT INTO $tableNamePrefix"."withdrawals ".
-        "SET user_id = '1', withdrawal_time = CURRENT_TIMESTAMP, ".
-        "dollar_amount = '$dollar_amount', ".
-        "email = '$email', ".
-        "name = '$name', address1 = '$address1', address2 = '$address2', ".
-        "city = '$city', us_state = '$state', postal_code = '$postal_code',".
-        "province = '$province', country='$country', exported = 0, ".
-        "flag='test'; ";
-    
-    $result = cm_queryDatabase( $query );
-
-    include( "addTestCheck.php" );
-    }
 
 
 
