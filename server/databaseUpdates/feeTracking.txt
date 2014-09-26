@@ -1,0 +1,3 @@
+ALTER TABLE minuetServer_withdrawals ADD fee DECIMAL(13, 2) NOT NULL AFTER dollar_amount;
+
+ALTER TABLE minuetServer_deposits ADD fee DECIMAL(13, 2) NOT NULL AFTER dollar_amount;

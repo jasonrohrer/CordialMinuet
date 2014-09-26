@@ -500,7 +500,8 @@ function cm_setupDatabase() {
             "deposit_time DATETIME NOT NULL," .
             "INDEX( deposit_time )," .
             // the amount charged to them, including fees
-            "dollar_amount DECIMAL(13, 2) NOT NULL ) ENGINE = INNODB;";
+            "dollar_amount DECIMAL(13, 2) NOT NULL, ".
+            "fee DECIMAL(13, 2) NOT NULL ) ENGINE = INNODB;";
 
         $result = cm_queryDatabase( $query );
 
@@ -525,6 +526,7 @@ function cm_setupDatabase() {
             "INDEX( withdrawal_time )," .
             // the amount sent to them, excluding fee
             "dollar_amount DECIMAL(13, 2) NOT NULL, ".
+            "fee DECIMAL(13, 2) NOT NULL, ".
             "email VARCHAR(255) NOT NULL," .
             "name VARCHAR(255) NOT NULL," .
             "address1 VARCHAR(255) NOT NULL," .
@@ -1556,7 +1558,8 @@ function cm_makeDeposit() {
 
     $query = "INSERT INTO $tableNamePrefix"."deposits ".
         "SET user_id = '$user_id', deposit_time = CURRENT_TIMESTAMP, ".
-        "dollar_amount = '$dollar_amount'; ";
+        "dollar_amount = '$dollar_amount', ".
+        "fee = '$fee'; ";
     
     $result = cm_queryDatabase( $query );
     
@@ -1997,6 +2000,7 @@ function cm_sendUSCheck() {
     $query = "INSERT INTO $tableNamePrefix"."withdrawals ".
         "SET user_id = '$user_id', withdrawal_time = CURRENT_TIMESTAMP, ".
         "dollar_amount = '$check_amount', ".
+        "fee = '$usCheckCost', ".
         "email = '$email', ".
         "name = '$name', address1 = '$address1', address2 = '$address2', ".
         "city = '$city', us_state = '$state', postal_code = '$zip',".
