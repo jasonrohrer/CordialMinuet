@@ -488,6 +488,7 @@ function cm_setupDatabase() {
             "deposit_id BIGINT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT," .
             "user_id INT UNSIGNED NOT NULL," .
             "INDEX( user_id )," .
+            "processing_id VARCHAR(255) NOT NULL,".
             "deposit_time DATETIME NOT NULL," .
             "INDEX( deposit_time )," .
             // the amount charged to them, including fees
@@ -1353,6 +1354,7 @@ function cm_makeDeposit() {
     $paid = false;
 
     $fee = 0;
+    $paymentID = "";
     
     foreach( $output as $line ) {
 
@@ -1369,6 +1371,13 @@ function cm_makeDeposit() {
                 
                 // in dollars
                 $fee = $fee / 100;
+                }
+            }
+        else if( strstr( $line, "\"id\"" ) != FALSE &&
+                 strstr( $line, "\"ch_" ) != FALSE ) {
+            if( preg_match( "/\"(ch_\w+)\"/", $line, $matches ) ) {
+                
+                $paymentID = $matches[1];
                 }
             }
         }
@@ -1547,7 +1556,7 @@ function cm_makeDeposit() {
     $query = "INSERT INTO $tableNamePrefix"."deposits ".
         "SET user_id = '$user_id', deposit_time = CURRENT_TIMESTAMP, ".
         "dollar_amount = '$dollar_amount', ".
-        "fee = '$fee'; ";
+        "fee = '$fee', processing_id = '$paymentID'; ";
     
     $result = cm_queryDatabase( $query );
     

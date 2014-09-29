@@ -1,0 +1,1 @@
+ALTER TABLE minuetServer_deposits ADD processing_id VARCHAR(255) NOT NULL AFTER user_id;
