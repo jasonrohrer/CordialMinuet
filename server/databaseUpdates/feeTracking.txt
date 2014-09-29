@@ -4,3 +4,15 @@ ALTER TABLE minuetServer_deposits ADD fee DECIMAL(13, 2) NOT NULL AFTER dollar_a
 
 
 UPDATE minuetServer_deposits SET fee = round( .30 + 0.029 * dollar_amount, 2) WHERE fee < .3;
+
+
+
+// working on query to track old deposits that aren't in deposit table:
+
+select user_id as u, dollar_balance, total_deposits - (select sum(dollar_amount - fee) from minuetServer_deposits where minuetServer_deposits.user_id = u) as leak from minuetServer_users;
+
+
+// Find these and insert them as dummy deposits.
+
+
+// do the same for old withdrawals.
