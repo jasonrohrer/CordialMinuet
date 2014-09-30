@@ -16,3 +16,7 @@ select user_id as u, dollar_balance, total_deposits - (select coalesce( sum(doll
 
 
 // do the same for old withdrawals.
+
+
+
+select user_id as u, dollar_balance, total_withdrawals - (select coalesce( sum(dollar_amount + fee), 0) from minuetServer_withdrawals where minuetServer_withdrawals.user_id = u) as leak from minuetServer_users;

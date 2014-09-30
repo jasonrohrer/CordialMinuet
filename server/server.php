@@ -170,7 +170,7 @@ if( isset( $_SERVER[ "REMOTE_ADDR" ] ) ) {
 
 
 
-cm_patchOldDeposits();
+cm_patchOldWithdrawals();
 
 
 global $shutdownMode;
@@ -674,6 +674,48 @@ function cm_patchOldDeposits() {
                 "SET user_id = '$user_id', deposit_time = CURRENT_TIMESTAMP, ".
                 "dollar_amount = '$leak', ".
                 "fee = '0', processing_id = 'manual_batch'; ";
+            cm_queryDatabase( $query );
+            }
+        }
+
+    cm_queryDatabase( "COMMIT;" );
+    cm_queryDatabase( "SET AUTOCOMMIT = 1;" );
+    }
+
+
+
+
+// updates deposit log by adding dummy entries for deposits that pre-dated
+// the deposit log
+function cm_patchOldWithdrawals() {
+    global $tableNamePrefix;
+
+    cm_queryDatabase( "SET AUTOCOMMIT = 0;" );
+    
+    $query = "SELECT user_id, email, ".
+        "total_withdrawals - (select coalesce( sum(dollar_amount + fee), 0) ".
+        "                  from $tableNamePrefix"."withdrawals ".
+        "                  where $tableNamePrefix"."withdrawals.user_id = ".
+        "                        $tableNamePrefix"."users.user_id ) ".
+        "AS leak ".
+        "FROM $tableNamePrefix"."users FOR UPDATE;";
+
+    $result = cm_queryDatabase( $query );
+
+    $numRows = mysql_numrows( $result );
+
+    for( $i=0; $i<$numRows; $i++ ) {
+        $user_id = mysql_result( $result, $i, "user_id" );
+        $email = mysql_result( $result, $i, "email" );
+        $leak = mysql_result( $result, $i, "leak" );
+
+        if( $leak > 0 ) {
+
+            $query = "INSERT INTO $tableNamePrefix"."withdrawals ".
+                "SET user_id = '$user_id', email = '$email', ".
+                "withdrawal_time = CURRENT_TIMESTAMP, ".
+                "dollar_amount = '$leak', ".
+                "fee = '0', name = 'manual_batch'; ";
             cm_queryDatabase( $query );
             }
         }
