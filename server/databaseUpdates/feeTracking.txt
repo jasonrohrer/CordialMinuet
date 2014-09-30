@@ -20,3 +20,14 @@ select user_id as u, dollar_balance, total_deposits - (select coalesce( sum(doll
 
 
 select user_id as u, dollar_balance, total_withdrawals - (select coalesce( sum(dollar_amount + fee), 0) from minuetServer_withdrawals where minuetServer_withdrawals.user_id = u) as leak from minuetServer_users;
+
+
+
+
+// ledger verification calculation
+// can we reconstruct their balance?
+
+select user_id as u, dollar_balance, (select coalesce( sum( dollar_amount - fee), 0 ) from minuetServer_deposits where user_id = u) - (select coalesce( sum( dollar_amount + fee), 0 ) from minuetServer_withdrawals where user_id = u) + (select coalesce( sum( dollar_delta), 0 ) from minuetServer_game_ledger where user_id = u) as net from minuetServer_users;
+
+
+YES!  This matches up for every player, good stuff.

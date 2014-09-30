@@ -92,7 +92,7 @@ $lobAPIKey = "test_10f8920b3c49e0aa69798860c5eecfa809b";
 $lobBankAccount = "bank_9cea4f3e314e883";
 
 // cost in dollars
-$usCheckCost = 1.50;
+$usCheckCost = 3.00;
 
 // email address and withdrawal details will be appended to this description
 $lobCheckNote = "Withdrawal from Jason Rohrer's Cordial Minuet game for ";
