@@ -170,7 +170,7 @@ if( isset( $_SERVER[ "REMOTE_ADDR" ] ) ) {
 
 
 
-cm_patchOldWithdrawals();
+//cm_patchOldWithdrawals();
 
 
 global $shutdownMode;
@@ -338,6 +338,7 @@ else if( preg_match( "/server\.php/", $_SERVER[ "SCRIPT_NAME" ] ) ) {
         cm_doesTableExist( $tableNamePrefix."users" ) &&
         cm_doesTableExist( $tableNamePrefix."deposits" ) &&
         cm_doesTableExist( $tableNamePrefix."withdrawals" ) &&
+        cm_doesTableExist( $tableNamePrefix."game_ledger" ) &&
         cm_doesTableExist( $tableNamePrefix."games" ) &&
         cm_doesTableExist( $tableNamePrefix."server_stats" ) &&
         cm_doesTableExist( $tableNamePrefix."user_stats" );
@@ -581,6 +582,76 @@ function cm_setupDatabase() {
         }
 
 
+
+    $tableName = $tableNamePrefix . "game_ledger";
+    if( ! cm_doesTableExist( $tableName ) ) {
+        $query =
+            "CREATE TABLE $tableName(" .
+            "entry_id BIGINT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT," .
+            // 0 for money moving to house
+            "user_id INT UNSIGNED NOT NULL," .
+            "INDEX( user_id )," .
+            // from game table, though dead games discared
+            // this ledger entry is only record of game outcome
+            "game_id BIGINT UNSIGNED NOT NULL," .
+            "entry_time DATETIME NOT NULL," .
+            // 9 whole dollar digits (up to 999,999,999)
+            // 4 fractional digits (0.0001 resolution)
+            // can be positive or negative
+            // (negative is money they spent (buy-in),
+            // positive is money they gained (pay-out)
+            "dollar_delta DECIMAL(13, 4) NOT NULL ) ENGINE = INNODB;";
+
+        $result = cm_queryDatabase( $query );
+
+        echo "<B>$tableName</B> table created<BR>";
+
+        
+        // auto-populate with dummy entries for old transactions
+        cm_queryDatabase( "SET AUTOCOMMIT = 0;" );
+        
+        $query = "SELECT user_id, total_lost, total_won FROM ".
+            "$tableNamePrefix"."users FOR UPDATE;";
+        $result = cm_queryDatabase( $query );
+        $numRows = mysql_numrows( $result );
+        for( $i=0; $i<$numRows; $i++ ) {
+            $user_id = mysql_result( $result, $i, "user_id" );
+            $total_won = mysql_result( $result, $i, "total_won" );
+            $total_lost = mysql_result( $result, $i, "total_lost" );
+
+            if( $total_won > 0 ) {
+                cm_addLedgerEntry( $user_id, 0, $total_won );
+                }
+            if( $total_lost > 0 ) {
+                cm_addLedgerEntry( $user_id, 0, -$total_lost );
+                }
+            }
+
+        // auto-populate with buy-ins for live games
+        $query = "SELECT game_id, dollar_amount, player_1_id, player_2_id ".
+            "FROM ".
+            "$tableNamePrefix"."games ".
+            "WHERE player_1_id != 0 AND player_2_id != 0 FOR UPDATE;";
+        $result = cm_queryDatabase( $query );
+        $numRows = mysql_numrows( $result );
+        for( $i=0; $i<$numRows; $i++ ) {
+            $game_id = mysql_result( $result, $i, "game_id" );
+            $dollar_amount = mysql_result( $result, $i, "dollar_amount" );
+            $player_1_id = mysql_result( $result, $i, "player_1_id" );
+            $player_2_id = mysql_result( $result, $i, "player_2_id" );
+
+            cm_addLedgerEntry( $player_1_id, $game_id, - $dollar_amount );
+            cm_addLedgerEntry( $player_2_id, $game_id, - $dollar_amount );
+            }
+
+        cm_queryDatabase( "COMMIT;" );
+        cm_queryDatabase( "SET AUTOCOMMIT = 1;" );
+        }
+    else {
+        echo "<B>$tableName</B> table already exists<BR>";
+        }
+
+    
 
     
     $tableName = $tableNamePrefix . "server_stats";
@@ -2296,6 +2367,20 @@ function cm_accountTransfer() {
 
 
 
+function cm_addLedgerEntry( $user_id, $game_id, $dollar_delta ) {
+
+    global $tableNamePrefix;
+
+    $query = "INSERT INTO $tableNamePrefix"."game_ledger SET ".
+        "user_id = '$user_id', game_id = '$game_id', ".
+        "entry_time = CURRENT_TIMESTAMP, dollar_delta = '$dollar_delta'; ";
+
+    cm_queryDatabase( $query );
+    }
+
+
+
+
 // ends any games that this user is part of
 // (to clear up conflicts before starting new games
 
@@ -2476,7 +2561,9 @@ function cm_endOldGames( $user_id ) {
                 "WHERE user_id = '$old_player_1_id';";
             cm_queryDatabase( $query );
 
-            
+            cm_addLedgerEntry( $old_player_1_id, $game_id, $player_1_payout );
+
+
             $won = $player_2_payout - $dollar_amount;
             $lost = 0;
             
@@ -2492,6 +2579,7 @@ function cm_endOldGames( $user_id ) {
                 "WHERE user_id = '$old_player_2_id';";
             cm_queryDatabase( $query );
 
+            cm_addLedgerEntry( $old_player_2_id, $game_id, $player_2_payout );
 
             
             $query = "UPDATE $tableNamePrefix"."server_globals ".
@@ -2499,6 +2587,9 @@ function cm_endOldGames( $user_id ) {
                 "  house_dollar_balance + $house_payout;";
             cm_queryDatabase( $query );
 
+            cm_addLedgerEntry( 0, $game_id, $house_payout );
+
+            
             // if other player is waiting for our move, free them to find
             // out that we left
             semSignal( $semaphore_key );
@@ -2680,6 +2771,9 @@ function cm_joinGame() {
             "WHERE user_id = '$player_1_id' OR user_id = '$user_id';";
         cm_queryDatabase( $query );
 
+        cm_addLedgerEntry( $player_1_id, $game_id, - $dollar_amount );
+        cm_addLedgerEntry( $user_id, $game_id, - $dollar_amount );
+        
         $query = "UPDATE $tableNamePrefix"."users ".
             "SET games_joined = games_joined + 1 ".
             "WHERE user_id = '$user_id';";
