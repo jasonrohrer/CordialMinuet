@@ -1175,6 +1175,29 @@ function cm_getBalance() {
 
 
 
+function cm_recomputeBalanceFromHistory( $user_id ) {
+    global $tableNamePrefix;
+
+    $query = "SELECT (SELECT COALESCE( SUM( dollar_amount - fee), 0 ) ".
+        "  FROM $tableNamePrefix"."deposits WHERE user_id = '$user_id') - ".
+        "(SELECT COALESCE( SUM( dollar_amount + fee), 0 ) ".
+        "  FROM $tableNamePrefix"."withdrawals WHERE user_id = '$user_id') + ".
+        "(SELECT COALESCE( SUM( dollar_delta), 0 ) ".
+        "  FROM $tableNamePrefix"."game_ledger WHERE user_id = '$user_id') ".
+        "AS recomputed_balance;";
+    $result = cm_queryDatabase( $query );
+
+    if( mysql_numrows( $result ) == 0 ) {
+        return 0;
+        }
+    else {
+        return mysql_result( $result, 0, 0 );
+        }
+    }
+
+
+
+
 // handles cases for user-validated transactions where request_tag matches
 // the user's last_request_tag by sending out last_request_response
 //
@@ -1901,6 +1924,26 @@ function cm_sendUSCheck() {
         cm_transactionDeny();
         return;
         }
+
+
+    $recomputedBalance = cm_recomputeBalanceFromHistory( $user_id );
+
+    if( $dollar_balance != $recomputedBalance ) {
+
+        $message = "User $user_id table dollar balance = $dollar_balance, ".
+            "but recomputed balance = $recomputedBalance, ".
+            "blocking send_us_check.";
+
+        cm_log( $message );
+        cm_informAdmin( $message );
+        
+        cm_transactionDeny();
+
+        return;
+        }
+    
+
+    
     if( $dollar_amount > $dollar_balance ) {
         cm_log( "cm_sendUSCheck withdrawal too big: \$$dollar_amount ".
                 "(account only has \$$dollar_balance)" );
@@ -2713,6 +2756,23 @@ function cm_joinGame() {
         return;
         }
 
+    
+    $recomputedBalance = cm_recomputeBalanceFromHistory( $user_id );
+    
+    if( $dollar_balance != $recomputedBalance ) {
+
+        $message = "User $user_id table dollar balance = $dollar_balance, ".
+            "but recomputed balance = $recomputedBalance, ".
+            "blocking join_game.";
+
+        cm_log( $message );
+        cm_informAdmin( $message );
+        
+        cm_transactionDeny();
+
+        return;
+        }
+    
 
     if( $dollar_amount > $dollar_balance ) {
         cm_log( "cm_joinGame, balance too low for requested game" );
