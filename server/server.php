@@ -4985,6 +4985,48 @@ function cm_showStats() {
 
 
 
+function cm_formatDataTable( $tableName, $whereClause,
+                             $fieldNames, $columnLabels, $dollarFieldNames ) {
+    global $tableNamePrefix;
+    
+    $fieldListString = implode( $fieldNames, "," );
+
+    $query = "SELECT $fieldListString ".
+        "FROM $tableNamePrefix"."$tableName $whereClause;";
+
+    $result = cm_queryDatabase( $query );
+
+    $numRows = mysql_numrows( $result );
+
+    echo "<table border=1 cellpadding=5>";
+
+    echo "<tr>";
+
+    foreach( $columnLabels as $label ) {
+        echo "<td><b>$label:</b></td>";
+        }
+    echo "</tr>";
+    
+        
+    for( $i=0; $i<$numRows; $i++ ) {
+        echo "<tr>";
+
+        foreach( $fieldNames as $field ) {
+            $fieldValue = mysql_result( $result, $i, "$field" );
+
+            if( in_array( $field, $dollarFieldNames ) ) {
+                $fieldValue = cm_formatBalanceForDisplay( $fieldValue );
+                }
+            
+            echo "<td>$fieldValue</td>";
+            }
+        echo "</tr>";
+        }
+    echo "</table>";
+    }
+
+
+
 
 
 function cm_showDetail() {
@@ -4998,7 +5040,8 @@ function cm_showDetail() {
     global $tableNamePrefix;
 
     $query = "SELECT account_key, email, ".
-        "admin_level, sequence_number, blocked ".
+        "admin_level, sequence_number, dollar_balance, total_buy_in, ".
+        "total_won, total_lost, total_deposits, total_withdrawals, blocked ".
         "FROM $tableNamePrefix"."users ".
         "WHERE user_id = '$user_id';";
 
@@ -5012,6 +5055,14 @@ function cm_showDetail() {
     $row = mysql_fetch_array( $result, MYSQL_ASSOC );
 
     $account_key = $row[ "account_key" ];
+    $dollar_balance = cm_formatBalanceForDisplay( $row[ "dollar_balance" ] );
+    $total_deposits = cm_formatBalanceForDisplay( $row[ "total_deposits" ] );
+    $total_withdrawals =
+        cm_formatBalanceForDisplay( $row[ "total_withdrawals" ] );
+    $total_buy_in = cm_formatBalanceForDisplay( $row[ "total_buy_in" ] );
+    $total_won = cm_formatBalanceForDisplay( $row[ "total_won" ] );
+    $total_lost = cm_formatBalanceForDisplay( $row[ "total_lost" ] );
+
     $admin_level = $row[ "admin_level" ];
     $blocked = $row[ "blocked" ];
     $email = $row[ "email" ];
@@ -5019,7 +5070,14 @@ function cm_showDetail() {
 
 
     echo "User ID: $user_id<br>\n";
-    echo "Account Key: $account_key<br>\n";
+    echo "Account Key: $account_key<br><br>\n";
+
+    echo "Balance: $dollar_balance<br><br>\n";
+    echo "Total Deposits: $total_deposits<br>\n";
+    echo "Total Withdrawals: $total_withdrawals<br>\n";
+    echo "Total Buy In: $total_buy_in<br>\n";
+    echo "Total Won: $total_won<br>\n";
+    echo "Total Lost: $total_lost<br><br>\n";
 
     $blockedChecked = "";
     if( $blocked ) {
@@ -5038,7 +5096,78 @@ function cm_showDetail() {
     <INPUT TYPE="Submit" VALUE="Update">
     </FORM>
 <?php
+
+    echo "<br><HR><br>Deposits:<br>";
+    cm_formatDataTable( "deposits", "WHERE user_id = '$user_id'",
+                        array( "deposit_time", "processing_id",
+                               "dollar_amount", "fee" ),
+                        array( "Date", "ID", "Total Amount", "Fee" ),
+                        array( "dollar_amount", "fee" ) );
+
     
+    echo "<br><HR><br>Withdrawals:<br>";
+    cm_formatDataTable( "withdrawals", "WHERE user_id = '$user_id'",
+                        array( "withdrawal_time",
+                               "dollar_amount", "fee",
+                               "name",
+                               "address1", "address2", "city", 
+                               "us_state", "province", "country",
+                               "postal_code" ),
+                        array( "Date", "Check Amount", "Fee", "Name",
+                               "Address", "Address", "City", "State",
+                               "Province", "Country", "ZIP" ),
+                        array( "dollar_amount", "fee" ) );
+    
+
+    echo "<br><HR><br>Game Ledger:<br>";
+    cm_formatDataTable( "game_ledger", "WHERE user_id = '$user_id'",
+                        array( "entry_time", "game_id",
+                               "dollar_delta" ),
+                        array( "Date", "Game ID", "Delta" ),
+                        array( "dollar_delta" ) );
+
+
+    echo "<br><HR><br>Game Partners:<br>";
+    $query = "SELECT entry_time, game_id ".
+        "FROM $tableNamePrefix"."game_ledger WHERE user_id = $user_id AND ".
+        "dollar_delta < 0;";
+
+    
+    $result = cm_queryDatabase( $query );
+
+    $numRows = mysql_numrows( $result );
+
+    echo "<table border=1 cellpadding=5>";
+
+    
+    echo "<tr><td><b>Date:</b></td>".
+        "<td><b>Game ID:</b></td>".
+        "<td><b>Partner:</b></td></tr>";
+    
+        
+    for( $i=0; $i<$numRows; $i++ ) {
+        $entry_time = mysql_result( $result, $i, "entry_time" );
+        $game_id = mysql_result( $result, $i, "game_id" );
+
+        // find partner matching buy-in
+        
+        $query = "SELECT user_id FROM $tableNamePrefix"."game_ledger ".
+            "WHERE game_id = $game_id AND ".
+            "user_id != $user_id AND $user_id != 0 AND dollar_delta < 0;";
+        
+        $resultPartner = cm_queryDatabase( $query );
+
+        if( mysql_numrows( $resultPartner ) > 0 ) {
+            $partner_id = mysql_result( $resultPartner, 0, 0 );
+
+            echo "<tr><td>$entry_time</td>".
+                "<td>$game_id</td>".
+                "<td>$partner_id [<a href=\"server.php?action=show_detail" .
+                "&user_id=$partner_id\">detail</a>]</td></tr>";
+            }
+        }
+    echo "</table>";
+
     }
 
 
