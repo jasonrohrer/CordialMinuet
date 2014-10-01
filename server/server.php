@@ -5130,7 +5130,7 @@ function cm_showDetail() {
     echo "<br><HR><br>Game Partners:<br>";
     $query = "SELECT entry_time, game_id ".
         "FROM $tableNamePrefix"."game_ledger WHERE user_id = $user_id AND ".
-        "dollar_delta < 0;";
+        "dollar_delta < 0 AND game_id != 0;";
 
     
     $result = cm_queryDatabase( $query );
