@@ -4818,7 +4818,9 @@ function cm_showDataUserList() {
              
     $query = "SELECT user_id, account_key, email, ".
         "dollar_balance, last_action_time, ".
-        "blocked ".
+        "blocked, ".
+        "(dollar_balance + total_withdrawals) /  total_deposits ".
+        " AS profit_ratio ".
         "FROM $usersTable ".
         "$keywordClause ".
         "ORDER BY $order_by DESC ".
@@ -4874,6 +4876,7 @@ function cm_showDataUserList() {
     echo "<td>".orderLink( "account_key", "Account Key" )."</td>\n";
     echo "<td>".orderLink( "email", "Email" )."</td>\n";
     echo "<td>".orderLink( "dollar_balance", "Balance" )."</td>\n";
+    echo "<td>".orderLink( "profit_ratio", "Profit Ratio" )."</td>\n";
     echo "<td>".orderLink( "last_action_time", "Action" )."</td>\n";
 
     echo "</tr>\n";
@@ -4884,6 +4887,7 @@ function cm_showDataUserList() {
         $account_key = mysql_result( $result, $i, "account_key" );
         $email = mysql_result( $result, $i, "email" );
         $dollar_balance = mysql_result( $result, $i, "dollar_balance" );
+        $profit_ratio = mysql_result( $result, $i, "profit_ratio" );
         $last_action_time = mysql_result( $result, $i, "last_action_time" );
         $blocked = mysql_result( $result, $i, "blocked" );
         
@@ -4917,6 +4921,7 @@ function cm_showDataUserList() {
         $balanceString = cm_formatBalanceForDisplay( $dollar_balance );
         
         echo "<td>$balanceString</td>\n";
+        echo "<td>$profit_ratio</td>\n";
         echo "<td>$last_action_time</td>\n";
         echo "</tr>\n";
         }
