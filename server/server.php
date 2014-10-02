@@ -466,6 +466,7 @@ function cm_setupDatabase() {
             "total_deposits DECIMAL(13, 2) NOT NULL,".
             "num_withdrawals SMALLINT UNSIGNED NOT NULL,".
             "total_withdrawals DECIMAL(13, 2) NOT NULL,".
+            "tax_info_on_file TINYINT UNSIGNED NOT NULL,".
             "games_created INT UNSIGNED NOT NULL,".
             "games_joined INT UNSIGNED NOT NULL,".
             "games_started INT UNSIGNED NOT NULL,".
@@ -1231,6 +1232,26 @@ function cm_recomputeBalanceFromHistory( $user_id ) {
 
 
 
+// does not include fees (total actually sent to player this year)
+function cm_computeAmountWithdrawnThisYear( $user_id ) {
+    global $tableNamePrefix;
+
+    $query = "SELECT COALESCE( SUM( dollar_amount ), 0 ) ".
+        "as withdrawnThisYear ".
+        "FROM $tableNamePrefix"."withdrawals WHERE user_id = '$user_id' ".
+        "AND YEAR( withdrawal_time ) = YEAR( CURRENT_TIMESTAMP );";
+    $result = cm_queryDatabase( $query );
+
+    if( mysql_numrows( $result ) == 0 ) {
+        return 0;
+        }
+    else {
+        return mysql_result( $result, 0, 0 );
+        }
+    }
+
+
+
 
 // handles cases for user-validated transactions where request_tag matches
 // the user's last_request_tag by sending out last_request_response
@@ -1637,7 +1658,7 @@ function cm_makeDeposit() {
         cm_queryDatabase( "SET AUTOCOMMIT=1" );
 
         cm_log( "MORE_INFO_NEEDED for $email (\$$dollar_amount deposit), ".
-                "$$total_deposits previous deposits, ".
+                "\$$total_deposits previous deposits, ".
                 "limit = \$$depositWithNoInfoLimit" );
 
 
@@ -2083,7 +2104,7 @@ function cm_sendUSCheck() {
     
     cm_queryDatabase( "SET AUTOCOMMIT=0" );
     
-    $query = "SELECT email, account_key, dollar_balance, ".
+    $query = "SELECT email, account_key, dollar_balance, tax_info_on_file, ".
         "request_sequence_number ".
         "FROM $tableNamePrefix"."users ".
         "WHERE user_id = '$user_id' FOR UPDATE;";
@@ -2106,6 +2127,7 @@ function cm_sendUSCheck() {
     $email = $row[ "email" ];
     $account_key = $row[ "account_key" ];
     $dollar_balance = $row[ "dollar_balance" ];
+    $tax_info_on_file = $row[ "tax_info_on_file" ];
     $old_request_sequence_number = $row[ "request_sequence_number" ];
 
 
@@ -2163,6 +2185,66 @@ function cm_sendUSCheck() {
         return;
         }
 
+
+
+    global $withdrawalWithNoInfoYearlyLimit;
+
+    
+    
+    $withdrawnThisYear = cm_computeAmountWithdrawnThisYear( $user_id );
+    
+    if( $withdrawnThisYear + $dollar_amount
+        >= $withdrawalWithNoInfoYearlyLimit &&
+        ! $tax_info_on_file ) {
+
+        echo "MORE_INFO_NEEDED";
+        cm_queryDatabase( "COMMIT;" );
+        cm_queryDatabase( "SET AUTOCOMMIT=1" );
+
+        cm_log( "MORE_INFO_NEEDED for $email (\$$dollar_amount withdrawal), ".
+                "\$$withdrawnThisYear previously withdrawn this year, ".
+                "limit = \$$withdrawalWithNoInfoYearlyLimit" );
+
+
+        $message =
+            "In order to withdraw \$$withdrawalWithNoInfoYearlyLimit ".
+            "or more in a given calendar year from ".
+            "your CORDIAL MINUET account, I need to collect your tax ".
+            "information so that I can file the necessary tax reporting ".
+            "documents at year end, as required by law in the ".
+            "United States.\n\n".
+            "The information I need from you depends on whether or not ".
+            "you are a US person for tax purposes.\n\n".
+
+            "Please send me one of the following:\n\n".
+
+            "--If you are a US person, please fill out and send me Form W-9, ".
+            "which can be printed from http://www.irs.gov/pub/irs-pdf/fw9.pdf".
+            "\n\n".
+
+            "--If you are a non-US person, please fill out and send me ".
+            "Form W-8BEN, which can be printed from ".
+            "http://www.irs.gov/pub/irs-pdf/fw8ben.pdf\n\n\n".
+
+            "Mail the appropriate form, along with your account email ".
+            "address, to me here:\n".
+            "        Jason Rohrer\n".
+            "        1208 L St.\n".
+            "        Davis, CA 95616\n".
+            "        USA\n\n\n".
+            "Thanks for your help here, and enjoy the game!\n".
+            "Jason\n\n";
+        
+            
+    
+        cm_mail( $email, "Cordial Minuet Tax Information Request",
+                 $message );
+
+        
+        return;
+        }
+
+    
 
 
     $name = cm_requestFilter(
@@ -5268,7 +5350,8 @@ function cm_showDetail() {
     global $tableNamePrefix;
 
     $query = "SELECT account_key, email, ".
-        "admin_level, sequence_number, dollar_balance, total_buy_in, ".
+        "admin_level, tax_info_on_file, ".
+        "sequence_number, dollar_balance, total_buy_in, ".
         "total_won, total_lost, total_deposits, total_withdrawals, blocked ".
         "FROM $tableNamePrefix"."users ".
         "WHERE user_id = '$user_id';";
@@ -5292,6 +5375,7 @@ function cm_showDetail() {
     $total_lost = cm_formatBalanceForDisplay( $row[ "total_lost" ] );
 
     $admin_level = $row[ "admin_level" ];
+    $tax_info_on_file = $row[ "tax_info_on_file" ];
     $blocked = $row[ "blocked" ];
     $email = $row[ "email" ];
     $sequence_number = $row[ "sequence_number" ];
@@ -5307,6 +5391,10 @@ function cm_showDetail() {
     echo "Total Won: $total_won<br>\n";
     echo "Total Lost: $total_lost<br><br>\n";
 
+    $taxInfoChecked = "";
+    if( $tax_info_on_file ) {
+        $taxInfoChecked = "checked";
+        }
     $blockedChecked = "";
     if( $blocked ) {
         $blockedChecked = "checked";
@@ -5317,9 +5405,11 @@ function cm_showDetail() {
     <INPUT TYPE="hidden" NAME="user_id" VALUE="<?php echo $user_id;?>">
     Email: <INPUT TYPE="text" MAXLENGTH=40 SIZE=30 NAME="email"
             VALUE="<?php echo $email;?>"><br>            
+    Tax Info on File: <INPUT TYPE="checkbox" NAME="tax_info_on_file" VALUE=1
+                 <?php echo $taxInfoChecked;?> ><br>
     Admin Level: <INPUT TYPE="text" MAXLENGTH=1 SIZE=2 NAME="admin_level"
             VALUE="<?php echo $admin_level;?>"><br>            
-    Blocked <INPUT TYPE="checkbox" NAME="blocked" VALUE=1
+    Blocked: <INPUT TYPE="checkbox" NAME="blocked" VALUE=1
                  <?php echo $blockedChecked;?> ><br>
     <INPUT TYPE="Submit" VALUE="Update">
     </FORM>
@@ -5426,7 +5516,7 @@ function cm_blockUserID() {
     $blocked = cm_requestFilter( "blocked", "/[01]/" );
 
     // don't touch admin
-    if( cm_updateUser_internal( $user_id, $blocked, -1, -1 ) ) {
+    if( cm_updateUser_internal( $user_id, $blocked, -1, -1, -1 ) ) {
         cm_showData();
         }
     }
@@ -5443,7 +5533,10 @@ function cm_updateUser() {
     $email = cm_requestFilter( "email", "/[A-Z0-9._%+-]+@[A-Z0-9.-]+/i" );
     $admin_level = cm_requestFilter( "admin_level", "/[0-9]+/i" );
 
-    if( cm_updateUser_internal( $user_id, $blocked, $email, $admin_level ) ) {
+    $tax_info_on_file = cm_requestFilter( "tax_info_on_file", "/[1]/", "0" );
+    
+    if( cm_updateUser_internal( $user_id, $blocked, $email, $admin_level,
+                                $tax_info_on_file) ) {
         cm_showDetail();
         }
     }
@@ -5452,7 +5545,8 @@ function cm_updateUser() {
 
 // set any to -1 to leave unchanged
 // returns 1 on success
-function cm_updateUser_internal( $user_id, $blocked, $email, $admin_level ) {
+function cm_updateUser_internal( $user_id, $blocked, $email, $admin_level,
+                                 $tax_info_on_file ) {
     
     global $tableNamePrefix;
         
@@ -5461,7 +5555,7 @@ function cm_updateUser_internal( $user_id, $blocked, $email, $admin_level ) {
     
 
     
-    $query = "SELECT user_id, blocked, email, admin_level ".
+    $query = "SELECT user_id, blocked, email, admin_level, tax_info_on_file ".
         "FROM $tableNamePrefix"."users ".
         "WHERE user_id = '$user_id';";
     $result = cm_queryDatabase( $query );
@@ -5472,6 +5566,7 @@ function cm_updateUser_internal( $user_id, $blocked, $email, $admin_level ) {
         $old_blocked = mysql_result( $result, 0, "blocked" );
         $old_email = mysql_result( $result, 0, "email" );
         $old_admin_level = mysql_result( $result, 0, "admin_level" );
+        $old_tax_info_on_file = mysql_result( $result, 0, "tax_info_on_file" );
 
         if( $blocked == -1 ) {
             $blocked = $old_blocked;
@@ -5482,11 +5577,15 @@ function cm_updateUser_internal( $user_id, $blocked, $email, $admin_level ) {
         if( $admin_level == -1 ) {
             $admin_level = $old_admin_level;
             }
+        if( $tax_info_on_file == -1 ) {
+            $tax_info_on_file = $old_tax_info_on_file;
+            }
         
         
         $query = "UPDATE $tableNamePrefix"."users SET " .
             "blocked = '$blocked', email = '$email', ".
-            "admin_level = '$admin_level' " .
+            "admin_level = '$admin_level', ".
+            "tax_info_on_file = '$tax_info_on_file' " .
             "WHERE user_id = '$user_id';";
         
         $result = cm_queryDatabase( $query );

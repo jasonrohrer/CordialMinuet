@@ -1,0 +1,3 @@
+ALTER TABLE minuetServer_users ADD tax_info_on_file TINYINT UNSIGNED NOT NULL AFTER total_withdrawals;
+
+UPDATE minuetServer_users SET tax_info_on_file = 0;

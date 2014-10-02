@@ -1240,6 +1240,13 @@ void drawFrame( char inUpdate ) {
                 currentGamePage = menuPage;
                 currentGamePage->base_makeActive( true );
                 }
+            else if( sendCheckPage->checkSignal( "moreInfoNeeded" ) ) {
+                extendedMessagePage->setMessageKey( 
+                    "moreWithdrawalInfoNeededMessage" );
+                
+                currentGamePage = extendedMessagePage;
+                currentGamePage->base_makeActive( true );
+                }
             else if( sendCheckPage->isResponseReady() ) {
                 withdrawalDisplayPage->setDeltaAmount( 
                     sendCheckPage->getWithdrawalAmount() );

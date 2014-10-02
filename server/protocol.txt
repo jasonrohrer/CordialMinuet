@@ -358,6 +358,8 @@ or request will be denined.
 
 Returns DENIED on account-level failures (not enough funds, etc).
 Returns CHECK_FAILED if request to mail check fails.
+Returns MORE_INFO_NEEDED if user would cross tax reporting limit and more
+information is needed before they can withdraw more money.
 
 Returns OVER_IRS_LIMIT response if the withdrawal cannot be made because
 the withdrawal would put the player over the yearly no-reporting (1099-MISC)

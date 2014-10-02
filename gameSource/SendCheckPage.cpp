@@ -112,6 +112,7 @@ SendCheckPage::SendCheckPage()
     */
 
     addServerErrorString( "CHECK_FAILED", "checkFailed" );
+    addServerErrorStringSignal( "MORE_INFO_NEEDED", "moreInfoNeeded" );
     }
 
 
