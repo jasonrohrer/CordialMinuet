@@ -142,6 +142,10 @@ PlayGamePage::~PlayGamePage() {
     freeSprite( mScorePipSprite );
     freeSprite( mScorePipExtraSprite );
     freeSprite( mScorePipEmptySprite );
+
+    freeSprite( mParchmentSprite );
+    freeSprite( mRedWatercolorSprite );
+    freeSprite( mBlueWatercolorSprite );
     }
 
 
