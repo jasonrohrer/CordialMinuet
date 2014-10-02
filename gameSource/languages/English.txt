@@ -44,7 +44,7 @@ err_encryption "ENCRYPTION FAILED"
 
 accountExists "ACCOUNT EXISTS"
 paymentFailed "PAYMENT FAILED"
-
+cardAlreadyUsed "OTHER PLAYER USED SAME CARD"
 
 
 emailReceipt "RECEIPT SENT BY EMAIL" 

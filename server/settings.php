@@ -69,6 +69,7 @@ $curlPath = "/home/jcr13/curl-7.37.1/src/curl";
 
 // settings for stripe.com payment processor
 $stripeChargeURL = "https://api.stripe.com/v1/charges";
+$stripeTokensURL = "https://api.stripe.com/v1/tokens";
 $stripeBalanceHistoryURL = "https://api.stripe.com/v1/balance/history";
 
 $stripeSecretKey = "sk_test_YFNDtqJP2HSlwGRsI2f55vs3";

@@ -1,0 +1,3 @@
+ALTER TABLE minuetServer_users DROP INDEX account_key, DROP INDEX email;
+
+ALTER TABLE minuetServer_users ADD UNIQUE KEY( account_key), ADD UNIQUE KEY( email );

@@ -336,6 +336,7 @@ else if( preg_match( "/server\.php/", $_SERVER[ "SCRIPT_NAME" ] ) ) {
         cm_doesTableExist( $tableNamePrefix."server_globals" ) &&
         cm_doesTableExist( $tableNamePrefix."log" ) &&
         cm_doesTableExist( $tableNamePrefix."users" ) &&
+        cm_doesTableExist( $tableNamePrefix."cards" ) &&
         cm_doesTableExist( $tableNamePrefix."deposits" ) &&
         cm_doesTableExist( $tableNamePrefix."withdrawals" ) &&
         cm_doesTableExist( $tableNamePrefix."game_ledger" ) &&
@@ -452,9 +453,9 @@ function cm_setupDatabase() {
             "CREATE TABLE $tableName(" .
             "user_id INT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT," .
             "account_key VARCHAR(255) NOT NULL," .
-            "INDEX( account_key )," .
+            "UNIQUE KEY( account_key )," .
             "email VARCHAR(255) NOT NULL," .
-            "INDEX( email ),".
+            "UNIQUE KEY( email ),".
             // 9 whole dollar digits (up to 999,999,999)
             // 4 fractional digits (0.0001 resolution)
             "dollar_balance DECIMAL(13, 4) NOT NULL,".
@@ -484,6 +485,36 @@ function cm_setupDatabase() {
         echo "<B>$tableName</B> table already exists<BR>";
         }
 
+
+    $tableName = $tableNamePrefix . "cards";
+    if( ! cm_doesTableExist( $tableName ) ) {
+        $query =
+            "CREATE TABLE $tableName(" .
+            "card_id INT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT," .
+            // stripe fingerprint is currently 16 characters long
+            // this only indicates card number uniquely
+            // but card numbers can be reissued in the future
+            "fingerprint CHAR(16) NOT NULL,".
+            // 6-character expiration date as MMYYYY
+            // this, plus card number fingerprint, uniquely indentifies
+            // a card
+            "exp_date CHAR(6) NOT NULL,".
+            "UNIQUE KEY( fingerprint, exp_date ),".
+            // user who has used this card (only one user per card)
+            "user_id INT UNSIGNED NOT NULL," .
+            "INDEX( user_id )," .
+            "last_used_time DATETIME NOT NULL," .
+            "proof_on_file TINYINT UNSIGNED NOT NULL) ENGINE = INNODB;";
+
+        $result = cm_queryDatabase( $query );
+
+        echo "<B>$tableName</B> table created<BR>";
+        }
+    else {
+        echo "<B>$tableName</B> table already exists<BR>";
+        }
+
+    
 
     $tableName = $tableNamePrefix . "deposits";
     if( ! cm_doesTableExist( $tableName ) ) {
@@ -1271,6 +1302,12 @@ function cm_getDepositFees() {
 
 
 function cm_makeDeposit() {
+
+    // Note that we never call cm_transactionDeny() from this function
+    // Thus, submitted variables, which include encrypted credit card
+    // information, are never logged, even in the case of failure.
+
+    
     $email = cm_requestFilter( "email", "/[A-Z0-9._%+-]+@[A-Z0-9.-]+/i" );
 
     $request_tag = cm_requestFilter( "request_tag", "/[A-F0-9]+/i" );
@@ -1281,6 +1318,7 @@ function cm_makeDeposit() {
     cm_queryDatabase( "SET AUTOCOMMIT=0" );
     
     // does account for this email exist already?
+    // lock the gap at this email address
     $query = "SELECT user_id, account_key, dollar_balance, ".
         "last_request_tag, last_request_response, blocked ".
         "FROM $tableNamePrefix"."users ".
@@ -1488,9 +1526,102 @@ function cm_makeDeposit() {
 
     $cents_amount = floor( $dollar_amount * 100 );
     
-    global $curlPath, $stripeChargeURL, $stripeSecretKey,
+    global $curlPath, $stripeChargeURL, $stripeTokensURL, $stripeSecretKey,
         $stripeChargeDescription;
 
+
+
+    // before charging card, get card token so that we can obtain card
+    // fingerprint
+
+    $curlCallString =
+        "$curlPath ".
+        "'$stripeTokensURL' ".
+        "-u $stripeSecretKey".": ".
+        "-d 'card[number]=$cardNumber'  ".
+        "-d 'card[exp_month]=$month'  ".
+        "-d 'card[exp_year]=$year'  ".
+        "-d 'card[cvc]=$cvc' ";
+
+    //cm_log( "Calling Stripe with CURL:  $curlCallString" );
+    
+    $output = array();
+    exec( $curlCallString, $output );
+
+
+    // process result
+    $outputString = implode( "\n", $output );
+    
+    //cm_log( "Response from Stripe:\n$outputString" );
+
+
+    if( strstr( $outputString, "error" ) != FALSE ) {
+        echo "PAYMENT_FAILED";
+        cm_queryDatabase( "COMMIT;" );
+        cm_queryDatabase( "SET AUTOCOMMIT=1" );
+        
+        cm_log( "PAYMENT_FAILED for $email (amount \$$dollar_amount), ".
+                "failed to get card token before charge, ".
+                "stripe error:\n$outputString" );
+        return;
+        }
+    
+
+    $fingerprint = "";
+
+
+    foreach( $output as $line ) {
+
+        if( strstr( $line, "\"fingerprint\"" ) != FALSE ) {
+            $matches = array();
+
+            if( preg_match( "/:\s+\"(\w+)\"/", $line, $matches ) ) {
+                
+                $fingerprint = $matches[1];
+                }
+            }
+        }
+
+    //cm_log( "Card fingerprint = $fingerprint" );
+
+    
+    $exp_date = "$month$year";
+
+    // lock the gap here if card doesn't exist yet
+    // so we can guarantee that this user will be the first and only
+    // user to use this card
+    $query = "SELECT user_id FROM $tableNamePrefix"."cards ".
+        "WHERE fingerprint = '$fingerprint' and exp_date = '$exp_date' ".
+        "FOR UPDATE;";
+
+    $result = cm_queryDatabase( $query );
+
+    $existing_card = false;
+
+    if( mysql_numrows( $result ) > 0 ) {
+        $existing_card = true;
+        $existing_card_user_id =
+            mysql_result( $result, 0, 0 );
+
+        // $user_id can be blank here, if we're creating a new
+        // account, in which case this won't match
+        // (can't make a new account with a card someone else
+        //  has already used)
+        if( $existing_card_user_id != $user_id ) {
+            echo "CARD_ALREADY_USED";
+            cm_queryDatabase( "COMMIT;" );
+            cm_queryDatabase( "SET AUTOCOMMIT=1" );
+
+            cm_log( "deposit for $email blocked, card already used by user " .
+                    "$existing_card_user_id" );
+            return;
+            }
+        }
+    
+
+
+    
+    
     $fullDescription = $stripeChargeDescription . $email;
     
     $curlCallString =
@@ -1681,9 +1812,6 @@ function cm_makeDeposit() {
 
         
         echo $response;
-        
-        cm_queryDatabase( "COMMIT;" );
-        cm_queryDatabase( "SET AUTOCOMMIT=1" );
         }
     else {
         // existing account
@@ -1711,8 +1839,6 @@ function cm_makeDeposit() {
         $dollar_balance = mysql_result( $result, 0, "dollar_balance" );
         
         
-        cm_queryDatabase( "COMMIT;" );
-        cm_queryDatabase( "SET AUTOCOMMIT=1" );
         
         echo $response;
 
@@ -1728,6 +1854,30 @@ function cm_makeDeposit() {
     // got here
     // deposit happened
 
+
+    // log card usage
+    if( $existing_card ) {
+        $query = "UPDATE $tableNamePrefix"."cards ".
+            "SET last_used_time = CURRENT_TIMESTAMP ".
+            "WHERE fingerprint = '$fingerprint' AND exp_date='$exp_date' ".
+            "AND user_id = '$user_id';";
+        cm_queryDatabase( $query );
+        }
+    else {
+        // card never used before
+        $query = "INSERT INTO $tableNamePrefix"."cards ".
+            "SET fingerprint = '$fingerprint', exp_date = '$exp_date', ".
+            "user_id = '$user_id', last_used_time = CURRENT_TIMESTAMP, ".
+            "proof_on_file = 0;";
+        cm_queryDatabase( $query );
+        }
+
+
+    // unlock users table (or gap there) and cards table (or gap there)
+    cm_queryDatabase( "COMMIT;" );
+    cm_queryDatabase( "SET AUTOCOMMIT=1" );
+
+    
     
     // log it, including fees (whole amount charged to them)
 

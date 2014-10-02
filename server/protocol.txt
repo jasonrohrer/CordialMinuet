@@ -224,6 +224,7 @@ Returns DENIED on payment failure.
 Returns ACCOUNT_EXISTS if no existing account details were provided and
 an account already exists for this email address.
 Returns PAYMENT_FAILED if payment fails.
+Returns CARD_ALREADY_USED if card is already used by another account.
 
 
 new_account is 1 if no deposit has ever been made for this email address
