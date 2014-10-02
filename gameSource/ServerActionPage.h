@@ -66,6 +66,11 @@ class ServerActionPage : public GamePage {
         void addServerErrorString( const char *inServerErrorString,
                                    const char *inUserMessageKey );        
 
+        // for more complicated error handling beyond displaying
+        // a message on this page, can also set a named signal
+        void addServerErrorStringSignal( const char *inServerErrorString,
+                                         const char *inSignalToSet );
+
 
         // default behavior is to start request immediately upon
         // makeActive (this is great for single-action pages)
@@ -131,7 +136,11 @@ class ServerActionPage : public GamePage {
 
         SimpleVector<char *> mErrorStringList;
         SimpleVector<const char *> mErrorStringUserMessageKeys;
+
+        SimpleVector<char *> mErrorStringListForSignals;
+        SimpleVector<const char *> mErrorStringSignals;
         
+
         int mNumResponseParts;
         
         SimpleVector<char*> mResponsePartNames;

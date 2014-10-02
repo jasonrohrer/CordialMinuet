@@ -45,6 +45,8 @@ AccountTransferPage.cpp \
 CreateGamePage.cpp \
 WaitGamePage.cpp \
 PlayGamePage.cpp \
+ExtendedMessagePage.cpp \
+
 
 
 

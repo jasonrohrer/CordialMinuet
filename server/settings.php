@@ -271,4 +271,20 @@ $minDeposit = "2.00";
 $housePotFraction = 0.10;
 
 
+
+// deposit threshold before we require more information from the user
+// (to verify that card is not stolen, etc.)
+// users can deposit up to this limit - 0.01 without submitting info
+$depositWithNoInfoLimit = "500.00";
+
+
+
+// withdrawal threshold before we require more information from
+// the user for tax purposes
+// users can withdraw up to this limit - 0.01 without submitting info
+$withdrawalWithNoInfoLimit = "600.00"
+
+
+
+
 ?>

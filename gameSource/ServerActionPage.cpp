@@ -83,6 +83,10 @@ ServerActionPage::~ServerActionPage() {
         delete [] *( mErrorStringList.getElement( i ) );
         }
     
+    for( int i=0; i<mErrorStringListForSignals.size(); i++ ) {
+        delete [] *( mErrorStringListForSignals.getElement( i ) );
+        }
+    
     if( mParameterHmacKey != NULL ) {
         delete [] mParameterHmacKey;
         mParameterHmacKey = NULL;
@@ -170,6 +174,17 @@ void ServerActionPage::addServerErrorString( const char *inServerErrorString,
                                              const char *inUserMessageKey ) {
     mErrorStringList.push_back( stringDuplicate( inServerErrorString ) );
     mErrorStringUserMessageKeys.push_back( inUserMessageKey );
+    }
+
+
+
+void ServerActionPage::addServerErrorStringSignal( 
+    const char *inServerErrorString,
+    const char *inSignalToSet ) {
+    
+    mErrorStringListForSignals.push_back( 
+        stringDuplicate( inServerErrorString ) );
+    mErrorStringSignals.push_back( inSignalToSet );
     }
 
 
@@ -303,6 +318,17 @@ void ServerActionPage::step() {
                         mStatusError = true;
                         mStatusMessageKey = 
                             *( mErrorStringUserMessageKeys.getElement(i) ); 
+                        errorParsed = true;
+                        break;
+                        }
+                    }
+                for( int i=0; i<mErrorStringListForSignals.size(); i++ ) {
+                    if( strstr( result, 
+                                *( mErrorStringListForSignals.getElement(i) ) )
+                        != NULL ) {
+                        
+                        setSignal( 
+                            *( mErrorStringSignals.getElement(i) ) ); 
                         errorParsed = true;
                         break;
                         }

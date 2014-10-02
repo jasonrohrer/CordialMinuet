@@ -161,6 +161,7 @@ DepositPage::DepositPage()
     addServerErrorString( "ACCOUNT_EXISTS", "accountExists" );
     addServerErrorString( "PAYMENT_FAILED", "paymentFailed" );
     addServerErrorString( "CARD_ALREADY_USED", "cardAlreadyUsed" );
+    addServerErrorStringSignal( "MORE_INFO_NEEDED", "moreInfoNeeded" );
     }
 
 

@@ -296,6 +296,9 @@ else if( $action == "block_user_id" ) {
 else if( $action == "update_user" ) {
     cm_updateUser();
     }
+else if( $action == "toggle_card_proof" ) {
+    cm_toggleCardProof();
+    }
 else if( $action == "logout" ) {
     cm_logout();
     }
@@ -1320,7 +1323,7 @@ function cm_makeDeposit() {
     // does account for this email exist already?
     // lock the gap at this email address
     $query = "SELECT user_id, account_key, dollar_balance, ".
-        "last_request_tag, last_request_response, blocked ".
+        "total_deposits, last_request_tag, last_request_response, blocked ".
         "FROM $tableNamePrefix"."users ".
         "WHERE email = '$email' FOR UPDATE;";
 
@@ -1331,6 +1334,7 @@ function cm_makeDeposit() {
     $user_id = "";
     $account_key = "";
     $dollar_balance = 0;
+    $total_deposits = 0;
     
     $last_request_tag = "";
     $last_request_response = "";
@@ -1392,6 +1396,7 @@ function cm_makeDeposit() {
 
         $account_key = $row[ "account_key" ];
         $dollar_balance = $row[ "dollar_balance" ];
+        $total_deposits = $row[ "total_deposits" ];
         }
     // else, no account exists for this email.
     // Leave user_id and dollar_balance blank
@@ -1590,18 +1595,20 @@ function cm_makeDeposit() {
     // lock the gap here if card doesn't exist yet
     // so we can guarantee that this user will be the first and only
     // user to use this card
-    $query = "SELECT user_id FROM $tableNamePrefix"."cards ".
+    $query = "SELECT user_id, proof_on_file FROM $tableNamePrefix"."cards ".
         "WHERE fingerprint = '$fingerprint' and exp_date = '$exp_date' ".
         "FOR UPDATE;";
 
     $result = cm_queryDatabase( $query );
 
     $existing_card = false;
-
+    $proof_on_file = 0;
+    
     if( mysql_numrows( $result ) > 0 ) {
         $existing_card = true;
-        $existing_card_user_id =
-            mysql_result( $result, 0, 0 );
+
+        $existing_card_user_id = mysql_result( $result, 0, "user_id" );
+        $proof_on_file = mysql_result( $result, 0, "proof_on_file" );
 
         // $user_id can be blank here, if we're creating a new
         // account, in which case this won't match
@@ -1619,6 +1626,61 @@ function cm_makeDeposit() {
         }
     
 
+    global $depositWithNoInfoLimit;
+
+
+    if( $total_deposits + $dollar_amount >= $depositWithNoInfoLimit &&
+        ! $proof_on_file ) {
+
+        echo "MORE_INFO_NEEDED";
+        cm_queryDatabase( "COMMIT;" );
+        cm_queryDatabase( "SET AUTOCOMMIT=1" );
+
+        cm_log( "MORE_INFO_NEEDED for $email (\$$dollar_amount deposit), ".
+                "$$total_deposits previous deposits, ".
+                "limit = \$$depositWithNoInfoLimit" );
+
+
+        $message =
+            "In order to deposit \$$depositWithNoInfoLimit or more, total,".
+            " into ".
+            "your CORDIAL MINUET account, I need to verify your financial ".
+            "information.  This requirement may seem tedious, but when the ".
+            "financial stakes get this high, I need to protect everyone from ".
+            "potential fraud.\n\n".
+            "Here's what I need from you:\n\n".
+            "--A scan or clear photograph of the FRONT of your ".
+            "credit card with the cardholder name, expiration date, and ".
+            "last 4 digits visible (please block the other digits ".
+            "of the card number with your finger or tape).\n\n".
+            "--A scan or clear photograph of your photo ID (driver license, state ID, or passport).\n\n".
+            "--A third clear photograph of you holding your card and ID up near your face (again, block all but the last 4 digits of the card number).\n\n".
+            "Obviously, the name on the card must match the name on your ID.  If you've been using a relative's card, please have your relative complete these steps.  I need proof that the cardholder has approved these charges.\n\n\n".
+
+            "You can get these photographs to me in two ways:\n\n".
+            "1) Reply to this email, and attach the photographs.\n\n".
+            "2) Print the photographs and mail them to:\n".
+            "        Jason Rohrer\n".
+            "        1208 L St.\n".
+            "        Davis, CA 95616\n".
+            "        USA\n\n\n".
+            "If you use the paper mail option, don't forget to include your ".
+            "account email address in the envelope.\n\n".
+            "DO NOT send a photo of your complete credit card number.  ".
+            "DO NOT send a photo of your card's CVC (3- or 4-digit security code, usually on the back, but sometimes on the front).  Neither email nor postal mail are secure enough to transmit this sensitive data.\n\n\n".
+
+            "Thanks for your help here, and enjoy the game!\n".
+            "Jason\n\n";
+        
+            
+    
+        cm_mail( $email, "Cordial Minuet Information Request",
+                 $message );
+
+        
+        return;
+        }
+    
 
     
     
@@ -5136,7 +5198,12 @@ function cm_showStats() {
 
 
 function cm_formatDataTable( $tableName, $whereClause,
-                             $fieldNames, $columnLabels, $dollarFieldNames ) {
+                             $fieldNames, $columnLabels, $dollarFieldNames,
+                             $linkLabel = "",
+                             $linkPrefix = "",
+                             // these database fields are appended
+                             // to link prefix
+                             $linkFieldNames = array() ) {
     global $tableNamePrefix;
     
     $fieldListString = implode( $fieldNames, "," );
@@ -5170,6 +5237,17 @@ function cm_formatDataTable( $tableName, $whereClause,
             
             echo "<td>$fieldValue</td>";
             }
+
+        if( $linkPrefix != "" ) {
+            $linkURL = $linkPrefix;
+            foreach( $linkFieldNames as $field ) {
+                $fieldValue = mysql_result( $result, $i, "$field" );
+                $linkURL .= "&$field=$fieldValue";
+                }
+            echo "<td>[<a href='$linkURL'>$linkLabel</a>]</td>";
+            }
+        
+        
         echo "</tr>";
         }
     echo "</table>";
@@ -5247,6 +5325,19 @@ function cm_showDetail() {
     </FORM>
 <?php
 
+
+    echo "<br><HR><br>Cards:<br>";
+    cm_formatDataTable( "cards", "WHERE user_id = '$user_id'",
+                        array( "fingerprint", "exp_date",
+                               "last_used_time", "proof_on_file" ),
+                        array( "Fingerprint", "MMYYYY", "Last Used",
+                               "Proof on File" ),
+                        array( ),
+                        "Toggle Proof",
+                        "server.php?action=toggle_card_proof&user_id=$user_id",
+                        array( "fingerprint", "exp_date" ) );
+
+                                                     
     echo "<br><HR><br>Deposits:<br>";
     cm_formatDataTable( "deposits", "WHERE user_id = '$user_id'",
                         array( "deposit_time", "processing_id",
@@ -5408,6 +5499,35 @@ function cm_updateUser_internal( $user_id, $blocked, $email, $admin_level ) {
         echo "$user_id not found";
         }
     return 0;
+    }
+
+
+
+
+
+function cm_toggleCardProof() {
+    
+    global $tableNamePrefix;
+
+    cm_checkPassword( "toggle_card_proof" );
+
+
+    $user_id = cm_getUserID();
+
+    $fingerprint = cm_requestFilter( "fingerprint", "/[[A-Z0-9]+/i", "" );
+    $exp_date = cm_requestFilter( "exp_date", "/\d\d\d\d\d\d/", "" );
+
+    $query = "UPDATE $tableNamePrefix"."cards SET " .
+        "proof_on_file = (proof_on_file + 1) % 2 ".
+        "WHERE user_id = '$user_id' AND fingerprint = '$fingerprint' ".
+        "AND exp_date = '$exp_date';";
+
+    cm_log( "Query = $query" );
+    
+    $result = cm_queryDatabase( $query );
+    
+
+    cm_showDetail();
     }
 
 

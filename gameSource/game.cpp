@@ -65,6 +65,7 @@ CustomRandomSource randSource( 34957197 );
 #include "CreateGamePage.h"
 #include "WaitGamePage.h"
 #include "PlayGamePage.h"
+#include "ExtendedMessagePage.h"
 
 
 #include "serialWebRequests.h"
@@ -77,6 +78,7 @@ GamePage *currentGamePage = NULL;
 
 
 FinalMessagePage *finalMessagePage;
+ExtendedMessagePage *extendedMessagePage;
 ServerActionPage *getServerURLPage;
 ServerActionPage *getRequiredVersionPage;
 AccountCheckPage *accountCheckPage;
@@ -465,6 +467,7 @@ void initFrameDrawer( int inWidth, int inHeight, int inTargetFrameRate,
     
 
     finalMessagePage = new FinalMessagePage();
+    extendedMessagePage = new ExtendedMessagePage();
     
     printf( "Starting fetching server URL from reflector %s\n",
             serverURL );
@@ -547,6 +550,7 @@ void freeFrameDrawer() {
 
     currentGamePage = NULL;
     delete finalMessagePage;
+    delete extendedMessagePage;
     delete getServerURLPage;
     delete getRequiredVersionPage;
     delete accountCheckPage;
@@ -1143,6 +1147,13 @@ void drawFrame( char inUpdate ) {
                 currentGamePage = depositDisplayPage;
                 currentGamePage->base_makeActive( true );
                 }
+            else if( depositPage->checkSignal( "moreInfoNeeded" ) ) {
+                extendedMessagePage->setMessageKey( 
+                    "moreDepositInfoNeededMessage" );
+                
+                currentGamePage = extendedMessagePage;
+                currentGamePage->base_makeActive( true );
+                }
             }
         else if( currentGamePage == newAccountDisplayPage ) {
             if( newAccountDisplayPage->checkSignal( "done" ) ) {
@@ -1298,6 +1309,12 @@ void drawFrame( char inUpdate ) {
         else if( currentGamePage == playGamePage ) {
             if( playGamePage->checkSignal( "back" ) ) {
                 currentGamePage = leaveGamePage;
+                currentGamePage->base_makeActive( true );
+                }
+            }
+        else if( currentGamePage == extendedMessagePage ) {
+            if( extendedMessagePage->checkSignal( "done" ) ) {
+                currentGamePage = getBalancePage;
                 currentGamePage->base_makeActive( true );
                 }
             }
