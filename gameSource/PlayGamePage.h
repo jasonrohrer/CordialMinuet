@@ -40,6 +40,8 @@ typedef struct PossibleScoreCacheRecord {
         int columnChoiceForUs;
         int columnChoiceForThem;
         
+        int revealChoiceForUs;
+
         char ourPossibleScores[106];
         char theirPossibleScores[106];
         
@@ -103,6 +105,9 @@ class PlayGamePage : public ServerActionPage, public ActionListener {
 
         int mColumnChoiceForUs;
         int mColumnChoiceForThem;
+
+        int mRevealChoiceForUs;
+        
 
         GameMessageState mMessageState;
         

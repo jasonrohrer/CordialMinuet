@@ -1,0 +1,3 @@
+ALTER TABLE minuetServer_games MODIFY player_1_moves CHAR(13) NOT NULL;
+
+ALTER TABLE minuetServer_games MODIFY player_2_moves CHAR(13) NOT NULL;

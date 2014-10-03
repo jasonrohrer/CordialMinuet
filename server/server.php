@@ -192,6 +192,7 @@ if( $shutdownMode &&
       $action == "list_games" ||
       $action == "get_game_state" ||
       $action == "make_move" ||
+      $action == "make_reveal_move" ||
       $action == "make_bet" ||
       $action == "fold_bet" ||
       $action == "end_round" ||
@@ -258,6 +259,9 @@ else if( $action == "get_game_state" ) {
     }
 else if( $action == "make_move" ) {
     cm_makeMove();
+    }
+else if( $action == "make_reveal_move" ) {
+    cm_makeRevealMove();
     }
 else if( $action == "make_bet" ) {
     cm_makeBet();
@@ -595,8 +599,8 @@ function cm_setupDatabase() {
             // 36-cell square, numbers from 1 to 36, separated by #
             // character
             "game_square CHAR(125) NOT NULL,".
-            "player_1_moves CHAR(11) NOT NULL,".
-            "player_2_moves CHAR(11) NOT NULL,".
+            "player_1_moves CHAR(13) NOT NULL,".
+            "player_2_moves CHAR(13) NOT NULL,".
             "player_1_bet_made TINYINT UNSIGNED NOT NULL,".
             "player_2_bet_made TINYINT UNSIGNED NOT NULL,".
             "player_1_ended_round TINYINT UNSIGNED NOT NULL,".
@@ -2782,8 +2786,8 @@ function cm_endOldGames( $user_id ) {
 
         if( $player_1_id != 0 &&
             $player_2_id != 0 &&
-            $player_1_move_count == 6 &&
-            $player_2_move_count == 6 &&
+            $player_1_move_count == 7 &&
+            $player_2_move_count == 7 &&
             $player_1_bet_made &&
             $player_2_bet_made ) {
 
@@ -3560,7 +3564,7 @@ function cm_printGameState( $inHideOpponentSecretMoves = true ) {
         
         $reveal = false;
 
-        if( $numMoves == 6 &&
+        if( $numMoves == 7 &&
             $player_1_pot_coins == $player_2_pot_coins &&
             $player_1_bet_made && $player_2_bet_made ) {
 
@@ -3568,7 +3572,7 @@ function cm_printGameState( $inHideOpponentSecretMoves = true ) {
 
             $numMovesUs = count( $movesUs );
 
-            if( $numMovesUs == 6 ) {
+            if( $numMovesUs == 7 ) {
                 // game round done
                 $reveal = true;
                 }
@@ -3576,12 +3580,51 @@ function cm_printGameState( $inHideOpponentSecretMoves = true ) {
 
         
         if( $inHideOpponentSecretMoves && ! $reveal ) {
+
+            $theirReveal = -1;
+            if( $numMoves > 6 ) {
+                $theirReveal = $moves[6];
+                }
             
             // replace moves they made for themselves with ?
-            for( $i=0; $i<$numMoves; $i++ ) {
-                if( $i % 2 == 0 ) {
+            $theirRevealIndex = -1;
+            $movesToScan = $numMoves;
+            if( $movesToScan > 6 ) {
+                $movesToScan = 6;
+                }
+            for( $i=0; $i<$movesToScan; $i++ ) {
+                if( $i % 2 == 0 &&
+                    $theirReveal != $moves[$i] ) {
+
                     $moves[$i] = "?";
                     }
+                if( $theirReveal == $moves[$i] ) {
+                    $theirRevealIndex = $i;
+                    }
+                }
+
+            if( $theirRevealIndex != -1 ) {
+                // reveal of an out-of-order move, other than their first
+                // move
+
+                // but game is done so order doesn't matter to players
+                // anymore
+
+                // swap this into the first move position
+                $temp = $moves[0];
+                $moves[0] = $moves[$theirRevealIndex];
+                $moves[$theirRevealIndex] = $temp;
+
+                // same for corresponding your_move pick
+
+                $your_moves_split = preg_split( "/#/", $your_moves );
+
+                $temp = $your_moves_split[1];
+                $your_moves_split[1] =
+                    $your_moves_split[$theirRevealIndex + 1];
+                $your_moves_split[$theirRevealIndex + 1] = $temp;
+
+                $your_moves = implode( "#", $your_moves_split );
                 }
             }
         
@@ -3778,6 +3821,168 @@ function cm_makeMove() {
     
     echo $response;
     }
+
+
+
+
+
+function cm_makeRevealMove() {
+    if( ! cm_verifyTransaction() ) {
+        return;
+        }
+
+    if( cm_handleRepeatResponse() ) {
+        return;
+        }
+    
+    $user_id = cm_getUserID();
+
+    
+    $our_column = cm_requestFilter( "our_column", "/[0-5]/", "0" );
+    
+
+    global $tableNamePrefix;
+
+
+    cm_queryDatabase( "SET AUTOCOMMIT=0" );
+    
+    $query = "SELECT player_1_id, player_2_id,".
+        "player_1_bet_made, player_2_bet_made, ".
+        "player_1_pot_coins, player_2_pot_coins, ".
+        "player_1_moves, player_2_moves, semaphore_key ".
+        "FROM $tableNamePrefix"."games ".
+        "WHERE ( player_1_id = '$user_id' OR player_2_id = '$user_id' )".
+        "AND player_1_bet_made = 1 AND player_2_bet_made = 1 ".
+        "AND player_1_pot_coins = player_2_pot_coins ".
+        "AND started = 1 ".
+        "FOR UPDATE;";
+
+    $result = cm_queryDatabase( $query );
+    
+    $numRows = mysql_numrows( $result );
+
+    if( $numRows != 1 ) {
+        cm_log( "Making a move for a game that doesn't exist ".
+                "(or maybe game is in betting phases, so moves forbidden)" );
+        cm_transactionDeny();
+        return;
+        }
+    
+    $player_1_id = mysql_result( $result, 0, "player_1_id" );
+    $player_2_id = mysql_result( $result, 0, "player_2_id" );
+
+    $player_1_bet_made = mysql_result( $result, 0, "player_1_bet_made" );
+    $player_2_bet_made = mysql_result( $result, 0, "player_2_bet_made" );
+
+    $player_1_pot_coins = mysql_result( $result, 0, "player_1_pot_coins" );
+    $player_2_pot_coins = mysql_result( $result, 0, "player_2_pot_coins" );
+    
+    $player_1_moves = mysql_result( $result, 0, "player_1_moves" );
+    $player_2_moves = mysql_result( $result, 0, "player_2_moves" );
+
+    $semaphore_key = mysql_result( $result, 0, "semaphore_key" );
+
+    $our_moves = "";
+    $their_moves = "";
+    
+    if( $player_1_id == $user_id ) {
+        $our_moves = $player_1_moves;
+        $their_moves = $player_2_moves;
+        }
+    else {
+        $our_moves = $player_2_moves;
+        $their_moves = $player_1_moves;
+        }
+
+    if( ! $player_1_bet_made || ! $player_2_bet_made ||
+        $player_1_pot_coins != $player_2_pot_coins ) {
+        cm_log( "Making a move when it's time for betting, ".
+                "blocked" );
+        cm_transactionDeny();
+        return;
+        }
+
+    
+
+    if( strlen( $our_moves ) > strlen( $their_moves ) ) {
+        cm_log( "Making another move when we're waiting for their move, ".
+                "blocked" );
+        cm_transactionDeny();
+        return;
+        }
+
+    if( strlen( $our_moves ) < 11 ) {
+         cm_log( "Making a reveal move before we've made our main moves, ".
+                "blocked" );
+        cm_transactionDeny();
+        return;
+        }
+    
+    
+    if( ! strstr( $our_moves, $our_column ) ) {
+        
+        cm_log( "Player trying to reveal $our_column, but that column ".
+                " is not theirs in past move list $our_moves" );
+        cm_transactionDeny();
+        return;
+        }
+    
+    
+    if( $our_moves != "#" ) {
+        $our_moves = $our_moves . "#";
+        }
+    
+    
+    $our_moves = $our_moves . $our_column;
+
+
+    if( $player_1_id == $user_id ) {
+        $player_1_moves =  $our_moves;
+        }
+    else {
+        $player_2_moves = $our_moves;
+        }
+
+    $betsMade = 1;
+
+    if( strlen( $player_1_moves ) == strlen( $player_2_moves ) ) {
+        // get ready for next betting round
+        $betsMade = 0;
+        }
+    
+
+    $query = "UPDATE $tableNamePrefix"."games ".
+        "SET player_1_moves = '$player_1_moves', ".
+        "player_2_moves = '$player_2_moves', ".
+        "player_1_bet_made = '$betsMade', ".
+        "player_2_bet_made = '$betsMade' ".
+        "WHERE player_1_id = '$user_id' OR player_2_id = '$user_id';";
+    
+
+    $result = cm_queryDatabase( $query );
+    
+    cm_queryDatabase( "COMMIT;" );
+    cm_queryDatabase( "SET AUTOCOMMIT = 1;" );
+
+    
+    // if they are waiting, they can stop waiting
+    semSignal( $semaphore_key );
+
+    
+    $response = "OK";
+
+    $request_tag = cm_requestFilter( "request_tag", "/[A-F0-9]+/i", "" );
+    
+    $query = "UPDATE $tableNamePrefix"."users SET ".
+        "last_request_response = '$response', ".
+        "last_request_tag = '$request_tag' ".
+        "WHERE user_id = '$user_id';";
+
+    cm_queryDatabase( $query );
+    
+    echo $response;
+    }
+
 
 
 
@@ -4261,9 +4466,9 @@ function cm_endRound() {
     $player_1_move_count = count( $player_1_move_list );
     $player_2_move_count = count( $player_2_move_list );
              
-    if( $player_1_move_count != 6
+    if( $player_1_move_count != 7
         ||
-        $player_2_move_count != 6
+        $player_2_move_count != 7
         ||
         ( $user_id == $player_1_id && $player_1_ended_round )
         ||

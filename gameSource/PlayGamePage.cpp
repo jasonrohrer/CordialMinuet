@@ -59,6 +59,7 @@ PlayGamePage::PlayGamePage()
           mLeaveButton( mainFont, -128, -288, translate( "leave" ) ),
           mBetPicker( mainFont, -64, -288, 3, 0, "" ),
           mColumnChoiceForUs( -1 ), mColumnChoiceForThem( -1 ),
+          mRevealChoiceForUs( -1 ),
           mScorePipSprite( loadWhiteSprite( "scorePip.tga" ) ),
           mScorePipExtraSprite( loadWhiteSprite( "scorePipExtra.tga" ) ),
           mScorePipEmptySprite( loadWhiteSprite( "scorePipEmpty.tga" ) ),
@@ -213,8 +214,18 @@ void PlayGamePage::actionPerformed( GUIComponent *inTarget ) {
                 }
 
             
-            
-            if( mColumnChoiceForUs == i ) {
+            if( numMovesAlreadyMade == 6 ) {
+                
+                if( mRevealChoiceForUs == i ) {
+                    mRevealChoiceForUs = -1;
+                    mColumnButtons[i]->setLabelText( "R" );
+                    }
+                else if( mRevealChoiceForUs == -1 ) {
+                    mRevealChoiceForUs = i;
+                    mColumnButtons[i]->setLabelText( "x" );
+                    }
+                }
+            else if( mColumnChoiceForUs == i ) {
                 mColumnChoiceForUs = -1;
                 mColumnButtons[i]->setLabelText( "+" );
                 }
@@ -260,6 +271,26 @@ void PlayGamePage::actionPerformed( GUIComponent *inTarget ) {
                 mCommitButton.setVisible( true );
                 mLeaveButton.setVisible( false );
                 }
+            else if( numMovesAlreadyMade == 6 ) {
+                if( mRevealChoiceForUs != -1 ) {
+                    for( int j=0; j<6; j++ ) {
+                        if( j != mRevealChoiceForUs ) {
+                        
+                            mColumnButtons[j]->setVisible( false );
+                            }
+                        }
+                    mCommitButton.setVisible( true );
+                    mLeaveButton.setVisible( false );
+                    }
+                else {
+                    mColumnButtons[mOurChoices[0]]->setVisible( true );
+                    mColumnButtons[mOurChoices[2]]->setVisible( true );
+                    mColumnButtons[mOurChoices[4]]->setVisible( true );
+
+                    mCommitButton.setVisible( false );
+                    mLeaveButton.setVisible( true );
+                    }
+                }
             else {
                 
                 if( numMovesAlreadyMade == 4 ) {
@@ -298,17 +329,38 @@ void PlayGamePage::actionPerformed( GUIComponent *inTarget ) {
         mLeaveButton.setVisible( true );
     
         clearActionParameters();
+
+        int numUsedColumns = 0;
+            
+        for( int i=0; i<6; i++ ) {
+            if( mColumnUsed[i] ) {
+                numUsedColumns ++;
+                }
+            }
         
-        setActionName( "make_move" );
+
         setResponsePartNames( -1, NULL );
         
-        setActionParameter( "our_column", mColumnChoiceForUs );
-        setActionParameter( "their_column", mColumnChoiceForThem );
-        
-        mColumnButtons[mColumnChoiceForUs]->setVisible( false );
-        mColumnButtons[mColumnChoiceForThem]->setVisible( false );
 
         mMessageState = sendingMove;
+
+        if( numUsedColumns < 6 ) {
+            setActionName( "make_move" );
+
+            setActionParameter( "their_column", mColumnChoiceForThem );
+
+            setActionParameter( "our_column", mColumnChoiceForUs );
+            mColumnButtons[mColumnChoiceForUs]->setVisible( false );
+
+            mColumnButtons[mColumnChoiceForThem]->setVisible( false );
+            }
+        else {
+            setActionName( "make_reveal_move" );
+            
+            setActionParameter( "our_column", mRevealChoiceForUs );
+            mColumnButtons[mRevealChoiceForUs]->setVisible( false );
+            }
+        
         
         setupRequestParameterSecurity();
         startRequest();
@@ -393,7 +445,9 @@ void PlayGamePage::draw( doublePair inViewCenter,
 
         char finalReveal = false;
 
-        if( mTheirWonSquares[0] != -1 ) {
+        if( mTheirWonSquares[0] != -1 &&
+            mTheirWonSquares[1] != -1 &&
+            mTheirWonSquares[2] != -1 ) {
             finalReveal = true;
             }
         
@@ -423,7 +477,7 @@ void PlayGamePage::draw( doublePair inViewCenter,
 
                                         
                 char theirPossibleWinBlocked = false;
-                for( int i=0; i<3; i++ ) {
+                for( int i=0; i<6; i++ ) {
                     if( y == mTheirChoices[i] ) {
                         theirPossibleWinBlocked = true;
                         break;
@@ -463,6 +517,9 @@ void PlayGamePage::draw( doublePair inViewCenter,
                     }
                 else if( x == mColumnChoiceForThem && ! mRowUsed[y] ) {
                     setThemColor();
+                    }
+                else if( x == mRevealChoiceForUs && winningSquare ) {
+                    setDrawColor( .9, .9, 0, 1 );
                     }
                 else {    
                     if( ! winningSquare && ! theirPossibleWin &&
@@ -849,6 +906,9 @@ void PlayGamePage::step() {
             }
         delete [] parts;
 
+        
+        mRevealChoiceForUs = -1;
+
 
         char *ourMoves = getResponse( "ourMoves" );
         char *theirMoves = getResponse( "theirMoves" );
@@ -885,7 +945,18 @@ void PlayGamePage::step() {
                 // we store them in us, us, us, them, them, them order locally
                 int theirChoiceMapping[6] = { 3, 0, 4, 1, 5, 2 };
 
-                for( int i=0; i<numOurParts; i++ ) {
+                int movesToParse = numOurParts;
+                // last move is reveal move, but ignore it
+                if( movesToParse > 6 ) {
+                    movesToParse = 6;
+                    }
+                
+                if( numOurParts > 6 ) {
+                    // our reveal already picked
+                    mRevealChoiceForUs = stringToInt( ourParts[6] );
+                    }
+
+                for( int i=0; i<movesToParse; i++ ) {
                     int ourChoice = stringToInt( ourParts[i] );
                     int theirChoice = stringToInt( theirParts[i] );
                     
@@ -906,7 +977,7 @@ void PlayGamePage::step() {
                 int ourWonSquareCount = 0;
                 int theirWonSquareCount = 0;
                 
-                for( int i=0; i<numOurParts; i += 2 ) {
+                for( int i=0; i<movesToParse; i += 2 ) {
                     
                     int ourSelfChoice = stringToInt( ourParts[i] );
                     int ourOtherChoice = stringToInt( ourParts[i+1] );
@@ -993,10 +1064,22 @@ void PlayGamePage::step() {
                 }
 
 
-            if( mTheirWonSquares[0] != -1 ) {
+            if( mTheirWonSquares[0] != -1 &&
+                mTheirWonSquares[1] != -1 &&
+                mTheirWonSquares[2] != -1 ) {
                 // reveal has happened
                 mRoundEnding = true;
                 mRoundEndTime = game_time( NULL ) + 5;
+                }
+            else if( numUsedColumns == 6 ) {
+                // final move, reveal one of our columns
+                mColumnButtons[mOurChoices[0]]->setVisible( true );
+                mColumnButtons[mOurChoices[2]]->setVisible( true );
+                mColumnButtons[mOurChoices[4]]->setVisible( true );
+                
+                mColumnButtons[mOurChoices[0]]->setLabelText( "R" );
+                mColumnButtons[mOurChoices[2]]->setLabelText( "R" );
+                mColumnButtons[mOurChoices[4]]->setLabelText( "R" );
                 }
             }
         else {
@@ -1375,15 +1458,60 @@ void PlayGamePage::computePossibleScores() {
     ourChoicesTheirPerspective[4] = -1;
     ourChoicesTheirPerspective[5] = -1;
     
+
+    int theirChoicesBackup[6];
+    memcpy( theirChoicesBackup, mTheirChoices, 6 * sizeof( int ) );
+
     
     // unless reveal has happened
-    if( mTheirWonSquares[0] != -1 ) {
+    if( mTheirWonSquares[0] != -1 &&
+        mTheirWonSquares[1] != -1 &&
+        mTheirWonSquares[2] != -1 ) {
+        
         int j = 3;
         for( int i=0; i<6; i+=2 ) {
             ourChoicesTheirPerspective[j] = ourUncommittedChoices[i];
             j++;
             }
         }
+    // or we have an uncommitted reveal waiting
+    else if( mRevealChoiceForUs != -1 ) {
+        int j = 3;
+        for( int i=0; i<6; i+=2 ) {
+            if( mRevealChoiceForUs == ourUncommittedChoices[i] ) {    
+                ourChoicesTheirPerspective[j] = ourUncommittedChoices[i];
+
+                
+                // so, in this case, because we fill in -1 in order
+                // (with fillInExtraChoices)
+                // to determine which part of the permutation array is
+                // fixed (the first part) and which part should be permuted
+                // (the second part), we can't support injecting a fixed
+                // move into the middle of the permutable part
+
+                // thus, we need to swap it in our array into the first
+                // spot AND swap their choice in their array
+                
+                if( j != 3 ) {
+                    // the revealed move we're sticking in is not coming
+                    // right at the end of our known moves
+                    // (not   them, them, them, us, -1, -1 )
+                    // (maybe them, them, them, -1, us, -1 )
+
+                    ourChoicesTheirPerspective[3] = 
+                        ourChoicesTheirPerspective[j];
+                    ourChoicesTheirPerspective[j] = -1;
+                    
+                    char temp = mTheirChoices[0];
+                    
+                    // we saved a backup above to restore this later
+                    mTheirChoices[0] = mTheirChoices[j-3];
+                    mTheirChoices[j-3] = temp;
+                    }
+                }
+            j++;
+            }
+        }    
     
 
 
@@ -1398,6 +1526,8 @@ void PlayGamePage::computePossibleScores() {
                    (void*)( &record ) );
 
     storeCacheRecord();
+
+    memcpy( mTheirChoices, theirChoicesBackup, 6 * sizeof( int ) );
     }
 
 
@@ -1438,6 +1568,7 @@ void PlayGamePage::storeCacheRecord() {
     
     mCacheRecords[r].columnChoiceForUs = mColumnChoiceForUs;
     mCacheRecords[r].columnChoiceForThem = mColumnChoiceForThem;
+    mCacheRecords[r].revealChoiceForUs = mRevealChoiceForUs;
     
 
     memcpy( mCacheRecords[r].ourPossibleScores, 
@@ -1463,7 +1594,9 @@ char PlayGamePage::loadCacheRecord() {
 
         if( mCacheRecords[r].columnChoiceForUs != mColumnChoiceForUs
             ||
-            mCacheRecords[r].columnChoiceForThem != mColumnChoiceForThem ) {
+            mCacheRecords[r].columnChoiceForThem != mColumnChoiceForThem
+            ||
+            mCacheRecords[r].revealChoiceForUs != mRevealChoiceForUs ) {
             
             continue;
             }

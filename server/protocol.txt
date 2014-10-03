@@ -575,6 +575,29 @@ and the move is apparent in the get_game_state result), bets must be made.
 
 
 === Call:
+server.php?action=make_reveal_move
+          &user_id=[id number]
+          &sequence_number=[number]
+          &account_hmac=[hmac-sha1, hex-encoded]  
+		  &our_column=[column 0 - 5]
+
+Returns:
+OK
+
+
+NOTE:
+This can only be called after all three move rounds have happened for
+each player, and all three interleaved betting rounds too.
+
+our_column must match one of the columns that we gave ourselves in
+a previous move.
+
+After this reveal move is made by each player, final bets must be made.
+
+
+
+
+=== Call:
 server.php?action=wait_move
           &user_id=[id number]
           &sequence_number=[number]
@@ -671,9 +694,9 @@ server.php?action=end_round
 Returns:
 OK
 
-After three moves from each player, and interspersed bets, and final bets,
-get_game_state returns the final reveal.  After this, both players must call
-end_round and then wait_move to wait for their opponent to end_round.
+After three moves from each player, and interspersed bets, reveal move, and 
+final bets, get_game_state returns the final reveal.  After this, both players
+must call end_round and then wait_move to wait for their opponent to end_round.
 
 After that, the next call to get_game_state will return the new, starting state
 for the next round.
