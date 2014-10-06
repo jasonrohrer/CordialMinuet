@@ -408,7 +408,7 @@ void initFrameDrawer( int inWidth, int inHeight, int inTargetFrameRate,
                           &webRetrySecondsSetting,
                           accountKey,
                           userEmail );
-    if( numRead != 7 ) {
+    if( numRead != 6 ) {
         // no recorded game?
         }
     else {
