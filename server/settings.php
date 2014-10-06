@@ -282,9 +282,12 @@ $depositWithNoInfoLimit = "500.00";
 // withdrawal threshold before we require more information from
 // the user for tax purposes
 // users can withdraw up to this limit - 0.01 without submitting info
-$withdrawalWithNoInfoYearlyLimit = "600.00"
+$withdrawalWithNoInfoYearlyLimit = "600.00";
 
 
+
+// 30 seconds
+$moveTimeLimit = "0 0:00:30.000";
 
 
 ?>

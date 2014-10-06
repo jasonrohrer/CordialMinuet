@@ -3116,6 +3116,8 @@ function cm_joinGame() {
         $player_1_id = mysql_result( $result, 0, "player_1_id" );
         $semaphore_key = mysql_result( $result, 0, "semaphore_key" );
 
+        global $moveTimeLimit;
+        
         $query = "UPDATE $tableNamePrefix"."games ".
             "SET player_2_id = '$user_id', started = 1,  ".
             "player_1_coins = player_1_coins - 1, ".
@@ -3123,7 +3125,8 @@ function cm_joinGame() {
             "player_1_pot_coins = player_1_pot_coins + 1, ".
             "player_2_pot_coins = player_2_pot_coins + 1, ".
             // buy-ins are done, ready for first moves to be made
-            "player_1_bet_made = 1, player_2_bet_made = 1 ".
+            "player_1_bet_made = 1, player_2_bet_made = 1, ".
+            "move_deadline = ADDTIME( CURRENT_TIMESTAMP, '$moveTimeLimit' ) ".
             "WHERE game_id = '$game_id';";
         
         cm_queryDatabase( $query );
@@ -3792,9 +3795,15 @@ function cm_makeMove() {
 
     $betsMade = 1;
 
+    $deadlineUpdate = "";
+    
     if( strlen( $player_1_moves ) == strlen( $player_2_moves ) ) {
         // get ready for next betting round
         $betsMade = 0;
+        
+        global $moveTimeLimit;
+        $deadlineUpdate =
+          ", move_deadline = ADDTIME( CURRENT_TIMESTAMP, '$moveTimeLimit' ) ";
         }
     
 
@@ -3803,6 +3812,7 @@ function cm_makeMove() {
         "player_2_moves = '$player_2_moves', ".
         "player_1_bet_made = '$betsMade', ".
         "player_2_bet_made = '$betsMade' ".
+        $deadlineUpdate .
         "WHERE player_1_id = '$user_id' OR player_2_id = '$user_id';";
     
 
@@ -3952,10 +3962,15 @@ function cm_makeRevealMove() {
         }
 
     $betsMade = 1;
-
+    $deadlineUpdate = "";
+    
     if( strlen( $player_1_moves ) == strlen( $player_2_moves ) ) {
         // get ready for next betting round
         $betsMade = 0;
+
+        global $moveTimeLimit;
+        $deadlineUpdate =
+          ", move_deadline = ADDTIME( CURRENT_TIMESTAMP, '$moveTimeLimit' ) ";
         }
     
 
@@ -3964,6 +3979,7 @@ function cm_makeRevealMove() {
         "player_2_moves = '$player_2_moves', ".
         "player_1_bet_made = '$betsMade', ".
         "player_2_bet_made = '$betsMade' ".
+        $deadlineUpdate .
         "WHERE player_1_id = '$user_id' OR player_2_id = '$user_id';";
     
 
@@ -4120,6 +4136,14 @@ function cm_makeBet() {
         $player_2_bet_made = 1;
         }
 
+    $deadlineUpdate = "";
+
+    if( $player_2_bet_made && $player_2_bet_made ) {
+        global $moveTimeLimit;
+        $deadlineUpdate =
+          ", move_deadline = ADDTIME( CURRENT_TIMESTAMP, '$moveTimeLimit' ) ";
+        }
+
 
     $query = "UPDATE $tableNamePrefix"."games ".
         "SET player_1_coins = '$player_1_coins', ".
@@ -4128,6 +4152,7 @@ function cm_makeBet() {
         "player_2_bet_made = '$player_2_bet_made', ".
         "player_1_pot_coins = '$player_1_pot_coins', ".
         "player_2_pot_coins = '$player_2_pot_coins' ".
+        $deadlineUpdate .
         "WHERE player_1_id = '$user_id' OR player_2_id = '$user_id';";
     
 
@@ -4350,7 +4375,9 @@ function cm_makeRoundLoser( $inLoserID, $inTie = false ) {
         }
     
     
+    global $moveTimeLimit;
 
+    
     $query = "UPDATE $tableNamePrefix"."games ".
         "SET player_1_coins = '$player_1_coins', ".
         "player_2_coins = '$player_2_coins', ".
@@ -4362,7 +4389,8 @@ function cm_makeRoundLoser( $inLoserID, $inTie = false ) {
         "player_2_moves = '#', ".
         "player_1_ended_round = '0', ".
         "player_2_ended_round = '0', ".
-        "game_square = '$game_square' ".
+        "game_square = '$game_square', ".
+        "move_deadline = ADDTIME( CURRENT_TIMESTAMP, '$moveTimeLimit' ) ".
         "WHERE player_1_id = '$inLoserID' OR player_2_id = '$inLoserID';";
     
 
@@ -4557,12 +4585,12 @@ function cm_waitMove() {
         return;
         }
 
-    cm_waitMoveInternall( true );
+    cm_waitMoveInternal( true );
     }
 
 
 
-function cm_waitMoveInternall( $inWaitOnSemaphore ) {
+function cm_waitMoveInternal( $inWaitOnSemaphore ) {
     
     global $tableNamePrefix;
 
@@ -4575,7 +4603,9 @@ function cm_waitMoveInternall( $inWaitOnSemaphore ) {
         "semaphore_key, player_1_moves, player_2_moves, ".
         "player_1_pot_coins, player_2_pot_coins, ".
         "player_1_bet_made, player_2_bet_made, ".
-        "player_1_ended_round, player_2_ended_round ".
+        "player_1_ended_round, player_2_ended_round, ".
+        "TIMESTAMPDIFF( SECOND, CURRENT_TIMESTAMP, move_deadline ) ".
+        "  AS seconds_left ".
         "FROM $tableNamePrefix"."games ".
         "WHERE player_1_id = '$user_id' OR player_2_id = '$user_id' ".
         "FOR UPDATE;";
@@ -4608,6 +4638,9 @@ function cm_waitMoveInternall( $inWaitOnSemaphore ) {
     $player_1_ended_round = mysql_result( $result, 0, "player_1_ended_round" );
     $player_2_ended_round = mysql_result( $result, 0, "player_2_ended_round" );
 
+
+    $seconds_left = mysql_result( $result, 0, "seconds_left" );
+    
     
     $ourPotCoins;
     $theirPotCoins;
@@ -4643,34 +4676,66 @@ function cm_waitMoveInternall( $inWaitOnSemaphore ) {
             }
         return;
         }
-    else if( $inWaitOnSemaphore ) {
-        global $waitTimeout;
-
-        semLock( $semaphore_key );
-
-        cm_queryDatabase( "COMMIT;" );
+    else {
+        // move not ready
         
-        $result = semWait( $semaphore_key, $waitTimeout );
+        if( $seconds_left <= 0 ) {
+            // deadline for opponent move has passed
+            // force them to leave game
+            
+            $otherPlayer = $player_2_id;
+            
+            if( $user_id == $player_2_id ) {
+                $otherPlayer = $player_1_id;
+                }
+            
+            cm_endOldGames( $otherPlayer );
 
-
-        if( $result == -2 ) {
-            echo "waiting\nOK";
+            cm_queryDatabase( "COMMIT;" );
+            
+            echo "opponent_left\nOK";
             return;
             }
-        else {
-            // don't re-wait on the semaphore this time,
-            // but re-perform the same tests to check if the move is ready 
-            cm_waitMoveInternall( false );
-            }
-        }
-    
-    else {
-        // we're waiting, but not supposed to block on semaphore
-        // (maybe we already woke up from waiting on it)
-        echo "waiting\nOK";
+        // else their deadline still running
+        else if( $inWaitOnSemaphore ) {
+            global $waitTimeout;
+
+            $waitLimit = ( $seconds_left + 1 ) * 1000;
         
-        cm_queryDatabase( "COMMIT;" );
-        return;
+            
+            if( $waitTimeout > $waitLimit ) {
+                $waitTimeout = $waitLimit;
+                }
+        
+            
+            semLock( $semaphore_key );
+
+            cm_queryDatabase( "COMMIT;" );
+
+            cm_log( "Waiting on semaphore with timeout $waitTimeout, ".
+                    "$seconds_left seconds left" );
+            
+            $result = semWait( $semaphore_key, $waitTimeout );
+            
+            
+            if( $result == -2 ) {
+                echo "waiting\nOK";
+                return;
+                }
+            else {
+                // don't re-wait on the semaphore this time,
+                // but re-perform the same tests to check if the move is ready 
+                cm_waitMoveInternal( false );
+                }
+            }
+        else {
+            // we're waiting, but not supposed to block on semaphore
+            // (maybe we already woke up from waiting on it)
+            echo "waiting\nOK";
+            
+            cm_queryDatabase( "COMMIT;" );
+            return;
+            }
         }
     }
 
