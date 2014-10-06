@@ -3021,7 +3021,7 @@ function cm_joinGame() {
 
     
     if( $numRows == 0 ) {
-        cm_log( "cm_joinGame, user $user_id not found" );
+        cm_log( "cm_joinGame denied, user $user_id not found" );
         cm_transactionDeny();
         return;
         }
@@ -3040,7 +3040,7 @@ function cm_joinGame() {
 
 
     if( $request_sequence_number < $old_request_sequence_number ) {
-        cm_log( "cm_joinGame, stale request sequence number" );
+        cm_log( "cm_joinGame denied, stale request sequence number" );
         cm_transactionDeny();
         return;
         }
@@ -3072,8 +3072,16 @@ function cm_joinGame() {
         }
     
 
+    if( $dollar_amount < 0.01 ) {
+        cm_log( "cm_joinGame denied, requested game of value ".
+                "\$$dollar_amount, too low" );
+        cm_transactionDeny();
+        return;
+        }
+    
+    
     if( $dollar_amount > $dollar_balance ) {
-        cm_log( "cm_joinGame, balance too low for requested game" );
+        cm_log( "cm_joinGame denied, balance too low for requested game" );
         cm_transactionDeny();
         return;
         }
