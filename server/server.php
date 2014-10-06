@@ -3609,7 +3609,7 @@ function cm_printGameState( $inHideOpponentSecretMoves = true ) {
 
                     $moves[$i] = "?";
                     }
-                if( $theirReveal == $moves[$i] ) {
+                else if( $theirReveal == $moves[$i] ) {
                     $theirRevealIndex = $i;
                     }
                 }
@@ -3936,8 +3936,11 @@ function cm_makeRevealMove() {
         return;
         }
     
+
+    $our_moves_split = preg_split( "/#/", $our_moves ); 
+    $revealIndex = array_search( $our_column, $our_moves_split );
     
-    if( ! strstr( $our_moves, $our_column ) ) {
+    if( $revealIndex % 2 != 0 ) {
         
         cm_log( "Player trying to reveal $our_column, but that column ".
                 " is not theirs in past move list $our_moves" );
