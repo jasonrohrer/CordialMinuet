@@ -24,6 +24,7 @@ DepositDisplayPage::DepositDisplayPage()
         : ServerActionPage( "get_balance",
                             1, getBalancePartNames, true ),
           mWithdraw( false ),
+          mLeftGame( false ),
           mOkayButton( mainFont, 0, -200, 
                        translate( "OK" ) ),
           mOldBalance( 0 ),
@@ -43,6 +44,11 @@ DepositDisplayPage::~DepositDisplayPage() {
 
 void DepositDisplayPage::setWithdraw( char inWithdraw ) {
     mWithdraw = inWithdraw;
+    }
+
+
+void DepositDisplayPage::setLeftGame( char inLeftGame ) {
+    mLeftGame = inLeftGame;
     }
 
 
@@ -151,6 +157,9 @@ void DepositDisplayPage::draw( doublePair inViewCenter,
     
     if( mWithdraw ) {
         amountKey = "withdrawAmount";
+        }
+    else if( mLeftGame ) {
+        amountKey = "leftWithAmount";
         }
 
     numbersFontFixed->drawString( translate( amountKey ), pos, alignRight );

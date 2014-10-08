@@ -1,0 +1,3 @@
+ALTER TABLE minuetServer_users ADD last_buy_in DECIMAL(13, 2) NOT NULL AFTER total_lost;
+
+ALTER TABLE minuetServer_users ADD last_pay_out DECIMAL(13, 4) NOT NULL AFTER last_buy_in;

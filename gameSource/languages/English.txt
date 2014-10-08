@@ -74,6 +74,7 @@ oldBalance "OLD BALANCE:"
 
 addedAmount "ADDED:"
 withdrawAmount "WITHDREW:"
+leftWithAmount "LEFT WITH:"
 
 
 newBalance "NEW BALANCE:"

@@ -475,9 +475,16 @@ server.php?action=leave_game
           &account_hmac=[hmac-sha1, hex-encoded]  
 
 Returns:
+buy_in_dollar_amount
+payout_dollar_amount
 OK
 
 
+buy_in_dollar_amount and payout_dollar_amount is dollars in ASCII floating 
+point
+
+Can both be zero when leaving a game that hasn't been joined by an opponent
+yet.
 
 
 

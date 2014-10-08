@@ -477,6 +477,8 @@ function cm_setupDatabase() {
             "total_buy_in DECIMAL(13, 2) NOT NULL,".
             "total_won DECIMAL(13, 4) NOT NULL,".
             "total_lost DECIMAL(13, 4) NOT NULL,".
+            "last_buy_in DECIMAL(13, 2) NOT NULL,".
+            "last_pay_out DECIMAL(13, 4) NOT NULL,".
             "sequence_number INT UNSIGNED NOT NULL," .
             "request_sequence_number INT UNSIGNED NOT NULL," .
             "last_action_time DATETIME NOT NULL," .
@@ -2898,7 +2900,8 @@ function cm_endOldGames( $user_id ) {
             $query = "UPDATE $tableNamePrefix"."users ".
                 "SET dollar_balance = dollar_balance + $player_1_payout, ".
                 "total_won = total_won + $won, ".
-                "total_lost = total_lost + $lost ".
+                "total_lost = total_lost + $lost, ".
+                "last_pay_out = $player_1_payout ".
                 "WHERE user_id = '$old_player_1_id';";
             cm_queryDatabase( $query );
 
@@ -2916,7 +2919,8 @@ function cm_endOldGames( $user_id ) {
             $query = "UPDATE $tableNamePrefix"."users ".
                 "SET dollar_balance = dollar_balance + $player_2_payout, ".
                 "total_won = total_won + $won, ".
-                "total_lost = total_lost + $lost ".
+                "total_lost = total_lost + $lost, ".
+                "last_pay_out = $player_2_payout ".
                 "WHERE user_id = '$old_player_2_id';";
             cm_queryDatabase( $query );
 
@@ -3136,7 +3140,8 @@ function cm_joinGame() {
         $query = "UPDATE $tableNamePrefix"."users ".
             "SET dollar_balance = dollar_balance - $dollar_amount, ".
             "games_started = games_started + 1, ".
-            "total_buy_in = total_buy_in + $dollar_amount ".
+            "total_buy_in = total_buy_in + $dollar_amount, ".
+            "last_buy_in = $dollar_amount ".
             "WHERE user_id = '$player_1_id' OR user_id = '$user_id';";
         cm_queryDatabase( $query );
 
@@ -3182,8 +3187,12 @@ function cm_joinGame() {
     // (we later cash them both out when the first one leaves, for
     //  cleanest accounting.
     //  There's no money sitting in idle, half-full games.)
+    //
+    // reset last_buy_in too, because user hasn't actually bought in until
+    // the opponent joins (then we set last_buy_in for both)
     $query = "UPDATE $tableNamePrefix"."users SET ".
-        "games_created = games_created + 1 ".
+        "games_created = games_created + 1, last_buy_in = 0, ".
+        "last_pay_out = 0 ".
         "WHERE user_id = '$user_id';";
     
     $result = cm_queryDatabase( $query );
@@ -3391,8 +3400,29 @@ function cm_leaveGame() {
     
     cm_endOldGames( $user_id );
 
-    cm_queryDatabase( "COMMIT;" );
+    global $tableNamePrefix;
     
+    $query = "SELECT last_buy_in, last_pay_out ".
+        "FROM $tableNamePrefix"."users ".
+        "WHERE user_id = '$user_id';";
+
+    $result = cm_queryDatabase( $query );
+    
+    $numRows = mysql_numrows( $result );
+
+    if( $numRows == 0 ) {
+        cm_transactionDeny();
+        return;
+        }
+
+    $last_buy_in = mysql_result( $result, 0, "last_buy_in" );
+    $last_pay_out = mysql_result( $result, 0, "last_pay_out" );
+
+    
+    cm_queryDatabase( "COMMIT;" );
+
+    echo "$last_buy_in\n";
+    echo "$last_pay_out\n";
     echo "OK";
     }
 

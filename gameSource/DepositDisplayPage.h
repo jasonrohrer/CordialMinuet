@@ -18,6 +18,8 @@ class DepositDisplayPage : public ServerActionPage, public ActionListener {
         // defaults to displaying post-deposit info
         // set to true to display post-withdrawal info instead.
         void setWithdraw( char inWithdraw );
+
+        void setLeftGame( char inLeftGame );
         
 
         virtual void actionPerformed( GUIComponent *inTarget );
@@ -35,6 +37,7 @@ class DepositDisplayPage : public ServerActionPage, public ActionListener {
     protected:
         
         char mWithdraw;
+        char mLeftGame;
 
         TextButton mOkayButton;
 

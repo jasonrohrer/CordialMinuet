@@ -519,7 +519,11 @@ void initFrameDrawer( int inWidth, int inHeight, int inTargetFrameRate,
     createGamePage = new CreateGamePage();
     waitGamePage = new WaitGamePage();
         
-    leaveGamePage = new ServerActionPage( "leave_game" );
+    const char *resultNamesE[2] = { "buy_in_dollar_amount", 
+                                    "payout_dollar_amount" };
+
+    leaveGamePage = new ServerActionPage( "leave_game",
+                                          2, resultNamesE, true );
 
     joinGamePage = new ServerActionPage( "join_game" );
 
@@ -1144,6 +1148,8 @@ void drawFrame( char inUpdate ) {
                 depositDisplayPage->setDeltaAmount( 
                     depositPage->getDepositNetAmount() );
                 
+                depositDisplayPage->setLeftGame( false );
+
                 currentGamePage = depositDisplayPage;
                 currentGamePage->base_makeActive( true );
                 }
@@ -1303,8 +1309,33 @@ void drawFrame( char inUpdate ) {
             }
         else if( currentGamePage == leaveGamePage ) {
             if( leaveGamePage->isResponseReady() ) {
-                currentGamePage = getBalancePage;
-                currentGamePage->base_makeActive( true );
+
+                double buyIn = leaveGamePage->getResponseDouble( 
+                    "buy_in_dollar_amount" );
+                
+                double payout = leaveGamePage->getResponseDouble( 
+                        "payout_dollar_amount" );
+
+                if( buyIn != 0 ) {
+                    // buy-in happened
+
+                    userBalance -= buyIn;
+
+                    // so there's a real cash-out
+                    depositDisplayPage->setDeltaAmount( payout );
+                    depositDisplayPage->setLeftGame( true );
+
+                    currentGamePage = depositDisplayPage;
+                    currentGamePage->base_makeActive( true );
+                    }
+                else {
+                    // buy-in didn't happen
+                    // left while waiting for game to start
+
+                    // don't bother showing payout
+                    currentGamePage = getBalancePage;
+                    currentGamePage->base_makeActive( true );
+                    }
                 }
             }
         else if( currentGamePage == joinGamePage ) {
