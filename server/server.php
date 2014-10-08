@@ -3498,7 +3498,9 @@ function cm_printGameState( $inHideOpponentSecretMoves = true ) {
         "game_square, player_1_coins, player_2_coins, ".
         "player_1_pot_coins, player_2_pot_coins, ".
         "player_1_bet_made, player_2_bet_made, ".
-        "player_1_moves, player_2_moves ".
+        "player_1_moves, player_2_moves, ".
+        "TIMESTAMPDIFF( SECOND, CURRENT_TIMESTAMP, move_deadline ) ".
+        "  AS seconds_left ".
         "FROM $tableNamePrefix"."games ".
         "WHERE player_1_id = '$user_id' OR player_2_id = '$user_id';";
 
@@ -3527,6 +3529,13 @@ function cm_printGameState( $inHideOpponentSecretMoves = true ) {
     $player_1_moves = mysql_result( $result, 0, "player_1_moves" );
     $player_2_moves = mysql_result( $result, 0, "player_2_moves" );
 
+
+    $seconds_left = mysql_result( $result, 0, "seconds_left" );
+
+    // give the player a grace period by giving them a shorter deadline
+    // than what is actually enforced
+    $seconds_left -= 2;
+    
     
     $running = 1;
     if( $player_1_id == 0 || $player_2_id == 0 ) {
@@ -3670,6 +3679,7 @@ function cm_printGameState( $inHideOpponentSecretMoves = true ) {
     echo "$their_pot_coins\n";
     echo "$your_moves\n";
     echo "$their_moves\n";
+    echo "$seconds_left\n";
     echo "OK";
     }
 

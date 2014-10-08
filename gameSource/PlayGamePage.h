@@ -3,6 +3,7 @@
 
 
 #include "minorGems/ui/event/ActionListener.h"
+#include "minorGems/game/game.h"
 
 
 #include "TextButton.h"
@@ -90,6 +91,11 @@ class PlayGamePage : public ServerActionPage, public ActionListener {
         // ours first
         int mPlayerCoins[2];
         int mPotCoins[2];
+        
+
+        time_t mMoveDeadline;
+        float mMoveDeadlineFade;
+        float mMoveDeadlineFadeDelta;
 
 
         TextButton mCommitButton;

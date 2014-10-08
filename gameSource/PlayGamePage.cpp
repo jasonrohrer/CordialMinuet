@@ -22,10 +22,11 @@ extern double frameRateFactor;
 
 
 
-const char *gameStatePartNames[8] = { "running", "boardLayout", 
+const char *gameStatePartNames[9] = { "running", "boardLayout", 
                                       "ourCoins", "theirCoins", 
                                       "ourPotCoins", "theirPotCoins",
-                                      "ourMoves", "theirMoves" };
+                                      "ourMoves", "theirMoves",
+                                      "secondsLeft" };
 
 const char *waitMovePartNames[1] = { "status" };
 
@@ -51,8 +52,11 @@ static doublePair lastMousePos = { 0, 0 };
 
 
 PlayGamePage::PlayGamePage()
-        : ServerActionPage( "get_game_state", 8, gameStatePartNames ),
+        : ServerActionPage( "get_game_state", 9, gameStatePartNames ),
           mGameBoard( NULL ),
+          mMoveDeadline( 0 ),
+          mMoveDeadlineFade( 0 ),
+          mMoveDeadlineFadeDelta( 1 ),
           mCommitButton( mainFont, 0, -288, translate( "commit" ) ),
           mBetButton( mainFont, 0, -288, translate( "bet" ) ),
           mFoldButton( mainFont, 120, -288, translate( "fold" ) ),
@@ -188,7 +192,7 @@ void PlayGamePage::makeActive( char inFresh ) {
     
 
     setActionName( "get_game_state" );
-    setResponsePartNames( 8, gameStatePartNames );
+    setResponsePartNames( 9, gameStatePartNames );
 
     clearActionParameters();
     
@@ -324,7 +328,8 @@ void PlayGamePage::actionPerformed( GUIComponent *inTarget ) {
         }
 
     if( inTarget == &mCommitButton ) {
-        
+        mMoveDeadline = 0;
+
         mCommitButton.setVisible( false );
         mLeaveButton.setVisible( true );
     
@@ -366,7 +371,8 @@ void PlayGamePage::actionPerformed( GUIComponent *inTarget ) {
         startRequest();
         }
     else if( inTarget == &mBetButton ) {
-        
+        mMoveDeadline = 0;
+
         mBetButton.setVisible( false );
         mFoldButton.setVisible( false );
         mLeaveButton.setVisible( true );
@@ -391,7 +397,8 @@ void PlayGamePage::actionPerformed( GUIComponent *inTarget ) {
         startRequest();
         }
     else if( inTarget == &mFoldButton ) {
-        
+        mMoveDeadline = 0;
+
         mBetButton.setVisible( false );
         mFoldButton.setVisible( false );
         mLeaveButton.setVisible( true );
@@ -409,6 +416,8 @@ void PlayGamePage::actionPerformed( GUIComponent *inTarget ) {
         startRequest();
         }
     else if( inTarget == &mLeaveButton ) {
+        mMoveDeadline = 0;
+        
         setSignal( "back" );
         
         if( mWebRequest != -1 ) {
@@ -674,6 +683,49 @@ void PlayGamePage::draw( doublePair inViewCenter,
             delete [] scoreString;
             }
         
+
+        if( mMoveDeadline != 0 ) {
+            int secondsLeft = (int)( mMoveDeadline - game_time( NULL ) );
+            
+            if( secondsLeft < 11 ) {
+                doublePair pos = { 0, 300 };
+                
+                
+                if( secondsLeft > 5 && mMoveDeadlineFade < 1 ) {
+                    mMoveDeadlineFade += 
+                        .05 * frameRateFactor;
+                    if( mMoveDeadlineFade > 1 ) {
+                        mMoveDeadlineFade = 1;
+                        }
+                    }
+                else {
+                    mMoveDeadlineFade += 
+                        mMoveDeadlineFadeDelta * .1 * frameRateFactor;
+                    
+                    if( mMoveDeadlineFade > 1 ) {
+                        mMoveDeadlineFade = 1;
+                        mMoveDeadlineFadeDelta *= -1;
+                        }
+                    else if( mMoveDeadlineFade < 0 ) {
+                        mMoveDeadlineFade = 0;
+                        mMoveDeadlineFadeDelta *= -1;
+                        }
+                    }
+
+                setDrawColor( 1, 0, 0, mMoveDeadlineFade );
+                
+                char *timeString = autoSprintf( "%d", secondsLeft );
+            
+                mainFont->drawString( timeString, pos, alignCenter );
+        
+                delete [] timeString;
+                }
+            else {
+                mMoveDeadlineFade = 0;
+                mMoveDeadlineFadeDelta = 1;
+                }
+                
+            }
         }
     
     
@@ -715,6 +767,12 @@ void PlayGamePage::draw( doublePair inViewCenter,
             }
 
         delete [] number;
+
+        if( ! mRunning ) {
+            mainFont->drawString( translate( "gone" ), 
+                                  pos, alignCenter );
+            }
+
 
 
         pos.y = -32;
@@ -791,6 +849,16 @@ int stringToInt( const char *inString ) {
 
 void PlayGamePage::step() {
 
+    if( mMoveDeadline != 0 ) {
+        int secondsLeft = (int)( mMoveDeadline - game_time( NULL ) );
+
+        if( secondsLeft < 0 ) {
+            // past deadline, force them to leave game
+            actionPerformed( &mLeaveButton );
+            }
+        }
+    
+
     if( mRoundEnding && mRoundEndTime < game_time( NULL ) ) {
         clearActionParameters();
         
@@ -849,7 +917,7 @@ void PlayGamePage::step() {
         
         // new game started
         setActionName( "get_game_state" );
-        setResponsePartNames( 8, gameStatePartNames );
+        setResponsePartNames( 9, gameStatePartNames );
         
         clearActionParameters();
         mMessageState = gettingState;
@@ -881,6 +949,16 @@ void PlayGamePage::step() {
 
         mPotCoins[0] = getResponseInt( "ourPotCoins" );
         mPotCoins[1] = getResponseInt( "theirPotCoins" );
+
+        int secondsLeft = getResponseInt( "secondsLeft" );
+        
+        if( mRunning && secondsLeft >= 0 ) {
+            mMoveDeadline = game_time( NULL ) + secondsLeft;
+            }
+        else {
+            // no deadline
+            mMoveDeadline = 0;
+            }
 
         char *gameBoardString = getResponse( "boardLayout" );
         
@@ -1129,7 +1207,7 @@ void PlayGamePage::step() {
             
             // get the new game state
             setActionName( "get_game_state" );
-            setResponsePartNames( 8, gameStatePartNames );
+            setResponsePartNames( 9, gameStatePartNames );
 
             clearActionParameters();
     
@@ -1148,7 +1226,7 @@ void PlayGamePage::step() {
         else if( strcmp( status, "round_ended" ) == 0 ) {
             // start of new round
             setActionName( "get_game_state" );
-            setResponsePartNames( 8, gameStatePartNames );
+            setResponsePartNames( 9, gameStatePartNames );
 
             clearActionParameters();
             mMessageState = gettingState;
@@ -1158,7 +1236,7 @@ void PlayGamePage::step() {
         else if( strcmp( status, "opponent_left" ) == 0 ) {
             // get final state
             setActionName( "get_game_state" );
-            setResponsePartNames( 8, gameStatePartNames );
+            setResponsePartNames( 9, gameStatePartNames );
 
             clearActionParameters();
             mMessageState = gettingState;

@@ -531,6 +531,7 @@ your_pot_coins
 their_pot_coins
 your_moves
 their_moves
+seconds_left
 OK
 
 
@@ -547,6 +548,10 @@ both players have committed so far.  So, if you make a move, and are waiting
 for the other player to move, and call get_game_state, your move won't be
 included in the response, because the other player hasn't submitted a matching
 move yet.
+
+seconds_left gives the number of seconds remaining for both players to submit
+their move or bet.  If a player does not submit a move in time, they leave
+the game.
 
 
 
