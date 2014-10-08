@@ -460,6 +460,14 @@ void PlayGamePage::draw( doublePair inViewCenter,
             finalReveal = true;
             }
         
+        int xPossibleWinsToClear = -1;
+        
+        if( mTheirWonSquares[0] != -1 && ! finalReveal ) {
+            // partial reveal, we know they didn't win anything else in 
+            // this column
+            xPossibleWinsToClear = mTheirWonSquares[0] % 6;
+            }
+
         
         for( int y=0; y<6; y++ ) {
             pos.x = -cellCenterStart;
@@ -491,6 +499,10 @@ void PlayGamePage::draw( doublePair inViewCenter,
                         theirPossibleWinBlocked = true;
                         break;
                         }
+                    }
+                
+                if( x == xPossibleWinsToClear ) {
+                    theirPossibleWinBlocked = true;
                     }
                         
                             
