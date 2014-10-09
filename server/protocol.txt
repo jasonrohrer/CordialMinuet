@@ -630,6 +630,10 @@ round_ended
 OK
 
 or
+next_round_started
+OK
+
+or
 opponent_left
 OK
 
@@ -643,8 +647,11 @@ too.
 round_ended in the middle of a round, when waiting for a bet from opponent,
 means the opponent folded.
 
-In either case, it means the next round has started and will be returned by the
-next call to get_game_state.
+In either case, it means the round has ended and the coin distribution 
+will be returned by the next call to get_game_state.
+
+next_round_started expected after calling start_next_round, once opponent has
+started next round too.
 
 
 
@@ -709,6 +716,24 @@ OK
 After three moves from each player, and interspersed bets, reveal move, and 
 final bets, get_game_state returns the final reveal.  After this, both players
 must call end_round and then wait_move to wait for their opponent to end_round.
+
+After that, the next call to get_game_state will return the final round state,
+which shows the coin distribution that results.
+
+
+
+
+=== Call:
+server.php?action=start_next_round
+          &user_id=[id number]
+          &sequence_number=[number]
+          &account_hmac=[hmac-sha1, hex-encoded]  
+
+Returns:
+OK
+
+After calling end_round and the final get_game_state, both players must call
+start_next_round then wait_move to wait for their opponent to start_next_round.
 
 After that, the next call to get_game_state will return the new, starting state
 for the next round.

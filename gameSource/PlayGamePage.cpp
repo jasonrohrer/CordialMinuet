@@ -73,7 +73,9 @@ PlayGamePage::PlayGamePage()
           mRedWatercolorSprite( loadSprite( "redWatercolor.tga", false ) ),
           mBlueWatercolorSprite( loadSprite( "blueWatercolor.tga", false ) ),
           mRoundEnding( false ), 
-          mRoundEndTime( 0 ) {
+          mRoundEndTime( 0 ),
+          mRoundStarting( false ),
+          mRoundStartTime( 0 ) {
     
     for( int i=0; i<2; i++ ) {
         mPlayerCoins[i] = -1;
@@ -979,6 +981,24 @@ void PlayGamePage::step() {
         }
 
 
+    if( mRoundStarting && mRoundStartTime < game_time( NULL ) && 
+        // wait for coins to finish flying before starting next round
+        mFlyingCoins[0].size() == 0 &&
+        mFlyingCoins[1].size() == 0 ) {
+
+        clearActionParameters();
+        
+        setActionName( "start_next_round" );
+        setResponsePartNames( -1, NULL );
+        
+        mMessageState = sendingStartNext;
+        
+        setupRequestParameterSecurity();
+        startRequest();
+        mRoundStarting = false;
+        }
+
+
 
     for( int f=0; f<2; f++ ) {
         if( mFlyingCoins[f].size() > 0 ) {
@@ -1090,6 +1110,21 @@ void PlayGamePage::step() {
         
         startRequest();
         }
+    else if( mMessageState == sendingStartNext ) {
+        
+        // start next sent
+        
+        // wait for opponent's start next
+
+        clearActionParameters();
+        
+        setActionName( "wait_move" );
+        setResponsePartNames( 1, waitMovePartNames );
+
+        mMessageState = waitingStartNext;
+        
+        startRequest();
+        }
     else if( mMessageState == gettingState ||
              mMessageState == gettingStatePostMove ||
              mMessageState == gettingStatePostBet ) {
@@ -1105,6 +1140,17 @@ void PlayGamePage::step() {
 
         pots[0] = getResponseInt( "ourPotCoins" );
         pots[1] = getResponseInt( "theirPotCoins" );
+
+        
+        if( coins[0] > 0 && coins[1] > 0 && 
+            pots[0] == 0 && pots[1] == 0 ) {
+            
+            // the post-reveal coin distribution has happened
+            // and there are still coins left for another round
+            mRoundStarting = true;
+            mRoundStartTime = game_time( NULL ) + 5;
+            }
+
 
         if( mPlayerCoins[0] == -1 ) {
             // no info about coins until now, start of game
@@ -1167,18 +1213,46 @@ void PlayGamePage::step() {
                 int loser = ( winner + 1 ) % 2;
 
                 
-                int winnerRawTotal = 
-                    getNetPlayerCoins( winner ) +
+                int rawTableTotal = 
+                    getNetPlayerCoins( winner ) + getNetPlayerCoins( loser ) +
                     getNetPotCoins( 0 )    + getNetPotCoins( 1 );
                 
-                int reportedWinnerTotal = coins[winner];
+                int reportedTableTotal = coins[winner] + coins[loser]
+                    + pots[winner] + pots[loser];
                 
 
-                int houseRake = winnerRawTotal - reportedWinnerTotal;
+                int houseRake = rawTableTotal - reportedTableTotal;
+
+                
 
 
+                // this is known
                 int winnerPotToAward = getNetPotCoins(winner);
-                int loserPotToAward = getNetPotCoins(loser) - houseRake;
+                
+                
+                // don't know loser pot, because they may have folded
+                // a as-of-yet-unseen bet
+                int loserPotContribution = coins[winner] + pots[winner]
+                    - getNetPlayerCoins( winner ) - winnerPotToAward;
+                
+                
+                if( loserPotContribution + houseRake > 
+                    getNetPotCoins( loser ) ) {
+                    // loser is opponent, and they folded after making
+                    // an insufficient bet that we haven't seen yet
+                    
+                    // show their bet flying now
+                    int diff =  loserPotContribution + houseRake 
+                        - getNetPotCoins( loser );
+
+                    for( int i=0; i<diff; i++ ) {    
+                        PendingFlyingCoin coin = 
+                            { &( mPlayerCoinSpots[loser] ),
+                              &( mPotCoinSpots[loser] ),
+                              0 };
+                        mFlyingCoins[0].push_back( coin );
+                        }
+                    }
                 
                 for( int i=0; i<winnerPotToAward; i++ ) {
                     PendingFlyingCoin coin = 
@@ -1187,7 +1261,7 @@ void PlayGamePage::step() {
                           0 };
                     mFlyingCoins[0].push_back( coin );
                     }
-                for( int i=0; i<loserPotToAward; i++ ) {
+                for( int i=0; i<loserPotContribution; i++ ) {
                     PendingFlyingCoin coin = 
                         { &( mPotCoinSpots[loser] ),
                           &( mPlayerCoinSpots[winner] ),
@@ -1201,6 +1275,7 @@ void PlayGamePage::step() {
                           0 };
                     mFlyingCoins[0].push_back( coin );
                     }
+                
                 }
             }
         
@@ -1460,7 +1535,8 @@ void PlayGamePage::step() {
         }
     else if( mMessageState == waitingMove ||
              mMessageState == waitingBet ||
-             mMessageState == waitingEnd ) {
+             mMessageState == waitingEnd ||
+             mMessageState == waitingStartNext ) {
         char *status = getResponse( "status" );
 
         if( strcmp( status, "move_ready" ) == 0 ) {
@@ -1484,6 +1560,16 @@ void PlayGamePage::step() {
             startRequest();
             }
         else if( strcmp( status, "round_ended" ) == 0 ) {
+            // start of new round
+            setActionName( "get_game_state" );
+            setResponsePartNames( 9, gameStatePartNames );
+
+            clearActionParameters();
+            mMessageState = gettingState;
+            
+            startRequest();
+            }
+        else if( strcmp( status, "next_round_started" ) == 0 ) {
             // start of new round
             setActionName( "get_game_state" );
             setResponsePartNames( 9, gameStatePartNames );

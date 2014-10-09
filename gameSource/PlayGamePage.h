@@ -22,9 +22,11 @@ typedef enum GameMessageState {
     sendingBet,
     sendingFold,
     sendingEnd,
+    sendingStartNext,
     waitingMove,
     waitingBet,
-    waitingEnd
+    waitingEnd,
+    waitingStartNext
     } GameMessageState;
 
 
@@ -222,4 +224,7 @@ class PlayGamePage : public ServerActionPage, public ActionListener {
 
         char mRoundEnding;
         int mRoundEndTime;
+
+        char mRoundStarting;
+        int mRoundStartTime;
     };
