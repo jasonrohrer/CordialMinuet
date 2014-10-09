@@ -990,7 +990,7 @@ void PlayGamePage::step() {
                 if( c == 0 ||
                     // or previous coin has gone far enough that 
                     // next coin can start moving too
-                    mFlyingCoins[f].getElement( c - 1 )->progress > .75 ) {
+                    mFlyingCoins[f].getElement( c - 1 )->progress > .25 ) {
                     
 
                     if( coin->progress == 0 ) {
@@ -1001,7 +1001,7 @@ void PlayGamePage::step() {
                                             coin->start->position );
                     
                     // constant speed, regardless of how far we are moving
-                    coin->progress += frameRateFactor * 10.0 / dist;
+                    coin->progress += frameRateFactor * 5.0 / dist;
                     }
                 }
             
