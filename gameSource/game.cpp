@@ -1,10 +1,10 @@
-int versionNumber = 2;
+int versionNumber = 3;
 
 // retain an older version number here if server is compatible
 // with older client versions.
 // Change this number (and number on server) if server has changed
 // in a way that breaks old clients.
-int accountHmacVersionNumber = 2;
+int accountHmacVersionNumber = 3;
 
 
 
