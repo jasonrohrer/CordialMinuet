@@ -1076,6 +1076,7 @@ void PlayGamePage::step() {
         setResponsePartNames( 1, waitMovePartNames );
 
         mMessageState = waitingMove;
+        mMoveDeadline = 0;
         
         startRequest();
         }
@@ -1091,19 +1092,20 @@ void PlayGamePage::step() {
         setResponsePartNames( 1, waitMovePartNames );
 
         mMessageState = waitingBet;
-        
+        mMoveDeadline = 0;
+
         startRequest();
         }
     else if( mMessageState == sendingFold ) {
         
         // fold sent
         
-        // new game started
+        // get end game state
         setActionName( "get_game_state" );
         setResponsePartNames( 9, gameStatePartNames );
         
         clearActionParameters();
-        mMessageState = gettingState;
+        mMessageState = gettingStateAtEnd;
         
         startRequest();
         }
@@ -1119,7 +1121,8 @@ void PlayGamePage::step() {
         setResponsePartNames( 1, waitMovePartNames );
 
         mMessageState = waitingEnd;
-        
+        mMoveDeadline = 0;
+
         startRequest();
         }
     else if( mMessageState == sendingStartNext ) {
@@ -1134,12 +1137,14 @@ void PlayGamePage::step() {
         setResponsePartNames( 1, waitMovePartNames );
 
         mMessageState = waitingStartNext;
-        
+        mMoveDeadline = 0;
+
         startRequest();
         }
     else if( mMessageState == gettingState ||
              mMessageState == gettingStatePostMove ||
-             mMessageState == gettingStatePostBet ) {
+             mMessageState == gettingStatePostBet ||
+             mMessageState == gettingStateAtEnd ) {
         
         mRunning = getResponseInt( "running" );
         
@@ -1241,6 +1246,11 @@ void PlayGamePage::step() {
                 int houseRake = rawTableTotal - reportedTableTotal;
 
                 
+                if( !mRunning ) {
+                    // other player left, don't have enough information
+                    // to compute the rake
+                    houseRake = 0;
+                    }
 
 
                 // this is known
@@ -1323,7 +1333,8 @@ void PlayGamePage::step() {
 
         int secondsLeft = getResponseInt( "secondsLeft" );
         
-        if( mRunning && secondsLeft >= 0 ) {
+        if( mMessageState != gettingStateAtEnd &&
+            mRunning && secondsLeft >= 0 ) {
             mMoveDeadline = game_time( NULL ) + secondsLeft;
             }
         else {
@@ -1590,6 +1601,9 @@ void PlayGamePage::step() {
             else if( mMessageState == waitingBet ) {
                 mMessageState = gettingStatePostBet;
                 }
+            else if( mMessageState == waitingEnd ) {
+                mMessageState = gettingStateAtEnd;
+                }
             else {
                 mMessageState = gettingState;
                 }
@@ -1602,7 +1616,7 @@ void PlayGamePage::step() {
             setResponsePartNames( 9, gameStatePartNames );
 
             clearActionParameters();
-            mMessageState = gettingState;
+            mMessageState = gettingStateAtEnd;
             
             startRequest();
             }

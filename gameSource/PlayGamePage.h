@@ -18,6 +18,7 @@ typedef enum GameMessageState {
     gettingState,
     gettingStatePostMove,
     gettingStatePostBet,
+    gettingStateAtEnd,
     sendingMove,
     sendingBet,
     sendingFold,
