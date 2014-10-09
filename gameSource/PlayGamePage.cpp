@@ -865,19 +865,27 @@ void PlayGamePage::draw( doublePair inViewCenter,
     for( int f=0; f<2; f++ ) {
         if( mFlyingCoins[f].size() > 0 ) {
             
-            PendingFlyingCoin *coin = mFlyingCoins[f].getElement( 0 );
-            
-            
-            float easedProgress = 
-                sin( coin->progress * M_PI / 2 );
 
-            doublePair pos = 
-                add( mult( coin->dest->position, easedProgress ),
-                     mult( coin->start->position, 1 - easedProgress ) );
+            for( int c=0; c < mFlyingCoins[f].size(); c++ ) {
+                
+                PendingFlyingCoin *coin = mFlyingCoins[f].getElement( c );
+                
+                if( coin->progress > 0 ) {
+                    
+                    float easedProgress = 
+                        sin( coin->progress * M_PI / 2 );
+                    
+                    doublePair pos = 
+                        add( mult( coin->dest->position, 
+                                   easedProgress ),
+                             mult( coin->start->position, 
+                                   1 - easedProgress ) );
             
-            setDrawColor( 1, 1, 1, 1 );
-            
-            drawSprite( mCoinSprite, pos );
+                    setDrawColor( 1, 1, 1, 1 );
+                    
+                    drawSprite( mCoinSprite, pos );
+                    }
+                }
             }
         }
     
@@ -974,25 +982,40 @@ void PlayGamePage::step() {
 
     for( int f=0; f<2; f++ ) {
         if( mFlyingCoins[f].size() > 0 ) {
-            PendingFlyingCoin *coin = mFlyingCoins[f].getElement( 0 );
+            
+            for( int c=0; c < mFlyingCoins[f].size(); c++ ) {
+                PendingFlyingCoin *coin = mFlyingCoins[f].getElement( c );
         
-            if( coin->progress == 0 ) {
-                *( coin->start->coinCount ) -= 1;
+                // first coin on list
+                if( c == 0 ||
+                    // or previous coin has gone far enough that 
+                    // next coin can start moving too
+                    mFlyingCoins[f].getElement( c - 1 )->progress > .75 ) {
+                    
+
+                    if( coin->progress == 0 ) {
+                        *( coin->start->coinCount ) -= 1;
+                        }
+            
+                    double dist = distance( coin->dest->position,
+                                            coin->start->position );
+                    
+                    // constant speed, regardless of how far we are moving
+                    coin->progress += frameRateFactor * 10.0 / dist;
+                    }
                 }
             
-            double dist = distance( coin->dest->position,
-                                    coin->start->position );
-
-            // constant speed, regardless of how far we are moving
-            coin->progress += frameRateFactor * 10.0 / dist;
-            
-            if( coin->progress >= 1 ) {
+            // now delete any that are done
+            for( int c=0; c < mFlyingCoins[f].size(); c++ ) {
+                PendingFlyingCoin *coin = mFlyingCoins[f].getElement( c );
+                if( coin->progress >= 1 ) {
                 
-                if( coin->dest->coinCount != NULL ) {
-                    *( coin->dest->coinCount ) += 1;
+                    if( coin->dest->coinCount != NULL ) {
+                        *( coin->dest->coinCount ) += 1;
+                        }
+                
+                    mFlyingCoins[f].deleteElement( c );
                     }
-                
-                mFlyingCoins[f].deleteElement( 0 );
                 }
             }
         }
