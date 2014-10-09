@@ -1204,10 +1204,15 @@ void PlayGamePage::step() {
                 // end of round, one player won coins
                 
                 
+                char tie = false;
                 
                 int winner = 0;
                 if( getNetPlayerCoins(1) < coins[1] ) {
                     winner = 1;
+
+                    if( getNetPlayerCoins(0) < coins[0] ) {
+                        tie = true;
+                        }
                     }
                 
                 int loser = ( winner + 1 ) % 2;
@@ -1236,6 +1241,10 @@ void PlayGamePage::step() {
                     - getNetPlayerCoins( winner ) - winnerPotToAward;
                 
                 
+                if( tie ) {
+                    loserPotContribution = getNetPotCoins( loser );
+                    }
+
                 if( loserPotContribution + houseRake > 
                     getNetPotCoins( loser ) ) {
                     // loser is opponent, and they folded after making
@@ -1261,7 +1270,15 @@ void PlayGamePage::step() {
                           0 };
                     mFlyingCoins[0].push_back( coin );
                     }
-                for( int i=0; i<loserPotContribution; i++ ) {
+                
+
+                if( tie ) {
+                    // swap winner and loser before distributing
+                    // loser's coins
+                    winner = loser;
+                    }
+
+                for( int i=0; i<loserPotContribution; i++ ) {    
                     PendingFlyingCoin coin = 
                         { &( mPotCoinSpots[loser] ),
                           &( mPlayerCoinSpots[winner] ),
