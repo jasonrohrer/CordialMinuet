@@ -867,9 +867,13 @@ void PlayGamePage::draw( doublePair inViewCenter,
             
             PendingFlyingCoin *coin = mFlyingCoins[f].getElement( 0 );
             
+            
+            float easedProgress = 
+                sin( coin->progress * M_PI / 2 );
+
             doublePair pos = 
-                add( mult( coin->dest->position, coin->progress ),
-                     mult( coin->start->position, 1 - coin->progress ) );
+                add( mult( coin->dest->position, easedProgress ),
+                     mult( coin->start->position, 1 - easedProgress ) );
             
             setDrawColor( 1, 1, 1, 1 );
             
@@ -976,7 +980,11 @@ void PlayGamePage::step() {
                 *( coin->start->coinCount ) -= 1;
                 }
             
-            coin->progress += frameRateFactor * 0.05;
+            double dist = distance( coin->dest->position,
+                                    coin->start->position );
+
+            // constant speed, regardless of how far we are moving
+            coin->progress += frameRateFactor * 10.0 / dist;
             
             if( coin->progress >= 1 ) {
                 
