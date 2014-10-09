@@ -872,7 +872,7 @@ void PlayGamePage::draw( doublePair inViewCenter,
                 
                 PendingFlyingCoin *coin = mFlyingCoins[f].getElement( c );
                 
-                if( coin->progress > 0 ) {
+                if( coin->progress > 0 && coin->start != NULL ) {
                     
                     float easedProgress = 
                         sin( coin->progress * M_PI / 2 );
@@ -1010,18 +1010,28 @@ void PlayGamePage::step() {
                 if( c == 0 ||
                     // or previous coin has gone far enough that 
                     // next coin can start moving too
-                    mFlyingCoins[f].getElement( c - 1 )->progress > .25 ) {
+                    // make sure previous coin is not a pause marker
+                    ( mFlyingCoins[f].getElement( c - 1 )->start != NULL &&
+                      mFlyingCoins[f].getElement( c - 1 )->progress > .25 ) ) {
                     
 
-                    if( coin->progress == 0 ) {
+                    if( coin->progress == 0 && coin->start != NULL ) {
                         *( coin->start->coinCount ) -= 1;
                         }
             
-                    double dist = distance( coin->dest->position,
-                                            coin->start->position );
+                    if( coin->start != NULL && coin->dest != NULL ) {
+                        
+                        double dist = distance( coin->dest->position,
+                                                coin->start->position );
                     
-                    // constant speed, regardless of how far we are moving
-                    coin->progress += frameRateFactor * 5.0 / dist;
+                        // constant speed, regardless of how far we are moving
+                        coin->progress += frameRateFactor * 5.0 / dist;
+                        }
+                    else {
+                        // no start or dest, this is a pause that runs
+                        // over a fixed time interval, 3 seconds
+                        coin->progress += frameRateFactor / 180.0;
+                        }
                     }
                 }
             
@@ -1030,7 +1040,9 @@ void PlayGamePage::step() {
                 PendingFlyingCoin *coin = mFlyingCoins[f].getElement( c );
                 if( coin->progress >= 1 ) {
                 
-                    if( coin->dest->coinCount != NULL ) {
+                    if( coin->dest != NULL && 
+                        coin->dest->coinCount != NULL ) {
+                        
                         *( coin->dest->coinCount ) += 1;
                         }
                 
@@ -1261,8 +1273,16 @@ void PlayGamePage::step() {
                               0 };
                         mFlyingCoins[0].push_back( coin );
                         }
+                    
+                    // insert a coin flight pause after this, so that loser's
+                    // insufficient pot is shown on the screen for a bit
+                    // before the coin distribution is shown
+                    PendingFlyingCoin coin = { NULL, NULL, 0 };
+                    mFlyingCoins[0].push_back( coin );
                     }
                 
+
+
                 for( int i=0; i<winnerPotToAward; i++ ) {
                     PendingFlyingCoin coin = 
                         { &( mPotCoinSpots[winner] ),

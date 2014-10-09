@@ -68,6 +68,7 @@ typedef struct CoinSpot {
 
 
 typedef struct PendingFlyingCoin {
+        // these can be NULL if this is a pause between coin flights
         CoinSpot *start;
         CoinSpot *dest;
         
