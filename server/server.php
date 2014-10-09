@@ -2786,6 +2786,17 @@ function cm_endOldGames( $user_id ) {
         $player_2_move_count = count( $player_2_move_list );
 
 
+        
+        $pot = $player_1_pot_coins + $player_2_pot_coins;
+
+        global $housePotFraction;
+        
+        $housePotShare = floor( $pot * $housePotFraction );
+                
+        $pot -= $housePotShare;
+        
+
+        
         if( $player_1_id != 0 &&
             $player_2_id != 0 &&
             $player_1_move_count == 7 &&
@@ -2806,19 +2817,12 @@ function cm_endOldGames( $user_id ) {
                 }
 
             if( $tie ) {
+                // no rake on tie
                 $player_1_coins += $player_1_pot_coins;
                 $player_2_coins += $player_2_pot_coins;
                 }
             else {
-                $pot = $player_1_pot_coins + $player_2_pot_coins;
-
-                global $housePotFraction;
                 
-                $houseCoins = floor( $pot * $housePotFraction );
-                
-                $pot -= $houseCoins;
-
-
                 if( $player_1_id == $loserID ) {
                     $player_2_coins += $pot;
                     }
@@ -2840,13 +2844,13 @@ function cm_endOldGames( $user_id ) {
             $player_1_id = 0;
 
             // whole pot to player 2
-            $player_2_coins += $player_2_pot_coins + $player_1_pot_coins;
+            $player_2_coins += $pot;
             }
         else if( $player_2_id == $user_id ) {
             $player_2_id = 0;
             
             // whole pot to player 1
-            $player_1_coins += $player_2_pot_coins + $player_1_pot_coins;
+            $player_1_coins += $pot;
             }
 
         $player_1_pot_coins = 0;
