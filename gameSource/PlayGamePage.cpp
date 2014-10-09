@@ -54,6 +54,7 @@ static doublePair lastMousePos = { 0, 0 };
 PlayGamePage::PlayGamePage()
         : ServerActionPage( "get_game_state", 9, gameStatePartNames ),
           mGameBoard( NULL ),
+          mCoinSprite( loadWhiteSprite( "coin.tga" ) ),
           mMoveDeadline( 0 ),
           mMoveDeadlineFade( 0 ),
           mMoveDeadlineFadeDelta( 1 ),
@@ -77,7 +78,25 @@ PlayGamePage::PlayGamePage()
     for( int i=0; i<2; i++ ) {
         mPlayerCoins[i] = -1;
         mPotCoins[i] = -1;
+
+        mPlayerCoinSpots[i].coinCount = &( mPlayerCoins[i] );
+        mPotCoinSpots[i].coinCount = &( mPotCoins[i] );
+        
+        mPlayerCoinSpots[i].position.x = -244;
+        mPotCoinSpots[i].position.x = -244;
         }
+
+    mPlayerCoinSpots[0].position.y = 291;
+    mPotCoinSpots[0].position.y = 35;
+
+    mPlayerCoinSpots[1].position.y = -285;
+    mPotCoinSpots[1].position.y = -29;
+    
+    // off top of screen
+    mHouseCoinSpot.position.x = 0;
+    mHouseCoinSpot.position.y = 333 + 16;
+    mHouseCoinSpot.coinCount = NULL;
+    
 
     double y = cellCenterStart + cellXOffset;
     double x = -cellCenterStart;
@@ -144,6 +163,8 @@ PlayGamePage::~PlayGamePage() {
         delete mColumnButtons[i];
         }
     
+    freeSprite( mCoinSprite );
+
     freeSprite( mScorePipSprite );
     freeSprite( mScorePipExtraSprite );
     freeSprite( mScorePipEmptySprite );
@@ -181,6 +202,9 @@ void PlayGamePage::makeActive( char inFresh ) {
     
     mPlayerCoins[0] = -1;
     mPlayerCoins[1] = -1;
+
+    mPotCoins[0] = -1;
+    mPotCoins[1] = -1;
 
     clearCacheRecords();
     
@@ -386,9 +410,16 @@ void PlayGamePage::actionPerformed( GUIComponent *inTarget ) {
 
         setActionParameter( "bet", bet );
         
-        mPotCoins[0] += bet;
-        mPlayerCoins[0] -= bet;
         
+        for( int i=0; i<bet; i++ ) {
+            PendingFlyingCoin coin = 
+                { &( mPlayerCoinSpots[0] ),
+                  &( mPotCoinSpots[0] ),
+                  0 };
+            mFlyingCoins[0].push_back( coin );
+            }
+        
+
         mBetPicker.setVisible( false );
         
         mMessageState = sendingBet;
@@ -743,8 +774,13 @@ void PlayGamePage::draw( doublePair inViewCenter,
     
     if( mPlayerCoins[0] != -1 ) {
         // draw coins
-        pos.x = -264;
-        pos.y = 288;
+        pos = mPlayerCoinSpots[0].position;
+        
+        setDrawColor( 1, 1, 1, 1 );
+        drawSprite( mCoinSprite, pos );
+        
+        pos.x -= 20;
+        pos.y -= 3;
         
         char *number = autoSprintf( "%d", mPlayerCoins[0] );
 
@@ -755,48 +791,94 @@ void PlayGamePage::draw( doublePair inViewCenter,
         delete [] number;
 
 
-        pos.y = 32;
-        number = autoSprintf( "%d", mPotCoins[0] );
+        if( mPotCoins[0] > 0 ) {
+            
+            pos = mPotCoinSpots[0].position;
+            
+            setDrawColor( 1, 1, 1, 1 );
+            drawSprite( mCoinSprite, pos );
+            
+            pos.x -= 20;
+            pos.y -= 3;
+
+            setUsColor();
         
-        if( mRunning ) {
+            number = autoSprintf( "%d", mPotCoins[0] );
+            
             mainFont->drawString( number, 
                                   pos, alignRight );
+        
+            delete [] number;
             }
         
-        delete [] number;
 
-
-
-        pos.y = -288;
-
-        number = autoSprintf( "%d", mPlayerCoins[1] );
-        
-        setThemColor();
-        
         if( mRunning ) {
+
+            pos = mPlayerCoinSpots[1].position;
+            
+            setDrawColor( 1, 1, 1, 1 );
+            drawSprite( mCoinSprite, pos );
+            
+            pos.x -= 20;
+            pos.y -= 3;
+            
+            number = autoSprintf( "%d", mPlayerCoins[1] );
+            
+            setThemColor();
+            
             mainFont->drawString( number, 
                                   pos, alignRight );
+            delete [] number;
             }
-
-        delete [] number;
-
-        if( ! mRunning ) {
+        else {
+            pos = mPlayerCoinSpots[1].position;
+            pos.x -= 20;
+            pos.y -= 3;
+            
             mainFont->drawString( translate( "gone" ), 
                                   pos, alignCenter );
             }
 
 
 
-        pos.y = -32;
-        number = autoSprintf( "%d", mPotCoins[1] );
+        if( mPotCoins[1] > 0 ) {
+            pos = mPotCoinSpots[1].position;
+
+            setDrawColor( 1, 1, 1, 1 );
+            drawSprite( mCoinSprite, pos );
+            
+            pos.x -= 20;
+            pos.y -= 3;
+            
+            setThemColor();
+
+            number = autoSprintf( "%d", mPotCoins[1] );
         
-        if( mRunning ) {
             mainFont->drawString( number, 
                                   pos, alignRight );
+            delete [] number;
             }
 
-        delete [] number;
         }
+
+
+    for( int f=0; f<2; f++ ) {
+        if( mFlyingCoins[f].size() > 0 ) {
+            
+            PendingFlyingCoin *coin = mFlyingCoins[f].getElement( 0 );
+            
+            doublePair pos = 
+                add( mult( coin->dest->position, coin->progress ),
+                     mult( coin->start->position, 1 - coin->progress ) );
+            
+            setDrawColor( 1, 1, 1, 1 );
+            
+            drawSprite( mCoinSprite, pos );
+            }
+        }
+    
+    
+
 
     if( mShowWatercolorDemo ) {
         
@@ -883,6 +965,32 @@ void PlayGamePage::step() {
         startRequest();
         mRoundEnding = false;
         }
+
+
+
+    for( int f=0; f<2; f++ ) {
+        if( mFlyingCoins[f].size() > 0 ) {
+            PendingFlyingCoin *coin = mFlyingCoins[f].getElement( 0 );
+        
+            if( coin->progress == 0 ) {
+                *( coin->start->coinCount ) -= 1;
+                }
+            
+            coin->progress += frameRateFactor * 0.05;
+            
+            if( coin->progress >= 1 ) {
+                
+                if( coin->dest->coinCount != NULL ) {
+                    *( coin->dest->coinCount ) += 1;
+                    }
+                
+                mFlyingCoins[f].deleteElement( 0 );
+                }
+            }
+        }
+    
+    
+
     
 
     ServerActionPage::step();
@@ -956,11 +1064,119 @@ void PlayGamePage::step() {
              mMessageState == gettingStatePostBet ) {
         
         mRunning = getResponseInt( "running" );
-        mPlayerCoins[0] = getResponseInt( "ourCoins" );
-        mPlayerCoins[1] = getResponseInt( "theirCoins" );
+        
 
-        mPotCoins[0] = getResponseInt( "ourPotCoins" );
-        mPotCoins[1] = getResponseInt( "theirPotCoins" );
+        int coins[2];
+        int pots[2];
+        
+        coins[0] = getResponseInt( "ourCoins" );
+        coins[1] = getResponseInt( "theirCoins" );
+
+        pots[0] = getResponseInt( "ourPotCoins" );
+        pots[1] = getResponseInt( "theirPotCoins" );
+
+        if( mPlayerCoins[0] == -1 ) {
+            // no info about coins until now, start of game
+        
+            // show first coins flying into pot
+            
+            for( int p=0; p<2; p++ ) {
+                
+                mPlayerCoins[p] = coins[p] + pots[p];
+                mPotCoins[p] = 0;
+                        
+                for( int i=0; i<pots[p]; i++ ) {
+                    PendingFlyingCoin coin = 
+                        { &( mPlayerCoinSpots[p] ),
+                          &( mPotCoinSpots[p] ),
+                          0 };
+                    mFlyingCoins[p].push_back( coin );
+                    }
+                }            
+            }
+        else {
+            // not start of game, know player balances
+            
+            printf( "Before moving bets, our net coins = %d, "
+                    "our net pot coins = %d\n",
+                    getNetPlayerCoins(0), getNetPotCoins( 0 ) );
+            
+            for( int p=0; p<2; p++ ) {
+
+                // coins moving into pots
+                if( coins[p] < getNetPlayerCoins(p) &&
+                    pots[p] > getNetPotCoins(p) ) {
+
+                    int diff = getNetPlayerCoins(p) -  coins[p];
+                
+                    for( int i=0; i<diff; i++ ) {
+                        PendingFlyingCoin coin = 
+                            { &( mPlayerCoinSpots[p] ),
+                              &( mPotCoinSpots[p] ),
+                              0 };
+                        mFlyingCoins[p].push_back( coin );
+                        }
+                    }
+                }
+
+            
+            
+            if( getNetPlayerCoins(0) < coins[0] ||
+                getNetPlayerCoins(1) < coins[1] ) {
+                
+                // end of round, one player won coins
+                
+                
+                
+                int winner = 0;
+                if( getNetPlayerCoins(1) < coins[1] ) {
+                    winner = 1;
+                    }
+                
+                int loser = ( winner + 1 ) % 2;
+
+                
+                int winnerRawTotal = 
+                    getNetPlayerCoins( winner ) +
+                    getNetPotCoins( 0 )    + getNetPotCoins( 1 );
+                
+                int reportedWinnerTotal = coins[winner];
+                
+
+                int houseRake = winnerRawTotal - reportedWinnerTotal;
+
+
+                int winnerPotToAward = getNetPotCoins(winner);
+                int loserPotToAward = getNetPotCoins(loser) - houseRake;
+                
+                for( int i=0; i<winnerPotToAward; i++ ) {
+                    PendingFlyingCoin coin = 
+                        { &( mPotCoinSpots[winner] ),
+                          &( mPlayerCoinSpots[winner] ),
+                          0 };
+                    mFlyingCoins[0].push_back( coin );
+                    }
+                for( int i=0; i<loserPotToAward; i++ ) {
+                    PendingFlyingCoin coin = 
+                        { &( mPotCoinSpots[loser] ),
+                          &( mPlayerCoinSpots[winner] ),
+                          0 };
+                    mFlyingCoins[0].push_back( coin );
+                    }
+                for( int i=0; i<houseRake; i++ ) {
+                    PendingFlyingCoin coin = 
+                        { &( mPotCoinSpots[loser] ),
+                          &( mHouseCoinSpot ),
+                          0 };
+                    mFlyingCoins[0].push_back( coin );
+                    }
+                }
+            }
+        
+                
+        
+            
+        
 
         int secondsLeft = getResponseInt( "secondsLeft" );
         
@@ -1122,8 +1338,8 @@ void PlayGamePage::step() {
 
         
         if( ! mRunning || 
-            mPotCoins[0] == 0 ||
-            mPotCoins[1] == 0 ) {
+            getNetPotCoins(0) == 0 ||
+            getNetPotCoins(1) == 0 ) {
             
             // one player left or either down to 0
 
@@ -1134,7 +1350,7 @@ void PlayGamePage::step() {
         else if( mMessageState == gettingState 
             ||
             ( mMessageState == gettingStatePostBet &&
-              mPotCoins[0] == mPotCoins[1] ) ) {
+              getNetPotCoins(0) == getNetPotCoins(1) ) ) {
             
             int numUsedColumns = 0;
             
@@ -1177,22 +1393,23 @@ void PlayGamePage::step() {
             mBetPicker.setVisible( true );
 
             // we can't bet more than our opponent can afford
-            int max = mPlayerCoins[1] + mPotCoins[1] - mPotCoins[0];
+            int max = getNetPlayerCoins(1) + getNetPotCoins(1) - 
+                getNetPotCoins(0);
 
             // we can't bet more than we can afford
-            if( mPlayerCoins[0] < max ) {
-                max = mPlayerCoins[0];
+            if( getNetPlayerCoins(0) < max ) {
+                max = getNetPlayerCoins(0);
                 }
 
             mBetPicker.setMax( max );
             
-            int minBet = mPotCoins[1] - mPotCoins[0];
+            int minBet = getNetPotCoins(1) - getNetPotCoins(0);
             
             if( minBet < 0 ) {
                 minBet = 0;
                 }
-            if( minBet > mPlayerCoins[0] ) {
-                minBet = mPlayerCoins[0];
+            if( minBet > getNetPlayerCoins(0) ) {
+                minBet = getNetPlayerCoins(0);
                 }
             
             mBetPicker.setMin( minBet );
@@ -1774,6 +1991,51 @@ void PlayGamePage::keyDown( unsigned char inASCII ) {
     if( inASCII == 'w' || inASCII == 'W' ) {
         mShowWatercolorDemo = ! mShowWatercolorDemo;
         }
+    }
+
+
+
+
+int PlayGamePage::getNetPlayerCoins( int inPlayerNumber ) {
+    int count = mPlayerCoins[inPlayerNumber];
+    
+    for( int p=0; p<2; p++ ) {
+        for( int f=0; f<mFlyingCoins[p].size(); f++ ) {
+            PendingFlyingCoin *coin = mFlyingCoins[p].getElement( f );
+            
+            if( coin->dest == &( mPlayerCoinSpots[inPlayerNumber] ) ) {
+                count ++;
+                }
+            if( coin->progress == 0 &&
+                coin->start == &( mPlayerCoinSpots[inPlayerNumber] ) ) {
+
+                count --;
+                }
+            }
+        }
+    return count;
+    }
+
+    
+
+int PlayGamePage::getNetPotCoins( int inPlayerNumber ) {
+    int count = mPotCoins[inPlayerNumber];
+    
+    for( int p=0; p<2; p++ ) {
+        for( int f=0; f<mFlyingCoins[p].size(); f++ ) {
+            PendingFlyingCoin *coin = mFlyingCoins[p].getElement( f );
+            
+            if( coin->dest == &( mPotCoinSpots[inPlayerNumber] ) ) {
+                count ++;
+                }
+            if( coin->progress == 0 &&
+                coin->start == &( mPotCoinSpots[inPlayerNumber] ) ) {
+                
+                count --;
+                }
+            }
+        }
+    return count;
     }
 
 

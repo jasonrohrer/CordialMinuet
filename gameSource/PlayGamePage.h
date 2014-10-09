@@ -4,6 +4,7 @@
 
 #include "minorGems/ui/event/ActionListener.h"
 #include "minorGems/game/game.h"
+#include "minorGems/util/SimpleVector.h"
 
 
 #include "TextButton.h"
@@ -52,6 +53,27 @@ typedef struct PossibleScoreCacheRecord {
 
 
 
+// spot on the screen where a coin icon is displayed
+// endpoint for flying coins
+typedef struct CoinSpot {
+        doublePair position;
+        
+        // pointer to a PlayGamePage member variable that 
+        // counts (and is used to display) the coins here
+        int *coinCount;
+        
+        } CoinSpot;
+
+
+typedef struct PendingFlyingCoin {
+        CoinSpot *start;
+        CoinSpot *dest;
+        
+        float progress;
+    } PendingFlyingCoin;
+
+
+
 class PlayGamePage : public ServerActionPage, public ActionListener {
         
     public:
@@ -92,6 +114,23 @@ class PlayGamePage : public ServerActionPage, public ActionListener {
         int mPlayerCoins[2];
         int mPotCoins[2];
         
+        SpriteHandle mCoinSprite;
+
+        CoinSpot mPlayerCoinSpots[2];
+        CoinSpot mPotCoinSpots[2];
+
+        CoinSpot mHouseCoinSpot;
+        
+
+        // two queues of flying coins that can move in parallel, 
+        // at most one coin from each queue
+        SimpleVector<PendingFlyingCoin> mFlyingCoins[2];
+
+        // counts all coins, including those flying in transit
+        int getNetPlayerCoins( int inPlayerNumber );
+        int getNetPotCoins( int inPlayerNumber );
+        
+
 
         time_t mMoveDeadline;
         float mMoveDeadlineFade;
