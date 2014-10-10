@@ -4387,6 +4387,13 @@ function cm_makeRoundLoser( $inLoserID, $inTie = false ) {
         $pot -= $houseCoins;
 
         $player_2_coins += $pot;
+
+        
+        if( $extra > 0 ) {
+            // player 1 folded, mark their bet as unmade
+            // to block reveal
+            $player_1_bet_made = 0;
+            }
         }
     else {
         $extra = $player_1_pot_coins - $player_2_pot_coins;
@@ -4402,6 +4409,13 @@ function cm_makeRoundLoser( $inLoserID, $inTie = false ) {
         $pot -= $houseCoins;
 
         $player_1_coins += $pot;
+
+        
+        if( $extra > 0 ) {
+            // player 2 folded, mark their bet as unmade
+            // to block reveal
+            $player_2_bet_made = 0;
+            }
         }
 
 
@@ -4866,7 +4880,11 @@ function cm_waitMoveInternal( $inWaitOnSemaphore ) {
         return;
         }
     else if( strlen( $player_2_moves ) == strlen( $player_1_moves ) &&
-             $player_1_bet_made == $player_2_bet_made &&
+             ( $player_1_bet_made == $player_2_bet_made ||
+               // watch for case where round ended without full bets made
+               // (one player folded)
+               ( $player_1_pot_coins == 0 && $player_2_pot_coins == 0 ) )
+             &&
              $player_1_ended_round == $player_2_ended_round &&
              $theirPotCoins >= $ourPotCoins ) {
 
