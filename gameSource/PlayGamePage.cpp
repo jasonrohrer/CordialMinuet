@@ -412,13 +412,26 @@ void PlayGamePage::actionPerformed( GUIComponent *inTarget ) {
 
         setActionParameter( "bet", bet );
         
-        
-        for( int i=0; i<bet; i++ ) {
-            PendingFlyingCoin coin = 
-                { &( mPlayerCoinSpots[0] ),
-                  &( mPotCoinSpots[0] ),
-                  0 };
-            mFlyingCoins[0].push_back( coin );
+        if( getNetPotCoins( 0 ) == getNetPotCoins( 1 ) ) {
+            // both players betting blind, and only lower player
+            // will see opponent's higher bet (or both will see each other's
+            // bets simultaneously if they bet the same amount coincidentally).
+            // SO... don't fly coins here... hold back bet from pot until
+            // reveal to make this clear
+            }
+        else {
+            // we're the lower player, and if we match their bet, they 
+            // will see it and be unable to raise.
+            // if we raise them, they will see it.
+            // SO, fly coins here to make this clear
+            
+            for( int i=0; i<bet; i++ ) {
+                PendingFlyingCoin coin = 
+                    { &( mPlayerCoinSpots[0] ),
+                      &( mPotCoinSpots[0] ),
+                      0 };
+                mFlyingCoins[0].push_back( coin );
+                }
             }
         
 
