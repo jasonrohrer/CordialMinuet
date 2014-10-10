@@ -124,6 +124,7 @@ class PlayGamePage : public ServerActionPage, public ActionListener {
         CoinSpot mPotCoinSpots[2];
 
         CoinSpot mHouseCoinSpot;
+        CoinSpot mOpponentGoneCoinSpot;
         
 
         // two queues of flying coins that can move in parallel, 

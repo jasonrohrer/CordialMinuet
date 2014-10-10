@@ -100,6 +100,14 @@ PlayGamePage::PlayGamePage()
     mHouseCoinSpot.coinCount = NULL;
     
 
+    // off top of screen on opponent's side, to show where they
+    // take pot if they win and leave before coins fly
+    mOpponentGoneCoinSpot.position.x = mPlayerCoinSpots[1].position.x;
+    mOpponentGoneCoinSpot.position.y = 333 + 16;
+    mOpponentGoneCoinSpot.coinCount = NULL;
+    
+
+
     double y = cellCenterStart + cellXOffset;
     double x = -cellCenterStart;
     
@@ -1228,7 +1236,8 @@ void PlayGamePage::step() {
 
             
             
-            if( getNetPlayerCoins(0) < coins[0] ||
+            if( !mRunning || 
+                getNetPlayerCoins(0) < coins[0] ||
                 getNetPlayerCoins(1) < coins[1] ) {
                 
                 // end of round, one player won coins
@@ -1243,6 +1252,13 @@ void PlayGamePage::step() {
                     if( getNetPlayerCoins(0) < coins[0] ) {
                         tie = true;
                         }
+                    }
+                
+                if( !tie &&
+                    getNetPlayerCoins( 0 ) == coins[0] &&
+                    coins[1] == 0 ) {
+                    // opponent left, and we didn't win
+                    winner = 1;
                     }
                 
                 int loser = ( winner + 1 ) % 2;
@@ -1280,6 +1296,22 @@ void PlayGamePage::step() {
                     loserPotContribution = getNetPotCoins( loser );
                     }
 
+
+                if( !mRunning && coins[winner] == 0 ) {
+                    // winner left
+                    loserPotContribution = getNetPotCoins( loser );
+
+                    // estimate rake at 10%, because we don't have
+                    // information about true rake
+
+                    int totalPot = loserPotContribution + winnerPotToAward;
+                    
+                    houseRake = totalPot / 10;
+                    
+                    loserPotContribution -= houseRake;
+                    }
+                
+
                 if( loserPotContribution + houseRake > 
                     getNetPotCoins( loser ) ) {
                     // loser is opponent, and they folded after making
@@ -1315,10 +1347,20 @@ void PlayGamePage::step() {
                     }
 
 
+                CoinSpot *winnerCoinSpot = &( mPlayerCoinSpots[winner] );
+                
+                if( !mRunning && coins[winner] == 0 ) {
+                    // winner left
+                    
+                    // show their won coins flying off top of screen with them
+                    winnerCoinSpot = &( mOpponentGoneCoinSpot );
+                    }
+                
+
                 for( int i=0; i<winnerPotToAward; i++ ) {
                     PendingFlyingCoin coin = 
                         { &( mPotCoinSpots[winner] ),
-                          &( mPlayerCoinSpots[winner] ),
+                          winnerCoinSpot,
                           0 };
                     mFlyingCoins[0].push_back( coin );
                     }
@@ -1333,7 +1375,7 @@ void PlayGamePage::step() {
                 for( int i=0; i<loserPotContribution; i++ ) {    
                     PendingFlyingCoin coin = 
                         { &( mPotCoinSpots[loser] ),
-                          &( mPlayerCoinSpots[winner] ),
+                          winnerCoinSpot,
                           0 };
                     mFlyingCoins[0].push_back( coin );
                     }
