@@ -230,6 +230,13 @@ void PlayGamePage::makeActive( char inFresh ) {
 
     clearActionParameters();
     
+    mRoundEnding = false;
+    mRoundStarting = false;
+
+    mFlyingCoins[0].deleteAll();
+    mFlyingCoins[1].deleteAll();
+    
+
     mMessageState = gettingState;
     
     startRequest();
