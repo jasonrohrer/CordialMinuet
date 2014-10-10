@@ -88,11 +88,11 @@ PlayGamePage::PlayGamePage()
         mPotCoinSpots[i].position.x = -244;
         }
 
-    mPlayerCoinSpots[0].position.y = 291;
-    mPotCoinSpots[0].position.y = 35;
+    mPlayerCoinSpots[1].position.y = 291;
+    mPotCoinSpots[1].position.y = 35;
 
-    mPlayerCoinSpots[1].position.y = -285;
-    mPotCoinSpots[1].position.y = -29;
+    mPlayerCoinSpots[0].position.y = -285;
+    mPotCoinSpots[0].position.y = -29;
     
     // off top of screen
     mHouseCoinSpot.position.x = 0;
@@ -716,7 +716,7 @@ void PlayGamePage::draw( doublePair inViewCenter,
             }
 
         setDrawColor( 1, 1, 1, 1 );
-        doublePair pos = { 319, 300 };
+        doublePair pos = { 319, -300 };
         char *scoreString = autoSprintf( "%d", ourScore );
         
         mainFont->drawString( scoreString, pos, alignRight );
@@ -733,7 +733,7 @@ void PlayGamePage::draw( doublePair inViewCenter,
                 }
 
             setDrawColor( 1, 1, 1, 1 );
-            doublePair pos = { 319, -300 };
+            doublePair pos = { 319, 300 };
             char *scoreString = autoSprintf( "%d", theirScore );
             
             mainFont->drawString( scoreString, pos, alignRight );
