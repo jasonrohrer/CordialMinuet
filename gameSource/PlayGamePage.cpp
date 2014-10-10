@@ -1290,7 +1290,15 @@ void PlayGamePage::step() {
                     PendingFlyingCoin coin = { NULL, NULL, 0 };
                     mFlyingCoins[0].push_back( coin );
                     }
-                
+                else if( loserPotContribution < getNetPotCoins( loser ) ) {
+                    // coins hanging in loser's pot that are unaccounted
+                    // for.  Winner definitely didn't get them.
+                    
+                    // maybe they left the game, and the rake took these
+                    // extra coins
+                    houseRake += 
+                        getNetPotCoins( loser ) - loserPotContribution;
+                    }
 
 
                 for( int i=0; i<winnerPotToAward; i++ ) {
