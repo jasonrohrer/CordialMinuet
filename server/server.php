@@ -2794,8 +2794,18 @@ function cm_endOldGames( $user_id ) {
         $pot = $player_1_pot_coins + $player_2_pot_coins;
 
         global $housePotFraction;
-        
-        $housePotShare = floor( $pot * $housePotFraction );
+
+        // only rake matching part of pot, extra immune from rake
+        $potToRake = 0;
+
+        if( $player_2_pot_coins < $player_1_pot_coins ) {
+            $potToRake = 2 * $player_2_pot_coins;
+            }
+        else {
+            $potToRake = 2 * $player_1_pot_coins;
+            }
+            
+        $housePotShare = floor( $potToRake * $housePotFraction );
                 
         $pot -= $housePotShare;
         
