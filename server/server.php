@@ -4563,10 +4563,14 @@ function cm_endRound() {
         
         cm_makeRoundLoser( $loserID, $tie );
         }
+
+    global $endRoundTimeLimit;
     
     $query = "UPDATE $tableNamePrefix"."games ".
         "SET player_1_ended_round = '$player_1_ended_round', ".
-        "player_2_ended_round = '$player_2_ended_round' ".
+        "player_2_ended_round = '$player_2_ended_round', ".
+        "move_deadline = ".
+        "ADDTIME( CURRENT_TIMESTAMP, '$endRoundTimeLimit' ) ".
         "WHERE player_1_id = '$user_id' OR player_2_id = '$user_id';";
     
 
@@ -4732,9 +4736,13 @@ function cm_startNextRound() {
         $result = cm_queryDatabase( $query );
         }
     else {
+        global $endRoundTimeLimit;
+        
         $query = "UPDATE $tableNamePrefix"."games ".
             "SET player_1_ended_round = '$player_1_ended_round', ".
-            "player_2_ended_round = '$player_2_ended_round' ".
+            "player_2_ended_round = '$player_2_ended_round', ".
+            "move_deadline = ".
+            "ADDTIME( CURRENT_TIMESTAMP, '$endRoundTimeLimit' ) ".
             "WHERE player_1_id = '$user_id' OR player_2_id = '$user_id';";
     
 

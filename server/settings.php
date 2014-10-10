@@ -286,8 +286,16 @@ $withdrawalWithNoInfoYearlyLimit = "600.00";
 
 
 
-// 30 seconds
+// 1 minute
 $moveTimeLimit = "0 0:01:02.000";
+
+// time limit for sending end_round after reveal
+// shorter than normal move time limit, so we don't keep
+// one player waiting long to see the coin distribution if the other player
+// bails or disconnects before sending end_round
+// note that this time limit kicks in as soon as one player sends
+// a properly sequenced end_round
+$endRoundTimeLimit = "0 0:00:15.000";
 
 
 ?>
