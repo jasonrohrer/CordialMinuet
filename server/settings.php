@@ -287,7 +287,7 @@ $withdrawalWithNoInfoYearlyLimit = "600.00";
 
 
 // 30 seconds
-$moveTimeLimit = "0 0:00:32.000";
+$moveTimeLimit = "0 0:01:02.000";
 
 
 ?>
