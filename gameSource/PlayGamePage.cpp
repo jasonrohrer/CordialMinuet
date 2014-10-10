@@ -1039,7 +1039,13 @@ void PlayGamePage::step() {
                     // or previous coin has gone far enough that 
                     // next coin can start moving too
                     // make sure previous coin is not a pause marker
-                    ( mFlyingCoins[f].getElement( c - 1 )->start != NULL &&
+                    ( mFlyingCoins[f].getElement( c - 1 )->start != NULL 
+                      &&
+                      // not moving out of previous coin's destination
+                      // (coins cross paths and look confusing
+                      mFlyingCoins[f].getElement( c - 1 )->dest !=
+                      mFlyingCoins[f].getElement( c )->start
+                      &&
                       mFlyingCoins[f].getElement( c - 1 )->progress > .25 ) ) {
                     
 
@@ -1319,6 +1325,19 @@ void PlayGamePage::step() {
                     }
                 
 
+                // add these coins to the end of the fullest queue
+                // thus, these coins will wait until pending flights are
+                // finished before starting, and not run in parallel
+                // (parallel used for [bets --> pot] only)
+                SimpleVector<PendingFlyingCoin> *flyingQueue;
+                
+                if( mFlyingCoins[0].size() > mFlyingCoins[1].size() ) {
+                    flyingQueue = &( mFlyingCoins[0] );
+                    }
+                else {
+                    flyingQueue = &( mFlyingCoins[1] );
+                    }
+                
                 if( loserPotContribution + houseRake > 
                     getNetPotCoins( loser ) ) {
                     // loser is opponent, and they folded after making
@@ -1333,14 +1352,14 @@ void PlayGamePage::step() {
                             { &( mPlayerCoinSpots[loser] ),
                               &( mPotCoinSpots[loser] ),
                               0 };
-                        mFlyingCoins[0].push_back( coin );
+                        flyingQueue->push_back( coin );
                         }
                     
                     // insert a coin flight pause after this, so that loser's
                     // insufficient pot is shown on the screen for a bit
                     // before the coin distribution is shown
                     PendingFlyingCoin coin = { NULL, NULL, 0 };
-                    mFlyingCoins[0].push_back( coin );
+                    flyingQueue->push_back( coin );
                     }
                 else if( loserPotContribution + houseRake
                          < getNetPotCoins( loser ) ) {
@@ -1369,7 +1388,7 @@ void PlayGamePage::step() {
                         { &( mPotCoinSpots[winner] ),
                           winnerCoinSpot,
                           0 };
-                    mFlyingCoins[0].push_back( coin );
+                    flyingQueue->push_back( coin );
                     }
                 
 
@@ -1384,14 +1403,14 @@ void PlayGamePage::step() {
                         { &( mPotCoinSpots[loser] ),
                           winnerCoinSpot,
                           0 };
-                    mFlyingCoins[0].push_back( coin );
+                    flyingQueue->push_back( coin );
                     }
                 for( int i=0; i<houseRake; i++ ) {
                     PendingFlyingCoin coin = 
                         { &( mPotCoinSpots[loser] ),
                           &( mHouseCoinSpot ),
                           0 };
-                    mFlyingCoins[0].push_back( coin );
+                    flyingQueue->push_back( coin );
                     }
                 
                 }
