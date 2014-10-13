@@ -149,6 +149,9 @@ class PlayGamePage : public ServerActionPage, public ActionListener {
 
         NumberPicker mBetPicker;
         
+        int mCommitFlashPreSteps;
+        float mCommitFlashProgress;
+        float mCommitFlashDirection;
 
         TextButton *mColumnButtons[6];
 

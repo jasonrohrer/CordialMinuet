@@ -63,6 +63,9 @@ PlayGamePage::PlayGamePage()
           mFoldButton( mainFont, 120, -288, translate( "fold" ) ),
           mLeaveButton( mainFont, -128, -288, translate( "leave" ) ),
           mBetPicker( mainFont, -64, -288, 3, 0, "" ),
+          mCommitFlashPreSteps( 0 ),
+          mCommitFlashProgress( 1.0 ),
+          mCommitFlashDirection( -1 ),
           mColumnChoiceForUs( -1 ), mColumnChoiceForThem( -1 ),
           mRevealChoiceForUs( -1 ),
           mScorePipSprite( loadWhiteSprite( "scorePip.tga" ) ),
@@ -198,6 +201,9 @@ void PlayGamePage::makeActive( char inFresh ) {
 
 
     mCommitButton.setVisible( false );
+    // clear flashing
+    setButtonStyle( &mCommitButton );
+
     mBetButton.setVisible( false );
     mFoldButton.setVisible( false );
     
@@ -314,6 +320,10 @@ void PlayGamePage::actionPerformed( GUIComponent *inTarget ) {
                         }
                     }
                 mCommitButton.setVisible( true );
+                mCommitFlashPreSteps = 0;
+                mCommitFlashProgress = 1.0;
+                mCommitFlashDirection = -1;
+                
                 mLeaveButton.setVisible( false );
                 }
             else if( numMovesAlreadyMade == 6 ) {
@@ -325,6 +335,11 @@ void PlayGamePage::actionPerformed( GUIComponent *inTarget ) {
                             }
                         }
                     mCommitButton.setVisible( true );
+                    mCommitFlashPreSteps = 0;
+                    mCommitFlashProgress = 1.0;
+                    mCommitFlashDirection = -1;
+                    
+                    
                     mLeaveButton.setVisible( false );
                     }
                 else {
@@ -333,6 +348,9 @@ void PlayGamePage::actionPerformed( GUIComponent *inTarget ) {
                     mColumnButtons[mOurChoices[4]]->setVisible( true );
 
                     mCommitButton.setVisible( false );
+                    // clear flashing
+                    setButtonStyle( &mCommitButton );
+
                     mLeaveButton.setVisible( true );
                     }
                 }
@@ -361,6 +379,9 @@ void PlayGamePage::actionPerformed( GUIComponent *inTarget ) {
                         }
                     }
                 mCommitButton.setVisible( false );
+                // clear flashing
+                setButtonStyle( &mCommitButton );
+
                 mLeaveButton.setVisible( true );
                 }
 
@@ -372,6 +393,9 @@ void PlayGamePage::actionPerformed( GUIComponent *inTarget ) {
         mMoveDeadline = 0;
 
         mCommitButton.setVisible( false );
+        // clear flashing
+        setButtonStyle( &mCommitButton );
+    
         mLeaveButton.setVisible( true );
     
         clearActionParameters();
@@ -1086,6 +1110,39 @@ void PlayGamePage::step() {
             }
         }
     
+    
+    if( mCommitButton.isVisible() ) {
+
+        if( mCommitButton.isMouseOver() ) {
+            mCommitFlashPreSteps = 0;
+            mCommitFlashProgress = 1;
+            mCommitFlashDirection = -1;
+            
+            mCommitButton.setNoHoverColor( 1, 1, 1, mCommitFlashProgress );
+            }
+        else {
+            
+            mCommitFlashPreSteps ++;
+            
+            if( mCommitFlashPreSteps > 120 / frameRateFactor ) {
+                
+
+                mCommitButton.setNoHoverColor( 1, 1, 1, mCommitFlashProgress );
+
+                mCommitFlashProgress += 
+                    mCommitFlashDirection * frameRateFactor * 0.03;
+        
+                if( mCommitFlashProgress > 1 ) {
+                    mCommitFlashProgress = 1;
+                    mCommitFlashDirection *= -1;
+                    }
+                else if( mCommitFlashProgress < 0.25 ) {
+                    mCommitFlashProgress = 0.25;
+                    mCommitFlashDirection *= -1;
+                    }
+                }
+            }
+        }
     
 
     

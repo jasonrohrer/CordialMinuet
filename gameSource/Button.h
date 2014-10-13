@@ -83,6 +83,9 @@ class Button : public PageComponent, public ActionListenerList {
         virtual void setDrawBackground( char inDraw );
 
 
+        virtual char isMouseOver();
+        
+
     protected:
 
         virtual void clearState();

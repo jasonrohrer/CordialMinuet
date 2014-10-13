@@ -310,3 +310,9 @@ void Button::setDrawBackground( char inDraw ) {
     mDrawBackground = inDraw;
     }
 
+
+
+char Button::isMouseOver() {
+    return mHover || mDragOver;
+    }
+
