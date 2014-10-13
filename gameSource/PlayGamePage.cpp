@@ -55,6 +55,7 @@ PlayGamePage::PlayGamePage()
         : ServerActionPage( "get_game_state", 9, gameStatePartNames ),
           mGameBoard( NULL ),
           mCoinSprite( loadWhiteSprite( "coin.tga" ) ),
+          mCoinTenSprite( loadWhiteSprite( "coinTen.tga" ) ),
           mMoveDeadline( 0 ),
           mMoveDeadlineFade( 0 ),
           mMoveDeadlineFadeDelta( 1 ),
@@ -177,6 +178,7 @@ PlayGamePage::~PlayGamePage() {
         }
     
     freeSprite( mCoinSprite );
+    freeSprite( mCoinTenSprite );
 
     freeSprite( mScorePipSprite );
     freeSprite( mScorePipExtraSprite );
@@ -464,11 +466,21 @@ void PlayGamePage::actionPerformed( GUIComponent *inTarget ) {
             // if we raise them, they will see it.
             // SO, fly coins here to make this clear
             
-            for( int i=0; i<bet; i++ ) {
+            int coinValue = 1;
+            if( bet >= 10 ) {
+                coinValue = 10;
+                }
+
+            for( int i=0; i<bet; i += coinValue ) {
+                if( bet - i < coinValue ) {
+                    coinValue = 1;
+                    }
+
                 PendingFlyingCoin coin = 
                     { &( mPlayerCoinSpots[0] ),
                       &( mPotCoinSpots[0] ),
-                      0 };
+                      0,
+                      coinValue };
                 mFlyingCoins[0].push_back( coin );
                 }
             }
@@ -937,7 +949,12 @@ void PlayGamePage::draw( doublePair inViewCenter,
             
                     setDrawColor( 1, 1, 1, 1 );
                     
-                    drawSprite( mCoinSprite, pos );
+                    if( coin->value == 1 ) {
+                        drawSprite( mCoinSprite, pos );
+                        }
+                    else {
+                        drawSprite( mCoinTenSprite, pos );
+                        }
                     }
                 }
             }
@@ -1074,7 +1091,7 @@ void PlayGamePage::step() {
                     
 
                     if( coin->progress == 0 && coin->start != NULL ) {
-                        *( coin->start->coinCount ) -= 1;
+                        *( coin->start->coinCount ) -= coin->value;
                         }
             
                     if( coin->start != NULL && coin->dest != NULL ) {
@@ -1101,7 +1118,7 @@ void PlayGamePage::step() {
                     if( coin->dest != NULL && 
                         coin->dest->coinCount != NULL ) {
                         
-                        *( coin->dest->coinCount ) += 1;
+                        *( coin->dest->coinCount ) += coin->value;
                         }
                 
                     mFlyingCoins[f].deleteElement( c );
@@ -1270,11 +1287,22 @@ void PlayGamePage::step() {
                 mPlayerCoins[p] = coins[p] + pots[p];
                 mPotCoins[p] = 0;
                         
-                for( int i=0; i<pots[p]; i++ ) {
+                
+                int coinValue = 1;
+                if( pots[p] >= 10 ) {
+                    coinValue = 10;
+                    }
+                
+                for( int i=0; i<pots[p]; i += coinValue ) {
+                    if( pots[p] - i < coinValue ) {
+                        coinValue = 1;
+                        }
+
                     PendingFlyingCoin coin = 
                         { &( mPlayerCoinSpots[p] ),
                           &( mPotCoinSpots[p] ),
-                          0 };
+                          0,
+                          coinValue };
                     mFlyingCoins[p].push_back( coin );
                     }
                 }            
@@ -1294,11 +1322,20 @@ void PlayGamePage::step() {
 
                     int diff = getNetPlayerCoins(p) -  coins[p];
                 
-                    for( int i=0; i<diff; i++ ) {
+                    int coinValue = 1;
+                    if( diff >= 10 ) {
+                        coinValue = 10;
+                        }
+                    
+                    for( int i=0; i<diff; i += coinValue ) {
+                        if( diff - i < coinValue ) {
+                            coinValue = 1;
+                            }
                         PendingFlyingCoin coin = 
                             { &( mPlayerCoinSpots[p] ),
                               &( mPotCoinSpots[p] ),
-                              0 };
+                              0,
+                              coinValue };
                         mFlyingCoins[p].push_back( coin );
                         }
                     }
@@ -1403,19 +1440,29 @@ void PlayGamePage::step() {
                     // show their bet flying now
                     int diff =  loserPotContribution + houseRake 
                         - getNetPotCoins( loser );
+                    
+                    int coinValue = 1;
+                    if( diff >= 10 ) {
+                        coinValue = 10;
+                        }
 
-                    for( int i=0; i<diff; i++ ) {    
+                    for( int i=0; i<diff; i += coinValue ) {    
+                        if( diff - i < coinValue ) {
+                            coinValue = 1;
+                            }
+                        
                         PendingFlyingCoin coin = 
                             { &( mPlayerCoinSpots[loser] ),
                               &( mPotCoinSpots[loser] ),
-                              0 };
+                              0,
+                              coinValue };
                         flyingQueue->push_back( coin );
                         }
                     
                     // insert a coin flight pause after this, so that loser's
                     // insufficient pot is shown on the screen for a bit
                     // before the coin distribution is shown
-                    PendingFlyingCoin coin = { NULL, NULL, 0 };
+                    PendingFlyingCoin coin = { NULL, NULL, 0, 1 };
                     flyingQueue->push_back( coin );
                     }
                 else if( loserPotContribution + houseRake
@@ -1438,13 +1485,23 @@ void PlayGamePage::step() {
                     // show their won coins flying off top of screen with them
                     winnerCoinSpot = &( mOpponentGoneCoinSpot );
                     }
-                
 
-                for( int i=0; i<winnerPotToAward; i++ ) {
+                
+                int coinValue = 1;
+                if( winnerPotToAward >= 10 ) {
+                    coinValue = 10;
+                    }
+
+                for( int i=0; i<winnerPotToAward; i += coinValue ) {
+                    if( winnerPotToAward - i < coinValue ) {
+                        coinValue = 1;
+                        }
+                    
                     PendingFlyingCoin coin = 
                         { &( mPotCoinSpots[winner] ),
                           winnerCoinSpot,
-                          0 };
+                          0,
+                          coinValue };
                     flyingQueue->push_back( coin );
                     }
                 
@@ -1455,18 +1512,40 @@ void PlayGamePage::step() {
                     winner = loser;
                     }
 
-                for( int i=0; i<loserPotContribution; i++ ) {    
+                coinValue = 1;
+                if( loserPotContribution >= 10 ) {
+                    coinValue = 10;
+                    }
+
+                for( int i=0; i<loserPotContribution; i += coinValue ) {    
+                    if( loserPotContribution - i < coinValue ) {
+                        coinValue = 1;
+                        }
+                    
                     PendingFlyingCoin coin = 
                         { &( mPotCoinSpots[loser] ),
                           winnerCoinSpot,
-                          0 };
+                          0,
+                          coinValue };
                     flyingQueue->push_back( coin );
                     }
-                for( int i=0; i<houseRake; i++ ) {
+
+                
+                coinValue = 1;
+                if( houseRake >= 10 ) {
+                    coinValue = 10;
+                    }
+
+                for( int i=0; i<houseRake; i += coinValue ) {
+                    if( houseRake - i < coinValue ) {
+                        coinValue = 1;
+                        }
+                    
                     PendingFlyingCoin coin = 
                         { &( mPotCoinSpots[loser] ),
                           &( mHouseCoinSpot ),
-                          0 };
+                          0,
+                          coinValue };
                     flyingQueue->push_back( coin );
                     }
                 
@@ -2319,12 +2398,12 @@ int PlayGamePage::getNetPlayerCoins( int inPlayerNumber ) {
             PendingFlyingCoin *coin = mFlyingCoins[p].getElement( f );
             
             if( coin->dest == &( mPlayerCoinSpots[inPlayerNumber] ) ) {
-                count ++;
+                count += coin->value;
                 }
             if( coin->progress == 0 &&
                 coin->start == &( mPlayerCoinSpots[inPlayerNumber] ) ) {
 
-                count --;
+                count -= coin->value;
                 }
             }
         }
@@ -2341,12 +2420,12 @@ int PlayGamePage::getNetPotCoins( int inPlayerNumber ) {
             PendingFlyingCoin *coin = mFlyingCoins[p].getElement( f );
             
             if( coin->dest == &( mPotCoinSpots[inPlayerNumber] ) ) {
-                count ++;
+                count += coin->value;
                 }
             if( coin->progress == 0 &&
                 coin->start == &( mPotCoinSpots[inPlayerNumber] ) ) {
                 
-                count --;
+                count -= coin->value;
                 }
             }
         }

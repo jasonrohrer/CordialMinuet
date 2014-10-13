@@ -74,6 +74,9 @@ typedef struct PendingFlyingCoin {
         CoinSpot *dest;
         
         float progress;
+        
+        int value;
+        
     } PendingFlyingCoin;
 
 
@@ -119,6 +122,7 @@ class PlayGamePage : public ServerActionPage, public ActionListener {
         int mPotCoins[2];
         
         SpriteHandle mCoinSprite;
+        SpriteHandle mCoinTenSprite;
 
         CoinSpot mPlayerCoinSpots[2];
         CoinSpot mPotCoinSpots[2];
