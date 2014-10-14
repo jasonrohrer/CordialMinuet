@@ -81,6 +81,12 @@ PlayGamePage::PlayGamePage()
           mRoundStarting( false ),
           mRoundStartTime( 0 ) {
     
+
+    // put status message on top of screen so that errors don't
+    // overlap with leave button
+    setStatusPositiion( true );
+    
+
     for( int i=0; i<2; i++ ) {
         mPlayerCoins[i] = -1;
         mPotCoins[i] = -1;

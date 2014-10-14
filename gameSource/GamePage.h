@@ -27,6 +27,10 @@ class GamePage : public PageComponent {
         // overrides default tip position
         // tip defaults to bottom of screen
         void setTipPosition( char inTop );
+
+        // overrides default status position
+        // status messages default to bottom of screen
+        void setStatusPositiion( char inTop );
         
         
         // override these from PageComponent to actually SHOW
@@ -188,6 +192,7 @@ class GamePage : public PageComponent {
         double mLastTipFade;
         
         char mTipAtTopOfScreen;
+        char mStatusAtTopOfScreen;
 
         char *mSignal;
         

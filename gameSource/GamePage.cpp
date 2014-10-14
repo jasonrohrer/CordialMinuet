@@ -45,6 +45,7 @@ GamePage::GamePage()
           mLastTip( NULL ),
           mLastTipFade( 1 ),
           mTipAtTopOfScreen( false ),
+          mStatusAtTopOfScreen( false ),
           mSignal( NULL ),
           mResponseWarningTipShowing( false ) {
 
@@ -174,6 +175,10 @@ void GamePage::setTipPosition( char inTop ) {
     }
 
 
+void GamePage::setStatusPositiion( char inTop ) {
+    mStatusAtTopOfScreen = inTop;
+    }
+
 
 
 void GamePage::base_draw( doublePair inViewCenter, 
@@ -200,11 +205,19 @@ void GamePage::base_draw( doublePair inViewCenter,
     if( mStatusMessageKey != NULL ) {
         doublePair labelPos = { 0, -280 };
         
+        if( mStatusAtTopOfScreen ) {
+            labelPos.y *= -1;
+            }
+        
         drawMessage( mStatusMessageKey, labelPos, mStatusError );
         statusDrawn = true;
         }
     else if( mStatusMessage != NULL ) {
         doublePair labelPos = { 0, -280 };
+        
+        if( mStatusAtTopOfScreen ) {
+            labelPos.y *= -1;
+            }
         
         drawMessage( mStatusMessage, labelPos, mStatusError );
         statusDrawn = true;
