@@ -3482,6 +3482,24 @@ function cm_listGames() {
     
     $numRows = mysql_numrows( $result );
 
+    if( $numRows == 0 && $skip != 0 ) {
+        // gone off end (maybe game list has changed since player loaded
+        // last page)
+
+        // wrap around
+        $skip = 0;
+
+        $query = "SELECT dollar_amount FROM $tableNamePrefix"."games ".
+            "WHERE player_2_id = 0 AND started = 0 ".
+            "ORDER BY dollar_amount ASC ".
+            "LIMIT $skip, $query_limit;";
+        
+        $result = cm_queryDatabase( $query );
+        
+        $numRows = mysql_numrows( $result );
+        }
+    
+    
 
     for( $i=0; $i < $numRows && $i < $limit; $i++ ) {
         $dollar_amount = mysql_result( $result, $i, "dollar_amount" );
