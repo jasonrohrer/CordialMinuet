@@ -147,6 +147,8 @@ gameList "JOIN GAME:"
 prevPage "LESS $"
 nextPage "MORE $"
 
+refresh "REFRESH"
+
 
 joinButtonTip "JOIN FOR %s"
 cannotJoinButtonTip "CANNOT AFFORD %s"

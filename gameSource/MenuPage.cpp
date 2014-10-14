@@ -39,6 +39,8 @@ MenuPage::MenuPage()
                        translate( "prevPage" ) ),
           mNextButton( mainFont, 200, -188, 
                        translate( "nextPage" ) ),
+          mRefreshButton( mainFont, -200, -188, 
+                          translate( "refresh" ) ),
           mLimit( 9 ),
           mSkip( 0 ),
           mResponseProcessed( false ),
@@ -49,14 +51,14 @@ MenuPage::MenuPage()
     addComponent( &mNewGameButton );
     addComponent( &mPrevButton );
     addComponent( &mNextButton );
-    
+    addComponent( &mRefreshButton );
     
     setButtonStyle( &mDepositButton );
     setButtonStyle( &mWithdrawButton );
     setButtonStyle( &mNewGameButton );
     setButtonStyle( &mPrevButton );
     setButtonStyle( &mNextButton );
-    
+    setButtonStyle( &mRefreshButton );
 
 
     mDepositButton.addActionListener( this );
@@ -64,11 +66,13 @@ MenuPage::MenuPage()
     mNewGameButton.addActionListener( this );
     mPrevButton.addActionListener( this );
     mNextButton.addActionListener( this );
+    mRefreshButton.addActionListener( this );
 
     setActionParameter( "limit", mLimit );
     setActionParameter( "skip", mSkip );
     mPrevButton.setVisible( false );
     mNextButton.setVisible( false );
+    mRefreshButton.setVisible( false );
 
 
     double y = 100;
@@ -185,6 +189,16 @@ void MenuPage::actionPerformed( GUIComponent *inTarget ) {
         mPrevButton.setVisible( false );
         mNextButton.setVisible( false );
         
+        clearListedGames();
+        
+        mResponseProcessed = false;
+        startRequest();
+        }
+    else if( inTarget == &mRefreshButton ) {
+        setActionParameter( "skip", mSkip );
+        
+        mRefreshButton.setVisible( false );
+
         clearListedGames();
         
         mResponseProcessed = false;
@@ -399,6 +413,17 @@ void MenuPage::step() {
                 if( mSkip > 0 ) {
                     mPrevButton.setVisible( true );
                     }
+
+                if( ! mPrevButton.isVisible() && ! mNextButton.isVisible() &&
+                    mListedGames.size() > 0 ) {
+                    
+                    // list auto-refreshes every 5 seconds if completely empty
+                    // don't want user spamming reload button in this case
+
+                    // but allow them to reload a page that has some games
+                    // listed on it
+                    mRefreshButton.setVisible( true );
+                    }
                 }
             
             for( int p=0; p<numParts; p++ ) {
@@ -408,6 +433,22 @@ void MenuPage::step() {
             }
         
         mResponseProcessed = true;
+        mLastResponseTime = game_time( NULL );
+        }
+    else if( mResponseProcessed && mListedGames.size() == 0 &&
+             game_time( NULL ) - mLastResponseTime > 5 ) {
+        
+        // auto-refresh empty list every 5 seconds
+
+        setActionParameter( "skip", mSkip );
+        
+        mPrevButton.setVisible( false );
+        mNextButton.setVisible( false );
+        
+        clearListedGames();
+    
+        mResponseProcessed = false;
+        startRequest();
         }
     }
 
@@ -422,6 +463,7 @@ void MenuPage::makeActive( char inFresh ) {
     
     mPrevButton.setVisible( false );
     mNextButton.setVisible( false );
+    mRefreshButton.setVisible( false );
     
     clearListedGames();
     

@@ -5,6 +5,8 @@
 #include "minorGems/ui/event/ActionListener.h"
 #include "minorGems/util/SimpleVector.h"
 
+#include "minorGems/game/game.h"
+
 
 #include "TextButton.h"
 
@@ -42,6 +44,8 @@ class MenuPage : public ServerActionPage, public ActionListener {
         TextButton mPrevButton;
         TextButton mNextButton;
         
+        TextButton mRefreshButton;
+
         SimpleVector<GameRecord> mListedGames;
         
         int mLimit;
@@ -49,6 +53,8 @@ class MenuPage : public ServerActionPage, public ActionListener {
 
         char mResponseProcessed;
         
+        time_t mLastResponseTime;
+
         SimpleVector<TextButton*> mGameButtons;
         
         void clearListedGames();
