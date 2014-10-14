@@ -349,7 +349,9 @@ void DepositPage::recomputeFee() {
     // round to nearest cent
     mFee *= 100;
     
-    mFee += 0.5;
+    // handle possible rounding differences on platforms
+    // round 0.49999990000 cents to 1.0 cent
+    mFee +=  0.5000001;
     
     // back to decimal form
     mFee = floor( mFee ) / 100;
