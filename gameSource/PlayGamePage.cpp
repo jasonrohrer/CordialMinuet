@@ -73,7 +73,7 @@ PlayGamePage::PlayGamePage()
           mScorePipExtraSprite( loadWhiteSprite( "scorePipExtra.tga" ) ),
           mScorePipEmptySprite( loadWhiteSprite( "scorePipEmpty.tga" ) ),
           mShowWatercolorDemo( false ),
-          mParchmentSprite( loadSprite( "parchment.tga", false ) ),
+          mParchmentSprite( loadSprite( "parchment.tga", true ) ),
           mRedWatercolorSprite( loadSprite( "redWatercolor.tga", false ) ),
           mBlueWatercolorSprite( loadSprite( "blueWatercolor.tga", false ) ),
           mRoundEnding( false ), 
