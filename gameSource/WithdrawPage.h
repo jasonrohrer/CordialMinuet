@@ -26,11 +26,13 @@ class WithdrawPage : public ServerActionPage, public ActionListener {
 
     protected:
         
-        TextButton mSendCheckButton;
+        TextButton mSendCheckUSButton;
+        TextButton mSendCheckGlobalButton;
         TextButton mAccountTransferButton;
         TextButton mCancelButton;
         
 
-        char mCheckAvailable;
+        char mUSCheckAvailable;
+        char mGlobalCheckAvailable;
         char mTransferAvailable;
     };

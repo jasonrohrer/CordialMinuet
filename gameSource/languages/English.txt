@@ -87,14 +87,16 @@ paste "PASTE"
 
 
 
-sendCheck "MAIL A CHECK"
+sendCheckUS "MAIL A US CHECK"
+sendCheckGlobal "MAIL A GLOBAL CHECK"
 
 accountTransfer "TRANSFER TO ANOTHER PLAYER"
 
 fee "FEE"
 free "FREE"
 
-checkNote "US RESIDENTS ONLY:##(%s)"
+checkNoteUS "US RESIDENTS:##(%s)"
+checkNoteGlobal "GLOBAL RESIDENTS:##(%s)"
 
 checkBalanceLow "(BALANCE TOO LOW FOR CHECK)" 
 
@@ -112,6 +114,10 @@ address2 " "
 city "CITY"
 state "STATE"
 zip "ZIP"
+
+province "PROVINCE"
+postalCode "CODE"
+country "COUNTRY"
 
 sendCheckButton "MAIL CHECK"
 

@@ -184,7 +184,7 @@ if( $shutdownMode &&
       $action == "get_deposit_fees" ||
       $action == "make_deposit" ||
       $action == "get_withdrawal_methods" ||
-      $action == "send_us_check" ||
+      $action == "send_check" ||
       $action == "account_transfer" ||
       $action == "join_games" ||
       $action == "wait_game_start" ||
@@ -237,8 +237,8 @@ else if( $action == "make_deposit" ) {
 else if( $action == "get_withdrawal_methods" ) {
     cm_getWithdrawalMethods();
     }
-else if( $action == "send_us_check" ) {
-    cm_sendUSCheck();
+else if( $action == "send_check" ) {
+    cm_sendCheck();
     }
 else if( $action == "account_transfer" ) {
     cm_accountTransfer();
@@ -2078,7 +2078,8 @@ function cm_verifyCheckHMAC( $account_key, $request_sequence_number,
                                   $field_value ) ) ) {
         
 
-        cm_log( "cm_sendUSCheck/cm_accountTransfer bad hmac for $field_name" );
+        cm_log( "cm_sendCheck/cm_accountTransfer bad hmac for ".
+                "$field_name (contents = '$field_value')" );
 
         
         cm_transactionDeny();
@@ -2093,7 +2094,7 @@ function cm_verifyCheckHMAC( $account_key, $request_sequence_number,
 
 
 
-function cm_sendUSCheck() {
+function cm_sendCheck() {
     if( ! cm_verifyTransaction() ) {
         return;
         }
@@ -2103,17 +2104,13 @@ function cm_sendUSCheck() {
         }
 
     $request_tag = cm_requestFilter( "request_tag", "/[A-F0-9]+/i", "" );
-    
-    global $tableNamePrefix, $usCheckMethodAvailable;
+
 
     
-    if( !$usCheckMethodAvailable ) {
-        cm_log( "cm_sendUSCheck, check-send withdrawal method blocked" );
-        cm_transactionDeny();
-        return;
-        }
+    global $tableNamePrefix;
+    
+    
 
-        
     $user_id = cm_getUserID();
     
     cm_queryDatabase( "SET AUTOCOMMIT=0" );
@@ -2130,7 +2127,7 @@ function cm_sendUSCheck() {
 
     
     if( $numRows == 0 ) {
-        cm_log( "cm_sendUSCheck, user $user_id not found" );
+        cm_log( "cm_sendCheck, user $user_id not found" );
         cm_transactionDeny();
         return;
         }
@@ -2150,10 +2147,50 @@ function cm_sendUSCheck() {
 
 
     if( $request_sequence_number < $old_request_sequence_number ) {
-        cm_log( "cm_sendUSCheck, stale request sequence number" );
+        cm_log( "cm_sendCheck, stale request sequence number" );
         cm_transactionDeny();
         return;
         }
+
+
+    
+
+    $country = cm_requestFilter( "country", "/[A-Za-z.\-' ,]+/i", "" );
+
+    if( ! cm_verifyCheckHMAC( $account_key, $request_sequence_number,
+                              "country", $country ) ) {
+        return;
+        }
+
+    if( $country == "" ) {
+        cm_transactionDeny();
+        return;
+        }
+
+
+    $isUS = false;
+
+    if( $country == "US" ) {
+        $isUS = true;
+        }
+
+    
+    global $usCheckMethodAvailable, $globalCheckMethodAvailable;
+
+    
+    if( $isUS && !$usCheckMethodAvailable ) {
+        cm_log( "cm_sendCheck, check-send-US withdrawal method blocked" );
+        cm_transactionDeny();
+        return;
+        }
+    else if( !$isUS && !$globalCheckMethodAvailable ) {
+        cm_log( "cm_sendCheck, check-send-global withdrawal method blocked" );
+        cm_transactionDeny();
+        return;
+        }
+
+        
+    
     
     
     $dollar_amount = cm_requestFilter(
@@ -2164,11 +2201,16 @@ function cm_sendUSCheck() {
         return;
         }
     
-    global $usCheckCost;
+    global $usCheckCost, $globalCheckCost;
     
     
-    if( $dollar_amount <= $usCheckCost ) {
-        cm_log( "cm_sendUSCheck withdrawal too small: \$$dollar_amount" );
+    if( $isUS && $dollar_amount <= $usCheckCost ) {
+        cm_log( "cm_sendCheck US withdrawal too small: \$$dollar_amount" );
+        cm_transactionDeny();
+        return;
+        }
+    else if( !$isUS && $dollar_amount <= $globalCheckCost ) {
+        cm_log( "cm_sendCheck global withdrawal too small: \$$dollar_amount" );
         cm_transactionDeny();
         return;
         }
@@ -2180,7 +2222,7 @@ function cm_sendUSCheck() {
 
         $message = "User $user_id table dollar balance = $dollar_balance, ".
             "but recomputed balance = $recomputedBalance, ".
-            "blocking send_us_check.";
+            "blocking send_check.";
 
         cm_log( $message );
         cm_informAdmin( $message );
@@ -2193,7 +2235,7 @@ function cm_sendUSCheck() {
 
     
     if( $dollar_amount > $dollar_balance ) {
-        cm_log( "cm_sendUSCheck withdrawal too big: \$$dollar_amount ".
+        cm_log( "cm_sendCheck withdrawal too big: \$$dollar_amount ".
                 "(account only has \$$dollar_balance)" );
         cm_transactionDeny();
         return;
@@ -2270,6 +2312,8 @@ function cm_sendUSCheck() {
         }
 
     if( $name == "" ) {
+        cm_log( "cm_sendCheck name missing" );
+                
         cm_transactionDeny();
         return;
         }
@@ -2283,6 +2327,7 @@ function cm_sendUSCheck() {
         }
 
     if( $address1 == "" ) {
+        cm_log( "cm_sendCheck address1 missing" );
         cm_transactionDeny();
         return;
         }
@@ -2306,42 +2351,84 @@ function cm_sendUSCheck() {
         }
 
     if( $city == "" ) {
+        cm_log( "cm_sendCheck city missing" );
         cm_transactionDeny();
         return;
         }
 
 
     
-    $state = cm_requestFilter(
-        "state", "/[A-Z][A-Z]/", "" );
+    $us_state = cm_requestFilter(
+        "us_state", "/[A-Z][A-Z]/", "" );
 
     if( ! cm_verifyCheckHMAC( $account_key, $request_sequence_number,
-                              "state", $state ) ) {
+                              "us_state", $us_state ) ) {
         return;
         }
 
-    if( $state == "" ) {
+    if( $isUS && $us_state == "" ) {
+        cm_log( "cm_sendCheck us_state missing for US destination" );
         cm_transactionDeny();
         return;
         }
-    
+    else if( !$isUS && $us_state != "" ) {
+        cm_log( "cm_sendCheck us_state forbidden for global destinations" );
+        cm_transactionDeny();
+        return;
+        }
 
-    
-    $zip = cm_requestFilter(
-        "zip", "/\d{5}([- ]\d{4})?/", "" );
+
+    $province = cm_requestFilter(
+        "province", "/[A-Za-z.\-' ,]+/i", "" );
 
     if( ! cm_verifyCheckHMAC( $account_key, $request_sequence_number,
-                              "zip", $zip ) ) {
+                              "province", $province ) ) {
         return;
         }
 
-    if( $zip == "" ) {
+    if( $isUS && $province != "" ) {
+        cm_log( "cm_sendCheck province forbidden for US destinations" );
         cm_transactionDeny();
+        return;
+        }
+    
+
+    $postal_code = "";
+
+
+    if( $isUS ) {
+        // enforce US ZIP code format
+        $postal_code = cm_requestFilter(
+            "postal_code", "/\d{5}([- ]\d{4})?/", "" );
+
+        if( $postal_code == "" ) {
+            cm_log( "cm_sendCheck zip-formated postal_code ".
+                    "required for US destinations" );
+            cm_transactionDeny();
+            return;
+            }
+        }
+    else {
+        // allow global format
+        $postal_code = cm_requestFilter(
+            "postal_code", "/[A-Z\- 0-9]+/i", "" );
+        }
+    
+    if( ! cm_verifyCheckHMAC( $account_key, $request_sequence_number,
+                              "postal_code", $postal_code ) ) {
         return;
         }
 
     
-    $check_amount = $dollar_amount - $usCheckCost;
+    $check_amount = $dollar_amount;
+
+    if( $isUS ) {
+        $check_amount -= $usCheckCost;
+        }
+    else {
+        $check_amount -= $globalCheckCost;
+        }
+    
     $check_amount_string = number_format( $check_amount, 2 );
     
 
@@ -2506,15 +2593,22 @@ function cm_sendUSCheck() {
     $address1 = mysql_real_escape_string( $address1 );
     $address2 = mysql_real_escape_string( $address2 );
     $city = mysql_real_escape_string( $city );
+    $province = mysql_real_escape_string( $province );
+    $country = mysql_real_escape_string( $country );
+
+    $fee = $usCheckCost;
+    if( ! $isUS ) {
+        $fee = $globalCheckCost;
+        }
     
     $query = "INSERT INTO $tableNamePrefix"."withdrawals ".
         "SET user_id = '$user_id', withdrawal_time = CURRENT_TIMESTAMP, ".
         "dollar_amount = '$check_amount', ".
-        "fee = '$usCheckCost', ".
+        "fee = '$fee', ".
         "email = '$email', ".
         "name = '$name', address1 = '$address1', address2 = '$address2', ".
-        "city = '$city', us_state = '$state', postal_code = '$zip',".
-        "province = '', country='USA'; ";
+        "city = '$city', us_state = '$us_state', province = '$province', ".
+        "postal_code = '$postal_code', country='$country'; ";
     
     $result = cm_queryDatabase( $query );
 
@@ -2535,7 +2629,7 @@ function cm_sendUSCheck() {
                                                  $dollar_amount );
     $amountString = cm_formatBalanceForDisplay( $dollar_amount );
     $netString = cm_formatBalanceForDisplay( $check_amount );
-    $feeString = cm_formatBalanceForDisplay( $usCheckCost );
+    $feeString = cm_formatBalanceForDisplay( $fee );
     
     
     $message =

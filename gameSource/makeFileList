@@ -41,6 +41,7 @@ balanceFormat.cpp \
 ExistingAccountPage.cpp \
 WithdrawPage.cpp \
 SendCheckPage.cpp \
+SendCheckGlobalPage.cpp \
 AccountTransferPage.cpp \
 CreateGamePage.cpp \
 WaitGamePage.cpp \

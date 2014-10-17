@@ -1,4 +1,4 @@
-#include "SendCheckPage.h"
+#include "SendCheckGlobalPage.h"
 
 #include "buttonStyle.h"
 
@@ -25,13 +25,13 @@ extern char *accountKey;
 extern int serverSequenceNumber;
 
 extern double userBalance;
-extern double checkCostUS;
+extern double checkCostGlobal;
 
 
 
 
 
-SendCheckPage::SendCheckPage()
+SendCheckGlobalPage::SendCheckGlobalPage()
         : ServerActionPage( "send_check", true),
           mAmountPicker( mainFont, 176, 201, 6, 2, 
                          translate( "withdrawMoney" ) ),
@@ -50,17 +50,25 @@ SendCheckPage::SendCheckPage()
                           "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
                           "abcdefghijklmnopqrstuvwxyz"
                           ".'- ,0123456789#" ),
-          mCityField( mainFont, 33, -66, 12, false, 
+          mCityField( mainFont, -150, -66, 5, false, 
                       translate( "city" ),
                       "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
                       "abcdefghijklmnopqrstuvwxyz"
                       ".'-, " ),
-          mStateField( mainFont, -132, -130, 2, true, 
-                       translate( "state" ),
-                       "ABCDEFGHIJKLMNOPQRSTUVWXYZ" ),
-          mZipField( mainFont, 121, -130, 10, true,
-                     translate( "zip" ),
-                     "0123456789-" ),
+          mProvinceField( mainFont, 224, -66, 5, false, 
+                          translate( "province" ),
+                          "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                          "abcdefghijklmnopqrstuvwxyz"
+                          ".'-, " ),
+          mPostalCodeField( mainFont, -150, -130, 5, true,
+                            translate( "postalCode" ),
+                            "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                            "- 0123456789" ),
+          mCountryField( mainFont, 224, -130, 5, false, 
+                         translate( "country" ),
+                         "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                         "abcdefghijklmnopqrstuvwxyz"
+                         ".'-, " ),
           mSendCheckButton( mainFont, 150, -200, 
                              translate( "sendCheckButton" ) ),
           mCancelButton( mainFont, -150, -200, 
@@ -89,15 +97,14 @@ SendCheckPage::SendCheckPage()
     mFields[1] = &mAddress1Field;
     mFields[2] = &mAddress2Field;
     mFields[3] = &mCityField;
-    mFields[4] = &mStateField;
-    mFields[5] = &mZipField;
+    mFields[4] = &mProvinceField;
+    mFields[5] = &mPostalCodeField;
+    mFields[6] = &mCountryField;
 
-    for( int i=0; i<NUM_SEND_CHECK_FIELDS; i++ ) {
+    for( int i=0; i<NUM_SEND_CHECK_GLOBAL_FIELDS; i++ ) {
         addComponent( mFields[i] );
         mFields[i]->addActionListener( this );
         }
-    mStateField.setMaxLength( 2 );
-    mZipField.setMaxLength( 10 );
     
     
     
@@ -117,7 +124,7 @@ SendCheckPage::SendCheckPage()
 
 
         
-SendCheckPage::~SendCheckPage() {
+SendCheckGlobalPage::~SendCheckGlobalPage() {
     }
 
 
@@ -125,7 +132,7 @@ SendCheckPage::~SendCheckPage() {
 
 
 
-void SendCheckPage::actionPerformed( GUIComponent *inTarget ) {
+void SendCheckGlobalPage::actionPerformed( GUIComponent *inTarget ) {
     if( inTarget == &mSendCheckButton ) {
         setStatus( NULL, false );
         
@@ -136,13 +143,12 @@ void SendCheckPage::actionPerformed( GUIComponent *inTarget ) {
         setParametersFromField( "address1", &mAddress1Field );
         setParametersFromField( "address2", &mAddress2Field );
         setParametersFromField( "city", &mCityField );
-        setParametersFromField( "us_state", &mStateField );
-        setParametersFromField( "postal_code", &mZipField );
+        setParametersFromField( "province", &mProvinceField );
+        setParametersFromField( "postal_code", &mPostalCodeField );
+        setParametersFromField( "country", &mCountryField );
         
-        setParametersFromString( "province", "" );
-        setParametersFromString( "country", "US" );
-
-
+        setParametersFromString( "us_state", "" );
+        
         double dollarAmount = mAmountPicker.getValue();
         
         char *dollarAmountString = autoSprintf( "%.2f", dollarAmount );
@@ -155,7 +161,7 @@ void SendCheckPage::actionPerformed( GUIComponent *inTarget ) {
         mSendCheckButton.setVisible( false );
         mCancelButton.setVisible( false );
         
-        for( int i=0; i<NUM_SEND_CHECK_FIELDS; i++ ) {
+        for( int i=0; i<NUM_SEND_CHECK_GLOBAL_FIELDS; i++ ) {
             mFields[i]->setActive( false );
             mFields[i]->unfocus();
             }
@@ -171,7 +177,7 @@ void SendCheckPage::actionPerformed( GUIComponent *inTarget ) {
 
 
 
-void SendCheckPage::makeActive( char inFresh ) {
+void SendCheckGlobalPage::makeActive( char inFresh ) {
     
     if( ! isActionInProgress() ) {
         makeFieldsActive();
@@ -191,15 +197,15 @@ void SendCheckPage::makeActive( char inFresh ) {
     checkIfSendCheckButtonVisible();
 
     // fix later with balance and check fee when page made active
-    mAmountPicker.setMin( checkCostUS + 0.01 );
+    mAmountPicker.setMin( checkCostGlobal + 0.01 );
     mAmountPicker.setMax( userBalance );
     }
 
 
 
-void SendCheckPage::makeNotActive() {
+void SendCheckGlobalPage::makeNotActive() {
     // paused? clear delete-held status
-    for( int i=0; i<NUM_SEND_CHECK_FIELDS; i++ ) {
+    for( int i=0; i<NUM_SEND_CHECK_GLOBAL_FIELDS; i++ ) {
         mFields[i]->unfocus();
         }
     }
@@ -207,10 +213,10 @@ void SendCheckPage::makeNotActive() {
 
 
 
-void SendCheckPage::makeFieldsActive() {
+void SendCheckGlobalPage::makeFieldsActive() {
     mNameField.focus();
         
-    for( int i=0; i<NUM_SEND_CHECK_FIELDS; i++ ) {
+    for( int i=0; i<NUM_SEND_CHECK_GLOBAL_FIELDS; i++ ) {
         mFields[i]->setActive( true );
         }
     
@@ -219,15 +225,15 @@ void SendCheckPage::makeFieldsActive() {
 
 
 
-void SendCheckPage::draw( doublePair inViewCenter, 
+void SendCheckGlobalPage::draw( doublePair inViewCenter, 
                           double inViewSize ) {
         
     
-    if( checkCostUS > 0 ) {
+    if( checkCostGlobal > 0 ) {
         doublePair labelPos = { 0, 264 };
 
         char *message = autoSprintf( translate( "feeSubtracted" ),
-                                     checkCostUS );
+                                     checkCostGlobal );
         
         drawMessage( message, labelPos, false );    
         delete [] message;
@@ -236,7 +242,7 @@ void SendCheckPage::draw( doublePair inViewCenter,
 
 
 
-void SendCheckPage::step() {
+void SendCheckGlobalPage::step() {
     ServerActionPage::step();
     
     if( ! isActionInProgress() ) {
@@ -251,13 +257,13 @@ void SendCheckPage::step() {
 
 
 
-double SendCheckPage::getWithdrawalAmount() {
+double SendCheckGlobalPage::getWithdrawalAmount() {
     return mAmountPicker.getValue();
     }
 
 
 
-void SendCheckPage::checkIfSendCheckButtonVisible() {
+void SendCheckGlobalPage::checkIfSendCheckButtonVisible() {
     char visible = true;
 
     char *name = mNameField.getText();
@@ -279,30 +285,20 @@ void SendCheckPage::checkIfSendCheckButtonVisible() {
 
     char *city = mCityField.getText();
     
-    if( strlen( city ) < 2 ) {
+    if( strlen( city ) < 1 ) {
         visible = false;
         }
 
     delete [] city;
 
 
-    char *state = mStateField.getText();
+    char *country = mCountryField.getText();
     
-    if( strlen( state ) < 2 ) {
+    if( strlen( country ) < 1 ) {
         visible = false;
         }
 
-    delete [] state;
-
-
-    char *zip = mZipField.getText();
-    
-    if( strlen( zip ) < 5 ||
-        ( strlen( zip ) > 5 && strlen( zip ) < 10 ) ) {
-        visible = false;
-        }
-
-    delete [] zip;
+    delete [] country;
 
 
     mSendCheckButton.setVisible( visible );
@@ -311,18 +307,18 @@ void SendCheckPage::checkIfSendCheckButtonVisible() {
 
 
 
-void SendCheckPage::switchFields( int inDir ) {
-    for( int i=0; i<NUM_SEND_CHECK_FIELDS; i++ ) {
+void SendCheckGlobalPage::switchFields( int inDir ) {
+    for( int i=0; i<NUM_SEND_CHECK_GLOBAL_FIELDS; i++ ) {
         
         if( mFields[i]->isFocused() ) {
 
             int next = i + inDir;
             
-            if( next >= NUM_SEND_CHECK_FIELDS ) {
+            if( next >= NUM_SEND_CHECK_GLOBAL_FIELDS ) {
                 next = 0;
                 }
             else if( next < 0 ) {
-                next = NUM_SEND_CHECK_FIELDS - 1;
+                next = NUM_SEND_CHECK_GLOBAL_FIELDS - 1;
                 }
             mFields[next]->focus();
             return;
@@ -332,7 +328,7 @@ void SendCheckPage::switchFields( int inDir ) {
 
     
 
-void SendCheckPage::keyDown( unsigned char inASCII ) {
+void SendCheckGlobalPage::keyDown( unsigned char inASCII ) {
     if( isActionInProgress() ) {
         return;
         }
@@ -346,7 +342,7 @@ void SendCheckPage::keyDown( unsigned char inASCII ) {
     if( inASCII == 10 || inASCII == 13 ) {
         // enter key
         
-        if( mZipField.isFocused() && mSendCheckButton.isVisible() ) {
+        if( mCountryField.isFocused() && mSendCheckButton.isVisible() ) {
             // process enter on last field
             actionPerformed( &mSendCheckButton );
             
@@ -360,7 +356,7 @@ void SendCheckPage::keyDown( unsigned char inASCII ) {
 
 
 
-void SendCheckPage::specialKeyDown( int inKeyCode ) {
+void SendCheckGlobalPage::specialKeyDown( int inKeyCode ) {
     if( isActionInProgress() ) {
         return;
         }

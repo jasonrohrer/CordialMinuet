@@ -19,7 +19,8 @@ extern int serverSequenceNumber;
 
 extern char gamePlayingBack;
 
-extern double checkCost;
+extern double checkCostUS;
+extern double checkCostGlobal;
 extern double transferCost;
 extern double userBalance;
 
@@ -30,24 +31,30 @@ extern double userBalance;
 
 WithdrawPage::WithdrawPage()
         : ServerActionPage( "get_withdrawal_methods", true ),
-          mSendCheckButton( mainFont, 0, 160, 
-                             translate( "sendCheck" ) ),
+          mSendCheckUSButton( mainFont, 0, 160, 
+                              translate( "sendCheckUS" ) ),
+          mSendCheckGlobalButton( mainFont, 0, -64, 
+                                  translate( "sendCheckGlobal" ) ),
           mAccountTransferButton( mainFont, 0, -64, 
                                   translate( "accountTransfer" ) ),
           mCancelButton( mainFont, 0, -200, 
                          translate( "cancel" ) ),
-          mCheckAvailable( false ), 
+          mUSCheckAvailable( false ), 
+          mGlobalCheckAvailable( false ), 
           mTransferAvailable( false ) {
 
-    addComponent( &mSendCheckButton );
+    addComponent( &mSendCheckUSButton );
+    addComponent( &mSendCheckGlobalButton );
     addComponent( &mAccountTransferButton );
     addComponent( &mCancelButton );
 
-    setButtonStyle( &mSendCheckButton );
+    setButtonStyle( &mSendCheckUSButton );
+    setButtonStyle( &mSendCheckGlobalButton );
     setButtonStyle( &mAccountTransferButton );
     setButtonStyle( &mCancelButton );
 
-    mSendCheckButton.addActionListener( this );
+    mSendCheckUSButton.addActionListener( this );
+    mSendCheckGlobalButton.addActionListener( this );
     mAccountTransferButton.addActionListener( this );
     mCancelButton.addActionListener( this );
     }
@@ -59,8 +66,11 @@ WithdrawPage::~WithdrawPage() {
 
         
 void WithdrawPage::actionPerformed( GUIComponent *inTarget ) {
-    if( inTarget == &mSendCheckButton ) {
+    if( inTarget == &mSendCheckUSButton ) {
         setSignal( "sendCheck" );
+        }
+    else if( inTarget == &mSendCheckGlobalButton ) {
+        setSignal( "sendCheckGlobal" );
         }
     else if( inTarget == &mAccountTransferButton ) {
         setSignal( "transfer" );
@@ -78,11 +88,13 @@ void WithdrawPage::makeActive( char inFresh ) {
         }
 
     
-    mSendCheckButton.setVisible( false );
+    mSendCheckUSButton.setVisible( false );
+    mSendCheckGlobalButton.setVisible( false );
     mAccountTransferButton.setVisible( false );
     mCancelButton.setVisible( false );
 
-    mCheckAvailable = false;
+    mUSCheckAvailable = false;
+    mGlobalCheckAvailable = false;
     mTransferAvailable = false;
 
     startRequest();
@@ -118,12 +130,22 @@ void WithdrawPage::step() {
             if( numParts == 2 ) {
                 if( strcmp( parts[0], "us_check" ) == 0 ) {
                     
-                    mCheckAvailable = true;
+                    mUSCheckAvailable = true;
                     
-                    sscanf( parts[1], "%lf", &checkCost );
+                    sscanf( parts[1], "%lf", &checkCostUS );
                     
-                    if( userBalance >= checkCost + 0.01 ) {
-                        mSendCheckButton.setVisible( true );
+                    if( userBalance >= checkCostUS + 0.01 ) {
+                        mSendCheckUSButton.setVisible( true );
+                        }
+                    }
+                else if( strcmp( parts[0], "global_check" ) == 0 ) {
+                    
+                    mGlobalCheckAvailable = true;
+                    
+                    sscanf( parts[1], "%lf", &checkCostGlobal );
+                    
+                    if( userBalance >= checkCostGlobal + 0.01 ) {
+                        mSendCheckGlobalButton.setVisible( true );
                         }
                     }
                 else if( strcmp( parts[0], "account_transfer" ) == 0 ) {
@@ -192,9 +214,14 @@ void WithdrawPage::draw( doublePair inViewCenter,
                              double inViewSize ) {
 
 
-    if( mCheckAvailable ) {
-        drawButtonNote( &mSendCheckButton, "checkNote", "checkBalanceLow",
-                        checkCost );
+    if( mUSCheckAvailable ) {
+        drawButtonNote( &mSendCheckUSButton, "checkNoteUS", "checkBalanceLow",
+                        checkCostUS );
+        }
+    if( mGlobalCheckAvailable ) {
+        drawButtonNote( &mSendCheckGlobalButton, "checkNoteGlobal", 
+                        "checkBalanceLow",
+                        checkCostGlobal );
         }
     if( mTransferAvailable ) {
         drawButtonNote( &mAccountTransferButton, "transferNote", 
