@@ -2050,11 +2050,15 @@ function cm_getWithdrawalMethods() {
         return;
         }
 
-    global $checkMethodAvailable, $transferMethodAvailable, $usCheckCost,
+    global $usCheckMethodAvailable, $globalCheckMethodAvailable,
+        $transferMethodAvailable, $usCheckCost, $globalCheckCost,
         $transferCost;
 
-    if( $checkMethodAvailable ) {
+    if( $usCheckMethodAvailable ) {
         echo "us_check#$usCheckCost\n";
+        }
+    if( $globalCheckMethodAvailable ) {
+        echo "global_check#$globalCheckCost\n";
         }
     if( $transferMethodAvailable ) {
         echo "account_transfer#$transferCost\n";
@@ -2100,10 +2104,10 @@ function cm_sendUSCheck() {
 
     $request_tag = cm_requestFilter( "request_tag", "/[A-F0-9]+/i", "" );
     
-    global $tableNamePrefix, $checkMethodAvailable;
+    global $tableNamePrefix, $usCheckMethodAvailable;
 
     
-    if( !$checkMethodAvailable ) {
+    if( !$usCheckMethodAvailable ) {
         cm_log( "cm_sendUSCheck, check-send withdrawal method blocked" );
         cm_transactionDeny();
         return;
@@ -2496,6 +2500,13 @@ function cm_sendUSCheck() {
 
     // log it, excluding fee (amount they will receive)
 
+
+    // these may have ' in them, which would break our query
+    $name = mysql_real_escape_string( $name );
+    $address1 = mysql_real_escape_string( $address1 );
+    $address2 = mysql_real_escape_string( $address2 );
+    $city = mysql_real_escape_string( $city );
+    
     $query = "INSERT INTO $tableNamePrefix"."withdrawals ".
         "SET user_id = '$user_id', withdrawal_time = CURRENT_TIMESTAMP, ".
         "dollar_amount = '$check_amount', ".
@@ -5974,7 +5985,7 @@ function cm_showDetail() {
                                "postal_code" ),
                         array( "Date", "Check Amount", "Fee", "Name",
                                "Address", "Address", "City", "State",
-                               "Province", "Country", "ZIP" ),
+                               "Province", "Country", "Post Code" ),
                         array( "dollar_amount", "fee" ) );
     
 

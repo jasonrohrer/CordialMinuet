@@ -95,12 +95,16 @@ $lobBankAccount = "bank_9cea4f3e314e883";
 // cost in dollars
 $usCheckCost = 3.00;
 
-// email address and withdrawal details will be appended to this description
-$lobCheckNote = "Withdrawal from Jason Rohrer's Cordial Minuet game for ";
+// cost in dollars
+$globalCheckCost = 7.00;
+
+// recipient email address will be appended to this memo
+$checkMemo = "Cordial Minuet withdrawl for ";
 
 
 
-$checkMethodAvailable = 1;
+$usCheckMethodAvailable = 1;
+$globalCheckMethodAvailable = 1;
 
 $transferMethodAvailable = 0;
 
