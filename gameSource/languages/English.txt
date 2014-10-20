@@ -126,6 +126,7 @@ feeSubtracted "$%.2f FEE WILL BE SUBTRACTED"
 
 
 checkFailed "MAILING TO THIS ADDRESS FAILED"
+unknownCountry "UNRECOGNIZED COUNTRY"
 
 
 

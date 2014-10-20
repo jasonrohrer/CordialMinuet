@@ -622,6 +622,7 @@ SendCheckGlobalPage::SendCheckGlobalPage()
     */
 
     addServerErrorString( "CHECK_FAILED", "checkFailed" );
+    addServerErrorString( "UNKNOWN_COUNTRY", "unknownCountry" );
     addServerErrorStringSignal( "MORE_INFO_NEEDED", "moreInfoNeeded" );
     }
 
@@ -648,8 +649,20 @@ void SendCheckGlobalPage::actionPerformed( GUIComponent *inTarget ) {
         setParametersFromField( "city", &mCityField );
         setParametersFromField( "province", &mProvinceField );
         setParametersFromField( "postal_code", &mPostalCodeField );
-        setParametersFromField( "country", &mCountryField );
+
         
+        // convert full name into ISO country code
+        char *countryFullName = mCountryField.getText();
+        
+        const char *code = 
+            countryMap[ findClosestCountryCode( countryFullName ) ].code;
+        
+        delete [] countryFullName;
+        
+        setParametersFromString( "country", code );
+        
+
+
         setParametersFromString( "us_state", "" );
         
         double dollarAmount = mAmountPicker.getValue();
