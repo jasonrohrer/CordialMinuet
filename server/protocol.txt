@@ -323,7 +323,7 @@ server.php?action=send_check
           &province_hmac=[hmac-sha1, hex-encoded]
           &postal_code=[post code]
           &postal_code_hmac=[hmac-sha1, hex-encoded]
-          &country=[country]
+          &country=[ISO 2-character country code]
           &country_hmac=[hmac-sha1, hex-encoded]
           &user_id=[id number]
           &sequence_number=[number]
@@ -372,6 +372,7 @@ or request will be denined.
 
 Returns DENIED on account-level failures (not enough funds, etc).
 Returns CHECK_FAILED if request to mail check fails.
+Returns UNKNOWN_COUNTRY if country code is invalid.
 Returns MORE_INFO_NEEDED if user would cross tax reporting limit and more
 information is needed before they can withdraw more money.
 

@@ -57,6 +57,268 @@ $readableBase32DigitArray =
            "N", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z" );
 
 
+
+
+
+// ISO country codes
+global $allowedCountries;
+
+$allowedCountries = array(
+    'AF' => 'Afghanistan',
+    'AX' => 'Aland Islands',
+    'AL' => 'Albania',
+    'DZ' => 'Algeria',
+    'AS' => 'American Samoa',
+    'AD' => 'Andorra',
+    'AO' => 'Angola',
+    'AI' => 'Anguilla',
+    'AQ' => 'Antarctica',
+    'AG' => 'Antigua And Barbuda',
+    'AR' => 'Argentina',
+    'AM' => 'Armenia',
+    'AW' => 'Aruba',
+    'AU' => 'Australia',
+    'AT' => 'Austria',
+    'AZ' => 'Azerbaijan',
+    'BS' => 'Bahamas',
+    'BH' => 'Bahrain',
+    'BD' => 'Bangladesh',
+    'BB' => 'Barbados',
+    'BY' => 'Belarus',
+    'BE' => 'Belgium',
+    'BZ' => 'Belize',
+    'BJ' => 'Benin',
+    'BM' => 'Bermuda',
+    'BT' => 'Bhutan',
+    'BO' => 'Bolivia',
+    'BA' => 'Bosnia And Herzegovina',
+    'BW' => 'Botswana',
+    'BV' => 'Bouvet Island',
+    'BR' => 'Brazil',
+    'IO' => 'British Indian Ocean Territory',
+    'BN' => 'Brunei Darussalam',
+    'BG' => 'Bulgaria',
+    'BF' => 'Burkina Faso',
+    'BI' => 'Burundi',
+    'KH' => 'Cambodia',
+    'CM' => 'Cameroon',
+    'CA' => 'Canada',
+    'CV' => 'Cape Verde',
+    'KY' => 'Cayman Islands',
+    'CF' => 'Central African Republic',
+    'TD' => 'Chad',
+    'CL' => 'Chile',
+    'CN' => 'China',
+    'CX' => 'Christmas Island',
+    'CC' => 'Cocos (Keeling) Islands',
+    'CO' => 'Colombia',
+    'KM' => 'Comoros',
+    'CG' => 'Congo',
+    'CD' => 'Congo, Democratic Republic',
+    'CK' => 'Cook Islands',
+    'CR' => 'Costa Rica',
+    'CI' => 'Cote D\'Ivoire',
+    'HR' => 'Croatia',
+    'CU' => 'Cuba',
+    'CY' => 'Cyprus',
+    'CZ' => 'Czech Republic',
+    'DK' => 'Denmark',
+    'DJ' => 'Djibouti',
+    'DM' => 'Dominica',
+    'DO' => 'Dominican Republic',
+    'EC' => 'Ecuador',
+    'EG' => 'Egypt',
+    'SV' => 'El Salvador',
+    'GQ' => 'Equatorial Guinea',
+    'ER' => 'Eritrea',
+    'EE' => 'Estonia',
+    'ET' => 'Ethiopia',
+    'FK' => 'Falkland Islands (Malvinas)',
+    'FO' => 'Faroe Islands',
+    'FJ' => 'Fiji',
+    'FI' => 'Finland',
+    'FR' => 'France',
+    'GF' => 'French Guiana',
+    'PF' => 'French Polynesia',
+    'TF' => 'French Southern Territories',
+    'GA' => 'Gabon',
+    'GM' => 'Gambia',
+    'GE' => 'Georgia',
+    'DE' => 'Germany',
+    'GH' => 'Ghana',
+    'GI' => 'Gibraltar',
+    'GR' => 'Greece',
+    'GL' => 'Greenland',
+    'GD' => 'Grenada',
+    'GP' => 'Guadeloupe',
+    'GU' => 'Guam',
+    'GT' => 'Guatemala',
+    'GG' => 'Guernsey',
+    'GN' => 'Guinea',
+    'GW' => 'Guinea-Bissau',
+    'GY' => 'Guyana',
+    'HT' => 'Haiti',
+    'HM' => 'Heard Island & Mcdonald Islands',
+    'VA' => 'Holy See (Vatican City State)',
+    'HN' => 'Honduras',
+    'HK' => 'Hong Kong',
+    'HU' => 'Hungary',
+    'IS' => 'Iceland',
+    'IN' => 'India',
+    'ID' => 'Indonesia',
+    'IR' => 'Iran, Islamic Republic Of',
+    'IQ' => 'Iraq',
+    'IE' => 'Ireland',
+    'IM' => 'Isle Of Man',
+    'IL' => 'Israel',
+    'IT' => 'Italy',
+    'JM' => 'Jamaica',
+    'JP' => 'Japan',
+    'JE' => 'Jersey',
+    'JO' => 'Jordan',
+    'KZ' => 'Kazakhstan',
+    'KE' => 'Kenya',
+    'KI' => 'Kiribati',
+    'KR' => 'Korea',
+    'KW' => 'Kuwait',
+    'KG' => 'Kyrgyzstan',
+    'LA' => 'Lao People\'s Democratic Republic',
+    'LV' => 'Latvia',
+    'LB' => 'Lebanon',
+    'LS' => 'Lesotho',
+    'LR' => 'Liberia',
+    'LY' => 'Libyan Arab Jamahiriya',
+    'LI' => 'Liechtenstein',
+    'LT' => 'Lithuania',
+    'LU' => 'Luxembourg',
+    'MO' => 'Macao',
+    'MK' => 'Macedonia',
+    'MG' => 'Madagascar',
+    'MW' => 'Malawi',
+    'MY' => 'Malaysia',
+    'MV' => 'Maldives',
+    'ML' => 'Mali',
+    'MT' => 'Malta',
+    'MH' => 'Marshall Islands',
+    'MQ' => 'Martinique',
+    'MR' => 'Mauritania',
+    'MU' => 'Mauritius',
+    'YT' => 'Mayotte',
+    'MX' => 'Mexico',
+    'FM' => 'Micronesia, Federated States Of',
+    'MD' => 'Moldova',
+    'MC' => 'Monaco',
+    'MN' => 'Mongolia',
+    'ME' => 'Montenegro',
+    'MS' => 'Montserrat',
+    'MA' => 'Morocco',
+    'MZ' => 'Mozambique',
+    'MM' => 'Myanmar',
+    'NA' => 'Namibia',
+    'NR' => 'Nauru',
+    'NP' => 'Nepal',
+    'NL' => 'Netherlands',
+    'AN' => 'Netherlands Antilles',
+    'NC' => 'New Caledonia',
+    'NZ' => 'New Zealand',
+    'NI' => 'Nicaragua',
+    'NE' => 'Niger',
+    'NG' => 'Nigeria',
+    'NU' => 'Niue',
+    'NF' => 'Norfolk Island',
+    'MP' => 'Northern Mariana Islands',
+    'NO' => 'Norway',
+    'OM' => 'Oman',
+    'PK' => 'Pakistan',
+    'PW' => 'Palau',
+    'PS' => 'Palestinian Territory, Occupied',
+    'PA' => 'Panama',
+    'PG' => 'Papua New Guinea',
+    'PY' => 'Paraguay',
+    'PE' => 'Peru',
+    'PH' => 'Philippines',
+    'PN' => 'Pitcairn',
+    'PL' => 'Poland',
+    'PT' => 'Portugal',
+    'PR' => 'Puerto Rico',
+    'QA' => 'Qatar',
+    'RE' => 'Reunion',
+    'RO' => 'Romania',
+    'RU' => 'Russian Federation',
+    'RW' => 'Rwanda',
+    'BL' => 'Saint Barthelemy',
+    'SH' => 'Saint Helena',
+    'KN' => 'Saint Kitts And Nevis',
+    'LC' => 'Saint Lucia',
+    'MF' => 'Saint Martin',
+    'PM' => 'Saint Pierre And Miquelon',
+    'VC' => 'Saint Vincent And Grenadines',
+    'WS' => 'Samoa',
+    'SM' => 'San Marino',
+    'ST' => 'Sao Tome And Principe',
+    'SA' => 'Saudi Arabia',
+    'SN' => 'Senegal',
+    'RS' => 'Serbia',
+    'SC' => 'Seychelles',
+    'SL' => 'Sierra Leone',
+    'SG' => 'Singapore',
+    'SK' => 'Slovakia',
+    'SI' => 'Slovenia',
+    'SB' => 'Solomon Islands',
+    'SO' => 'Somalia',
+    'ZA' => 'South Africa',
+    'GS' => 'South Georgia And Sandwich Isl.',
+    'ES' => 'Spain',
+    'LK' => 'Sri Lanka',
+    'SD' => 'Sudan',
+    'SR' => 'Suriname',
+    'SJ' => 'Svalbard And Jan Mayen',
+    'SZ' => 'Swaziland',
+    'SE' => 'Sweden',
+    'CH' => 'Switzerland',
+    'SY' => 'Syrian Arab Republic',
+    'TW' => 'Taiwan',
+    'TJ' => 'Tajikistan',
+    'TZ' => 'Tanzania',
+    'TH' => 'Thailand',
+    'TL' => 'Timor-Leste',
+    'TG' => 'Togo',
+    'TK' => 'Tokelau',
+    'TO' => 'Tonga',
+    'TT' => 'Trinidad And Tobago',
+    'TN' => 'Tunisia',
+    'TR' => 'Turkey',
+    'TM' => 'Turkmenistan',
+    'TC' => 'Turks And Caicos Islands',
+    'TV' => 'Tuvalu',
+    'UG' => 'Uganda',
+    'UA' => 'Ukraine',
+    'AE' => 'United Arab Emirates',
+    'GB' => 'United Kingdom',
+    'US' => 'United States',
+    'UM' => 'United States Outlying Islands',
+    'UY' => 'Uruguay',
+    'UZ' => 'Uzbekistan',
+    'VU' => 'Vanuatu',
+    'VE' => 'Venezuela',
+    'VN' => 'Viet Nam',
+    'VG' => 'Virgin Islands, British',
+    'VI' => 'Virgin Islands, U.S.',
+    'WF' => 'Wallis And Futuna',
+    'EH' => 'Western Sahara',
+    'YE' => 'Yemen',
+    'ZM' => 'Zambia',
+    'ZW' => 'Zimbabwe'
+    );
+
+
+
+
+
+
+
+
+
 // no caching
 //header('Expires: Mon, 26 Jul 1997 05:00:00 GMT');
 header('Cache-Control: no-store, no-cache, must-revalidate');
@@ -2155,7 +2417,7 @@ function cm_sendCheck() {
 
     
 
-    $country = cm_requestFilter( "country", "/[A-Za-z.\-' ,]+/i", "" );
+    $country = cm_requestFilter( "country", "/[A-Z][A-Z]/", "" );
 
     if( ! cm_verifyCheckHMAC( $account_key, $request_sequence_number,
                               "country", $country ) ) {
@@ -2167,11 +2429,27 @@ function cm_sendCheck() {
         return;
         }
 
+    global $allowedCountries;
+    
+    if( ! array_key_exists( $country, $allowedCountries ) ) {
+        echo "UNKNOWN_COUNTRY";
+        cm_queryDatabase( "COMMIT;" );
+        cm_queryDatabase( "SET AUTOCOMMIT=1" );
+        
+        cm_log( "UNKNOWN_COUNTRY for check request ($country)" );
+        return;
+        }
+    
+
+    
+    global $usCheckCost, $globalCheckCost;
 
     $isUS = false;
+    $fee = $globalCheckCost;
 
     if( $country == "US" ) {
         $isUS = true;
+        $fee = $usCheckCost;
         }
 
     
@@ -2201,16 +2479,10 @@ function cm_sendCheck() {
         return;
         }
     
-    global $usCheckCost, $globalCheckCost;
     
     
-    if( $isUS && $dollar_amount <= $usCheckCost ) {
-        cm_log( "cm_sendCheck US withdrawal too small: \$$dollar_amount" );
-        cm_transactionDeny();
-        return;
-        }
-    else if( !$isUS && $dollar_amount <= $globalCheckCost ) {
-        cm_log( "cm_sendCheck global withdrawal too small: \$$dollar_amount" );
+    if( $dollar_amount <= $fee ) {
+        cm_log( "cm_sendCheck withdrawal too small: \$$dollar_amount" );
         cm_transactionDeny();
         return;
         }
@@ -2420,14 +2692,7 @@ function cm_sendCheck() {
         }
 
     
-    $check_amount = $dollar_amount;
-
-    if( $isUS ) {
-        $check_amount -= $usCheckCost;
-        }
-    else {
-        $check_amount -= $globalCheckCost;
-        }
+    $check_amount = $dollar_amount - $fee;
     
     $check_amount_string = number_format( $check_amount, 2 );
     
@@ -2553,6 +2818,98 @@ function cm_sendCheck() {
     */
 
 
+
+    cm_log( "Got a verfied [\$$check_amount_string] check request to:\n".
+            "$name\n".
+            "$address1\n".
+            "$address2\n".
+            "$city, $us_state, $province, $postal_code, $country" );
+
+
+
+    global $curlPath, $chexxURL, $chexxSharedSecret, $chexxPRN,
+        $checkMemo;
+
+
+    $description = $checkMemo . $email;
+
+    
+    $address2Param = "";
+
+    if( $address2 != "" ) {
+        $address2Param = "-d \"AddressLine2=$address2\" ";
+        }
+
+    $timestamp = time();
+
+    $requestID = $user_id . "_" . $request_sequence_number;
+
+    $paymentType = "chq_issue_credit";
+    $currency = "USD";
+    
+    $signature = cm_hmac_sha1( $chexxSharedSecret,
+                               $chexxUserName .
+                               $timestamp .
+                               $requestID .
+                               $paymentType .
+                               $check_amount .
+                               $currency );
+
+    // FIXME:
+    // finish populating these fields
+    $curlCallString =
+        "$curlPath ".
+        "'$chexxURL' ".
+        "-d 'RAPIVersion=2' ".
+        "-d 'Username=$chexxUserName' ".
+        "-d 'Timestamp=$timestamp' ".
+        "-d 'RequestID=$requestID' ".
+        "-d 'Signature=$signature' ".
+        "-d 'PRN=$chexxPRN' ".
+        "-d 'PRN=$chexxPRN' ".
+        "-d 'PaymentType=$paymentType' ".
+        "-d 'Amount=$check_amount' ".
+        "-d 'Beneficiary=$name' ".
+        "-d 'Currency=$currency' ".
+        "-d '=$' ".
+        "-d '=$' ".
+        "-d '=$' ".
+        "-d '=$' ".
+        "-d '=$' ".
+        "-d '=$' ".
+        "-d '=$' ".
+        "-d '=$' ".
+        "-d \"message=$fullNote\" ".
+        "-d 'memo=$email' ".
+        "-d 'name=Cordial Minuet Withdrawal' ".
+        "-d \"bank_account=$lobBankAccount\" ".
+        "-d \"amount=$check_amount\" ".
+        "-d \"to[name]=$name\" ".
+        "-d \"to[address_line1]=$address1\" ".
+        $address2Param .
+        "-d \"to[address_city]=$city\" ".
+        "-d \"to[address_state]=$state\" ".
+        "-d \"to[address_zip]=$zip\" ".
+        "-d \"to[address_country]=US\" ";
+
+
+    //cm_log( "Calling Lob with:\n$curlCallString" );
+
+    $output = array();
+    exec( $curlCallString, $output );
+
+    // process result
+    $outputString = implode( "\n", $output );
+    
+    //cm_log( "Response from Lob:\n$outputString" );
+
+
+    // FIXME:
+    // finish processing Chexx response
+    
+
+    
+
     // now all valid check requests are OK, because
     // they are simply put in the withdrawal table to be pulled
     // by the processor later.
@@ -2596,10 +2953,7 @@ function cm_sendCheck() {
     $province = mysql_real_escape_string( $province );
     $country = mysql_real_escape_string( $country );
 
-    $fee = $usCheckCost;
-    if( ! $isUS ) {
-        $fee = $globalCheckCost;
-        }
+    
     
     $query = "INSERT INTO $tableNamePrefix"."withdrawals ".
         "SET user_id = '$user_id', withdrawal_time = CURRENT_TIMESTAMP, ".

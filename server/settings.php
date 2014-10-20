@@ -102,6 +102,15 @@ $globalCheckCost = 7.00;
 $checkMemo = "Cordial Minuet withdrawl for ";
 
 
+$chexxURL = "https://raven.chexxinc.com/realtime/submit";
+
+// test values, replace these with production values:
+$chexxUserName = "ernest";
+$chexxSharedSecret = "all good men die young";
+$chexxPRN = 987743;
+
+
+
 
 $usCheckMethodAvailable = 1;
 $globalCheckMethodAvailable = 1;
