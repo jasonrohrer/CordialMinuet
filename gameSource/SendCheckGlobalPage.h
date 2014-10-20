@@ -47,14 +47,18 @@ class SendCheckGlobalPage : public ServerActionPage, public ActionListener {
 
         NumberPicker mAmountPicker;
         
+        TextField mCountryField;
         TextField mNameField;
         TextField mAddress1Field;
         TextField mAddress2Field;
         TextField mCityField;
         TextField mProvinceField;
         TextField mPostalCodeField;
-        TextField mCountryField;
         
+        char mCountryVerified;
+        
+        void verifyCountry();
+
 
         TextField *mFields[NUM_SEND_CHECK_GLOBAL_FIELDS];
         
