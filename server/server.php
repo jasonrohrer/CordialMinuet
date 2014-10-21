@@ -313,6 +313,47 @@ $allowedCountries = array(
 
 
 
+global $currencyMap;
+
+$currencyMap = array(
+    'AU' => 'AUD',
+    'AT' => 'USD',
+    'BE' => 'EUR',
+    'BR' => 'BRL',
+    'CA' => 'CAD',
+    'EE' => 'USD',
+    'FI' => 'USD',
+    'FR' => 'EUR',
+    'DE' => 'EUR',
+    'GB' => 'GBP',
+    'GR' => 'EUR',
+    'HK' => 'HKD',
+    'HU' => 'USD',
+    'IS' => 'USD',
+    'IN' => 'INR',
+    'IE' => 'EUR',
+    'IT' => 'EUR',
+    'LU' => 'USD',
+    'MY' => 'MYR',
+    'MX' => 'MXN',
+    'NL' => 'USD',
+    'NZ' => 'NZD',
+    'NO' => 'USD',
+    'PL' => 'USD',
+    'PT' => 'EUR',
+    'SG' => 'SGD',
+    'SI' => 'USD',
+    'SK' => 'USD',
+    'ZA' => 'ZAR',
+    'ES' => 'EUR',
+    'SE' => 'SEK',
+    'CH' => 'USD',
+    'TH' => 'THB',
+    'US' => 'USD'
+    );
+
+
+
 
 
 
@@ -838,7 +879,8 @@ function cm_setupDatabase() {
             "us_state CHAR(2) NOT NULL," .
             "province VARCHAR(255) NOT NULL," .
             "country VARCHAR(255) NOT NULL," .
-            "postal_code VARCHAR(16) NOT NULL ) ENGINE = INNODB;";
+            "postal_code VARCHAR(16) NOT NULL, ".
+            "reference_code VARCHAR(255) NOT NULL ) ENGINE = INNODB;";
 
         $result = cm_queryDatabase( $query );
 
@@ -1822,7 +1864,7 @@ function cm_makeDeposit() {
     $year = $dataParts[2];
     $cvc = $dataParts[3];
 
-    $cents_amount = floor( $dollar_amount * 100 );
+    $cents_amount = round( $dollar_amount * 100 );
     
     global $curlPath, $stripeChargeURL, $stripeTokensURL, $stripeSecretKey,
         $stripeChargeDescription;
@@ -2693,8 +2735,10 @@ function cm_sendCheck() {
 
     
     $check_amount = $dollar_amount - $fee;
-    
+
+    $dollar_amount_string = number_format( $dollar_amount, 2 );
     $check_amount_string = number_format( $check_amount, 2 );
+    $fee_string = number_format( $fee, 2 );
     
 
 
@@ -2827,11 +2871,34 @@ function cm_sendCheck() {
 
 
 
-    global $curlPath, $chexxURL, $chexxSharedSecret, $chexxPRN,
-        $checkMemo;
+    global $curlPath, $chexxSubmitURL, $chexxResponseURL,
+        $chexxUserName, $chexxSharedSecret, $chexxPRN,
+        $checkMemo, $checkComment;
 
 
     $description = $checkMemo . $email;
+
+    
+    $currency = "USD";
+
+    global $currencyMap;
+    
+    if( array_key_exists( $country, $currencyMap ) ) {
+        $currency = $currencyMap[ $country ];
+        }
+
+    $currencyNote = "";
+
+    if( $currency != "USD" ) {
+        $currencyNote = "Your check has been converted into your ".
+            "local $currency currency.";
+        }
+    
+
+    $comment = $checkComment .
+        "$email".".  Withdrawing USD $dollar_amount_string with a ".
+        "$fee_string fee.  ".
+        $currencyNote;
 
     
     $address2Param = "";
@@ -2840,60 +2907,84 @@ function cm_sendCheck() {
         $address2Param = "-d \"AddressLine2=$address2\" ";
         }
 
-    $timestamp = time();
+    $provState = $province;
+    if( $isUS ) {
+        $provState = $us_state;
+        }
+    
+    
+    $timestamp = gmdate( "Y-m-d\TH:i:s.000\Z" );
 
     $requestID = $user_id . "_" . $request_sequence_number;
 
     $paymentType = "chq_issue_credit";
-    $currency = "USD";
+
+    
+    $check_amount_cents = round( $check_amount * 100 );
+
+
+    // amount used in signature
+    // must match Amount value passed in (which isn't necessarily check
+    // amount)
+    $amount = 0;
+    
+    
+
+    $amountLines;
+
+    if( $currency == "USD" ) {
+        // specify amount directly in USD
+        $amountLines =
+            "-d 'Amount=$check_amount_cents' ";
+        $amount = $check_amount_cents;
+        }
+    else {
+        // leave local currency amount blank
+        // specify amount to be taken out of our account in USD
+        $amountLines =
+            "-d 'Amount=0' ".
+            "-d 'AccountAmount=$check_amount_cents' ";
+        $amount = 0;
+        }
+
+
     
     $signature = cm_hmac_sha1( $chexxSharedSecret,
                                $chexxUserName .
                                $timestamp .
                                $requestID .
                                $paymentType .
-                               $check_amount .
+                               $amount .
                                $currency );
-
-    // FIXME:
-    // finish populating these fields
+    
+    
     $curlCallString =
         "$curlPath ".
-        "'$chexxURL' ".
+        "'$chexxSubmitURL' ".
         "-d 'RAPIVersion=2' ".
         "-d 'Username=$chexxUserName' ".
         "-d 'Timestamp=$timestamp' ".
         "-d 'RequestID=$requestID' ".
         "-d 'Signature=$signature' ".
         "-d 'PRN=$chexxPRN' ".
-        "-d 'PRN=$chexxPRN' ".
         "-d 'PaymentType=$paymentType' ".
-        "-d 'Amount=$check_amount' ".
-        "-d 'Beneficiary=$name' ".
+        $amountLines .
+        "-d \"Beneficiary=$name\" ".
         "-d 'Currency=$currency' ".
-        "-d '=$' ".
-        "-d '=$' ".
-        "-d '=$' ".
-        "-d '=$' ".
-        "-d '=$' ".
-        "-d '=$' ".
-        "-d '=$' ".
-        "-d '=$' ".
-        "-d \"message=$fullNote\" ".
-        "-d 'memo=$email' ".
-        "-d 'name=Cordial Minuet Withdrawal' ".
-        "-d \"bank_account=$lobBankAccount\" ".
-        "-d \"amount=$check_amount\" ".
-        "-d \"to[name]=$name\" ".
-        "-d \"to[address_line1]=$address1\" ".
+        // country of the source account (our account)
+        "-d 'Country=US' ".
+        "-d \"Description=$description\" ".
+        "-d 'Reference=user_id_$user_id' ".
+        "-d \"AddressLine1=$address1\" ".
         $address2Param .
-        "-d \"to[address_city]=$city\" ".
-        "-d \"to[address_state]=$state\" ".
-        "-d \"to[address_zip]=$zip\" ".
-        "-d \"to[address_country]=US\" ";
+        "-d \"City=$city\" ".
+        "-d \"ProvState=$provState\" ".
+        "-d 'PostalCode=$postal_code' ".
+        "-d 'CustomerCountry=$country' ".
+        "-d \"Comment=$comment\" ";
+    
 
-
-    //cm_log( "Calling Lob with:\n$curlCallString" );
+    cm_log( "Calling chexx with:\n$curlCallString" );
 
     $output = array();
     exec( $curlCallString, $output );
@@ -2901,18 +2992,96 @@ function cm_sendCheck() {
     // process result
     $outputString = implode( "\n", $output );
     
-    //cm_log( "Response from Lob:\n$outputString" );
+    cm_log( "Response from Chexx submit:\n$outputString" );
 
+    $decodedOutputString = urldecode( $outputString );
+    cm_log( "Decoded response from Chexx submit:\n$decodedOutputString" );
+    
+    if( strstr( $outputString, "InProgress" ) == FALSE &&
+        strstr( $outputString, "Invalid" ) == FALSE &&
+        strstr( $outputString, "Rejected" ) == FALSE &&
+        strstr( $outputString, "ConfigError" ) == FALSE ) {
+            
+        // chexx sennt nothing back, must ask for result in second call
+        // send back old requestID
+        $timestamp = gmdate( "Y-m-d\TH:i:s.000\Z" );
+    
+        $signature = cm_hmac_sha1( $chexxSharedSecret,
+                                   $chexxUserName .
+                                   $timestamp .
+                                   $requestID );
 
-    // FIXME:
-    // finish processing Chexx response
+        $curlCallString =
+            "$curlPath ".
+            "'$chexxResponseURL' ".
+            "-d 'RAPIVersion=2' ".
+            "-d 'Username=$chexxUserName' ".
+            "-d 'Timestamp=$timestamp' ".
+            "-d 'RequestID=$requestID' ".
+            "-d 'Signature=$signature' ";
+
+        $output = array();
+        exec( $curlCallString, $output );
+
+    
+        // process result
+        $outputString = implode( "\n", $output );
+    
+        cm_log( "Response from Chexx response:\n$outputString" );
+        }
+        
+
     
 
+    if( ( strstr( $outputString, "Invalid" ) != FALSE &&
+          // allow test channel responses through, even though they
+          // are marked as invalid
+          strstr( $outputString, "Invalid%3ATestChannel" ) == FALSE )
+        ||
+        strstr( $outputString, "Rejected" ) != FALSE
+        ||
+        strstr( $outputString, "ConfigError" ) != FALSE ) {
+
+        echo "CHECK_FAILED";
+        
+        cm_queryDatabase( "COMMIT;" );
+        cm_queryDatabase( "SET AUTOCOMMIT=1" );
+        
+        cm_log( "CHECK_FAILED for $email, ".
+                "Chexx Raven error:\n$outputString" );
+        return;
+        }
     
 
-    // now all valid check requests are OK, because
-    // they are simply put in the withdrawal table to be pulled
-    // by the processor later.
+    if( strstr( $outputString, "InProgress" ) == FALSE &&
+        strstr( $outputString, "Invalid%3ATestChannel" ) == FALSE ) {
+
+        echo "CHECK_FAILED";
+        
+        cm_queryDatabase( "COMMIT;" );
+        cm_queryDatabase( "SET AUTOCOMMIT=1" );
+        
+        cm_log( "CHECK_FAILED for $email, ".
+                "Chexx Raven error:\n$outputString" );
+        return;
+        }
+        
+    // a valid response
+    
+
+    // extract tracking number
+    $matches = array();
+
+    $trackingNumber = "";
+    
+    if( preg_match( "/TrackingNumber=(\d+)/", $outputString, $matches ) ) {
+        
+        $trackingNumber = $matches[1];
+        }
+
+    cm_log( "Tracking number = $trackingNumber" );
+    
+
     
     
 
@@ -2951,7 +3120,6 @@ function cm_sendCheck() {
     $address2 = mysql_real_escape_string( $address2 );
     $city = mysql_real_escape_string( $city );
     $province = mysql_real_escape_string( $province );
-    $country = mysql_real_escape_string( $country );
 
     
     
@@ -2962,7 +3130,8 @@ function cm_sendCheck() {
         "email = '$email', ".
         "name = '$name', address1 = '$address1', address2 = '$address2', ".
         "city = '$city', us_state = '$us_state', province = '$province', ".
-        "postal_code = '$postal_code', country='$country'; ";
+        "postal_code = '$postal_code', country='$country', ".
+        "reference_code = '$trackingNumber' ; ";
     
     $result = cm_queryDatabase( $query );
 
@@ -2970,7 +3139,7 @@ function cm_sendCheck() {
     
     global $remoteIP;
     cm_log( "Withdrawal of \$$dollar_amount for $email by ".
-            "$remoteIP" );
+            "$remoteIP (Chexx tracking number $trackingNumber)" );
     
     cm_queryDatabase( "COMMIT;" );
     cm_queryDatabase( "SET AUTOCOMMIT=1" );
@@ -2984,6 +3153,16 @@ function cm_sendCheck() {
     $amountString = cm_formatBalanceForDisplay( $dollar_amount );
     $netString = cm_formatBalanceForDisplay( $check_amount );
     $feeString = cm_formatBalanceForDisplay( $fee );
+
+    $outsideUSLine = "";
+
+    if( $currency != "USD" ) {
+        $outsideUSLine =
+            "\n\nSince you are outside the United States, your check ".
+            "will be issued in your local $currency currency according ".
+            "to current ".
+            "exchange rates.";
+        }
     
     
     $message =
@@ -2991,7 +3170,9 @@ function cm_sendCheck() {
         "($feeString fee, total withdrawl $amountString) from your ".
         "CORDIAL MINUET account.  Your new balance is $balanceString.\n\n".
         "Please allow a few weeks for your $netString check to arrive ".
-        "in the mail.\n\n\n".
+        "in the mail (reference number $trackingNumber).".
+        $outsideUSLine .
+        "\n\n\n".
         "Thanks for playing!\n".
         "Jason\n\n";
             
@@ -6430,10 +6611,10 @@ function cm_showDetail() {
                                "name",
                                "address1", "address2", "city", 
                                "us_state", "province", "country",
-                               "postal_code" ),
+                               "postal_code", "reference_code" ),
                         array( "Date", "Check Amount", "Fee", "Name",
                                "Address", "Address", "City", "State",
-                               "Province", "Country", "Post Code" ),
+                               "Province", "Country", "Post Code", "Ref" ),
                         array( "dollar_amount", "fee" ) );
     
 

@@ -1,0 +1,1 @@
+ALTER TABLE minuetServer_withdrawals ADD reference_code VARCHAR(255) NOT NULL AFTER postal_code;

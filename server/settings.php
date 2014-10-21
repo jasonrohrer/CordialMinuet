@@ -101,8 +101,11 @@ $globalCheckCost = 7.00;
 // recipient email address will be appended to this memo
 $checkMemo = "Cordial Minuet withdrawl for ";
 
+// email address and more details will be appended, put in letter
+$checkComment = "Withdrawal from Jason Rohrer's Cordial Minuet game for ";
 
-$chexxURL = "https://raven.chexxinc.com/realtime/submit";
+$chexxSubmitURL = "https://raven.chexxinc.com/realtime/submit";
+$chexxResponseURL = "https://raven.chexxinc.com/realtime/response";
 
 // test values, replace these with production values:
 $chexxUserName = "ernest";
