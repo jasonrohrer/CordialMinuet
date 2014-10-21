@@ -733,6 +733,27 @@ void SendCheckGlobalPage::makeFieldsActive() {
     mCountryField.focus();
     mCountryVerified = false;
     
+    char *oldCountry = mCountryField.getText();
+    verifyCountry();
+
+    if( mCountryVerified ) {
+
+        char *newCountry = mCountryField.getText();
+        
+        if( strcmp( newCountry, oldCountry ) == 0 ) {
+            
+            // country already typed in, jump to name field
+            mNameField.focus();
+            }
+        else {
+            mCountryField.setText( oldCountry );
+            }
+
+        delete [] newCountry;
+        }
+    delete [] oldCountry;
+
+
     for( int i=0; i<NUM_SEND_CHECK_GLOBAL_FIELDS; i++ ) {
         mFields[i]->setActive( true );
         }
