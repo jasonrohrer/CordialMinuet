@@ -3044,7 +3044,9 @@ function cm_sendCheck() {
         ||
         strstr( $outputString, "Rejected" ) != FALSE
         ||
-        strstr( $outputString, "ConfigError" ) != FALSE ) {
+        strstr( $outputString, "ConfigError" ) != FALSE
+        ||
+        strstr( $outputString, "UnsupportedCountry" ) != FALSE ) {
 
         echo "CHECK_FAILED";
         
@@ -3053,6 +3055,24 @@ function cm_sendCheck() {
         
         cm_log( "CHECK_FAILED for $email, ".
                 "Chexx Raven error:\n$outputString" );
+
+        if( strstr( $outputString, "UnsupportedCountry" ) != FALSE ) {
+            $countryFullName = $allowedCountries[ $country ];
+
+            $message = "Country ($country) $countryFullName unsupported ".
+                "by Chexx for $email";
+
+            cm_log( $message );
+            
+            global $emailAdminOnFatalError, $adminEmail;
+
+            if( $emailAdminOnFatalError ) {
+                cm_mail( $adminEmail,
+                         "Cordial Minuet Chexx country unsupported",
+                         $message );
+                }
+            }
+        
         return;
         }
     
