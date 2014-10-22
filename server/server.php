@@ -719,7 +719,9 @@ function cm_setupDatabase() {
             "last_flush_time DATETIME NOT NULL, ".
             "house_dollar_balance DECIMAL(13, 4) NOT NULL, ".
             "house_withdrawals DECIMAL(13, 4) NOT NULL, ".
-            "next_magic_square_seed BIGINT UNSIGNED NOT NULL ".
+            "next_magic_square_seed BIGINT UNSIGNED NOT NULL, ".
+            // amount of money left in chexx check-sending account
+            "check_account_dollar_balance DECIMAL(13, 2) NOT NULL ".
             ") ENGINE = INNODB;";
 
         $result = cm_queryDatabase( $query );
@@ -727,8 +729,9 @@ function cm_setupDatabase() {
         echo "<B>$tableName</B> table created<BR>";
 
         // create one row
+        // assume chexx account starts out with $5000
         $query = "INSERT INTO $tableName ".
-            "VALUES ( CURRENT_TIMESTAMP, 0, 0, 1977 );";
+            "VALUES ( CURRENT_TIMESTAMP, 0, 0, 1977, 5000.00 );";
         $result = cm_queryDatabase( $query );
         }
     else {
@@ -3063,14 +3066,9 @@ function cm_sendCheck() {
                 "by Chexx for $email";
 
             cm_log( $message );
-            
-            global $emailAdminOnFatalError, $adminEmail;
 
-            if( $emailAdminOnFatalError ) {
-                cm_mail( $adminEmail,
-                         "Cordial Minuet Chexx country unsupported",
-                         $message );
-                }
+            cm_informAdmin( $message,
+                            "Cordial Minuet Chexx country unsupported" );
             }
         
         return;
@@ -3159,6 +3157,112 @@ function cm_sendCheck() {
     
     $result = cm_queryDatabase( $query );
 
+    $query = "UPDATE $tableNamePrefix"."server_globals ".
+        "SET check_account_dollar_balance = ".
+        "check_account_dollar_balance - ( $check_amount + $fee );";
+
+    $result = cm_queryDatabase( $query );
+
+    $query = "SELECT check_account_dollar_balance FROM ".
+        "$tableNamePrefix"."server_globals FOR UPDATE;";
+
+    $result = cm_queryDatabase( $query );
+
+    $check_account_dollar_balance = mysql_result( $result, 0, 0 );
+
+    global $checkAccountTarget, $checkAccountThreshold;
+
+    if( $check_account_dollar_balance < $checkAccountThreshold ) {
+
+        $addition = $checkAccountTarget - $check_account_dollar_balance;
+
+
+        global $refreshCheckName, $refreshCheckAddress,
+            $refreshCheckCity, $refreshCheckState, $refreshCheckPostalCode,
+            $refreshCheckCountry, $chexxPRN;
+
+        $memo = "PRN $chexxPRN";
+
+        $fullNote = "Deposit into Jason Rohrer's Chexx account, ".
+            "PRN $chexxPRN";
+        
+        // send lob request
+
+        global $curlPath, $lobURL, $lobAPIKey, $lobBankAccount;
+    
+        $curlCallString =
+            "$curlPath ".
+            "'$lobURL' ".
+            "-u $lobAPIKey".": ".
+            "-d \"message=$fullNote\" ".
+            "-d 'memo=$memo' ".
+            "-d 'name=Chexx Balance Refresh' ".
+            "-d \"bank_account=$lobBankAccount\" ".
+            "-d \"amount=$addition\" ".
+            "-d \"to[name]=$refreshCheckName\" ".
+            "-d \"to[address_line1]=$refreshCheckAddress\" ".
+            "-d \"to[address_city]=$refreshCheckCity\" ".
+            "-d \"to[address_state]=$refreshCheckState\" ".
+            "-d \"to[address_zip]=$refreshCheckPostalCode\" ".
+            "-d \"to[address_country]=$refreshCheckCountry\" ";
+
+
+        //cm_log( "Calling Lob with:\n$curlCallString" );
+
+        $output = array();
+        exec( $curlCallString, $output );
+
+        // process result
+        $outputString = implode( "\n", $output );
+    
+        //cm_log( "Response from Lob:\n$outputString" );
+
+
+        if( strstr( $outputString, "errors" ) != FALSE ) {
+
+            $message = "Failed to send Chexx account refresh check, ".
+                "Lob error:\n$outputString";
+            cm_log( $message );
+            cm_informAdmin( $message );
+            }
+        else {
+            
+    
+            $processed = false;
+            
+            foreach( $output as $line ) {
+
+                if( strstr( $line, "status" ) != FALSE &&
+                    strstr( $line, "processed" ) != FALSE ) {
+                    $processed = true;
+                    }
+                }
+
+            if( !$processed ) {
+                $message = "Failed to send Chexx account refresh check, ".
+                    "Lob result not marked as processed:\n$outputString";
+                cm_log( $message );
+                cm_informAdmin( $message );
+                }
+            else {
+                
+                // else we're good
+                $query = "UPDATE $tableNamePrefix"."server_globals ".
+                    "SET check_account_dollar_balance = ".
+                    "check_account_dollar_balance + $addition;";
+
+                $result = cm_queryDatabase( $query );
+
+                $message = "Sent refresh check to Chexx account for $addition";
+
+                cm_log( $message );
+
+                cm_informAdmin( $message,
+                                "Cordial Minuet refresh check sent to Chexx" );
+                }
+            }
+        }
+    
     
     
     global $remoteIP;
@@ -6197,12 +6301,15 @@ function cm_generateHeader() {
 
     
 
-    $query = "SELECT house_dollar_balance, house_withdrawals ".
+    $query = "SELECT house_dollar_balance, house_withdrawals, ".
+        "check_account_dollar_balance ".
         "FROM  $tableNamePrefix"."server_globals;";
     $result = cm_queryDatabase( $query );
 
     $house_dollar_balance = mysql_result( $result, 0, "house_dollar_balance" );
     $house_withdrawals = mysql_result( $result, 0, "house_withdrawals" );
+    $check_account_dollar_balance =
+        mysql_result( $result, 0, "check_account_dollar_balance" );
 
     $leaked_money =
         $totalBalance
@@ -6219,6 +6326,8 @@ function cm_generateHeader() {
 
     $houseBalanceString = cm_formatBalanceForDisplay( $house_dollar_balance );
     $houseWithdrawalsString = cm_formatBalanceForDisplay( $house_withdrawals );
+    $checkAccountBalanceString
+        = cm_formatBalanceForDisplay( $check_account_dollar_balance );
 
     $leakedMoneyString = cm_formatBalanceForDisplay( $leaked_money );
 
@@ -6240,7 +6349,8 @@ function cm_generateHeader() {
         "Withdrawals: $totalWithdrawalsString<br>".
         "House balance: $houseBalanceString | ".
         "House withdrawals: $houseWithdrawalsString | ".
-        "Leaked: $leakedMoneyString</td>".
+        "Leaked: $leakedMoneyString<br>".
+        "Chexx Balance: $checkAccountBalanceString</td>".
         "<td valign=top align=right width=25%>[<a href=\"server.php?action=logout" .
             "\">Logout</a>]</td>".
         "</tr></table><br><br><br>";
@@ -7834,14 +7944,16 @@ function cm_callAdmin( $inTextMessage ) {
 
 // informs admin by email and phone, if either are enabled
 // of a non-fatal but serious condition
-function cm_informAdmin( $inMessage ) {
+function cm_informAdmin( $inMessage,
+                         $inSubject = "Cordial Minuet server issue" ) {
+    
     global $emailAdminOnFatalError, $callAdminInEmergency;
 
 
     if( $emailAdminOnFatalError ) {
         global $adminEmail;
         
-        cm_mail( $adminEmail, "Cordial Minuet server issue",
+        cm_mail( $adminEmail, $inSubject,
                  $inMessage );
         }
     if( $callAdminInEmergency ) {

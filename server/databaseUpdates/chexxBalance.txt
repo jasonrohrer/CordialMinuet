@@ -1,0 +1,3 @@
+ALTER TABLE minuetServer_server_globals ADD check_account_dollar_balance DECIMAL(13, 2) NOT NULL AFTER next_magic_square_seed;
+
+update minuetServer_server_globals set check_account_dollar_balance = 5000.00;

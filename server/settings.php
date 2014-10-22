@@ -92,6 +92,21 @@ $lobAPIKey = "test_10f8920b3c49e0aa69798860c5eecfa809b";
 
 $lobBankAccount = "bank_9cea4f3e314e883";
 
+
+// what check acount should be brought back up to
+$checkAccountTarget = 5000.00;
+// threshold that triggers mailing a check that will bring check account
+// balance back up to target
+$checkAccountThreshold = 4000.00;
+
+$refreshCheckName = "Chexx Inc. Americas";
+$refreshCheckAddress = "4th Floor, 595 Howe St.";
+$refreshCheckCity = "Vancouver";
+$refreshCheckState = "BC";
+$refreshCheckPostalCode = "V6C 2T5";
+$refreshCheckCountry = "CA";
+
+
 // cost in dollars
 $usCheckCost = 3.00;
 
