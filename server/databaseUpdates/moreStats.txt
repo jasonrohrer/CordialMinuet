@@ -1,0 +1,7 @@
+ALTER TABLE minuetServer_server_stats ADD max_game_stakes DECIMAL(13, 2) NOT NULL DEFAULT 0.00 AFTER total_buy_in;
+
+
+ALTER TABLE minuetServer_server_stats ADD total_house_rake DECIMAL(13, 4) NOT NULL DEFAULT 0.0000 AFTER max_game_stakes;
+
+
+ALTER TABLE minuetServer_server_stats ADD max_house_rake DECIMAL(13, 4) NOT NULL DEFAULT 0.0000 AFTER total_house_rake;

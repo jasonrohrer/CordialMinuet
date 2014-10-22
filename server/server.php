@@ -1019,7 +1019,13 @@ function cm_setupDatabase() {
             "max_concurrent_connections INT UNSIGNED NOT NULL DEFAULT 0," .
 
             "game_count INT UNSIGNED NOT NULL DEFAULT 0,".
-            "total_buy_in DECIMAL(13, 2) NOT NULL DEFAULT 0 ".
+            "total_buy_in DECIMAL(13, 2) NOT NULL DEFAULT 0, ".
+            
+            "max_game_stakes DECIMAL(13, 2) NOT NULL DEFAULT 0.00, ".
+
+            "total_house_rake DECIMAL(13, 4) NOT NULL DEFAULT 0.0000, ".
+            "max_house_rake DECIMAL(13, 4) NOT NULL DEFAULT 0.0000 ".
+            
             ") ENGINE = INNODB;";
         
 
@@ -2158,6 +2164,7 @@ function cm_makeDeposit() {
                         "$remoteIP, ".
                         "initial deposit \$$dollar_amount (\$$fee fee), ".
                         "net \$$deposit_net" );
+                cm_incrementStat( "unique_users" );
                 }
             else {
                 cm_log( "Duplicate ids?  Error:  " . mysql_error() );
@@ -3720,6 +3727,8 @@ function cm_endOldGames( $user_id ) {
 
             cm_addLedgerEntry( 0, $game_id, $house_payout );
 
+            cm_incrementStat( "total_house_rake", $house_payout );
+            cm_updateMaxStat( "max_house_rake", $house_payout );
             
             // if other player is waiting for our move, free them to find
             // out that we left
@@ -3956,6 +3965,11 @@ function cm_joinGame() {
     
         cm_queryDatabase( "COMMIT;" );
         cm_queryDatabase( "SET AUTOCOMMIT=1" );
+
+        cm_incrementStat( "game_count" );
+        cm_incrementStat( "total_buy_in", $dollar_amount * 2 );
+
+        cm_updateMaxStat( "max_game_stakes", $dollar_amount );
         
         echo $response;
 
@@ -5879,7 +5893,7 @@ function cm_verifyTransaction( $inUserID = -1,
 
     // automatically ignore blocked users
     
-    $query = "SELECT sequence_number, account_key ".
+    $query = "SELECT sequence_number, account_key, last_action_time ".
         "FROM $tableNamePrefix"."users ".
         "WHERE user_id = '$user_id' AND blocked='0' FOR UPDATE;";
 
@@ -5914,7 +5928,8 @@ function cm_verifyTransaction( $inUserID = -1,
     
     
     $account_key = $row[ "account_key" ];
-
+    $last_action_time = $row[ "last_action_time" ];
+        
 
     global $cm_accountHmacVersion;
     
@@ -5955,6 +5970,18 @@ function cm_verifyTransaction( $inUserID = -1,
     if( $inCheckSequenceNumber ) {
         
         // counts as an action for this user
+
+
+        // log potentially unique user today
+        $query = "SELECT CURRENT_DATE != DATE( '$last_action_time' );";
+        $result = cm_queryDatabase( $query );
+
+        if( mysql_result( $result, 0, 0 ) ) {
+            // last visit of this user was NOT today
+            cm_incrementStat( "unique_users" );
+            }
+
+        
         $query = "UPDATE $tableNamePrefix"."users SET ".
             "last_action_time = CURRENT_TIMESTAMP ".
             "WHERE user_id = $user_id;";
@@ -6398,6 +6425,7 @@ function cm_makeAccount() {
             
     $result = cm_queryDatabase( $query );
 
+    cm_incrementStat( "unique_users" );
     
     cm_showData();
     }
