@@ -2484,7 +2484,7 @@ function cm_sendCheck() {
     
 
     
-    global $usCheckCost, $globalCheckCost;
+    global $usCheckCost, $globalCheckCost, $otherCountriesWithUSCheckCost;
 
     $isUS = false;
     $fee = $globalCheckCost;
@@ -2493,7 +2493,11 @@ function cm_sendCheck() {
         $isUS = true;
         $fee = $usCheckCost;
         }
-
+    else if( in_array( $country, $otherCountriesWithUSCheckCost ) ) {
+        $fee = $usCheckCost;
+        }
+             
+    
     
     global $usCheckMethodAvailable, $globalCheckMethodAvailable;
 

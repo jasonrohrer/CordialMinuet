@@ -95,8 +95,12 @@ $lobBankAccount = "bank_9cea4f3e314e883";
 // cost in dollars
 $usCheckCost = 3.00;
 
-// cost in dollars
+// these countries outside the US are also charged only $usCheckCost
+$otherCountriesWithUSCheckCost = array( "GB", "CA" );
+
+// cost in dollars for all other countries
 $globalCheckCost = 7.00;
+
 
 // recipient email address will be appended to this memo
 $checkMemo = "Cordial Minuet withdrawl for ";
