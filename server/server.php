@@ -3010,7 +3010,7 @@ function cm_sendCheck() {
         "-d \"Comment=$comment\" ";
     
 
-    cm_log( "Calling chexx with:\n$curlCallString" );
+    //cm_log( "Calling chexx with:\n$curlCallString" );
 
     $output = array();
     exec( $curlCallString, $output );
@@ -3018,10 +3018,10 @@ function cm_sendCheck() {
     // process result
     $outputString = implode( "\n", $output );
     
-    cm_log( "Response from Chexx submit:\n$outputString" );
+    //cm_log( "Response from Chexx submit:\n$outputString" );
 
-    $decodedOutputString = urldecode( $outputString );
-    cm_log( "Decoded response from Chexx submit:\n$decodedOutputString" );
+    //$decodedOutputString = urldecode( $outputString );
+    //cm_log( "Decoded response from Chexx submit:\n$decodedOutputString" );
     
     if( strstr( $outputString, "InProgress" ) == FALSE &&
         strstr( $outputString, "Invalid" ) == FALSE &&
@@ -3120,7 +3120,7 @@ function cm_sendCheck() {
         $trackingNumber = $matches[1];
         }
 
-    cm_log( "Tracking number = $trackingNumber" );
+    //cm_log( "Tracking number = $trackingNumber" );
     
 
     
