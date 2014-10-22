@@ -1018,6 +1018,15 @@ function cm_setupDatabase() {
             "database_connections INT UNSIGNED NOT NULL DEFAULT 0," .
             "max_concurrent_connections INT UNSIGNED NOT NULL DEFAULT 0," .
 
+            "deposit_count INT UNSIGNED NOT NULL DEFAULT 0, ".
+            "total_deposits DECIMAL(13, 2) NOT NULL DEFAULT 0, ".
+            "max_deposit DECIMAL(13, 2) NOT NULL DEFAULT 0, ".
+
+            "withdrawal_count INT UNSIGNED NOT NULL DEFAULT 0, ".
+            "total_withdrawals DECIMAL(13, 2) NOT NULL DEFAULT 0, ".
+            "max_withdrawal DECIMAL(13, 2) NOT NULL DEFAULT 0, ".
+            
+            
             "game_count INT UNSIGNED NOT NULL DEFAULT 0,".
             "total_buy_in DECIMAL(13, 2) NOT NULL DEFAULT 0, ".
             
@@ -2115,6 +2124,9 @@ function cm_makeDeposit() {
     // to player
     $deposit_net = $dollar_amount - $fee;
     
+    cm_incrementStat( "deposit_count" );
+    cm_incrementStat( "total_deposits", $deposit_net );
+    cm_updateMaxStat( "max_deposit", $deposit_net );
     
     
     if( $user_id == "" ) {
@@ -3127,6 +3139,12 @@ function cm_sendCheck() {
         "WHERE user_id = $user_id;";
     cm_queryDatabase( $query );
 
+
+    cm_incrementStat( "withdrawal_count" );
+    cm_incrementStat( "total_withdrawals", $dollar_amount );
+    cm_updateMaxStat( "max_withdrawal", $dollar_amount );
+    
+    
 
     /*
      // No longer using Lob

@@ -5,3 +5,22 @@ ALTER TABLE minuetServer_server_stats ADD total_house_rake DECIMAL(13, 4) NOT NU
 
 
 ALTER TABLE minuetServer_server_stats ADD max_house_rake DECIMAL(13, 4) NOT NULL DEFAULT 0.0000 AFTER total_house_rake;
+
+
+
+
+
+
+
+ALTER TABLE minuetServer_server_stats ADD  max_withdrawal DECIMAL(13, 2) NOT NULL DEFAULT 0 AFTER max_concurrent_connections;
+
+ALTER TABLE minuetServer_server_stats ADD  total_withdrawals DECIMAL(13, 2) NOT NULL DEFAULT 0 AFTER max_concurrent_connections;
+
+ALTER TABLE minuetServer_server_stats ADD  withdrawal_count INT UNSIGNED NOT NULL DEFAULT 0 AFTER max_concurrent_connections;
+
+
+ALTER TABLE minuetServer_server_stats ADD max_deposit DECIMAL(13, 2) NOT NULL DEFAULT 0 AFTER max_concurrent_connections;
+
+ALTER TABLE minuetServer_server_stats ADD total_deposits DECIMAL(13, 2) NOT NULL DEFAULT 0 AFTER max_concurrent_connections;
+
+ALTER TABLE minuetServer_server_stats ADD deposit_count INT UNSIGNED NOT NULL DEFAULT 0  AFTER max_concurrent_connections;
