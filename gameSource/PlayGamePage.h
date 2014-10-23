@@ -213,6 +213,7 @@ class PlayGamePage : public ServerActionPage, public ActionListener {
         SpriteHandle mParchmentSprite;
         SpriteHandle mRedWatercolorSprite;
         SpriteHandle mBlueWatercolorSprite;
+        SpriteHandle mInkGridSprite;
         
 
         

@@ -76,6 +76,7 @@ PlayGamePage::PlayGamePage()
           mParchmentSprite( loadSprite( "parchment.tga", true ) ),
           mRedWatercolorSprite( loadSprite( "redWatercolor.tga", false ) ),
           mBlueWatercolorSprite( loadSprite( "blueWatercolor.tga", false ) ),
+          mInkGridSprite( loadSprite( "inkGrid.tga", false ) ),
           mRoundEnding( false ), 
           mRoundEndTime( 0 ),
           mRoundStarting( false ),
@@ -193,6 +194,7 @@ PlayGamePage::~PlayGamePage() {
     freeSprite( mParchmentSprite );
     freeSprite( mRedWatercolorSprite );
     freeSprite( mBlueWatercolorSprite );
+    freeSprite( mInkGridSprite );
     }
 
 
@@ -978,6 +980,18 @@ void PlayGamePage::draw( doublePair inViewCenter,
         drawSprite( mParchmentSprite, parchPos );
     
         toggleMultiplicativeBlend( true );
+
+        toggleAdditiveTextureColoring( true );
+
+        float inkValue = (lastMousePos.x + 333 )/ 666;
+
+        setDrawColor( inkValue, inkValue, inkValue, 1 );
+
+        drawSprite( mInkGridSprite, parchPos );    
+
+        toggleAdditiveTextureColoring( false );
+
+        setDrawColor( 1, 1, 1, 1 );
 
         drawSprite( mRedWatercolorSprite, parchPos );
     
