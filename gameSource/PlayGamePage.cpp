@@ -83,6 +83,89 @@ PlayGamePage::PlayGamePage()
           mRoundStartTime( 0 ) {
     
 
+
+    Image *numbersImage = readTGAFile( "inkNumbers.tga" );
+    
+    if( numbersImage != NULL ) {
+        
+        int width = numbersImage->getWidth();
+        
+        int height = numbersImage->getHeight();
+
+        int numberWidth = width / 6;
+        int numberHeight = height / 6;
+        
+
+        // pad individual sprite width and height to powers to 2
+        int paddedW = numberWidth;
+        int paddedH = numberHeight;
+
+        int wPadOffset = 0;
+        int hPadOffset = 0;
+
+        double log2w = log( numberWidth ) / log( 2 );
+        double log2h = log( numberHeight ) / log( 2 );
+    
+
+        int next2PowerW = (int)( ceil( log2w ) );
+        int next2PowerH = (int)( ceil( log2h ) );
+    
+        if( next2PowerW != log2w ) {
+            paddedW = (int)( pow( 2, next2PowerW ) );
+            
+            wPadOffset = ( paddedW - numberWidth ) / 2;
+            }
+
+        if( next2PowerH != log2h ) {
+            paddedH = (int)( pow( 2, next2PowerH ) );
+            
+            hPadOffset = ( paddedH - numberHeight ) / 2;
+            }
+        
+        for( int i=0; i<36; i++ ) {
+            
+            int x = i % 6;
+            int y = i / 6;
+            
+
+            Image *oneNumberImage = 
+                numbersImage->getSubImage( x * numberWidth, 
+                                           y * numberHeight,
+                                           numberWidth, numberHeight );
+            
+            int numChannels = oneNumberImage->getNumChannels();
+    
+            Image paddedImage( paddedW, paddedH, numChannels, false );
+            
+            int numPaddedPixels = paddedW * paddedH;
+
+            for( int c=0; c<numChannels; c++ ) {
+                double *destChannel = paddedImage.getChannel( c );
+                double *sourceChannel = oneNumberImage->getChannel( c );
+        
+                for( int p=0; p<numPaddedPixels; p++ ) {
+                    destChannel[p] = 1.0;
+                    }
+
+                for( int r=0; r<numberHeight; r++ ) {
+                    // copy row
+                    memcpy( &( destChannel[ (r+hPadOffset) * paddedW + 
+                                            wPadOffset ] ),
+                            &( sourceChannel[ r * numberWidth ] ),
+                            sizeof( double ) * numberWidth );
+                    }
+                }
+            
+            mInkNumberSprites[i] = fillSprite( &paddedImage, false );
+            
+            delete oneNumberImage;
+            }
+        
+        delete numbersImage;
+        }
+    
+
+
     // put status message on top of screen so that errors don't
     // overlap with leave button
     setStatusPositiion( true );
@@ -195,6 +278,10 @@ PlayGamePage::~PlayGamePage() {
     freeSprite( mRedWatercolorSprite );
     freeSprite( mBlueWatercolorSprite );
     freeSprite( mInkGridSprite );
+
+    for( int i=0; i<36; i++ ) {
+        freeSprite( mInkNumberSprites[i] );
+        }
     }
 
 
@@ -988,6 +1075,21 @@ void PlayGamePage::draw( doublePair inViewCenter,
         setDrawColor( inkValue, inkValue, inkValue, 1 );
 
         drawSprite( mInkGridSprite, parchPos );    
+
+        for( int i=0; i<36; i++ ) {
+            doublePair numberPos = parchPos;
+            
+            numberPos.x -= 138;
+            numberPos.y += 137;
+
+            numberPos.x += ( i % 6 ) * 55;
+            numberPos.y -= ( i / 6 ) * 54;
+            
+            
+            drawSprite( mInkNumberSprites[ mGameBoard[i] -  1 ], numberPos );  
+            }
+        
+
 
         toggleAdditiveTextureColoring( false );
 
