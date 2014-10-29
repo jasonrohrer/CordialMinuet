@@ -6597,18 +6597,25 @@ function cm_showStats() {
     $altBGColor = "#CCCCCC";
 
 
-    echo "<tr>";
-    for( $i=0; $i<$numFields; $i++ ) {
-        $name = mysql_field_name( $result, $i );
-
-        echo "<td><b>$name</b></td>";
-        }
-    echo "</tr>\n";
+    
     
         
     for( $i=0; $i<$numRows; $i++ ) {
 
-        echo "<tr>";
+        // repeat header periodically so column titles are visible
+        // when scrolling
+        if( $i % 20 == 0 ) {
+            echo "<tr>";
+            for( $j=0; $j<$numFields; $j++ ) {
+                $name = mysql_field_name( $result, $j );
+                
+                echo "<td><b>$name</b></td>";
+                }
+            echo "</tr>\n";
+            
+            echo "<tr>";
+            }
+        
         for( $j=0; $j<$numFields; $j++ ) {
             $value = mysql_result( $result, $i, $j );
 
