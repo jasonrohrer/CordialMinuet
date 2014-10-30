@@ -240,6 +240,8 @@ class PlayGamePage : public ServerActionPage, public ActionListener {
 
         SpriteHandle mRedWatercolorVSprites[3][6];
         
+        SpriteHandle mBlackWatercolorVSprites[6][6];
+        SpriteHandle mBlackWatercolorHSprites[6][6];
 
         doublePair mInkGridCenter;
         

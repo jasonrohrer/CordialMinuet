@@ -121,7 +121,7 @@ static void readWatercolorImages( const char *inTGAFileName,
                     subYOffset = 0;
                     }
                 Image *subStrokeImage = 
-                    watercolorImage->getSubImage( subXOffset, subYOffset,
+                    strokeImage->getSubImage( subXOffset, subYOffset,
                                                   64, 64 );
                 
 
@@ -270,6 +270,11 @@ PlayGamePage::PlayGamePage()
     readWatercolorImages( "redWatercolorV.tga", true, 
                           mRedWatercolorVSprites );
 
+    readWatercolorImages( "blackWatercolorV.tga", true, 
+                          mBlackWatercolorVSprites );
+
+    readWatercolorImages( "blackWatercolorH.tga", false, 
+                          mBlackWatercolorHSprites );
     
     
     mInkGridCenter.x = 0;
@@ -411,6 +416,12 @@ PlayGamePage::~PlayGamePage() {
             freeSprite( mGreenWatercolorHSprites[i][s] );
             
             freeSprite( mRedWatercolorVSprites[i][s] );
+            }
+        }
+    for( int i=0; i<6; i++ ) {
+        for( int s=0; s<6; s++ ) {
+            freeSprite( mBlackWatercolorVSprites[i][s] );
+            freeSprite( mBlackWatercolorHSprites[i][s] );
             }
         }
     }
@@ -1930,6 +1941,9 @@ void PlayGamePage::step() {
         
         int theirOldChoices[6];
         memcpy( theirOldChoices, mTheirChoices, 6 * sizeof( int ) );
+
+        int ourOldWonSquares[3];
+        memcpy( ourOldWonSquares, mOurWonSquares, 3 * sizeof( int ) );
         
         for( int i=0; i<6; i++ ) {
             mRowUsed[i] = false;
@@ -2020,6 +2034,21 @@ void PlayGamePage::step() {
                         mOurWonSquares[ ourWonSquareCount ] =
                             ourWonIndex;
                         
+                        if( mOurWonSquares[ ourWonSquareCount ] !=
+                            ourOldWonSquares[ ourWonSquareCount ] ) {
+                            
+                            // a new won square
+                            int r = mOurWonSquares[ ourWonSquareCount ] / 6;
+                            int c = mOurWonSquares[ ourWonSquareCount ] % 6;
+                            printf( "Adding a won square for us at %d,%d\n",
+                                    r, c );
+                            
+                            addColumnStroke( c,
+                                             mBlackWatercolorVSprites[r] );
+                            addRowStroke( r,
+                                          mBlackWatercolorHSprites[c] );
+                            }
+
                         ourWonSquareCount ++;
                         }
                     
