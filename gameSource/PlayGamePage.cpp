@@ -1061,11 +1061,13 @@ void PlayGamePage::draw( doublePair inViewCenter,
                 doublePair pos = { 0, 300 };
                 
                 
-                if( secondsLeft > 5 && mMoveDeadlineFade < 1 ) {
-                    mMoveDeadlineFade += 
-                        .05 * frameRateFactor;
-                    if( mMoveDeadlineFade > 1 ) {
-                        mMoveDeadlineFade = 1;
+                if( secondsLeft > 5 ) {
+                    if( mMoveDeadlineFade < 1 ) {
+                        mMoveDeadlineFade += 
+                            .05 * frameRateFactor;
+                        if( mMoveDeadlineFade > 1 ) {
+                            mMoveDeadlineFade = 1;
+                            }
                         }
                     }
                 else {
