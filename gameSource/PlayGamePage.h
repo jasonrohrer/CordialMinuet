@@ -237,6 +237,8 @@ class PlayGamePage : public ServerActionPage, public ActionListener {
 
         SpriteHandle mGreenWatercolorVSprites[3][6];
         SpriteHandle mGreenWatercolorHSprites[3][6];
+
+        SpriteHandle mRedWatercolorVSprites[3][6];
         
 
         doublePair mInkGridCenter;

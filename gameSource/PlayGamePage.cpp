@@ -266,6 +266,10 @@ PlayGamePage::PlayGamePage()
 
     readWatercolorImages( "greenWatercolorH.tga", false, 
                           mGreenWatercolorHSprites );
+
+    readWatercolorImages( "redWatercolorV.tga", true, 
+                          mRedWatercolorVSprites );
+
     
     
     mInkGridCenter.x = 0;
@@ -405,6 +409,8 @@ PlayGamePage::~PlayGamePage() {
         for( int s=0; s<6; s++ ) {
             freeSprite( mGreenWatercolorVSprites[i][s] );
             freeSprite( mGreenWatercolorHSprites[i][s] );
+            
+            freeSprite( mRedWatercolorVSprites[i][s] );
             }
         }
     }
@@ -452,6 +458,16 @@ void PlayGamePage::makeActive( char inFresh ) {
     mColumnChoiceForUs = -1;
     mColumnChoiceForThem = -1;
     
+    for( int i=0; i<6; i++ ) {
+        mRowUsed[i] = false;
+        mColumnUsed[i] = false;
+        mOurChoices[i] = -1;
+        mTheirChoices[i] = -1;
+        }
+    for( int i=0; i<3; i++ ) {
+        mOurWonSquares[i] = -1;
+        mTheirWonSquares[i] = -1;
+        }
 
     setActionName( "get_game_state" );
     setResponsePartNames( 9, gameStatePartNames );
@@ -643,6 +659,7 @@ void PlayGamePage::actionPerformed( GUIComponent *inTarget ) {
             setActionName( "make_move" );
 
             addColumnStroke( mColumnChoiceForUs, mGreenWatercolorVSprites[0] );
+            addColumnStroke( mColumnChoiceForThem, mRedWatercolorVSprites[0] );
 
             setActionParameter( "their_column", mColumnChoiceForThem );
 
@@ -1911,6 +1928,9 @@ void PlayGamePage::step() {
         char *ourMoves = getResponse( "ourMoves" );
         char *theirMoves = getResponse( "theirMoves" );
         
+        int theirOldChoices[6];
+        memcpy( theirOldChoices, mTheirChoices, 6 * sizeof( int ) );
+        
         for( int i=0; i<6; i++ ) {
             mRowUsed[i] = false;
             mColumnUsed[i] = false;
@@ -1969,6 +1989,15 @@ void PlayGamePage::step() {
                         }
                     
                     mTheirChoices[ theirChoiceMapping[i] ] = theirChoice;
+                    
+                    if( theirChoiceMapping[i] < 3 &&
+                        theirOldChoices[ theirChoiceMapping[i] ] !=
+                        mTheirChoices[ theirChoiceMapping[i] ] ) {
+                        
+                        // a new choice
+                        addRowStroke( mTheirChoices[ theirChoiceMapping[i] ],
+                                      mGreenWatercolorHSprites[0] );
+                        }
                     }
                 
                 
@@ -2771,7 +2800,7 @@ void PlayGamePage::addRowStroke( int inRow, SpriteHandle inSprite[6] ) {
 
     for( int i=0; i<6; i++ ) {
         WatercolorStroke stroke = { subPos,
-                                    inSprite, false, 1, 1 };
+                                    inSprite[i], false, 1, 1 };
         
         mWatercolorStrokes.push_back( stroke );
         
