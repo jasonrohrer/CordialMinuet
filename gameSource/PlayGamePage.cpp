@@ -233,8 +233,23 @@ PlayGamePage::PlayGamePage()
 
     readWatercolorImages( "greenWatercolorH.tga", false, 
                           mGreenWatercolorHSprites );
+    
+    
+    mInkGridCenter.x = 0;
+    mInkGridCenter.y = 0;
+    
+    for( int i=0; i<6; i++ ) {
+        mColumnPositions[i] = mInkGridCenter;
+        mColumnPositions[i].x -= 138;
+        mColumnPositions[i].x += i * 55;
 
 
+        mRowPositions[i] = mInkGridCenter;
+        mRowPositions[i].y += 137;
+        mRowPositions[i].y -= i * 54;
+        }
+    
+    
 
     // put status message on top of screen so that errors don't
     // overlap with leave button
@@ -413,6 +428,8 @@ void PlayGamePage::makeActive( char inFresh ) {
 
     mFlyingCoins[0].deleteAll();
     mFlyingCoins[1].deleteAll();
+
+    mWatercolorStrokes.deleteAll();
     
 
     mMessageState = gettingState;
@@ -458,6 +475,8 @@ void PlayGamePage::actionPerformed( GUIComponent *inTarget ) {
                 }
             else if( mColumnChoiceForUs == -1 ) {
                 mColumnChoiceForUs = i;
+                addColumnStroke( i, mGreenWatercolorVSprites[0] );
+                
                 mColumnButtons[i]->setLabelText( "x" );
                
                 if( numMovesAlreadyMade == 4 ) {
@@ -1151,30 +1170,74 @@ void PlayGamePage::draw( doublePair inViewCenter,
 
         setDrawColor( inkValue, inkValue, inkValue, 1 );
 
-        drawSprite( mInkGridSprite, parchPos );    
+        drawSprite( mInkGridSprite, mInkGridCenter );    
 
         for( int i=0; i<36; i++ ) {
-            doublePair numberPos = parchPos;
-            
-            numberPos.x -= 138;
-            numberPos.y += 137;
+            doublePair numberPos;
+            numberPos.x = mColumnPositions[ i % 6 ].x;
+            numberPos.y = mRowPositions[ i / 6 ].y;
 
-            numberPos.x += ( i % 6 ) * 55;
-            numberPos.y -= ( i / 6 ) * 54;
-            
-            
             drawSprite( mInkNumberSprites[ mGameBoard[i] -  1 ], numberPos );  
             }
-        
-        if( mColumnChoiceForUs != -1 ) {
-            doublePair strokePos = parchPos;
-            strokePos.x -= 138;
+
+
+        setDrawColor( 1, 1, 1, 1 );
+
+        for( int i=0; i<mWatercolorStrokes.size(); i++ ) {
+            // draw strokes until we find one that is still
+            // fading in, then stop after that one (only fade in one
+            // at a time
             
-            strokePos.x += mColumnChoiceForUs * 55;
+            WatercolorStroke *stroke = mWatercolorStrokes.getElement( i );
+            
+            if( stroke->leftEnd == 0 && stroke->rightEnd == 0 ) {
+                setDrawColor( 0, 0, 0, 1 );
+                
+                drawSprite( stroke->sprite, stroke->pos );
+                }
+            else {
+                
+                FloatColor spriteColors[4];
+    
+                for( int i=0; i<4; i++ ) {
+                    float value = stroke->leftEnd;
+                    
+                    if( ! stroke->vertical && ( i == 1 || i == 2 ) ) {
+                        value = stroke->rightEnd;
+                        }
+                    else if( stroke->vertical && ( i == 0 || i == 1 ) ) {
+                        value = stroke->rightEnd;
+                        }
+                    spriteColors[i].r = value;
+                    spriteColors[i].g = value;
+                    spriteColors[i].b = value;
+                    spriteColors[i].a = 1;
+                    }
+            
+                drawSprite( stroke->sprite, stroke->pos, spriteColors );
+                }
+            
+
+            if( stroke->leftEnd > 0 ) {
+                stroke->leftEnd -= 0.04 * frameRateFactor;
+                // don't draw any further strokes
+                break;
+                }
+            else if( stroke->rightEnd > 0 ) {
+                // don't draw any further strokes
+                stroke->rightEnd -= 0.04 * frameRateFactor;
+                }
+            }
+        
+        /*
+        if( mColumnChoiceForUs != -1 ) {
+            doublePair strokePos;
+            
+            strokePos = mColumnPositions[ mColumnChoiceForUs ];
             
             drawSprite( mGreenWatercolorVSprites[0], strokePos );
             }
-        
+        */
         
 
 
@@ -2639,6 +2702,25 @@ int PlayGamePage::getNetPotCoins( int inPlayerNumber ) {
             }
         }
     return count;
+    }
+
+
+
+
+void PlayGamePage::addColumnStroke( int inColumn, SpriteHandle inSprite ) {
+    WatercolorStroke stroke = { mColumnPositions[inColumn],
+                                inSprite, true, 1, 1 };
+    
+    mWatercolorStrokes.push_back( stroke );
+    }
+
+    
+
+void PlayGamePage::addRowStroke( int inRow, SpriteHandle inSprite ) {
+    WatercolorStroke stroke = { mRowPositions[inRow],
+                                inSprite, false, 1, 1 };
+    
+    mWatercolorStrokes.push_back( stroke );
     }
 
 

@@ -81,6 +81,24 @@ typedef struct PendingFlyingCoin {
 
 
 
+typedef struct WatercolorStroke {
+        doublePair pos;
+        
+        SpriteHandle sprite;
+        
+        char vertical;
+
+        // fade-in progress, full strength when both ends hit 0
+        // note that these represent top and bottom ends when vertical
+        float leftEnd;
+        float rightEnd;
+
+    } WatercolorStroke;
+
+
+
+
+
 class PlayGamePage : public ServerActionPage, public ActionListener {
         
     public:
@@ -219,6 +237,18 @@ class PlayGamePage : public ServerActionPage, public ActionListener {
 
         SpriteHandle mGreenWatercolorVSprites[3];
         SpriteHandle mGreenWatercolorHSprites[3];
+        
+
+        doublePair mInkGridCenter;
+        
+        // for centering a stroke on a column or row
+        doublePair mColumnPositions[6];
+        doublePair mRowPositions[6];
+        
+        SimpleVector<WatercolorStroke> mWatercolorStrokes;
+        
+        void addColumnStroke( int inColumn, SpriteHandle inSprite );
+        void addRowStroke( int inRow, SpriteHandle inSprite );
         
 
         
