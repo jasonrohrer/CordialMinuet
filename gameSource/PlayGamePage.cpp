@@ -51,6 +51,68 @@ static void setThemColor() {
 static doublePair lastMousePos = { 0, 0 };
 
 
+
+// assumes strokes are 64 wide
+// outArray must have room for however many strokes are in image
+static void readWatercolorImages( const char *inTGAFileName,
+                                  char inVertical,
+                                  SpriteHandle outSpriteArray[] ) {
+    
+    Image *watercolorImage = readTGAFile( inTGAFileName );
+    
+    if( watercolorImage != NULL ) {
+        int w = watercolorImage->getWidth();
+        int h = watercolorImage->getHeight();
+        
+        int numStrokes;
+        int strokeSpriteW;
+        int strokeSpriteH;
+        
+        if( inVertical ) {
+            numStrokes =  w / 64;
+            strokeSpriteH = h;
+            strokeSpriteW = 64;
+            }
+        else {
+            numStrokes = h / 64;
+            
+            strokeSpriteH = 64;
+            strokeSpriteW = w;
+            }
+        
+        for( int i=0; i<numStrokes; i++ ) {
+            
+            int xOffset;
+            int yOffset;
+            
+            if( inVertical ) {
+                xOffset = i * 64;
+                yOffset = 0;
+                }
+            else {
+                xOffset = 0;
+                yOffset = i * 64;
+                }
+
+            Image *strokeImage = 
+                watercolorImage->getSubImage( xOffset, yOffset,
+                                              strokeSpriteW, strokeSpriteH );
+            
+            outSpriteArray[i] = fillSprite( strokeImage, false );
+            
+            delete strokeImage;
+            }
+
+        delete watercolorImage;
+        }
+    
+    }
+
+
+
+
+
+
 PlayGamePage::PlayGamePage()
         : ServerActionPage( "get_game_state", 9, gameStatePartNames ),
           mGameBoard( NULL ),
@@ -164,6 +226,14 @@ PlayGamePage::PlayGamePage()
         delete numbersImage;
         }
     
+
+    
+    readWatercolorImages( "greenWatercolorV.tga", true, 
+                          mGreenWatercolorVSprites );
+
+    readWatercolorImages( "greenWatercolorH.tga", false, 
+                          mGreenWatercolorHSprites );
+
 
 
     // put status message on top of screen so that errors don't
@@ -281,6 +351,11 @@ PlayGamePage::~PlayGamePage() {
 
     for( int i=0; i<36; i++ ) {
         freeSprite( mInkNumberSprites[i] );
+        }
+    
+    for( int i=0; i<3; i++ ) {
+        freeSprite( mGreenWatercolorVSprites[i] );
+        freeSprite( mGreenWatercolorHSprites[i] );
         }
     }
 
@@ -1071,6 +1146,8 @@ void PlayGamePage::draw( doublePair inViewCenter,
         toggleAdditiveTextureColoring( true );
 
         float inkValue = (lastMousePos.x + 333 )/ 666;
+        
+        inkValue = 0;
 
         setDrawColor( inkValue, inkValue, inkValue, 1 );
 
@@ -1088,6 +1165,16 @@ void PlayGamePage::draw( doublePair inViewCenter,
             
             drawSprite( mInkNumberSprites[ mGameBoard[i] -  1 ], numberPos );  
             }
+        
+        if( mColumnChoiceForUs != -1 ) {
+            doublePair strokePos = parchPos;
+            strokePos.x -= 138;
+            
+            strokePos.x += mColumnChoiceForUs * 55;
+            
+            drawSprite( mGreenWatercolorVSprites[0], strokePos );
+            }
+        
         
 
 

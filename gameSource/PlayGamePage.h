@@ -217,6 +217,10 @@ class PlayGamePage : public ServerActionPage, public ActionListener {
         
         SpriteHandle mInkNumberSprites[36];
 
+        SpriteHandle mGreenWatercolorVSprites[3];
+        SpriteHandle mGreenWatercolorHSprites[3];
+        
+
         
         int mCurrentCacheAge;
         
