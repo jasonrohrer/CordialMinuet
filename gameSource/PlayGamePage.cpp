@@ -54,9 +54,10 @@ static doublePair lastMousePos = { 0, 0 };
 
 // assumes strokes are 64 wide
 // outArray must have room for however many strokes are in image
+// and each stroke divided up into 6 sub-strokes
 static void readWatercolorImages( const char *inTGAFileName,
                                   char inVertical,
-                                  SpriteHandle outSpriteArray[] ) {
+                                  SpriteHandle outSpriteArray[][6] ) {
     
     Image *watercolorImage = readTGAFile( inTGAFileName );
     
@@ -98,7 +99,39 @@ static void readWatercolorImages( const char *inTGAFileName,
                 watercolorImage->getSubImage( xOffset, yOffset,
                                               strokeSpriteW, strokeSpriteH );
             
-            outSpriteArray[i] = fillSprite( strokeImage, false );
+            
+            // break into sub-strokes
+            int substrokeStartOffset;
+            if( inVertical ) {
+                substrokeStartOffset = ( h - ( 6 * 64 ) ) / 2;
+                }
+            else {
+                substrokeStartOffset = ( w - ( 6 * 64 ) ) / 2;
+                }
+            
+            for( int s=0; s<6; s++ ) {
+                int subXOffset, subYOffset;
+                
+                if( inVertical ) {
+                    subXOffset = 0;
+                    subYOffset = s * 64 + substrokeStartOffset;
+                    }
+                else {
+                    subXOffset = s * 64 + substrokeStartOffset;
+                    subYOffset = 0;
+                    }
+                Image *subStrokeImage = 
+                    watercolorImage->getSubImage( subXOffset, subYOffset,
+                                                  64, 64 );
+                
+
+                outSpriteArray[i][s] = fillSprite( subStrokeImage, false );
+              
+                delete subStrokeImage;
+                }
+            
+
+            //outSpriteArray[i] = fillSprite( strokeImage, false );
             
             delete strokeImage;
             }
@@ -369,8 +402,10 @@ PlayGamePage::~PlayGamePage() {
         }
     
     for( int i=0; i<3; i++ ) {
-        freeSprite( mGreenWatercolorVSprites[i] );
-        freeSprite( mGreenWatercolorHSprites[i] );
+        for( int s=0; s<6; s++ ) {
+            freeSprite( mGreenWatercolorVSprites[i][s] );
+            freeSprite( mGreenWatercolorHSprites[i][s] );
+            }
         }
     }
 
@@ -475,7 +510,6 @@ void PlayGamePage::actionPerformed( GUIComponent *inTarget ) {
                 }
             else if( mColumnChoiceForUs == -1 ) {
                 mColumnChoiceForUs = i;
-                addColumnStroke( i, mGreenWatercolorVSprites[0] );
                 
                 mColumnButtons[i]->setLabelText( "x" );
                
@@ -607,6 +641,8 @@ void PlayGamePage::actionPerformed( GUIComponent *inTarget ) {
 
         if( numUsedColumns < 6 ) {
             setActionName( "make_move" );
+
+            addColumnStroke( mColumnChoiceForUs, mGreenWatercolorVSprites[0] );
 
             setActionParameter( "their_column", mColumnChoiceForThem );
 
@@ -1219,13 +1255,17 @@ void PlayGamePage::draw( doublePair inViewCenter,
             
 
             if( stroke->leftEnd > 0 ) {
-                stroke->leftEnd -= 0.04 * frameRateFactor;
-                // don't draw any further strokes
-                break;
+                stroke->leftEnd -= 0.02 * frameRateFactor;
+                // don't draw any further strokes, we're not close to done 
+                // with the start end of this one yet
+                if( stroke->leftEnd > 0.75 ) {
+                    break;
+                    }
                 }
-            else if( stroke->rightEnd > 0 ) {
-                // don't draw any further strokes
-                stroke->rightEnd -= 0.04 * frameRateFactor;
+            if( stroke->rightEnd > 0 ) {
+                stroke->rightEnd -= 0.02 * frameRateFactor;
+                // go on to start end of next stroke in parallel
+                // with end-end of this stroke
                 }
             }
         
@@ -2707,20 +2747,36 @@ int PlayGamePage::getNetPotCoins( int inPlayerNumber ) {
 
 
 
-void PlayGamePage::addColumnStroke( int inColumn, SpriteHandle inSprite ) {
-    WatercolorStroke stroke = { mColumnPositions[inColumn],
-                                inSprite, true, 1, 1 };
+void PlayGamePage::addColumnStroke( int inColumn, SpriteHandle inSprite[6] ) {
     
-    mWatercolorStrokes.push_back( stroke );
+    doublePair subPos = mColumnPositions[inColumn];
+    subPos.y += 64 + 64 + 32;
+    
+    for( int i=0; i<6; i++ ) {
+        
+        WatercolorStroke stroke = { subPos,
+                                    inSprite[i], true, 1, 1 };
+    
+        mWatercolorStrokes.push_back( stroke );
+        
+        subPos.y -= 64;
+        }
     }
 
     
 
-void PlayGamePage::addRowStroke( int inRow, SpriteHandle inSprite ) {
-    WatercolorStroke stroke = { mRowPositions[inRow],
-                                inSprite, false, 1, 1 };
-    
-    mWatercolorStrokes.push_back( stroke );
+void PlayGamePage::addRowStroke( int inRow, SpriteHandle inSprite[6] ) {
+    doublePair subPos = mRowPositions[inRow];
+    subPos.x -= 64 + 64 + 32;
+
+    for( int i=0; i<6; i++ ) {
+        WatercolorStroke stroke = { subPos,
+                                    inSprite, false, 1, 1 };
+        
+        mWatercolorStrokes.push_back( stroke );
+        
+        subPos.x += 64;
+        }
     }
 
 

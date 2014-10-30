@@ -235,8 +235,8 @@ class PlayGamePage : public ServerActionPage, public ActionListener {
         
         SpriteHandle mInkNumberSprites[36];
 
-        SpriteHandle mGreenWatercolorVSprites[3];
-        SpriteHandle mGreenWatercolorHSprites[3];
+        SpriteHandle mGreenWatercolorVSprites[3][6];
+        SpriteHandle mGreenWatercolorHSprites[3][6];
         
 
         doublePair mInkGridCenter;
@@ -247,8 +247,8 @@ class PlayGamePage : public ServerActionPage, public ActionListener {
         
         SimpleVector<WatercolorStroke> mWatercolorStrokes;
         
-        void addColumnStroke( int inColumn, SpriteHandle inSprite );
-        void addRowStroke( int inRow, SpriteHandle inSprite );
+        void addColumnStroke( int inColumn, SpriteHandle inSprite[6] );
+        void addRowStroke( int inRow, SpriteHandle inSprite[6] );
         
 
         
