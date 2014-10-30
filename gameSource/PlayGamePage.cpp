@@ -493,6 +493,10 @@ void PlayGamePage::makeActive( char inFresh ) {
 
     mWatercolorStrokes.deleteAll();
     
+    mNextGreenVSprite = 0;
+    mNextGreenHSprite = 0;
+    mNextRedVSprite = 0;
+
 
     mMessageState = gettingState;
     
@@ -669,8 +673,12 @@ void PlayGamePage::actionPerformed( GUIComponent *inTarget ) {
         if( numUsedColumns < 6 ) {
             setActionName( "make_move" );
 
-            addColumnStroke( mColumnChoiceForUs, mGreenWatercolorVSprites[0] );
-            addColumnStroke( mColumnChoiceForThem, mRedWatercolorVSprites[0] );
+            addColumnStroke( mColumnChoiceForUs, 
+                             mGreenWatercolorVSprites[mNextGreenVSprite] );
+            mNextGreenVSprite++;
+            addColumnStroke( mColumnChoiceForThem, 
+                             mRedWatercolorVSprites[mNextRedVSprite] );
+            mNextRedVSprite++;
 
             setActionParameter( "their_column", mColumnChoiceForThem );
 
@@ -1308,7 +1316,7 @@ void PlayGamePage::draw( doublePair inViewCenter,
         */
         
 
-
+        /*
         toggleAdditiveTextureColoring( false );
 
         setDrawColor( 1, 1, 1, 1 );
@@ -1345,6 +1353,10 @@ void PlayGamePage::draw( doublePair inViewCenter,
         else if( rightEnd > 0 ) {
             rightEnd -= 0.02;
             }
+        */
+
+        toggleAdditiveTextureColoring( false );
+        toggleMultiplicativeBlend( false );
         }
     
         
@@ -2009,8 +2021,10 @@ void PlayGamePage::step() {
                         mTheirChoices[ theirChoiceMapping[i] ] ) {
                         
                         // a new choice
-                        addRowStroke( mTheirChoices[ theirChoiceMapping[i] ],
-                                      mGreenWatercolorHSprites[0] );
+                        addRowStroke( 
+                            mTheirChoices[ theirChoiceMapping[i] ],
+                            mGreenWatercolorHSprites[mNextGreenHSprite] );
+                        mNextGreenHSprite++;
                         }
                     }
                 
