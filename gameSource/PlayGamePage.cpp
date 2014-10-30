@@ -496,7 +496,9 @@ void PlayGamePage::makeActive( char inFresh ) {
     mNextGreenVSprite = 0;
     mNextGreenHSprite = 0;
     mNextRedVSprite = 0;
-
+    
+    mParchmentFade = 1;
+    mParchmentFadingOut = false;
 
     mMessageState = gettingState;
     
@@ -1226,7 +1228,7 @@ void PlayGamePage::draw( doublePair inViewCenter,
     
 
 
-    if( mShowWatercolorDemo ) {
+    if( mShowWatercolorDemo && mGameBoard != NULL ) {
         
         doublePair parchPos = { 0, 0 };
     
@@ -1294,6 +1296,9 @@ void PlayGamePage::draw( doublePair inViewCenter,
 
             if( stroke->leftEnd > 0 ) {
                 stroke->leftEnd -= 0.02 * frameRateFactor;
+                if( stroke->leftEnd < 0 ) {
+                    stroke->leftEnd = 0;
+                    }
                 // don't draw any further strokes, we're not close to done 
                 // with the start end of this one yet
                 if( stroke->leftEnd > 0.75 ) {
@@ -1302,6 +1307,10 @@ void PlayGamePage::draw( doublePair inViewCenter,
                 }
             if( stroke->rightEnd > 0 ) {
                 stroke->rightEnd -= 0.02 * frameRateFactor;
+                if( stroke->rightEnd < 0 ) {
+                    stroke->rightEnd = 0;
+                    }
+                
                 // go on to start end of next stroke in parallel
                 // with end-end of this stroke
                 }
@@ -1359,6 +1368,13 @@ void PlayGamePage::draw( doublePair inViewCenter,
 
         toggleAdditiveTextureColoring( false );
         toggleMultiplicativeBlend( false );
+
+        
+        if( mParchmentFade > 0 ) {
+            setDrawColor( 0, 0, 0, mParchmentFade );
+            drawSquare( parchPos, 256 );
+            }
+        
         }
     
         
@@ -1403,24 +1419,76 @@ void PlayGamePage::step() {
         mRoundEnding = false;
         }
 
+    char anyStrokesStillAdding = false;
+    if( mWatercolorStrokes.size() > 0 ) {
+        
+        WatercolorStroke *lastStroke = 
+            mWatercolorStrokes.getElement( mWatercolorStrokes.size() - 1 );
+        
+        if( lastStroke->rightEnd > 0 ) {
+            anyStrokesStillAdding = true;
+            }
+        }
+    
+    if( !mShowWatercolorDemo ) {
+        anyStrokesStillAdding = false;
+        }
+    
 
     if( mRoundStarting && mRoundStartTime < game_time( NULL ) && 
         // wait for coins to finish flying before starting next round
         mFlyingCoins[0].size() == 0 &&
-        mFlyingCoins[1].size() == 0 ) {
+        mFlyingCoins[1].size() == 0 && 
+        // wait for final strokes, too
+        ! anyStrokesStillAdding ) {
 
-        clearActionParameters();
+        mParchmentFadingOut = true;
         
-        setActionName( "start_next_round" );
-        setResponsePartNames( -1, NULL );
-        
-        mMessageState = sendingStartNext;
-        
-        setupRequestParameterSecurity();
-        startRequest();
-        mRoundStarting = false;
+        if( mParchmentFade < 1 ) {
+            // fade out before starting next round
+            
+            mParchmentFade += 0.02 * frameRateFactor;
+            if( mParchmentFade > 1 ) {
+                mParchmentFade = 1;
+                }
+            }
+        else {
+            mWatercolorStrokes.deleteAll();
+            mNextGreenVSprite = 0;
+            mNextGreenHSprite = 0;
+            mNextRedVSprite = 0;
+
+            for( int i=0; i<6; i++ ) {
+                mRowUsed[i] = false;
+                mColumnUsed[i] = false;
+                mOurChoices[i] = -1;
+                mTheirChoices[i] = -1;
+                }
+            for( int i=0; i<3; i++ ) {
+                mOurWonSquares[i] = -1;
+                mTheirWonSquares[i] = -1;
+                }
+
+
+            clearActionParameters();
+            
+            setActionName( "start_next_round" );
+            setResponsePartNames( -1, NULL );
+            
+            mMessageState = sendingStartNext;
+            
+            setupRequestParameterSecurity();
+            startRequest();
+            mRoundStarting = false;
+            }
         }
 
+    if( ! mParchmentFadingOut && mParchmentFade > 0 ) {
+        mParchmentFade -= 0.02 * frameRateFactor;
+        if( mParchmentFade < 0 ) {
+            mParchmentFade = 0;
+            }
+        }
 
 
     for( int f=0; f<2; f++ ) {
@@ -1939,6 +2007,8 @@ void PlayGamePage::step() {
             for( int i=0; i<numParts; i++ ) {
                 sscanf( parts[i], "%d", &( mGameBoard[i] ) );
                 }
+            
+            mParchmentFadingOut = false;
             }
         
         for( int i=0; i<numParts; i++ ) {
@@ -1958,6 +2028,9 @@ void PlayGamePage::step() {
 
         int ourOldWonSquares[3];
         memcpy( ourOldWonSquares, mOurWonSquares, 3 * sizeof( int ) );
+        
+        int theirOldWonSquares[3];
+        memcpy( theirOldWonSquares, mTheirWonSquares, 3 * sizeof( int ) );
         
         for( int i=0; i<6; i++ ) {
             mRowUsed[i] = false;
@@ -2056,8 +2129,6 @@ void PlayGamePage::step() {
                             // a new won square
                             int r = mOurWonSquares[ ourWonSquareCount ] / 6;
                             int c = mOurWonSquares[ ourWonSquareCount ] % 6;
-                            printf( "Adding a won square for us at %d,%d\n",
-                                    r, c );
                             
                             addColumnStroke( c,
                                              mBlackWatercolorVSprites[r] );
@@ -2077,6 +2148,21 @@ void PlayGamePage::step() {
                         mTheirWonSquares[ theirWonSquareCount ] =
                             theirWonIndex;
                         
+                        if( mTheirWonSquares[ theirWonSquareCount ] !=
+                            theirOldWonSquares[ theirWonSquareCount ] ) {
+                            
+                            // a new won square
+                            int r = 
+                                mTheirWonSquares[ theirWonSquareCount ] / 6;
+                            int c = 
+                                mTheirWonSquares[ theirWonSquareCount ] % 6;
+                            
+                            addColumnStroke( c,
+                                             mBlackWatercolorVSprites[r] );
+                            addRowStroke( r,
+                                          mBlackWatercolorHSprites[c] );
+                            }
+
                         theirWonSquareCount ++;
                         }
                     

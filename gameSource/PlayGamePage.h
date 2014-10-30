@@ -280,4 +280,10 @@ class PlayGamePage : public ServerActionPage, public ActionListener {
 
         char mRoundStarting;
         int mRoundStartTime;
+
+        // 1 means complete fade
+        float mParchmentFade;
+        
+        char mParchmentFadingOut;
+        
     };
