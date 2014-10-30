@@ -802,7 +802,7 @@ void PlayGamePage::draw( doublePair inViewCenter,
     
     doublePair pos = { - cellCenterStart, cellCenterStart };
     
-    if( mGameBoard != NULL ) {
+    if( mGameBoard != NULL && ! mShowWatercolorDemo ) {
         
         setDrawColor( 1, 1, 1, 1 );
         
@@ -1372,7 +1372,7 @@ void PlayGamePage::draw( doublePair inViewCenter,
         
         if( mParchmentFade > 0 ) {
             setDrawColor( 0, 0, 0, mParchmentFade );
-            drawSquare( parchPos, 256 );
+            drawSquare( parchPos, 217 );
             }
         
         }
