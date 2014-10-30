@@ -169,8 +169,6 @@ PlayGamePage::PlayGamePage()
           mScorePipEmptySprite( loadWhiteSprite( "scorePipEmpty.tga" ) ),
           mShowWatercolorDemo( false ),
           mParchmentSprite( loadSprite( "parchment.tga", true ) ),
-          mRedWatercolorSprite( loadSprite( "redWatercolor.tga", false ) ),
-          mBlueWatercolorSprite( loadSprite( "blueWatercolor.tga", false ) ),
           mInkGridSprite( loadSprite( "inkGrid.tga", false ) ),
           mRoundEnding( false ), 
           mRoundEndTime( 0 ),
@@ -402,8 +400,6 @@ PlayGamePage::~PlayGamePage() {
     freeSprite( mScorePipEmptySprite );
 
     freeSprite( mParchmentSprite );
-    freeSprite( mRedWatercolorSprite );
-    freeSprite( mBlueWatercolorSprite );
     freeSprite( mInkGridSprite );
 
     for( int i=0; i<36; i++ ) {

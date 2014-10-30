@@ -229,8 +229,6 @@ class PlayGamePage : public ServerActionPage, public ActionListener {
         char mShowWatercolorDemo;
 
         SpriteHandle mParchmentSprite;
-        SpriteHandle mRedWatercolorSprite;
-        SpriteHandle mBlueWatercolorSprite;
         SpriteHandle mInkGridSprite;
         
         SpriteHandle mInkNumberSprites[36];
