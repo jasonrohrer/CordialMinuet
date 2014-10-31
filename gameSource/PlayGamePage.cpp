@@ -816,16 +816,12 @@ void PlayGamePage::draw( doublePair inViewCenter,
     
     doublePair pos = { - cellCenterStart, cellCenterStart };
     
-    if( mGameBoard != NULL && ! mShowWatercolorDemo ) {
+    if( mGameBoard != NULL ) {
         
         setDrawColor( 1, 1, 1, 1 );
-        
-        doublePair center  = {0,0};
-        drawSquare( center, 
-                    ( (cellSize + borderWidth) * 6 ) /  2 + borderWidth / 2 );
-        
-        int cellIndex = 0;
 
+
+        
         char finalReveal = false;
 
         if( mTheirWonSquares[0] != -1 &&
@@ -833,6 +829,15 @@ void PlayGamePage::draw( doublePair inViewCenter,
             mTheirWonSquares[2] != -1 ) {
             finalReveal = true;
             }
+
+        
+        if( ! mShowWatercolorDemo ) {
+            
+        doublePair center  = {0,0};
+        drawSquare( center, 
+                    ( (cellSize + borderWidth) * 6 ) /  2 + borderWidth / 2 );
+        
+        int cellIndex = 0;
         
         int xPossibleWinsToClear = -1;
         
@@ -940,7 +945,8 @@ void PlayGamePage::draw( doublePair inViewCenter,
                 }
             pos.y -= cellSize + borderWidth;
             }
-
+        
+            } // end check for mShowWatercolorDemo
         
         
         // draw score pips
