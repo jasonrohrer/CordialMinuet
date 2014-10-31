@@ -233,6 +233,8 @@ class PlayGamePage : public ServerActionPage, public ActionListener {
         
         SpriteHandle mInkNumberSprites[36];
 
+        SpriteHandle mInkHebrewSprites[12];
+
         int mNextGreenVSprite;
         int mNextGreenHSprite;
         SpriteHandle mGreenWatercolorVSprites[3][6];

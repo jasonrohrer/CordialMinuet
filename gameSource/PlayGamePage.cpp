@@ -143,6 +143,96 @@ static void readWatercolorImages( const char *inTGAFileName,
 
 
 
+// outSpriteArray must have enough room for rows * columns sprites
+static void readCharacterGrid( const char *inTGAFileName,
+                               int inNumRows, int inNumColumns,
+                               SpriteHandle outSpriteArray[] ) {
+    
+    Image *numbersImage = readTGAFile( inTGAFileName );
+    
+    if( numbersImage != NULL ) {
+        
+        int width = numbersImage->getWidth();
+        
+        int height = numbersImage->getHeight();
+
+        int numberWidth = width / inNumColumns;
+        int numberHeight = height / inNumRows;
+        
+
+        // pad individual sprite width and height to powers to 2
+        int paddedW = numberWidth;
+        int paddedH = numberHeight;
+
+        int wPadOffset = 0;
+        int hPadOffset = 0;
+
+        double log2w = log( numberWidth ) / log( 2 );
+        double log2h = log( numberHeight ) / log( 2 );
+    
+
+        int next2PowerW = (int)( ceil( log2w ) );
+        int next2PowerH = (int)( ceil( log2h ) );
+    
+        if( next2PowerW != log2w ) {
+            paddedW = (int)( pow( 2, next2PowerW ) );
+            
+            wPadOffset = ( paddedW - numberWidth ) / 2;
+            }
+
+        if( next2PowerH != log2h ) {
+            paddedH = (int)( pow( 2, next2PowerH ) );
+            
+            hPadOffset = ( paddedH - numberHeight ) / 2;
+            }
+        
+        int numChars = inNumRows * inNumColumns;
+
+        for( int i=0; i<numChars; i++ ) {
+            
+            int x = i % inNumColumns;
+            int y = i / inNumColumns;
+            
+
+            Image *oneNumberImage = 
+                numbersImage->getSubImage( x * numberWidth, 
+                                           y * numberHeight,
+                                           numberWidth, numberHeight );
+            
+            int numChannels = oneNumberImage->getNumChannels();
+    
+            Image paddedImage( paddedW, paddedH, numChannels, false );
+            
+            int numPaddedPixels = paddedW * paddedH;
+
+            for( int c=0; c<numChannels; c++ ) {
+                double *destChannel = paddedImage.getChannel( c );
+                double *sourceChannel = oneNumberImage->getChannel( c );
+        
+                for( int p=0; p<numPaddedPixels; p++ ) {
+                    destChannel[p] = 1.0;
+                    }
+
+                for( int r=0; r<numberHeight; r++ ) {
+                    // copy row
+                    memcpy( &( destChannel[ (r+hPadOffset) * paddedW + 
+                                            wPadOffset ] ),
+                            &( sourceChannel[ r * numberWidth ] ),
+                            sizeof( double ) * numberWidth );
+                    }
+                }
+            
+            outSpriteArray[i] = fillSprite( &paddedImage, false );
+            
+            delete oneNumberImage;
+            }
+        
+        delete numbersImage;
+        }
+
+    }
+
+
 
 
 
@@ -175,87 +265,11 @@ PlayGamePage::PlayGamePage()
           mRoundStarting( false ),
           mRoundStartTime( 0 ) {
     
-
-
-    Image *numbersImage = readTGAFile( "inkNumbers.tga" );
     
-    if( numbersImage != NULL ) {
-        
-        int width = numbersImage->getWidth();
-        
-        int height = numbersImage->getHeight();
-
-        int numberWidth = width / 6;
-        int numberHeight = height / 6;
-        
-
-        // pad individual sprite width and height to powers to 2
-        int paddedW = numberWidth;
-        int paddedH = numberHeight;
-
-        int wPadOffset = 0;
-        int hPadOffset = 0;
-
-        double log2w = log( numberWidth ) / log( 2 );
-        double log2h = log( numberHeight ) / log( 2 );
     
+    readCharacterGrid( "inkNumbers.tga", 6, 6, mInkNumberSprites );
 
-        int next2PowerW = (int)( ceil( log2w ) );
-        int next2PowerH = (int)( ceil( log2h ) );
-    
-        if( next2PowerW != log2w ) {
-            paddedW = (int)( pow( 2, next2PowerW ) );
-            
-            wPadOffset = ( paddedW - numberWidth ) / 2;
-            }
-
-        if( next2PowerH != log2h ) {
-            paddedH = (int)( pow( 2, next2PowerH ) );
-            
-            hPadOffset = ( paddedH - numberHeight ) / 2;
-            }
-        
-        for( int i=0; i<36; i++ ) {
-            
-            int x = i % 6;
-            int y = i / 6;
-            
-
-            Image *oneNumberImage = 
-                numbersImage->getSubImage( x * numberWidth, 
-                                           y * numberHeight,
-                                           numberWidth, numberHeight );
-            
-            int numChannels = oneNumberImage->getNumChannels();
-    
-            Image paddedImage( paddedW, paddedH, numChannels, false );
-            
-            int numPaddedPixels = paddedW * paddedH;
-
-            for( int c=0; c<numChannels; c++ ) {
-                double *destChannel = paddedImage.getChannel( c );
-                double *sourceChannel = oneNumberImage->getChannel( c );
-        
-                for( int p=0; p<numPaddedPixels; p++ ) {
-                    destChannel[p] = 1.0;
-                    }
-
-                for( int r=0; r<numberHeight; r++ ) {
-                    // copy row
-                    memcpy( &( destChannel[ (r+hPadOffset) * paddedW + 
-                                            wPadOffset ] ),
-                            &( sourceChannel[ r * numberWidth ] ),
-                            sizeof( double ) * numberWidth );
-                    }
-                }
-            
-            mInkNumberSprites[i] = fillSprite( &paddedImage, false );
-            
-            delete oneNumberImage;
-            }
-        
-        delete numbersImage;
-        }
+    readCharacterGrid( "inkHebrew.tga", 2, 6, mInkHebrewSprites );
     
 
     
@@ -275,8 +289,8 @@ PlayGamePage::PlayGamePage()
                           mBlackWatercolorHSprites );
     
     
-    mInkGridCenter.x = 0;
-    mInkGridCenter.y = 0;
+    mInkGridCenter.x = 34;
+    mInkGridCenter.y = -38;
     
     for( int i=0; i<6; i++ ) {
         mColumnPositions[i] = mInkGridCenter;
@@ -404,6 +418,10 @@ PlayGamePage::~PlayGamePage() {
 
     for( int i=0; i<36; i++ ) {
         freeSprite( mInkNumberSprites[i] );
+        }
+
+    for( int i=0; i<12; i++ ) {
+        freeSprite( mInkHebrewSprites[i] );
         }
     
     for( int i=0; i<3; i++ ) {
@@ -1252,6 +1270,20 @@ void PlayGamePage::draw( doublePair inViewCenter,
             drawSprite( mInkNumberSprites[ mGameBoard[i] -  1 ], numberPos );  
             }
 
+        for( int i=0; i<6; i++ ) {
+            doublePair charPos;
+            
+            charPos.x = mColumnPositions[ i ].x + 4;
+            charPos.y = mRowPositions[0].y + 42;
+            
+            drawSprite( mInkHebrewSprites[i], charPos );
+
+            charPos.x = mColumnPositions[ 0 ].x - 49;
+            charPos.y = mRowPositions[i].y;
+            
+            drawSprite( mInkHebrewSprites[i + 6], charPos );
+            }
+        
 
         setDrawColor( 1, 1, 1, 1 );
 
