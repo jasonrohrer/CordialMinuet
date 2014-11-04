@@ -1010,6 +1010,12 @@ function cm_setupDatabase() {
 
     if( ! cm_doesTableExist( $tableName ) ) {
 
+        // leave as MyISAM, because stats are only changed via
+        // INSERT ... ON DUPLICATE UPDATE calls, which are atomic
+        // so locking isn't needed (and not locking stats during a
+        // transaction allows for more concurrency and one less deadlock
+        // opportunity).
+              
         $query =
             "CREATE TABLE $tableName(" .
             "stat_date DATE NOT NULL PRIMARY KEY," .
@@ -1035,7 +1041,7 @@ function cm_setupDatabase() {
             "total_house_rake DECIMAL(13, 4) NOT NULL DEFAULT 0.0000, ".
             "max_house_rake DECIMAL(13, 4) NOT NULL DEFAULT 0.0000 ".
             
-            ") ENGINE = INNODB;";
+            ");";
         
 
         $result = cm_queryDatabase( $query );
