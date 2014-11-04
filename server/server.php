@@ -1675,6 +1675,54 @@ function cm_makeDeposit() {
     
     // does account for this email exist already?
     // lock the gap at this email address
+
+    // SELECT FOR UPDATE doesn't actually lock the gap against other
+    // SELECTS (only blocks insert).
+    // This means that duplicate new account requests can get past
+    // SELECT FOR UPDATE and charge the card twice, etc.
+
+    // Only way to REALLY lock the gap is with an INSERT
+    // this blocks both other INSERTS on the same email, and also
+    // SELECT FOR UPDATES on the same email.
+
+    // of course, we haven't parsed their other detail yet,
+    // and they don't have any money, etc., so we don't want to leave
+    // this new, dumy record in the db.  INSERT followed by DELETE is enough
+    // to lock the gap.
+
+    // BUT, don't want to flood the AUTO_INCREMENT ID space here with 2x
+    // IDs for each new user.  So, remember the temp ID and use it later
+    // (the ID is locked)
+    $temp_user_id = "";
+
+    $temp_account_key = cm_generateAccountKey( $email, 0 );
+    $query = "INSERT into $tableNamePrefix"."users SET email = '$email', ".
+        "account_key = '$temp_account_key';";
+
+    // handle INSERT error ourselves
+    $result = mysql_query( $query );
+            
+    if( $result ) {
+        $temp_user_id = mysql_insert_id();
+
+        $query = "DELETE FROM $tableNamePrefix"."users WHERE ".
+            "user_id = '$temp_user_id';";
+        cm_queryDatabase( $query );
+
+        // now that it has been created and deleted, row gap is
+        // locked to prevent other transactions from getting
+        // through before we commit
+
+        // go ahead with normal SELECT FOR UPDATE
+        }
+    else {
+        // insert failed, assume that account for this email already
+        // exists
+        // Note that if row exists, INSERT won't lock anything
+        // so, we go onto SELECT FOR UPDATE below
+        }
+    
+    
     $query = "SELECT user_id, account_key, dollar_balance, ".
         "total_deposits, last_request_tag, last_request_response, blocked ".
         "FROM $tableNamePrefix"."users ".
@@ -2124,9 +2172,6 @@ function cm_makeDeposit() {
     // to player
     $deposit_net = $dollar_amount - $fee;
     
-    cm_incrementStat( "deposit_count" );
-    cm_incrementStat( "total_deposits", $deposit_net );
-    cm_updateMaxStat( "max_deposit", $deposit_net );
     
     
     if( $user_id == "" ) {
@@ -2138,15 +2183,22 @@ function cm_makeDeposit() {
 
         $found_unused = false;
 
+        $tryCount = 0;
 
-        while( ! $found_unused ) {
+        while( ! $found_unused && $tryCount < 10 ) {
             
         
             $account_key = cm_generateAccountKey( $email, $salt );
 
+            $user_id_line = "";
+            if( $temp_user_id != "" ) {
+                $user_id_line = "user_id = '$temp_user_id',";
+                }
+            
             
             // user_id auto-assigned (auto-increment)
             $query = "INSERT INTO $tableNamePrefix". "users SET ".
+                $user_id_line .
                 "account_key = '$account_key', ".
                 "email = '$email', ".
                 "dollar_balance = '$deposit_net', ".
@@ -2172,19 +2224,35 @@ function cm_makeDeposit() {
                 $user_id = mysql_insert_id();
                 
                 global $remoteIP;
-                cm_log( "Account key $account_key created by $email from ".
+                cm_log( "Account key $account_key, user_id $user_id ".
+                        "created by $email from ".
                         "$remoteIP, ".
                         "initial deposit \$$dollar_amount (\$$fee fee), ".
-                        "net \$$deposit_net" );
+                        "net \$$deposit_net, ".
+                        "desired temp user id $temp_user_id" );
                 cm_incrementStat( "unique_users" );
                 }
             else {
                 cm_log( "Duplicate ids?  Error:  " . mysql_error() );
                 // try again
                 $salt += 1;
+
+                $tryCount ++;
                 }
             }
+        if( $user_id == "" ) {
+            // exceeded try count
+            cm_log( "Failed to insert new user record ".
+                    "after $tryCount tries, returning ACCOUNT_EXISTS" );
 
+            echo "ACCOUNT_EXISTS";
+            cm_queryDatabase( "COMMIT;" );
+            cm_queryDatabase( "SET AUTOCOMMIT=1" );
+
+            return;
+            }
+        
+        
         $dollar_balance = $deposit_net;
 
         // for presentation to user
@@ -2296,7 +2364,12 @@ function cm_makeDeposit() {
     cm_queryDatabase( "COMMIT;" );
     cm_queryDatabase( "SET AUTOCOMMIT=1" );
 
+
     
+    cm_incrementStat( "deposit_count" );
+    cm_incrementStat( "total_deposits", $deposit_net );
+    cm_updateMaxStat( "max_deposit", $deposit_net );
+
     
     // log it, including fees (whole amount charged to them)
 
