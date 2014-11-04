@@ -40,11 +40,11 @@ static int cellXOffset = cellSize + borderWidth;
 
 
 static void setUsColor() {
-    setDrawColor( 0, 0.75, 0, 1 );
+    setDrawColor( .51, 0.682, .122, 1 );
     }
 
 static void setThemColor() {
-    setDrawColor( 0.75, 0, 0, 1 );
+    setDrawColor( .85, .149, .216, 1 );
     }
 
 
