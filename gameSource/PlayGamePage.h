@@ -104,6 +104,10 @@ typedef struct ColumnPicker {
         char mouseOver;
         char held;
         char draw;
+
+        // if mouse click not in center of picker, picker shouldn't
+        // leap to center on mouse when mouse moves
+        double heldOffset;
     } ColumnPicker;
 
 

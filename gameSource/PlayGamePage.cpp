@@ -2961,9 +2961,11 @@ char PlayGamePage::loadCacheRecord() {
 void PlayGamePage::pickerReactToMouseMove( ColumnPicker *inPicker,
                                            ColumnPicker *inOtherPicker,
                                            float inX, float inY ) {
+    inX = roundf( inX );
+    
     if( inPicker->draw && inPicker->held ) {
         
-        float x = inX;
+        float x = inX - inPicker->heldOffset;
         
         if( inX > mColumnPositions[5].x ) {
             x = mColumnPositions[5].x;
@@ -2972,6 +2974,7 @@ void PlayGamePage::pickerReactToMouseMove( ColumnPicker *inPicker,
             x = mColumnPositions[0].x;
             }
         inPicker->pos.x = x;
+        inPicker->heldOffset = inX - inPicker->pos.x;
         
         int closestColumn = 0;
         float closestDist = 300000;
@@ -3081,6 +3084,7 @@ void PlayGamePage::pointerDown( float inX, float inY ) {
         && inY > mPickerUs.pos.y - 32
         && inY < mPickerUs.pos.y + 32 ) {
         mPickerUs.held = true;
+        mPickerUs.heldOffset = roundf(inX) - mPickerUs.pos.x;
         }
     else {
         mPickerUs.held = false;
@@ -3091,6 +3095,7 @@ void PlayGamePage::pointerDown( float inX, float inY ) {
         && inY > mPickerThem.pos.y - 32
         && inY < mPickerThem.pos.y + 32 ) {
         mPickerThem.held = true;
+        mPickerThem.heldOffset = roundf(inX) - mPickerThem.pos.x;
         }
     else {
         mPickerThem.held = false;
