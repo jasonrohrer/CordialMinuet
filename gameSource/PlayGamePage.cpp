@@ -257,7 +257,7 @@ PlayGamePage::PlayGamePage()
           mScorePipSprite( loadWhiteSprite( "scorePip.tga" ) ),
           mScorePipExtraSprite( loadWhiteSprite( "scorePipExtra.tga" ) ),
           mScorePipEmptySprite( loadWhiteSprite( "scorePipEmpty.tga" ) ),
-          mShowWatercolorDemo( false ),
+          mShowWatercolorDemo( true ),
           mParchmentSprite( loadSprite( "parchment.tga", true ) ),
           mInkGridSprite( loadSprite( "inkGrid.tga", false ) ),
           mColumnPickerSprite( loadWhiteSprite( "columnPicker.tga" ) ),
@@ -679,6 +679,28 @@ void PlayGamePage::actionPerformed( GUIComponent *inTarget ) {
     if( inTarget == &mCommitButton ) {
         mMoveDeadline = 0;
 
+        int numMovesAlreadyMade = 0;
+        for( int j=0; j<6; j++ ) {
+            if( mOurChoices[j] != -1 ) {
+                numMovesAlreadyMade++;
+                }
+            }
+
+        if( numMovesAlreadyMade == 6 ) {
+            if( mPickerUs.draw ) {
+                mRevealChoiceForUs = mPickerUs.targetColumn;
+                }
+            }
+        else {    
+            if( mPickerUs.draw ) {
+                mColumnChoiceForUs = mPickerUs.targetColumn;
+                }
+            if( mPickerThem.draw ) {
+                mColumnChoiceForThem = mPickerThem.targetColumn;
+                }
+            }
+        
+
         mPickerUs.draw = false;
         mPickerThem.draw = false;
         
@@ -709,10 +731,12 @@ void PlayGamePage::actionPerformed( GUIComponent *inTarget ) {
             setActionName( "make_move" );
 
             addColumnStroke( mColumnChoiceForUs, 
-                             mGreenWatercolorVSprites[mNextGreenVSprite] );
+                             mGreenWatercolorVSprites[mNextGreenVSprite],
+                             true );
             mNextGreenVSprite++;
             addColumnStroke( mColumnChoiceForThem, 
-                             mRedWatercolorVSprites[mNextRedVSprite] );
+                             mRedWatercolorVSprites[mNextRedVSprite],
+                             false );
             mNextRedVSprite++;
 
             setActionParameter( "their_column", mColumnChoiceForThem );
@@ -1668,7 +1692,8 @@ void PlayGamePage::step() {
     
     if( mCommitButton.isVisible() ) {
 
-        if( mCommitButton.isMouseOver() ) {
+        if( mCommitButton.isMouseOver() ||
+            mPickerThem.held || mPickerUs.held ) {
             mCommitFlashPreSteps = 0;
             mCommitFlashProgress = 1;
             mCommitFlashDirection = -1;
@@ -2219,7 +2244,8 @@ void PlayGamePage::step() {
                         // a new choice
                         addRowStroke( 
                             mTheirChoices[ theirChoiceMapping[i] ],
-                            mGreenWatercolorHSprites[mNextGreenHSprite] );
+                            mGreenWatercolorHSprites[mNextGreenHSprite],
+                            true );
                         mNextGreenHSprite++;
                         }
                     }
@@ -2252,9 +2278,11 @@ void PlayGamePage::step() {
                             int c = mOurWonSquares[ ourWonSquareCount ] % 6;
                             
                             addColumnStroke( c,
-                                             mBlackWatercolorVSprites[r] );
+                                             mBlackWatercolorVSprites[r],
+                                             false );
                             addRowStroke( r,
-                                          mBlackWatercolorHSprites[c] );
+                                          mBlackWatercolorHSprites[c],
+                                          false );
                             }
 
                         ourWonSquareCount ++;
@@ -2279,9 +2307,11 @@ void PlayGamePage::step() {
                                 mTheirWonSquares[ theirWonSquareCount ] % 6;
                             
                             addColumnStroke( c,
-                                             mBlackWatercolorVSprites[r] );
+                                             mBlackWatercolorVSprites[r],
+                                             false );
                             addRowStroke( r,
-                                          mBlackWatercolorHSprites[c] );
+                                          mBlackWatercolorHSprites[c],
+                                          false);
                             }
 
                         theirWonSquareCount ++;
@@ -3106,6 +3136,18 @@ void PlayGamePage::pointerDown( float inX, float inY ) {
 
 
 void PlayGamePage::pointerUp( float inX, float inY ) {
+    if( mPickerUs.held || mPickerThem.held ) {
+        // dropping a picker
+    
+        // commit allowed now
+        mCommitButton.setVisible( true );
+        mCommitFlashPreSteps = 0;
+        mCommitFlashProgress = 1.0;
+        mCommitFlashDirection = -1;
+
+        mLeaveButton.setVisible( false );
+        }
+    
     mPickerUs.held = false;
     mPickerThem.held = false;
     }
@@ -3167,15 +3209,33 @@ int PlayGamePage::getNetPotCoins( int inPlayerNumber ) {
 
 
 
-void PlayGamePage::addColumnStroke( int inColumn, SpriteHandle inSprite[6] ) {
+void PlayGamePage::addColumnStroke( int inColumn, SpriteHandle inSprite[6],
+                                    char inSpeedUpStart ) {
     
     doublePair subPos = mColumnPositions[inColumn];
     subPos.y += 64 + 64 + 32;
     
     for( int i=0; i<6; i++ ) {
         
+        float leftEnd = 1;
+        float rightEnd = 1;
+        
+        if( inSpeedUpStart ) {
+            
+            if( i == 0 ) {
+                // speed up start of stroke drawing, because it contains
+                // empty space
+                leftEnd = 0;
+                rightEnd = 0.5;
+                }
+            if( i == 1 ) {
+                // have left end of second segment match right end of first
+                leftEnd = 0.5;
+                }
+            }
+
         WatercolorStroke stroke = { subPos,
-                                    inSprite[i], true, 1, 1 };
+                                    inSprite[i], true, leftEnd, rightEnd };
     
         mWatercolorStrokes.push_back( stroke );
         
@@ -3185,13 +3245,31 @@ void PlayGamePage::addColumnStroke( int inColumn, SpriteHandle inSprite[6] ) {
 
     
 
-void PlayGamePage::addRowStroke( int inRow, SpriteHandle inSprite[6] ) {
+void PlayGamePage::addRowStroke( int inRow, SpriteHandle inSprite[6],
+                                 char inSpeedUpStart ) {
     doublePair subPos = mRowPositions[inRow];
     subPos.x -= 64 + 64 + 32;
 
     for( int i=0; i<6; i++ ) {
+        float leftEnd = 1;
+        float rightEnd = 1;
+        
+        if( inSpeedUpStart ) {
+            
+            if( i == 0 ) {
+                // speed up start of stroke drawing, because it contains
+                // empty space
+                leftEnd = 0;
+                rightEnd = 0.5;
+                }
+            if( i == 1 ) {
+                // have left end of second segment match right end of first
+                leftEnd = 0.5;
+                }
+            }
+
         WatercolorStroke stroke = { subPos,
-                                    inSprite[i], false, 1, 1 };
+                                    inSprite[i], false, leftEnd, rightEnd };
         
         mWatercolorStrokes.push_back( stroke );
         

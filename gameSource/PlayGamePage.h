@@ -275,8 +275,10 @@ class PlayGamePage : public ServerActionPage, public ActionListener {
         
         SimpleVector<WatercolorStroke> mWatercolorStrokes;
         
-        void addColumnStroke( int inColumn, SpriteHandle inSprite[6] );
-        void addRowStroke( int inRow, SpriteHandle inSprite[6] );
+        void addColumnStroke( int inColumn, SpriteHandle inSprite[6],
+                              char inSpeedUpStart );
+        void addRowStroke( int inRow, SpriteHandle inSprite[6],
+                           char inSpeedUpStart );
         
 
         
