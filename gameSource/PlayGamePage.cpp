@@ -244,10 +244,10 @@ PlayGamePage::PlayGamePage()
           mMoveDeadline( 0 ),
           mMoveDeadlineFade( 0 ),
           mMoveDeadlineFadeDelta( 1 ),
-          mCommitButton( mainFont, 0, -288, translate( "commit" ) ),
+          mCommitButton( mainFont, 0, 288, translate( "commit" ) ),
           mBetButton( mainFont, 0, -288, translate( "bet" ) ),
           mFoldButton( mainFont, 120, -288, translate( "fold" ) ),
-          mLeaveButton( mainFont, -128, -288, translate( "leave" ) ),
+          mLeaveButton( mainFont, -128, 288, translate( "leave" ) ),
           mBetPicker( mainFont, -64, -288, 3, 0, "" ),
           mCommitFlashPreSteps( 0 ),
           mCommitFlashProgress( 1.0 ),
@@ -260,6 +260,7 @@ PlayGamePage::PlayGamePage()
           mShowWatercolorDemo( false ),
           mParchmentSprite( loadSprite( "parchment.tga", true ) ),
           mInkGridSprite( loadSprite( "inkGrid.tga", false ) ),
+          mColumnPickerSprite( loadWhiteSprite( "columnPicker.tga" ) ),
           mRoundEnding( false ), 
           mRoundEndTime( 0 ),
           mRoundStarting( false ),
@@ -303,6 +304,15 @@ PlayGamePage::PlayGamePage()
         mRowPositions[i].y -= i * 54;
         }
     
+    mPickerUs.pos.y = -252;
+    mPickerUs.mouseOver = false;
+    mPickerUs.held = false;
+    mPickerUs.draw = false;
+
+    mPickerThem.pos.y = -252;
+    mPickerThem.mouseOver = false;
+    mPickerThem.held = false;
+    mPickerThem.draw = false;
     
 
     // put status message on top of screen so that errors don't
@@ -438,6 +448,9 @@ PlayGamePage::~PlayGamePage() {
             freeSprite( mBlackWatercolorHSprites[i][s] );
             }
         }
+    
+    freeSprite( mColumnPickerSprite );
+    
     }
 
 
@@ -452,6 +465,8 @@ void PlayGamePage::makeActive( char inFresh ) {
     mScorePipLabelFade = 0;
     mScorePipLabelFadeDelta = -1;
 
+    mPickerUs.draw = false;
+    mPickerThem.draw = false;
 
     mCommitButton.setVisible( false );
     // clear flashing
@@ -663,6 +678,10 @@ void PlayGamePage::actionPerformed( GUIComponent *inTarget ) {
 
     if( inTarget == &mCommitButton ) {
         mMoveDeadline = 0;
+
+        mPickerUs.draw = false;
+        mPickerThem.draw = false;
+        
 
         mCommitButton.setVisible( false );
         // clear flashing
@@ -1409,6 +1428,45 @@ void PlayGamePage::draw( doublePair inViewCenter,
             drawSquare( parchPos, 217 );
             }
         
+        if( ! mPickerUs.held ) {
+            if( mPickerUs.draw ) {
+                setUsColor();
+                if( ! mPickerUs.mouseOver && ! mPickerUs.held ) {
+                    setDrawFade( 0.75 );
+                    }
+                doublePair pos = mPickerUs.pos;
+                if( mPickerUs.held ) {
+                    pos.y += 4;
+                    }
+                drawSprite( mColumnPickerSprite, pos );
+                }
+            }
+        if( mPickerThem.draw ) {
+            setThemColor();
+            if( ! mPickerThem.mouseOver && ! mPickerThem.held ) {
+                setDrawFade( 0.75 );
+                }
+            doublePair pos = mPickerThem.pos;
+            if( mPickerThem.held ) {
+                pos.y += 4;
+
+                }
+            drawSprite( mColumnPickerSprite, pos );
+            }
+        if( mPickerUs.held ) {
+            if( mPickerUs.draw ) {
+                setUsColor();
+                if( ! mPickerUs.mouseOver && ! mPickerUs.held ) {
+                    setDrawFade( 0.75 );
+                    }
+                doublePair pos = mPickerUs.pos;
+                if( mPickerUs.held ) {
+                    pos.y += 4;
+                    }
+                drawSprite( mColumnPickerSprite, pos );
+                }
+            }
+
         }
     
         
@@ -1424,6 +1482,30 @@ int stringToInt( const char *inString ) {
     sscanf( inString, "%d", &returnValue );
 
     return returnValue;
+    }
+
+
+
+void PlayGamePage::slidePicker( ColumnPicker *inPicker ) {
+    if( inPicker->draw && 
+        ! inPicker->held &&
+        inPicker->pos.x != 
+        mColumnPositions[inPicker->targetColumn].x ) {
+        
+        // Purho Easing function
+        float delta = 0.2 * frameRateFactor *
+            ( mColumnPositions[inPicker->targetColumn].x - inPicker->pos.x );
+        
+        if( delta < 0 ) {
+            delta = floorf( delta );
+            }
+        else {
+            delta = ceilf( delta );
+            }
+        
+        inPicker->pos.x += delta;
+            
+        }
     }
 
 
@@ -1619,6 +1701,11 @@ void PlayGamePage::step() {
     
 
     
+    slidePicker( &mPickerUs );
+    slidePicker( &mPickerThem );
+
+
+
 
     ServerActionPage::step();
 
@@ -2241,11 +2328,28 @@ void PlayGamePage::step() {
             int numUsedColumns = 0;
             
             for( int i=0; i<6; i++ ) {
-                mColumnButtons[i]->setVisible( ! mColumnUsed[i] );
-                mColumnButtons[i]->setLabelText( "+" );
-                
+                if( !mShowWatercolorDemo ) {
+                    mColumnButtons[i]->setVisible( ! mColumnUsed[i] );
+                    mColumnButtons[i]->setLabelText( "+" );
+                    }
                 if( mColumnUsed[i] ) {
                     numUsedColumns ++;
+                    }
+                else {
+                    if( ! mPickerUs.draw ) {
+                        mPickerUs.draw = true;
+                        mPickerUs.pos.x = mColumnPositions[i].x;
+                        mPickerUs.targetColumn = i;
+                        mPickerUs.held = false;
+                        mPickerUs.mouseOver = false;
+                        }
+                    else if( ! mPickerThem.draw ) {
+                        mPickerThem.draw = true;
+                        mPickerThem.pos.x = mColumnPositions[i].x;
+                        mPickerThem.targetColumn = i;
+                        mPickerThem.held = false;
+                        mPickerThem.mouseOver = false;
+                        }
                     }
                 }
             
@@ -2265,13 +2369,22 @@ void PlayGamePage::step() {
                 }
             else if( numUsedColumns == 6 ) {
                 // final move, reveal one of our columns
-                mColumnButtons[mOurChoices[0]]->setVisible( true );
-                mColumnButtons[mOurChoices[2]]->setVisible( true );
-                mColumnButtons[mOurChoices[4]]->setVisible( true );
                 
-                mColumnButtons[mOurChoices[0]]->setLabelText( "R" );
-                mColumnButtons[mOurChoices[2]]->setLabelText( "R" );
-                mColumnButtons[mOurChoices[4]]->setLabelText( "R" );
+                if( !mShowWatercolorDemo ) {
+                    mColumnButtons[mOurChoices[0]]->setVisible( true );
+                    mColumnButtons[mOurChoices[2]]->setVisible( true );
+                    mColumnButtons[mOurChoices[4]]->setVisible( true );
+                
+                    mColumnButtons[mOurChoices[0]]->setLabelText( "R" );
+                    mColumnButtons[mOurChoices[2]]->setLabelText( "R" );
+                    mColumnButtons[mOurChoices[4]]->setLabelText( "R" );
+                    }
+                
+                mPickerUs.draw = true;
+                mPickerUs.pos.x = mColumnPositions[mOurChoices[0]].x;
+                mPickerUs.targetColumn = mOurChoices[0];
+                mPickerUs.held = false;
+                mPickerUs.mouseOver = false;
                 }
             }
         else {
@@ -2845,6 +2958,75 @@ char PlayGamePage::loadCacheRecord() {
 
 
 
+void PlayGamePage::pickerReactToMouseMove( ColumnPicker *inPicker,
+                                           ColumnPicker *inOtherPicker,
+                                           float inX, float inY ) {
+    if( inPicker->draw && inPicker->held ) {
+        
+        float x = inX;
+        
+        if( inX > mColumnPositions[5].x ) {
+            x = mColumnPositions[5].x;
+            }
+        else if( inX < mColumnPositions[0].x ) {
+            x = mColumnPositions[0].x;
+            }
+        inPicker->pos.x = x;
+        
+        int closestColumn = 0;
+        float closestDist = 300000;
+        
+        for( int i=0; i<6; i++ ) {
+            float dist = mColumnPositions[i].x - x;
+            // square as a rough abs
+            dist *= dist;
+            if( dist < closestDist ) {
+                closestDist = dist;
+                closestColumn = i;
+                }
+            }
+        
+        inPicker->targetColumn = closestColumn;
+
+        float delta = mColumnPositions[closestColumn].x - x;
+
+        if( closestColumn == inOtherPicker->targetColumn ) {
+            // push it out of the way
+
+            if( delta > 0 ) {
+                if( inOtherPicker->targetColumn > 0 ) {
+                    inOtherPicker->targetColumn --;
+                    }
+                else {
+                    inOtherPicker->targetColumn ++;
+                    }
+                }
+            else {
+                if( inOtherPicker->targetColumn < 5 ) {
+                    inOtherPicker->targetColumn ++;
+                    }
+                else {
+                    inOtherPicker->targetColumn --;
+                    }
+                }    
+            }
+        }
+    else if( inPicker->draw && ! inOtherPicker->held
+        && inX > inPicker->pos.x - 32
+        && inX < inPicker->pos.x + 32
+        && inY > inPicker->pos.y - 32
+        && inY < inPicker->pos.y + 32 ) {
+        inPicker->mouseOver = true;
+        }
+    else {
+        inPicker->mouseOver = false;
+        }
+
+    }
+
+
+
+
 void PlayGamePage::pointerMove( float inX, float inY ) {
     lastMousePos.x = inX;
     lastMousePos.y = inY;
@@ -2853,6 +3035,11 @@ void PlayGamePage::pointerMove( float inX, float inY ) {
     rightEnd = 1;
 
     mScorePipLabelFadeDelta = -1;
+
+
+    pickerReactToMouseMove( &mPickerUs, &mPickerThem, inX, inY );
+    pickerReactToMouseMove( &mPickerThem, &mPickerUs, inX, inY );
+        
     
     doublePair pos = mScorePipPositions[0];
     
@@ -2884,6 +3071,40 @@ void PlayGamePage::pointerMove( float inX, float inY ) {
     
     
     }
+
+
+
+void PlayGamePage::pointerDown( float inX, float inY ) {
+    if( mPickerUs.draw 
+        && inX > mPickerUs.pos.x - 32
+        && inX < mPickerUs.pos.x + 32
+        && inY > mPickerUs.pos.y - 32
+        && inY < mPickerUs.pos.y + 32 ) {
+        mPickerUs.held = true;
+        }
+    else {
+        mPickerUs.held = false;
+        }
+    if( mPickerThem.draw 
+        && inX > mPickerThem.pos.x - 32
+        && inX < mPickerThem.pos.x + 32
+        && inY > mPickerThem.pos.y - 32
+        && inY < mPickerThem.pos.y + 32 ) {
+        mPickerThem.held = true;
+        }
+    else {
+        mPickerThem.held = false;
+        }
+    }
+
+
+
+
+void PlayGamePage::pointerUp( float inX, float inY ) {
+    mPickerUs.held = false;
+    mPickerThem.held = false;
+    }
+
 
 
 

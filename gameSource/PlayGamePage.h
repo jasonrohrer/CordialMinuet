@@ -98,6 +98,16 @@ typedef struct WatercolorStroke {
 
 
 
+typedef struct ColumnPicker {
+        doublePair pos;
+        int targetColumn;
+        char mouseOver;
+        char held;
+        char draw;
+    } ColumnPicker;
+
+
+
 
 class PlayGamePage : public ServerActionPage, public ActionListener {
         
@@ -126,6 +136,8 @@ class PlayGamePage : public ServerActionPage, public ActionListener {
             }
         
         virtual void pointerMove( float inX, float inY );
+        virtual void pointerDown( float inX, float inY );
+        virtual void pointerUp( float inX, float inY );
         
         virtual void keyDown( unsigned char inASCII );
         
@@ -245,6 +257,11 @@ class PlayGamePage : public ServerActionPage, public ActionListener {
         
         SpriteHandle mBlackWatercolorVSprites[6][6];
         SpriteHandle mBlackWatercolorHSprites[6][6];
+        
+        SpriteHandle mColumnPickerSprite;
+        
+
+        ColumnPicker mPickerUs, mPickerThem;
 
         doublePair mInkGridCenter;
         
@@ -285,5 +302,12 @@ class PlayGamePage : public ServerActionPage, public ActionListener {
         float mParchmentFade;
         
         char mParchmentFadingOut;
+        
+
+        void pickerReactToMouseMove( ColumnPicker *inPicker,
+                                     ColumnPicker *inOtherPicker,
+                                     float inX, float inY );
+
+        void slidePicker( ColumnPicker *inPicker );
         
     };
