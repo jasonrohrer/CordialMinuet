@@ -93,6 +93,9 @@ typedef struct WatercolorStroke {
         float leftEnd;
         float rightEnd;
 
+        // to lighten or darken overall
+        float globalFade;
+
     } WatercolorStroke;
 
 
@@ -276,9 +279,9 @@ class PlayGamePage : public ServerActionPage, public ActionListener {
         SimpleVector<WatercolorStroke> mWatercolorStrokes;
         
         void addColumnStroke( int inColumn, SpriteHandle inSprite[6],
-                              char inSpeedUpStart );
+                              char inSpeedUpStart, float inGlobalFade = 1.0 );
         void addRowStroke( int inRow, SpriteHandle inSprite[6],
-                           char inSpeedUpStart );
+                           char inSpeedUpStart, float inGlobalFade = 1.0 );
         
 
         

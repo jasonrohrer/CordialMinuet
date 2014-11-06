@@ -749,6 +749,23 @@ void PlayGamePage::actionPerformed( GUIComponent *inTarget ) {
         else {
             setActionName( "make_reveal_move" );
             
+            int r;
+            for( int w=0; w<3; w++ ) {
+                int c = mOurWonSquares[ w ] % 6;
+                if( c == mRevealChoiceForUs ) {
+                    r = mOurWonSquares[ w ] / 6;
+                    break;
+                    }
+                }
+            
+            addColumnStroke( mRevealChoiceForUs,
+                             mBlackWatercolorVSprites[r],
+                             true );
+            
+            addRowStroke( r,
+                          mBlackWatercolorHSprites[mRevealChoiceForUs],
+                          false );
+
             setActionParameter( "our_column", mRevealChoiceForUs );
             mColumnButtons[mRevealChoiceForUs]->setVisible( false );
             }
@@ -1342,9 +1359,10 @@ void PlayGamePage::draw( doublePair inViewCenter,
             // at a time
             
             WatercolorStroke *stroke = mWatercolorStrokes.getElement( i );
+            float globalFade = stroke->globalFade;
             
             if( stroke->leftEnd == 0 && stroke->rightEnd == 0 ) {
-                setDrawColor( 0, 0, 0, 1 );
+                setDrawColor( 1-globalFade, 1-globalFade, 1-globalFade, 1 );
                 
                 drawSprite( stroke->sprite, stroke->pos );
                 }
@@ -1361,6 +1379,11 @@ void PlayGamePage::draw( doublePair inViewCenter,
                     else if( stroke->vertical && ( i == 0 || i == 1 ) ) {
                         value = stroke->rightEnd;
                         }
+
+                    if( globalFade < 1 ) {
+                        value = 1 - ( globalFade * ( 1 - value ) );
+                        }
+                    
                     spriteColors[i].r = value;
                     spriteColors[i].g = value;
                     spriteColors[i].b = value;
@@ -2279,10 +2302,11 @@ void PlayGamePage::step() {
                             
                             addColumnStroke( c,
                                              mBlackWatercolorVSprites[r],
-                                             false );
+                                             false, 0.75 );
+                            
                             addRowStroke( r,
                                           mBlackWatercolorHSprites[c],
-                                          false );
+                                          false, 0.75 );
                             }
 
                         ourWonSquareCount ++;
@@ -2311,7 +2335,7 @@ void PlayGamePage::step() {
                                              false );
                             addRowStroke( r,
                                           mBlackWatercolorHSprites[c],
-                                          false);
+                                          false );
                             }
 
                         theirWonSquareCount ++;
@@ -3210,7 +3234,7 @@ int PlayGamePage::getNetPotCoins( int inPlayerNumber ) {
 
 
 void PlayGamePage::addColumnStroke( int inColumn, SpriteHandle inSprite[6],
-                                    char inSpeedUpStart ) {
+                                    char inSpeedUpStart, float inGlobalFade ) {
     
     doublePair subPos = mColumnPositions[inColumn];
     subPos.y += 64 + 64 + 32;
@@ -3235,7 +3259,8 @@ void PlayGamePage::addColumnStroke( int inColumn, SpriteHandle inSprite[6],
             }
 
         WatercolorStroke stroke = { subPos,
-                                    inSprite[i], true, leftEnd, rightEnd };
+                                    inSprite[i], true, leftEnd, rightEnd,
+                                    inGlobalFade };
     
         mWatercolorStrokes.push_back( stroke );
         
@@ -3246,7 +3271,7 @@ void PlayGamePage::addColumnStroke( int inColumn, SpriteHandle inSprite[6],
     
 
 void PlayGamePage::addRowStroke( int inRow, SpriteHandle inSprite[6],
-                                 char inSpeedUpStart ) {
+                                 char inSpeedUpStart, float inGlobalFade ) {
     doublePair subPos = mRowPositions[inRow];
     subPos.x -= 64 + 64 + 32;
 
@@ -3269,7 +3294,8 @@ void PlayGamePage::addRowStroke( int inRow, SpriteHandle inSprite[6],
             }
 
         WatercolorStroke stroke = { subPos,
-                                    inSprite[i], false, leftEnd, rightEnd };
+                                    inSprite[i], false, leftEnd, rightEnd,
+                                    inGlobalFade };
         
         mWatercolorStrokes.push_back( stroke );
         
