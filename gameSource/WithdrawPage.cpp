@@ -215,12 +215,13 @@ void WithdrawPage::draw( doublePair inViewCenter,
 
 
     if( mUSCheckAvailable ) {
-        drawButtonNote( &mSendCheckUSButton, "checkNoteUS", "checkBalanceLow",
+        drawButtonNote( &mSendCheckUSButton, "checkNoteUS", 
+                        "checkBalanceLowUS",
                         checkCostUS );
         }
     if( mGlobalCheckAvailable ) {
         drawButtonNote( &mSendCheckGlobalButton, "checkNoteGlobal", 
-                        "checkBalanceLow",
+                        "checkBalanceLowGlobal",
                         checkCostGlobal );
         }
     if( mTransferAvailable ) {

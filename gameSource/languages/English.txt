@@ -87,7 +87,7 @@ paste "PASTE"
 
 
 
-sendCheckUS "MAIL A US CHECK"
+sendCheckUS "MAIL A U.S. CHECK"
 sendCheckGlobal "MAIL A GLOBAL CHECK"
 
 accountTransfer "TRANSFER TO ANOTHER PLAYER"
@@ -95,10 +95,12 @@ accountTransfer "TRANSFER TO ANOTHER PLAYER"
 fee "FEE"
 free "FREE"
 
-checkNoteUS "US RESIDENTS:##(%s)"
+checkNoteUS "U.S. RESIDENTS:##(%s)"
 checkNoteGlobal "GLOBAL RESIDENTS:##(%s)"
 
-checkBalanceLow "(BALANCE TOO LOW FOR CHECK)" 
+checkBalanceLowUS "(U.S. CHECK: BALANCE TOO LOW)" 
+
+checkBalanceLowGlobal "(GLOBAL CHECK: BALANCE TOO LOW)" 
 
 transferNote "WORLDWIDE RESIDENTS:##(%s)"
 
