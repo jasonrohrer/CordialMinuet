@@ -1546,6 +1546,7 @@ int stringToInt( const char *inString ) {
 
 int PlayGamePage::slidePicker( ColumnPicker *inPicker ) {
     if( inPicker->draw && 
+        inPicker->targetColumn != -1 &&
         ! inPicker->held &&
         inPicker->pos.x != 
         mColumnPositions[inPicker->targetColumn].x ) {
@@ -2437,17 +2438,19 @@ void PlayGamePage::step() {
                 else {
                     if( ! mPickerUs.draw ) {
                         mPickerUs.draw = true;
-                        mPickerUs.pos.x = mColumnPositions[i].x;
-                        mPickerUs.targetColumn = i;
+                        mPickerUs.pos.x = mColumnPositions[0].x - 27;
+                        mPickerUs.targetColumn = -1;
                         mPickerUs.hardScoreUpdate = true;
+                        mPickerUs.draggedInYet = false;
                         mPickerUs.held = false;
                         mPickerUs.mouseOver = false;
                         }
                     else if( ! mPickerThem.draw ) {
                         mPickerThem.draw = true;
-                        mPickerThem.pos.x = mColumnPositions[i].x;
-                        mPickerThem.targetColumn = i;
+                        mPickerThem.pos.x = mColumnPositions[5].x + 27;
+                        mPickerThem.targetColumn = -1;
                         mPickerThem.hardScoreUpdate = true;
+                        mPickerThem.draggedInYet = false;
                         mPickerThem.held = false;
                         mPickerThem.mouseOver = false;
                         }
@@ -2482,9 +2485,10 @@ void PlayGamePage::step() {
                     }
                 
                 mPickerUs.draw = true;
-                mPickerUs.pos.x = mColumnPositions[mOurChoices[0]].x;
-                mPickerUs.targetColumn = mOurChoices[0];
+                mPickerUs.pos.x = mColumnPositions[0].x - 27;
+                mPickerUs.targetColumn = -1;
                 mPickerUs.hardScoreUpdate = true;
+                mPickerUs.draggedInYet = false;
                 mPickerUs.held = false;
                 mPickerUs.mouseOver = false;
                 }
@@ -3070,15 +3074,44 @@ void PlayGamePage::pickerReactToMouseMove( ColumnPicker *inPicker,
     inX = roundf( inX );
     
     if( inPicker->draw && inPicker->held ) {
-        
+
+        // preserve relative mouse-picker offset, so picker doesn't jump
+        // to center itself on mouse as it moves
         float x = inX - inPicker->heldOffset;
         
-        if( inX > mColumnPositions[5].x ) {
-            x = mColumnPositions[5].x;
+        if( !inPicker->draggedInYet ) {
+            if( x > mColumnPositions[5].x + 27 ) {
+                x = mColumnPositions[5].x + 27;
+                if( inX > x ) {
+                    inX = x;
+                    }
+                }
+            else if( x < mColumnPositions[0].x - 27 ) {
+                x = mColumnPositions[0].x - 27;
+                if( inX < x ) {
+                    inX = x;
+                    }
+                }
+            else if( x <= mColumnPositions[5].x &&
+                     x >= mColumnPositions[0].x ) {
+                inPicker->draggedInYet = true;
+                }
             }
-        else if( inX < mColumnPositions[0].x ) {
-            x = mColumnPositions[0].x;
+        else {    
+            if( x > mColumnPositions[5].x ) {
+                x = mColumnPositions[5].x;
+                if( inX > x ) {
+                    inX = x;
+                    }
+                }
+            else if( x < mColumnPositions[0].x ) {
+                x = mColumnPositions[0].x;
+                if( inX < x ) {
+                    inX = x;
+                    }
+                }
             }
+        
         inPicker->pos.x = x;
         inPicker->heldOffset = inX - inPicker->pos.x;
         
@@ -3090,12 +3123,27 @@ void PlayGamePage::pickerReactToMouseMove( ColumnPicker *inPicker,
         int trueClosestColumn = 0;
         float trueClosestDist = 300000;
         
+        char blockedColumns[6];
 
+        if( mPickerUs.draw && ! mPickerThem.draw ) {
+            memset( blockedColumns, false, 6 );
+            // picking reveal, our-picks-for-them are blocked
+            for( int p=0; p<3; p++ ) {
+                int t = p * 2 + 1;
+                blockedColumns[ mOurChoices[t] ] = true;
+                }
+            }
+        else {
+            // only unpicked allowed
+            memcpy( blockedColumns, mColumnUsed, 6 );
+            }
+        
+        
         for( int i=0; i<6; i++ ) {
             float dist = mColumnPositions[i].x - x;
             // square as a rough abs
             dist *= dist;
-            if( dist < closestDist && ! mColumnUsed[i] ) {
+            if( dist < closestDist && ! blockedColumns[i] ) {
                 closestDist = dist;
                 closestColumn = i;
                 }
@@ -3143,7 +3191,7 @@ void PlayGamePage::pickerReactToMouseMove( ColumnPicker *inPicker,
             closestColumn == inOtherPicker->targetColumn ) {
             // push it out of the way
 
-            while( mColumnUsed[ inOtherPicker->targetColumn ] ||
+            while( blockedColumns[ inOtherPicker->targetColumn ] ||
                    closestColumn == inOtherPicker->targetColumn ) {
                 
                 if( delta > 0 ) {
@@ -3262,13 +3310,23 @@ void PlayGamePage::pointerUp( float inX, float inY ) {
     if( mPickerUs.held || mPickerThem.held ) {
         // dropping a picker
     
-        // commit allowed now
-        mCommitButton.setVisible( true );
-        mCommitFlashPreSteps = 0;
-        mCommitFlashProgress = 1.0;
-        mCommitFlashDirection = -1;
+        if( mPickerUs.held ) {
+            mPickerUs.draggedInYet = true;
+            }
+        if( mPickerThem.held ) {
+            mPickerThem.draggedInYet = true;
+            }
 
-        mLeaveButton.setVisible( false );
+        if( mPickerUs.draggedInYet && mPickerThem.draggedInYet ) {
+            
+            // commit allowed now
+            mCommitButton.setVisible( true );
+            mCommitFlashPreSteps = 0;
+            mCommitFlashProgress = 1.0;
+            mCommitFlashDirection = -1;
+
+            mLeaveButton.setVisible( false );
+            }
         }
     
     mPickerUs.held = false;

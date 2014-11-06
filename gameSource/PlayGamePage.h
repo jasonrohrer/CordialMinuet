@@ -108,6 +108,8 @@ typedef struct ColumnPicker {
         // done for this target column?
         char hardScoreUpdate;
         
+        char draggedInYet;
+
         char mouseOver;
         char held;
         char draw;
