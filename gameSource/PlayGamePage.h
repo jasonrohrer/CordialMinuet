@@ -260,6 +260,8 @@ class PlayGamePage : public ServerActionPage, public ActionListener {
 
         SpriteHandle mInkHebrewSprites[12];
 
+        SpriteHandle mSansHebrewSprites[6];
+
         int mNextGreenVSprite;
         int mNextGreenHSprite;
         SpriteHandle mGreenWatercolorVSprites[3][6];
@@ -332,4 +334,5 @@ class PlayGamePage : public ServerActionPage, public ActionListener {
         // 2 if still has more to go
         int slidePicker( ColumnPicker *inPicker );
         
+        void drawColumnPicker( ColumnPicker *inPicker );
     };

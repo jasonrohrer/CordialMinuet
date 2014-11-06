@@ -10,10 +10,29 @@ SpriteHandle loadWhiteSprite( const char *inTGAFileName,
     if( spriteImage == NULL ) {
         return NULL;
         }
+
+    if( outW != NULL ) {
+        *outW = spriteImage->getWidth();
+        }
+    if( outH != NULL ) {
+        *outH = spriteImage->getHeight();
+        }
+
+    SpriteHandle sprite = fillWhiteSprite( spriteImage );
+
+    delete spriteImage;
     
-    int width = spriteImage->getWidth();
+    return sprite;
+    }
+
+
+
+SpriteHandle fillWhiteSprite( Image *inImage ) {
         
-    int height = spriteImage->getHeight();
+    
+    int width = inImage->getWidth();
+        
+    int height = inImage->getHeight();
     
     int numPixels = width * height;
     
@@ -23,7 +42,7 @@ SpriteHandle loadWhiteSprite( const char *inTGAFileName,
     
     
     // red into alpha
-    memcpy( rgbaImage.getChannel( 3 ), spriteImage->getChannel( 0 ),
+    memcpy( rgbaImage.getChannel( 3 ), inImage->getChannel( 0 ),
             sizeof( double ) * numPixels );
     
     // white into rest
@@ -42,17 +61,10 @@ SpriteHandle loadWhiteSprite( const char *inTGAFileName,
     memcpy( rgbaImage.getChannel( 2 ), solidWhite, 
             sizeof( double ) * numPixels ); 
 
-    delete spriteImage;
+    
     delete [] solidWhite;
 
     
-    if( outW != NULL ) {
-        *outW = width;
-        }
-    
-    if( outH != NULL ) {
-        *outH = height;
-        }
     
     
     return fillSprite( &rgbaImage, false );

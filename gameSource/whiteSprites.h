@@ -15,3 +15,6 @@
 SpriteHandle loadWhiteSprite( const char *inTGAFileName,
                               int *outW = NULL,
                               int *outH = NULL );
+
+
+SpriteHandle fillWhiteSprite( Image *inImage );

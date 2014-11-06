@@ -146,7 +146,8 @@ static void readWatercolorImages( const char *inTGAFileName,
 // outSpriteArray must have enough room for rows * columns sprites
 static void readCharacterGrid( const char *inTGAFileName,
                                int inNumRows, int inNumColumns,
-                               SpriteHandle outSpriteArray[] ) {
+                               SpriteHandle outSpriteArray[],
+                               char inWhiteSprites = false ) {
     
     Image *numbersImage = readTGAFile( inTGAFileName );
     
@@ -222,8 +223,12 @@ static void readCharacterGrid( const char *inTGAFileName,
                     }
                 }
             
-            outSpriteArray[i] = fillSprite( &paddedImage, false );
-            
+            if( inWhiteSprites ) {
+                outSpriteArray[i] = fillWhiteSprite( &paddedImage );
+                }
+            else {
+                outSpriteArray[i] = fillSprite( &paddedImage, false );
+                }
             delete oneNumberImage;
             }
         
@@ -271,6 +276,8 @@ PlayGamePage::PlayGamePage()
     readCharacterGrid( "inkNumbers.tga", 6, 6, mInkNumberSprites );
 
     readCharacterGrid( "inkHebrew.tga", 2, 6, mInkHebrewSprites );
+
+    readCharacterGrid( "sansHebrew.tga", 1, 6, mSansHebrewSprites, true );
     
 
     
@@ -441,6 +448,9 @@ PlayGamePage::~PlayGamePage() {
 
     for( int i=0; i<12; i++ ) {
         freeSprite( mInkHebrewSprites[i] );
+        }
+    for( int i=0; i<6; i++ ) {
+        freeSprite( mSansHebrewSprites[i] );
         }
     
     for( int i=0; i<3; i++ ) {
@@ -877,6 +887,44 @@ void PlayGamePage::actionPerformed( GUIComponent *inTarget ) {
 
 float leftEnd = 0;
 float rightEnd = 0;
+
+
+
+void PlayGamePage::drawColumnPicker( ColumnPicker *inPicker ) {
+    if( inPicker->draw ) {
+        if( ! inPicker->mouseOver && ! inPicker->held ) {
+            if( ! inPicker->draggedInYet ) {
+                setDrawFade( 0.75 * mCommitFlashProgress );
+                }
+            else {
+                setDrawFade( 0.75 );
+                }
+            }
+        doublePair pos = inPicker->pos;
+        if( inPicker->held ) {
+            pos.y += 4;
+                    }
+        drawSprite( mColumnPickerSprite, pos );
+        
+        if( inPicker->targetColumn != -1 ) {
+            pos.y -= 16;
+
+            float fade = 0;
+            
+            double dist = 
+                fabs( pos.x - mColumnPositions[ inPicker->targetColumn ].x );
+            
+            if( dist < 27 ) {
+                fade = 1 - dist / 27.0;
+                }
+            setDrawFade( fade );
+            
+            drawSprite( mSansHebrewSprites[ inPicker->targetColumn ],
+                        pos );
+            }
+        }
+    }
+
 
 
 
@@ -1485,56 +1533,20 @@ void PlayGamePage::draw( doublePair inViewCenter,
             setDrawColor( 0, 0, 0, mParchmentFade );
             drawSquare( parchPos, 217 );
             }
-        
+
+        // draw held picker on top
         if( ! mPickerUs.held ) {
-            if( mPickerUs.draw ) {
-                setUsColor();
-                if( ! mPickerUs.mouseOver && ! mPickerUs.held ) {
-                    if( ! mPickerUs.draggedInYet ) {
-                        setDrawFade( 0.75 * mCommitFlashProgress );
-                        }
-                    else {
-                        setDrawFade( 0.75 );
-                        }
-                    }
-                doublePair pos = mPickerUs.pos;
-                if( mPickerUs.held ) {
-                    pos.y += 4;
-                    }
-                drawSprite( mColumnPickerSprite, pos );
-                }
+            setUsColor();
+            drawColumnPicker( &mPickerUs );
             }
-        if( mPickerThem.draw ) {
-            setThemColor();
-            if( ! mPickerThem.mouseOver && ! mPickerThem.held ) {
-                if( ! mPickerThem.draggedInYet ) {
-                    setDrawFade( 0.75 * mCommitFlashProgress );
-                    }
-                else {
-                    setDrawFade( 0.75 );
-                    }
-                }
-            doublePair pos = mPickerThem.pos;
-            if( mPickerThem.held ) {
-                pos.y += 4;
-
-                }
-            drawSprite( mColumnPickerSprite, pos );
-            }
+        
+        setThemColor();
+        drawColumnPicker( &mPickerThem );
+        
         if( mPickerUs.held ) {
-            if( mPickerUs.draw ) {
-                setUsColor();
-                if( ! mPickerUs.mouseOver && ! mPickerUs.held ) {
-                    setDrawFade( 0.75 );
-                    }
-                doublePair pos = mPickerUs.pos;
-                if( mPickerUs.held ) {
-                    pos.y += 4;
-                    }
-                drawSprite( mColumnPickerSprite, pos );
-                }
+            setUsColor();
+            drawColumnPicker( &mPickerUs );
             }
-
         }
     
         
