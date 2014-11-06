@@ -313,10 +313,12 @@ PlayGamePage::PlayGamePage()
     
     mPickerUs.pos.y = -252;
     mPickerUs.mouseOver = false;
+    mPickerUs.hardScoreUpdate = true;
     mPickerUs.held = false;
     mPickerUs.draw = false;
 
     mPickerThem.pos.y = -252;
+    mPickerThem.hardScoreUpdate = true;
     mPickerThem.mouseOver = false;
     mPickerThem.held = false;
     mPickerThem.draw = false;
@@ -1771,16 +1773,19 @@ void PlayGamePage::step() {
     int slidUs = slidePicker( &mPickerUs );
     int slidThem = slidePicker( &mPickerThem );
 
-    if( slidUs != 2 && slidThem != 2 ) {
-        // neither still moving
+    if( slidUs != 2 && slidThem != 2 &&
+        ! mPickerUs.held && ! mPickerThem.held ) {
+        // neither still moving or held
         
-        if( slidUs == 1 || slidThem == 1 ) {
-            // one or both just came to rest
-    
-            // can actually compute scores for real here, instead of just
-            // relying on cache, because there's no animation that will
-            // stutter
+        if( ! mPickerUs.hardScoreUpdate ||
+            ! mPickerThem.hardScoreUpdate ) {
+            
+            // a picker still needs a hard score update, now that it
+            // has come to rest
             computePossibleScores( false );
+        
+            mPickerUs.hardScoreUpdate = true;
+            mPickerThem.hardScoreUpdate = true;
             }
         }
     
@@ -2434,6 +2439,7 @@ void PlayGamePage::step() {
                         mPickerUs.draw = true;
                         mPickerUs.pos.x = mColumnPositions[i].x;
                         mPickerUs.targetColumn = i;
+                        mPickerUs.hardScoreUpdate = true;
                         mPickerUs.held = false;
                         mPickerUs.mouseOver = false;
                         }
@@ -2441,6 +2447,7 @@ void PlayGamePage::step() {
                         mPickerThem.draw = true;
                         mPickerThem.pos.x = mColumnPositions[i].x;
                         mPickerThem.targetColumn = i;
+                        mPickerThem.hardScoreUpdate = true;
                         mPickerThem.held = false;
                         mPickerThem.mouseOver = false;
                         }
@@ -2477,6 +2484,7 @@ void PlayGamePage::step() {
                 mPickerUs.draw = true;
                 mPickerUs.pos.x = mColumnPositions[mOurChoices[0]].x;
                 mPickerUs.targetColumn = mOurChoices[0];
+                mPickerUs.hardScoreUpdate = true;
                 mPickerUs.held = false;
                 mPickerUs.mouseOver = false;
                 }
@@ -3074,16 +3082,26 @@ void PlayGamePage::pickerReactToMouseMove( ColumnPicker *inPicker,
         inPicker->pos.x = x;
         inPicker->heldOffset = inX - inPicker->pos.x;
         
+        // closest useable
         int closestColumn = 0;
         float closestDist = 300000;
         
+        // closest actual, even though it may be unpickable now
+        int trueClosestColumn = 0;
+        float trueClosestDist = 300000;
+        
+
         for( int i=0; i<6; i++ ) {
             float dist = mColumnPositions[i].x - x;
             // square as a rough abs
             dist *= dist;
-            if( dist < closestDist ) {
+            if( dist < closestDist && ! mColumnUsed[i] ) {
                 closestDist = dist;
                 closestColumn = i;
+                }
+            if( dist < trueClosestDist ) {
+                trueClosestDist = dist;
+                trueClosestColumn = i;
                 }
             }
         
@@ -3106,29 +3124,45 @@ void PlayGamePage::pickerReactToMouseMove( ColumnPicker *inPicker,
         
 
         if( closestColumn != oldTarget ) {
-            // jump score graph in realtime as we drag, but only if cached
-            computePossibleScores( true );
+            
+            inPicker->hardScoreUpdate = false;
+            
+            // don't jump score graph to match closestColumn if
+            // we're currently dragging over an unpickable column, because
+            // that's confusing
+            if( trueClosestColumn == closestColumn ) {
+            
+                // jump score graph in realtime as we drag, but only if cached
+                computePossibleScores( true );
+                }
             }
 
         float delta = mColumnPositions[closestColumn].x - x;
 
-        if( closestColumn == inOtherPicker->targetColumn ) {
+        if( inOtherPicker->draw && 
+            closestColumn == inOtherPicker->targetColumn ) {
             // push it out of the way
 
-            if( delta > 0 ) {
-                if( inOtherPicker->targetColumn > 0 ) {
-                    inOtherPicker->targetColumn --;
+            while( mColumnUsed[ inOtherPicker->targetColumn ] ||
+                   closestColumn == inOtherPicker->targetColumn ) {
+                
+                if( delta > 0 ) {
+                    if( inOtherPicker->targetColumn > 0 ) {
+                        inOtherPicker->targetColumn --;
+                        }
+                    else {
+                        inOtherPicker->targetColumn ++;
+                        delta = -delta;
+                        }
                     }
                 else {
-                    inOtherPicker->targetColumn ++;
-                    }
-                }
-            else {
-                if( inOtherPicker->targetColumn < 5 ) {
-                    inOtherPicker->targetColumn ++;
-                    }
-                else {
-                    inOtherPicker->targetColumn --;
+                    if( inOtherPicker->targetColumn < 5 ) {
+                        inOtherPicker->targetColumn ++;
+                        }
+                    else {
+                        inOtherPicker->targetColumn --;
+                        delta = -delta;
+                        }
                     }
                 }    
             }

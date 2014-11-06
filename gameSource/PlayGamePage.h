@@ -104,6 +104,10 @@ typedef struct WatercolorStroke {
 typedef struct ColumnPicker {
         doublePair pos;
         int targetColumn;
+        // has a non-cached possible-score update been 
+        // done for this target column?
+        char hardScoreUpdate;
+        
         char mouseOver;
         char held;
         char draw;
