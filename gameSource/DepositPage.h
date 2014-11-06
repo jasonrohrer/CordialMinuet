@@ -66,7 +66,8 @@ class DepositPage : public ServerActionPage, public ActionListener {
         TextButton mDepositButton;
 
         TextButton mCancelButton;
-
+        TextButton mClearButton;
+        
 
         unsigned char mPublicKey[32];
         unsigned char mSecretKey[32];

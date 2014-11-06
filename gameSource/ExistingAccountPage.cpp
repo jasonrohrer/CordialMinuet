@@ -91,6 +91,13 @@ ExistingAccountPage::~ExistingAccountPage() {
 
 
 
+void ExistingAccountPage::clearFields() {
+    mEmailField.setText( "" );
+    mKeyField.setText( "" );
+    }
+
+
+
 void ExistingAccountPage::makeActive( char inFresh ) {
     mEmailField.focus();
     mPasteButton.setVisible( false );

@@ -1165,6 +1165,27 @@ void drawFrame( char inUpdate ) {
                 currentGamePage = extendedMessagePage;
                 currentGamePage->base_makeActive( true );
                 }
+            else if( depositPage->checkSignal( "clearAccount" ) ) {
+                SettingsManager::setSetting( "email", "" );
+                SettingsManager::setSetting( "accountKey", "" );
+                
+                if( userEmail != NULL ) {
+                    delete [] userEmail;
+                    userEmail = NULL;
+                    }
+                if( accountKey != NULL ) {
+                    delete [] accountKey;
+                    accountKey = NULL;
+                    }
+                userID = -1;
+                userBalance = 0;
+                serverSequenceNumber = 0;
+                
+                existingAccountPage->clearFields();
+                
+                currentGamePage = accountCheckPage;
+                currentGamePage->base_makeActive( true );
+                }
             }
         else if( currentGamePage == newAccountDisplayPage ) {
             if( newAccountDisplayPage->checkSignal( "done" ) ) {

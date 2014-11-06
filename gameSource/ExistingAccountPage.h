@@ -15,7 +15,8 @@ class ExistingAccountPage : public GamePage, public ActionListener {
         ExistingAccountPage();
         
         virtual ~ExistingAccountPage();
-
+        
+        void clearFields();
         
         virtual void actionPerformed( GUIComponent *inTarget );
 

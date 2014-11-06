@@ -109,21 +109,28 @@ DepositPage::DepositPage()
                            translate( "deposit" ) ),
           mCancelButton( mainFont, -150, -200, 
                          translate( "cancel" ) ),
+          mClearButton( mainFont, 263, 126, 
+                        translate( "clear" ) ),
           mResponseProcessed( false ) {
 
 
 
     addComponent( &mDepositButton );
     addComponent( &mCancelButton );
+    addComponent( &mClearButton );
     
 
     setButtonStyle( &mDepositButton );
     setButtonStyle( &mCancelButton );
+    setButtonStyle( &mClearButton );
     
 
     mDepositButton.addActionListener( this );
     mCancelButton.addActionListener( this );
+    mClearButton.addActionListener( this );
 
+    
+    mClearButton.setMouseOverTip( "clearTip" );
 
     addComponent( &mAmountPicker );
     
@@ -321,6 +328,7 @@ void DepositPage::actionPerformed( GUIComponent *inTarget ) {
         
         mDepositButton.setVisible( false );
         mCancelButton.setVisible( false );
+        mClearButton.setVisible( false );
         
         for( int i=0; i<NUM_DEPOSIT_FIELDS; i++ ) {
             mFields[i]->setActive( false );
@@ -334,6 +342,15 @@ void DepositPage::actionPerformed( GUIComponent *inTarget ) {
         }
     else if( inTarget == &mCancelButton ) {
         setSignal( "back" );
+        }
+    else if( inTarget == &mClearButton ) {
+        mEmailField.setText( "" );
+        mCardNumberField.setText( "" );
+        mExpireMonthField.setText( "" );
+        mExpireYearField.setText( "" );
+        mCVCField.setText( "" );
+        mAmountPicker.setValue( 5.00 );
+        setSignal( "clearAccount" );
         }
     else if( inTarget == &mAmountPicker ) {
         recomputeFee();
@@ -495,6 +512,8 @@ void DepositPage::step() {
             makeFieldsActive();
             }
         mCancelButton.setVisible( true );
+        
+        mClearButton.setVisible( ! mEmailFieldCanFocus );
         }
     
     if( !mResponseProcessed && isResponseReady() ) {

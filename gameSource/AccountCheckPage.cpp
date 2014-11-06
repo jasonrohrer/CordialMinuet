@@ -90,6 +90,12 @@ void AccountCheckPage::makeActive( char inFresh ) {
     else {
         mNewAccountButton.setVisible( true );
         mExistingAccountButton.setVisible( true );
+        
+        mStatusError = false;
+        mStatusMessageKey = NULL;
+        setStatusDirect( NULL, false );
+
+        mResponseReady = false;
         }
     
     

@@ -21,6 +21,10 @@ existingAccount "EXISTING ACCOUNT"
 deposit  "DEPOSIT"
 withdraw "WITHDRAW"
 cancel "CANCEL"
+clear "CLEAR"
+
+clearTip "CLEAR LOCAL ACCOUNT DETAILS"
+
 
 email "EMAIL"
 card "CARD#"
