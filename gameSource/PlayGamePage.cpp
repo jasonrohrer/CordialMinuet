@@ -1542,7 +1542,7 @@ int stringToInt( const char *inString ) {
 
 
 
-void PlayGamePage::slidePicker( ColumnPicker *inPicker ) {
+int PlayGamePage::slidePicker( ColumnPicker *inPicker ) {
     if( inPicker->draw && 
         ! inPicker->held &&
         inPicker->pos.x != 
@@ -1560,8 +1560,17 @@ void PlayGamePage::slidePicker( ColumnPicker *inPicker ) {
             }
         
         inPicker->pos.x += delta;
-            
+           
+        if( inPicker->pos.x == mColumnPositions[inPicker->targetColumn].x ) {
+            // reached goal
+            return 1;
+            }
+        else {
+            // still moving
+            return 2;
+            }
         }
+    return 0;
     }
 
 
@@ -1759,9 +1768,22 @@ void PlayGamePage::step() {
     
 
     
-    slidePicker( &mPickerUs );
-    slidePicker( &mPickerThem );
+    int slidUs = slidePicker( &mPickerUs );
+    int slidThem = slidePicker( &mPickerThem );
 
+    if( slidUs != 2 && slidThem != 2 ) {
+        // neither still moving
+        
+        if( slidUs == 1 || slidThem == 1 ) {
+            // one or both just came to rest
+    
+            // can actually compute scores for real here, instead of just
+            // relying on cache, because there's no animation that will
+            // stutter
+            computePossibleScores( false );
+            }
+        }
+    
 
 
 
@@ -2754,19 +2776,23 @@ static void testAllTheirMovesWithFixedOurMove( int *inValues,
 
 
 
-void PlayGamePage::computePossibleScores() {
+void PlayGamePage::computePossibleScores( char inCachedOnly ) {
+        
+    if( loadCacheRecord() ) {
+        // cached!
+        return;
+        }
+
+    if( inCachedOnly ) {
+        return;
+        }
+    
     for( int i=0; i<MAX_SCORE_RANGE; i++ ) {
         mOurPossibleScores[i] = false;
         mTheirPossibleScores[i] = false;
         
         mOurPossibleScoresFromTheirPerspective[i] = false;
         }
-    
-    if( loadCacheRecord() ) {
-        // cached!
-        return;
-        }
-    
 
 
     ScoreSearchRecord record;
@@ -3061,7 +3087,28 @@ void PlayGamePage::pickerReactToMouseMove( ColumnPicker *inPicker,
                 }
             }
         
+        int oldTarget = inPicker->targetColumn;
+        
         inPicker->targetColumn = closestColumn;
+        
+        if( inPicker == &mPickerUs ) {
+            if( ! mPickerThem.draw ) {
+                // reveal step
+                mRevealChoiceForUs = closestColumn;
+                }
+            else {
+                mColumnChoiceForUs = closestColumn;
+                }
+            }
+        else {
+            mColumnChoiceForThem = closestColumn;
+            }
+        
+
+        if( closestColumn != oldTarget ) {
+            // jump score graph in realtime as we drag, but only if cached
+            computePossibleScores( true );
+            }
 
         float delta = mColumnPositions[closestColumn].x - x;
 

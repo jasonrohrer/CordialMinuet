@@ -239,7 +239,7 @@ class PlayGamePage : public ServerActionPage, public ActionListener {
         float mScorePipLabelFadeDelta;
 
 
-        void computePossibleScores();
+        void computePossibleScores( char inCachedOnly=false );
 
         SpriteHandle mScorePipSprite;
         SpriteHandle mScorePipExtraSprite;
@@ -320,6 +320,10 @@ class PlayGamePage : public ServerActionPage, public ActionListener {
                                      ColumnPicker *inOtherPicker,
                                      float inX, float inY );
 
-        void slidePicker( ColumnPicker *inPicker );
+        // return 
+        // 0 if not sliding
+        // 1 if just slid to stop
+        // 2 if still has more to go
+        int slidePicker( ColumnPicker *inPicker );
         
     };
