@@ -635,7 +635,7 @@ static void drawPauseScreen() {
 
     doublePair messagePos = lastScreenViewCenter;
 
-    messagePos.y += 4.5;
+    messagePos.y += 4.5  * (viewHeight / 15);
 
     mainFont->drawString( translate( "pauseMessage1" ), 
                            messagePos, alignCenter );
