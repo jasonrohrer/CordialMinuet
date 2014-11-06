@@ -708,15 +708,15 @@ void PlayGamePage::actionPerformed( GUIComponent *inTarget ) {
             }
 
         if( numMovesAlreadyMade == 6 ) {
-            if( mPickerUs.draw ) {
+            if( mPickerUs.draw && mPickerUs.targetColumn != -1 ) {
                 mRevealChoiceForUs = mPickerUs.targetColumn;
                 }
             }
         else {    
-            if( mPickerUs.draw ) {
+            if( mPickerUs.draw && mPickerUs.targetColumn != -1 ) {
                 mColumnChoiceForUs = mPickerUs.targetColumn;
                 }
-            if( mPickerThem.draw ) {
+            if( mPickerThem.draw && mPickerThem.targetColumn != -1 ) {
                 mColumnChoiceForThem = mPickerThem.targetColumn;
                 }
             }
@@ -892,32 +892,37 @@ float rightEnd = 0;
 
 void PlayGamePage::drawColumnPicker( ColumnPicker *inPicker ) {
     if( inPicker->draw ) {
+        float fade = 1;
+        
         if( ! inPicker->mouseOver && ! inPicker->held ) {
             if( ! inPicker->draggedInYet ) {
-                setDrawFade( 0.75 * mCommitFlashProgress );
+                fade = 0.75 * mCommitFlashProgress;
                 }
             else {
-                setDrawFade( 0.75 );
+                fade = 0.75;
                 }
             }
         doublePair pos = inPicker->pos;
         if( inPicker->held ) {
             pos.y += 4;
-                    }
+            }
+        
+        setDrawFade( fade );
+
         drawSprite( mColumnPickerSprite, pos );
         
         if( inPicker->targetColumn != -1 ) {
             pos.y -= 16;
 
-            float fade = 0;
+            float labelFade = 0;
             
             double dist = 
                 fabs( pos.x - mColumnPositions[ inPicker->targetColumn ].x );
             
             if( dist < 27 ) {
-                fade = 1 - dist / 27.0;
+                labelFade = 1 - dist / 27.0;
                 }
-            setDrawFade( fade );
+            setDrawFade( fade * labelFade );
             
             drawSprite( mSansHebrewSprites[ inPicker->targetColumn ],
                         pos );
@@ -3338,9 +3343,11 @@ void PlayGamePage::pointerUp( float inX, float inY ) {
     
         if( mPickerUs.held ) {
             mPickerUs.draggedInYet = true;
+            mPickerUs.mouseOver = false;
             }
         if( mPickerThem.held ) {
             mPickerThem.draggedInYet = true;
+            mPickerThem.mouseOver = false;
             }
 
         if( mPickerUs.draggedInYet && mPickerThem.draggedInYet ) {
