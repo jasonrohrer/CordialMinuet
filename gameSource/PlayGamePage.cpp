@@ -1662,7 +1662,8 @@ void PlayGamePage::step() {
             }
         }
 
-
+    // delay flying coins until all strokes added
+    if( !anyStrokesStillAdding )
     for( int f=0; f<2; f++ ) {
         if( mFlyingCoins[f].size() > 0 ) {
             
@@ -2274,10 +2275,18 @@ void PlayGamePage::step() {
                         mTheirChoices[ theirChoiceMapping[i] ] ) {
                         
                         // a new choice
+
+                        char speedUp = true;
+                        if( anyStrokesStillAdding ) {
+                            // don't rush this stroke on top of last
+                            // one that is drawing
+                            speedUp = false;
+                            }
+                        
                         addRowStroke( 
                             mTheirChoices[ theirChoiceMapping[i] ],
                             mGreenWatercolorHSprites[mNextGreenHSprite],
-                            true );
+                            speedUp );
                         mNextGreenHSprite++;
                         }
                     }
