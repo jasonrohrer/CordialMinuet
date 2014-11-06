@@ -73,6 +73,8 @@ graphics/greenWatercolorH.tga \
 graphics/redWatercolorV.tga \
 graphics/blackWatercolorV.tga \
 graphics/blackWatercolorH.tga \
+graphics/blackWatercolorVFlipped.tga \
+graphics/blackWatercolorHFlipped.tga \
 graphics/inkHebrew.tga \
 graphics/columnPicker.tga \
 

@@ -288,6 +288,13 @@ PlayGamePage::PlayGamePage()
 
     readWatercolorImages( "blackWatercolorH.tga", false, 
                           mBlackWatercolorHSprites );
+
+
+    readWatercolorImages( "blackWatercolorVFlipped.tga", true, 
+                          mBlackWatercolorVFlippedSprites );
+
+    readWatercolorImages( "blackWatercolorHFlipped.tga", false, 
+                          mBlackWatercolorHFlippedSprites );
     
     
     mInkGridCenter.x = 34;
@@ -446,6 +453,8 @@ PlayGamePage::~PlayGamePage() {
         for( int s=0; s<6; s++ ) {
             freeSprite( mBlackWatercolorVSprites[i][s] );
             freeSprite( mBlackWatercolorHSprites[i][s] );
+            freeSprite( mBlackWatercolorVFlippedSprites[i][s] );
+            freeSprite( mBlackWatercolorHFlippedSprites[i][s] );
             }
         }
     
@@ -759,11 +768,11 @@ void PlayGamePage::actionPerformed( GUIComponent *inTarget ) {
                 }
             
             addColumnStroke( mRevealChoiceForUs,
-                             mBlackWatercolorVSprites[r],
+                             mBlackWatercolorVFlippedSprites[r],
                              true );
             
             addRowStroke( r,
-                          mBlackWatercolorHSprites[mRevealChoiceForUs],
+                          mBlackWatercolorHFlippedSprites[mRevealChoiceForUs],
                           false );
 
             setActionParameter( "our_column", mRevealChoiceForUs );

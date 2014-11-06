@@ -264,6 +264,9 @@ class PlayGamePage : public ServerActionPage, public ActionListener {
         
         SpriteHandle mBlackWatercolorVSprites[6][6];
         SpriteHandle mBlackWatercolorHSprites[6][6];
+
+        SpriteHandle mBlackWatercolorVFlippedSprites[6][6];
+        SpriteHandle mBlackWatercolorHFlippedSprites[6][6];
         
         SpriteHandle mColumnPickerSprite;
         
