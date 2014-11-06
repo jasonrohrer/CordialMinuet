@@ -1490,7 +1490,12 @@ void PlayGamePage::draw( doublePair inViewCenter,
             if( mPickerUs.draw ) {
                 setUsColor();
                 if( ! mPickerUs.mouseOver && ! mPickerUs.held ) {
-                    setDrawFade( 0.75 );
+                    if( ! mPickerUs.draggedInYet ) {
+                        setDrawFade( 0.75 * mCommitFlashProgress );
+                        }
+                    else {
+                        setDrawFade( 0.75 );
+                        }
                     }
                 doublePair pos = mPickerUs.pos;
                 if( mPickerUs.held ) {
@@ -1502,7 +1507,12 @@ void PlayGamePage::draw( doublePair inViewCenter,
         if( mPickerThem.draw ) {
             setThemColor();
             if( ! mPickerThem.mouseOver && ! mPickerThem.held ) {
-                setDrawFade( 0.75 );
+                if( ! mPickerThem.draggedInYet ) {
+                    setDrawFade( 0.75 * mCommitFlashProgress );
+                    }
+                else {
+                    setDrawFade( 0.75 );
+                    }
                 }
             doublePair pos = mPickerThem.pos;
             if( mPickerThem.held ) {
@@ -1735,10 +1745,14 @@ void PlayGamePage::step() {
         }
     
     
-    if( mCommitButton.isVisible() ) {
+    if( mCommitButton.isVisible() || 
+        ( mPickerUs.draw && ! mPickerUs.draggedInYet ) ||
+        ( mPickerThem.draw && ! mPickerThem.draggedInYet ) ) {
 
-        if( mCommitButton.isMouseOver() ||
-            mPickerThem.held || mPickerUs.held ) {
+        if( ( mCommitButton.isVisible() && mCommitButton.isMouseOver() )
+            || mPickerUs.mouseOver || mPickerThem.mouseOver
+            || mPickerThem.held || mPickerUs.held ) {
+            
             mCommitFlashPreSteps = 0;
             mCommitFlashProgress = 1;
             mCommitFlashDirection = -1;
@@ -1749,7 +1763,7 @@ void PlayGamePage::step() {
             
             mCommitFlashPreSteps ++;
             
-            if( mCommitFlashPreSteps > 120 / frameRateFactor ) {
+            if( mCommitFlashPreSteps > 300 / frameRateFactor ) {
                 
 
                 mCommitButton.setNoHoverColor( 1, 1, 1, mCommitFlashProgress );
