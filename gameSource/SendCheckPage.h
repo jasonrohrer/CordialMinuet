@@ -21,6 +21,7 @@ class SendCheckPage : public ServerActionPage, public ActionListener {
         
         ~SendCheckPage();
         
+        void clearFields();
         
         virtual void actionPerformed( GUIComponent *inTarget );
 

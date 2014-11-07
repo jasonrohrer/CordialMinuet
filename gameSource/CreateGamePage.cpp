@@ -65,8 +65,11 @@ CreateGamePage::~CreateGamePage() {
 
 
 
+void CreateGamePage::clearAmountPicker() {
+    mAmountPicker.setValue( 0.01 );
+    }
 
-
+    
 
 void CreateGamePage::actionPerformed( GUIComponent *inTarget ) {
     if( inTarget == &mCreateButton ) {

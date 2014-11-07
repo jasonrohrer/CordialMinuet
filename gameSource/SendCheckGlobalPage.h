@@ -20,7 +20,8 @@ class SendCheckGlobalPage : public ServerActionPage, public ActionListener {
         SendCheckGlobalPage();
         
         ~SendCheckGlobalPage();
-        
+
+        void clearFields();        
         
         virtual void actionPerformed( GUIComponent *inTarget );
 

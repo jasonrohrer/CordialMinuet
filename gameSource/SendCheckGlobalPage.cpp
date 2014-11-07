@@ -633,6 +633,14 @@ SendCheckGlobalPage::~SendCheckGlobalPage() {
 
 
 
+void SendCheckGlobalPage::clearFields() {
+    for( int i=0; i<NUM_SEND_CHECK_GLOBAL_FIELDS; i++ ) {
+        mFields[i]->setText( "" );
+        }
+    }
+
+
+
 
 
 
@@ -713,6 +721,7 @@ void SendCheckGlobalPage::makeActive( char inFresh ) {
     checkIfSendCheckButtonVisible();
 
     // fix later with balance and check fee when page made active
+    mAmountPicker.setValue( userBalance );
     mAmountPicker.setMin( checkCostGlobal + 0.01 );
     mAmountPicker.setMax( userBalance );
     }

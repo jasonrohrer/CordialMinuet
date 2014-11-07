@@ -1182,7 +1182,11 @@ void drawFrame( char inUpdate ) {
                 serverSequenceNumber = 0;
                 
                 existingAccountPage->clearFields();
+                sendCheckPage->clearFields();
+                sendCheckGlobalPage->clearFields();
                 
+                createGamePage->clearAmountPicker();
+
                 currentGamePage = accountCheckPage;
                 currentGamePage->base_makeActive( true );
                 }

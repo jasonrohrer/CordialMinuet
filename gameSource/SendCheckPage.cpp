@@ -122,6 +122,12 @@ SendCheckPage::~SendCheckPage() {
 
 
 
+void SendCheckPage::clearFields() {
+    for( int i=0; i<NUM_SEND_CHECK_FIELDS; i++ ) {
+        mFields[i]->setText( "" );
+        }
+    }
+
 
 
 
@@ -191,6 +197,7 @@ void SendCheckPage::makeActive( char inFresh ) {
     checkIfSendCheckButtonVisible();
 
     // fix later with balance and check fee when page made active
+    mAmountPicker.setValue( userBalance );
     mAmountPicker.setMin( checkCostUS + 0.01 );
     mAmountPicker.setMax( userBalance );
     }

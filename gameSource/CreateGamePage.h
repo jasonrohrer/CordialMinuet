@@ -20,6 +20,8 @@ class CreateGamePage : public ServerActionPage, public ActionListener {
         
         ~CreateGamePage();
         
+        void clearAmountPicker();
+        
         
         virtual void actionPerformed( GUIComponent *inTarget );
 
