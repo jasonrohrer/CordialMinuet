@@ -482,11 +482,12 @@ void initFrameDrawer( int inWidth, int inHeight, int inTargetFrameRate,
                                              1, resultNamesA, false );
 
 
-    const char *resultNamesB[2] = { "requiredVersionNumber",
-                                    "newVersionURL" };
+    const char *resultNamesB[3] = { "requiredVersionNumber",
+                                    "newVersionURL",
+                                    "autoUpdateURL" };
     
     getRequiredVersionPage = new ServerActionPage( "check_required_version", 
-                                                   2, resultNamesB, false );
+                                                   3, resultNamesB, false );
     
     accountCheckPage = new AccountCheckPage();
     

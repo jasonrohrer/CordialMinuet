@@ -30,6 +30,7 @@ server.php?action=check_required_version
 Returns:
 requiredVersionNumber
 newVersionDownloadURL
+autoUpdateURL
 OK
 
 

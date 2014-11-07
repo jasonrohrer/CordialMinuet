@@ -1399,9 +1399,9 @@ function cm_checkForFlush() {
 
 
 function cm_checkRequiredVersion() {
-    global $cm_version, $upgradeURL;
+    global $cm_version, $upgradeURL, $autoUpdateURL;
     
-    echo "$cm_version $upgradeURL OK";
+    echo "$cm_version $upgradeURL $autoUpdateURL OK";
     }
 
 
