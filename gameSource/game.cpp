@@ -47,12 +47,14 @@ CustomRandomSource randSource( 34957197 );
 #include "minorGems/game/gameGraphics.h"
 #include "minorGems/game/Font.h"
 #include "minorGems/game/drawUtils.h"
+#include "minorGems/game/diffBundle/client/diffBundleClient.h"
 
 
 
 
 #include "FinalMessagePage.h"
 #include "ServerActionPage.h"
+#include "AutoUpdatePage.h"
 #include "AccountCheckPage.h"
 #include "DepositPage.h"
 #include "NewAccountDisplayPage.h"
@@ -82,6 +84,7 @@ FinalMessagePage *finalMessagePage;
 ExtendedMessagePage *extendedMessagePage;
 ServerActionPage *getServerURLPage;
 ServerActionPage *getRequiredVersionPage;
+AutoUpdatePage *autoUpdatePage;
 AccountCheckPage *accountCheckPage;
 ServerActionPage *getDepositFeesPage;
 DepositPage *depositPage;
@@ -160,6 +163,12 @@ const char *getWindowTitle() {
 const char *getAppName() {
     return "CORDIAL_MINUET";
     }
+
+const char *getLinuxAppName() {
+    // no dir-name conflict here because we're using all caps for app name
+    return getAppName();
+    }
+
 
 
 const char *getFontTGAFileName() {
@@ -489,6 +498,8 @@ void initFrameDrawer( int inWidth, int inHeight, int inTargetFrameRate,
     getRequiredVersionPage = new ServerActionPage( "check_required_version", 
                                                    3, resultNamesB, false );
     
+    autoUpdatePage = new AutoUpdatePage();
+
     accountCheckPage = new AccountCheckPage();
     
     
@@ -562,6 +573,7 @@ void freeFrameDrawer() {
     delete extendedMessagePage;
     delete getServerURLPage;
     delete getRequiredVersionPage;
+    delete autoUpdatePage;
     delete accountCheckPage;
     delete getDepositFeesPage;
     delete depositPage;
@@ -1073,16 +1085,35 @@ void drawFrame( char inUpdate ) {
                         "requiredVersionNumber" );
                 
                 if( requiredVersionNumber > versionNumber ) {
-                    currentGamePage = finalMessagePage;
 
-                    finalMessagePage->setMessageKey( "upgradeMessage" );
+                    char *autoUpdateURL = 
+                        getRequiredVersionPage->getResponse( "autoUpdateURL" );
+
                     
-                    char *downloadURL = 
-                        getRequiredVersionPage->getResponse( "newVersionURL" );
+                    char updateStarted = 
+                        startUpdate( autoUpdateURL, versionNumber );
                     
-                    finalMessagePage->setSubMessage( downloadURL );
+                    delete [] autoUpdateURL;
+
+                    if( ! updateStarted ) {
+                        currentGamePage = finalMessagePage;
+                        
+                        finalMessagePage->setMessageKey( "upgradeMessage" );
+
+                        char *downloadURL = 
+                            getRequiredVersionPage->getResponse( 
+                                "newVersionURL" );
+
+                        finalMessagePage->setSubMessage( downloadURL );
                     
-                    currentGamePage->base_makeActive( true );
+                        delete [] downloadURL;
+                        
+                        currentGamePage->base_makeActive( true );
+                        }
+                    else {
+                        currentGamePage = autoUpdatePage;
+                        currentGamePage->base_makeActive( true );
+                        }
                     }
                 else {
                     // version okay
@@ -1090,6 +1121,30 @@ void drawFrame( char inUpdate ) {
                     currentGamePage = accountCheckPage;
                     currentGamePage->base_makeActive( true );
                     }
+                }
+            }
+        else  if( currentGamePage == autoUpdatePage ) {
+            if( autoUpdatePage->checkSignal( "failed" ) ) {
+                currentGamePage = finalMessagePage;
+                        
+                finalMessagePage->setMessageKey( "upgradeMessage" );
+                
+                char *downloadURL = 
+                    getRequiredVersionPage->getResponse( 
+                        "newVersionURL" );
+                
+                finalMessagePage->setSubMessage( downloadURL );
+                
+                delete [] downloadURL;
+                
+                currentGamePage->base_makeActive( true );
+                }
+            else if( autoUpdatePage->checkSignal( "relaunchFailed" ) ) {
+                currentGamePage = finalMessagePage;
+                        
+                finalMessagePage->setMessageKey( "manualRestartMessage" );
+                                
+                currentGamePage->base_makeActive( true );
                 }
             }
         else if( currentGamePage == accountCheckPage ) {

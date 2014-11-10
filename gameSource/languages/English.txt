@@ -12,6 +12,7 @@ serverShutdownMessage "THE SERVER HAS BEEN##SHUT DOWN FOR MAINTENANCE.##PLEASE T
 
 upgradeMessage "PLEASE DOWNLOAD##THE LATEST VERSION:"
 
+manualRestartMessage "PRESS [ESC] TO QUIT AND##RESTART GAME TO APPLY UPDATE"
 
 
 newAccount "NEW ACCOUNT"
@@ -176,6 +177,10 @@ leave "LEAVE"
 gone "GONE"
 
 
+
+
+downloadingUpdate "DOWNLOADING UPDATE"
+applyingUpdate "APPLYING UPDATE"
 
 
 

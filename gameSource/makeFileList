@@ -47,7 +47,7 @@ CreateGamePage.cpp \
 WaitGamePage.cpp \
 PlayGamePage.cpp \
 ExtendedMessagePage.cpp \
-
+AutoUpdatePage.cpp \
 
 
 
@@ -122,4 +122,5 @@ NEEDED_MINOR_GEMS_OBJECTS = \
  ${REVERB_SOUND_FILTER_O} \
  ${COEFFICIENT_FILTERS_O} \
  ${CURVE_25519_O} \
- ${CRYPTO_RANDOM_O}
+ ${CRYPTO_RANDOM_O} \
+ ${DIFF_BUNDLE_CLIENT_O} \
