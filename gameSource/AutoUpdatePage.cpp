@@ -52,6 +52,8 @@ void AutoUpdatePage::step() {
     int result = stepUpdate();
 
     if( result == -1 ) {
+        clearUpdate();
+        
         setSignal( "failed" );
         return;
         }
