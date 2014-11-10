@@ -8,22 +8,4 @@ fi
 
 ./makeSourceBundle $1
 
-sourceBundleDir="CordialMinuet_$1_UnixSource"
-
-cd $sourceBundleDir
-./runToBuild 1
-
-cd ..
-
-buildDir="CordialMinuet_$1"
-finalTarball="CordialMinuet_$1_Linux.tar.gz"
-
-rm -rf $buildDir $buildDir_Linux.tar.gz
-
-mkdir $buildDir
-
-cd $sourceBundleDir
-cp -r CORDIAL_MINUET graphics languages language.txt no_copyright.txt Readme.txt settings ../$buildDir
-
-cd ..
-tar czf $finalTarball $buildDir
+./makeLinuxBuildFromSourceBundle $1

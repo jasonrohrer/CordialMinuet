@@ -1,0 +1,36 @@
+#!/bin/sh
+
+if [ $# -lt 1 ] ; then
+   echo "Usage: $0 release_name"
+   exit 1
+fi
+
+
+
+sourceBundleDir="CordialMinuet_$1_UnixSource"
+
+sourceWorkingDir="CordialMinuet_$1_UnixSource_build"
+
+rm -rf $sourceWorkingDir
+
+cp -r $sourceBundleDir $sourceWorkingDir
+
+cd $sourceWorkingDir
+./runToBuild 1
+
+cd ..
+
+buildDir="CordialMinuet_$1"
+finalTarball="CordialMinuet_$1_Linux.tar.gz"
+
+rm -rf $buildDir $buildDir_Linux.tar.gz
+
+mkdir $buildDir
+
+cd $sourceWorkingDir
+cp -r CORDIAL_MINUET graphics languages language.txt no_copyright.txt Readme.txt settings ../$buildDir
+
+cd ..
+tar czf $finalTarball $buildDir
+
+rm -rf $sourceWorkingDir
