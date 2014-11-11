@@ -64,7 +64,11 @@ void AutoUpdatePage::step() {
         char relaunched = relaunchGame();
         
         if( !relaunched ) {
+            printf( "Relaunch failed\n" );
             setSignal( "relaunchFailed" );
+            }
+        else {
+            printf( "Relaunched... now what?\n" );
             }
         }
     
