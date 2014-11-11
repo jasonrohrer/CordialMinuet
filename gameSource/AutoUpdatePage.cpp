@@ -68,7 +68,8 @@ void AutoUpdatePage::step() {
             setSignal( "relaunchFailed" );
             }
         else {
-            printf( "Relaunched... now what?\n" );
+            printf( "Relaunched... but did not exit?\n" );
+            setSignal( "relaunchFailed" );
             }
         }
     
