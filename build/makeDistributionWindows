@@ -33,13 +33,13 @@ cp unix2dos windows
 cp unix2dosScript windows
 
 
-cd windows/CordialMinuet_$1
+cd windows
 
 d=`date`
 
-echo "$1 built on $d" > binary.txt
+echo "$1 built on $d" > CordialMinuet_$1/binary.txt
 
-for file in $( find . -name "*.txt" )
+for file in $( find ./CordialMinuet_$1 -name "*.txt" )
 do
 	../unix2dosScript "$file"
 done
@@ -47,7 +47,6 @@ done
 
 
 
-cd ..
 
 
 
