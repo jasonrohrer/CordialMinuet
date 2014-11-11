@@ -33,6 +33,13 @@ rm -r mac/CordialMinuet_$1/CORDIAL_MINUET.app/Contents/Frameworks/empty.txt
 cp -r $3 mac/CordialMinuet_$1/CORDIAL_MINUET.app/Contents/Frameworks/
 
 cd mac
+
+
+d=`date`
+
+echo "$1 built on $d" > CordialMinuet_$1/binary.txt
+
+
 tar cf "CordialMinuet_$1_$2.tar" CordialMinuet_$1
 gzip "CordialMinuet_$1_$2.tar"
 
