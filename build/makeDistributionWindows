@@ -14,12 +14,12 @@ if [ $# -lt 1 ] ; then
 fi
 
 
-rm -rf windows
+rm -rf windows/CordialMinuet_$1
 
 
 ./makeBaseDistributionFolder $1
 
-mv base windows
+mv base/* windows
 
 
 
@@ -47,7 +47,7 @@ done
 
 # build a batch file for making a windows SFX bundle
 
-echo "set version=$1" > makeWindowsExtractor.bat; cat ../makeWindowsExtractor_template >> makeWindowsExtractor.bat
+echo "set version=$1" > makeWindowsExtractor_$1.bat; cat ../makeWindowsExtractor_template >> makeWindowsExtractor_$1.bat
 
 
 

@@ -14,13 +14,13 @@ if [ $# -lt 3 ] ; then
 fi
 
 
-rm -rf mac
+rm -rf mac/CordialMinuet_$1
 
 
 ./makeBaseDistributionFolder $1
 
 
-mv base mac
+mv base/* mac
 
 
 cp -r macOSX/CORDIAL_MINUET.app mac/CordialMinuet_$1/CORDIAL_MINUET.app
