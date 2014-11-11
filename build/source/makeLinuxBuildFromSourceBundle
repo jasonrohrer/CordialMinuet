@@ -31,6 +31,13 @@ cd $sourceWorkingDir
 cp -r CORDIAL_MINUET graphics languages language.txt no_copyright.txt Readme.txt settings ../$buildDir
 
 cd ..
+
+
+d=`date`
+
+echo "$1 built on $d" > $buildDir/binary.txt
+
+
 tar czf $finalTarball $buildDir
 
 rm -rf $sourceWorkingDir
