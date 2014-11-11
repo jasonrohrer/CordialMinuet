@@ -41,7 +41,7 @@ void AutoUpdatePage::draw( doublePair inViewCenter,
     
     
     // progress
-    setDrawColor( .9, .9, .9, 0 );
+    setDrawColor( .8, .8, .8, 1 );
     drawRect( -98, -8, 
                -98 + progress * ( 98 * 2 ), 8 );
 
