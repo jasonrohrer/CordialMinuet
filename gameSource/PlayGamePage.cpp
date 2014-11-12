@@ -3321,6 +3321,12 @@ void PlayGamePage::pointerDown( float inX, float inY ) {
     else {
         mPickerUs.held = false;
         }
+
+    // never let both be held at same time
+    if( mPickerUs.held ) {
+        return;
+        }
+    
     if( mPickerThem.draw 
         && inX > mPickerThem.pos.x - 32
         && inX < mPickerThem.pos.x + 32
