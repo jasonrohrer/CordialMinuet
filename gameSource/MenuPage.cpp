@@ -467,6 +467,14 @@ void MenuPage::makeActive( char inFresh ) {
     
     clearListedGames();
     
+    if( userBalance < 0.01 ) {
+        mNewGameButton.setVisible( false );
+        }
+    else {
+        mNewGameButton.setVisible( true );
+        }
+    
+
     mResponseProcessed = false;
     startRequest();
     }
