@@ -6232,8 +6232,9 @@ function cm_showDataUserList() {
     
              
     $query = "SELECT user_id, account_key, email, ".
+        "total_deposits, total_withdrawals, ".
         "dollar_balance, last_action_time, ".
-        "blocked, ".
+        "blocked, games_started, ".
         "(dollar_balance + total_withdrawals) /  total_deposits ".
         " AS profit_ratio ".
         "FROM $usersTable ".
@@ -6290,8 +6291,12 @@ function cm_showDataUserList() {
     echo "<td>Blocked?</td>\n";
     echo "<td>".orderLink( "account_key", "Account Key" )."</td>\n";
     echo "<td>".orderLink( "email", "Email" )."</td>\n";
+    echo "<td>".orderLink( "total_deposits", "Deposits" )."</td>\n";
+    echo "<td>".orderLink( "total_withdrawals", "Withdrawals" )."</td>\n";
     echo "<td>".orderLink( "dollar_balance", "Balance" )."</td>\n";
     echo "<td>".orderLink( "profit_ratio", "Profit Ratio" )."</td>\n";
+    echo "<td>".orderLink( "games_started", "Games" )."</td>\n";
+    
     echo "<td>".orderLink( "last_action_time", "Action" )."</td>\n";
 
     echo "</tr>\n";
@@ -6301,8 +6306,11 @@ function cm_showDataUserList() {
         $user_id = mysql_result( $result, $i, "user_id" );
         $account_key = mysql_result( $result, $i, "account_key" );
         $email = mysql_result( $result, $i, "email" );
+        $total_deposits = mysql_result( $result, $i, "total_deposits" );
+        $total_withdrawals = mysql_result( $result, $i, "total_withdrawals" );
         $dollar_balance = mysql_result( $result, $i, "dollar_balance" );
         $profit_ratio = mysql_result( $result, $i, "profit_ratio" );
+        $games_started = mysql_result( $result, $i, "games_started" );
         $last_action_time = mysql_result( $result, $i, "last_action_time" );
         $blocked = mysql_result( $result, $i, "blocked" );
         
@@ -6333,10 +6341,15 @@ function cm_showDataUserList() {
         echo "<td>$account_key</td>\n";
         echo "<td>$email</td>\n";
 
+        $depositsString = cm_formatBalanceForDisplay( $total_deposits );
+        $withdrawalsString = cm_formatBalanceForDisplay( $total_withdrawals );
         $balanceString = cm_formatBalanceForDisplay( $dollar_balance );
         
+        echo "<td>$depositsString</td>\n";
+        echo "<td>$withdrawalsString</td>\n";
         echo "<td>$balanceString</td>\n";
         echo "<td>$profit_ratio</td>\n";
+        echo "<td>$games_started</td>\n";
         echo "<td>$last_action_time</td>\n";
         echo "</tr>\n";
         }
