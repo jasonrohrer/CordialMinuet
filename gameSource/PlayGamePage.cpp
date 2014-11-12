@@ -2471,6 +2471,7 @@ void PlayGamePage::step() {
                         mPickerUs.draw = true;
                         mPickerUs.pos.x = mColumnPositions[0].x - 27;
                         mPickerUs.targetColumn = -1;
+                        mPickerUs.lastPlayerDropColumn = -1;
                         mPickerUs.hardScoreUpdate = true;
                         mPickerUs.draggedInYet = false;
                         mPickerUs.held = false;
@@ -2480,6 +2481,7 @@ void PlayGamePage::step() {
                         mPickerThem.draw = true;
                         mPickerThem.pos.x = mColumnPositions[5].x + 27;
                         mPickerThem.targetColumn = -1;
+                        mPickerThem.lastPlayerDropColumn = -1;
                         mPickerThem.hardScoreUpdate = true;
                         mPickerThem.draggedInYet = false;
                         mPickerThem.held = false;
@@ -2518,6 +2520,7 @@ void PlayGamePage::step() {
                 mPickerUs.draw = true;
                 mPickerUs.pos.x = mColumnPositions[0].x - 27;
                 mPickerUs.targetColumn = -1;
+                mPickerUs.lastPlayerDropColumn = -1;
                 mPickerUs.hardScoreUpdate = true;
                 mPickerUs.draggedInYet = false;
                 mPickerUs.held = false;
@@ -3245,6 +3248,12 @@ void PlayGamePage::pickerReactToMouseMove( ColumnPicker *inPicker,
                     }
                 }    
             }
+        else if( inOtherPicker->draw &&
+                 closestColumn != inOtherPicker->lastPlayerDropColumn ) {
+            // other picker can go back to where player last dropped it,
+            // because it's clear now
+            inOtherPicker->targetColumn = inOtherPicker->lastPlayerDropColumn;
+            }
         }
     else if( inPicker->draw && ! inOtherPicker->held
         && inX > inPicker->pos.x - 32
@@ -3350,11 +3359,22 @@ void PlayGamePage::pointerUp( float inX, float inY ) {
         if( mPickerUs.held ) {
             mPickerUs.draggedInYet = true;
             mPickerUs.mouseOver = false;
+            mPickerUs.lastPlayerDropColumn = mPickerUs.targetColumn;
             }
         if( mPickerThem.held ) {
             mPickerThem.draggedInYet = true;
             mPickerThem.mouseOver = false;
+            mPickerThem.lastPlayerDropColumn = mPickerThem.targetColumn;
             }
+
+
+        // both pickers remember where they are now, because player
+        // just dropped (player only dropped one, but a drop of either
+        // sets both, so that the un-touched one doesn't jump unexpectedly 
+        // later
+        mPickerUs.lastPlayerDropColumn = mPickerUs.targetColumn;
+        mPickerThem.lastPlayerDropColumn = mPickerThem.targetColumn;
+        
 
         if( mPickerUs.draggedInYet && mPickerThem.draggedInYet ) {
             

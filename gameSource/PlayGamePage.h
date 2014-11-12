@@ -104,6 +104,14 @@ typedef struct WatercolorStroke {
 typedef struct ColumnPicker {
         doublePair pos;
         int targetColumn;
+        
+        // tracks where player last put this picker
+        // targetColumn may change as picker gets out of way of other
+        // picker, but it will return to lastPlayerDropColumn whenever
+        // it can, until the player moves it
+        int lastPlayerDropColumn;
+        
+
         // has a non-cached possible-score update been 
         // done for this target column?
         char hardScoreUpdate;
