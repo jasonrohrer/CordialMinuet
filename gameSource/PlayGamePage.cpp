@@ -1351,37 +1351,6 @@ void PlayGamePage::draw( doublePair inViewCenter,
         }
 
 
-    for( int f=0; f<2; f++ ) {
-        if( mFlyingCoins[f].size() > 0 ) {
-            
-
-            for( int c=0; c < mFlyingCoins[f].size(); c++ ) {
-                
-                PendingFlyingCoin *coin = mFlyingCoins[f].getElement( c );
-                
-                if( coin->progress > 0 && coin->start != NULL ) {
-                    
-                    float easedProgress = 
-                        sin( coin->progress * M_PI / 2 );
-                    
-                    doublePair pos = 
-                        add( mult( coin->dest->position, 
-                                   easedProgress ),
-                             mult( coin->start->position, 
-                                   1 - easedProgress ) );
-            
-                    setDrawColor( 1, 1, 1, 1 );
-                    
-                    if( coin->value == 1 ) {
-                        drawSprite( mCoinSprite, pos );
-                        }
-                    else {
-                        drawSprite( mCoinTenSprite, pos );
-                        }
-                    }
-                }
-            }
-        }
     
     
 
@@ -1597,6 +1566,42 @@ void PlayGamePage::draw( doublePair inViewCenter,
             }
         }
     
+
+
+
+    for( int f=0; f<2; f++ ) {
+        if( mFlyingCoins[f].size() > 0 ) {
+            
+
+            for( int c=0; c < mFlyingCoins[f].size(); c++ ) {
+                
+                PendingFlyingCoin *coin = mFlyingCoins[f].getElement( c );
+                
+                if( coin->progress > 0 && coin->start != NULL ) {
+                    
+                    float easedProgress = 
+                        sin( coin->progress * M_PI / 2 );
+                    
+                    doublePair pos = 
+                        add( mult( coin->dest->position, 
+                                   easedProgress ),
+                             mult( coin->start->position, 
+                                   1 - easedProgress ) );
+            
+                    setDrawColor( 1, 1, 1, 1 );
+                    
+                    if( coin->value == 1 ) {
+                        drawSprite( mCoinSprite, pos );
+                        }
+                    else {
+                        drawSprite( mCoinTenSprite, pos );
+                        }
+                    }
+                }
+            }
+        }
+
+
         
     }
 
