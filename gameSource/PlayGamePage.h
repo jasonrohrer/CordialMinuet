@@ -76,6 +76,9 @@ typedef struct PendingFlyingCoin {
         float progress;
         
         int value;
+
+        // an incremented ID unique to each coin
+        int id;
         
     } PendingFlyingCoin;
 
@@ -96,6 +99,13 @@ typedef struct WatercolorStroke {
         // to lighten or darken overall
         float globalFade;
 
+
+        // ID of last coin that was pending when this stroke was added
+        // this stroke will wait for it to finish flying before
+        // drawing
+        // can be -1
+        int waitingForCoinIDToFinish;
+        
     } WatercolorStroke;
 
 

@@ -39,6 +39,9 @@ static double cellCenterStart = ( ( cellSize + borderWidth ) * 5 ) / 2;
 static int cellXOffset = cellSize + borderWidth;
 
 
+static int nextCoinID = 0;
+
+
 static void setUsColor() {
     setDrawColor( .51, 0.682, .122, 1 );
     }
@@ -507,6 +510,10 @@ void PlayGamePage::makeActive( char inFresh ) {
     // clear flashing
     setButtonStyle( &mCommitButton );
 
+    mCommitFlashPreSteps = 0;
+    mCommitFlashProgress = 1.0;
+    mCommitFlashDirection = -1;
+
     mBetButton.setVisible( false );
     mFoldButton.setVisible( false );
     
@@ -852,7 +859,8 @@ void PlayGamePage::actionPerformed( GUIComponent *inTarget ) {
                     { &( mPlayerCoinSpots[0] ),
                       &( mPotCoinSpots[0] ),
                       0,
-                      coinValue };
+                      coinValue,
+                      nextCoinID++ };
                 mFlyingCoins[0].push_back( coin );
                 }
             }
@@ -1435,6 +1443,15 @@ void PlayGamePage::draw( doublePair inViewCenter,
             // at a time
             
             WatercolorStroke *stroke = mWatercolorStrokes.getElement( i );
+
+
+            if( stroke->waitingForCoinIDToFinish != -1 ) {
+                // still waiting for our preceeding coin to land
+                // before we increment our draw progress
+                // don't draw any further strokes either.
+                break;
+                }
+
             float globalFade = stroke->globalFade;
             
             if( stroke->leftEnd == 0 && stroke->rightEnd == 0 ) {
@@ -1684,7 +1701,9 @@ void PlayGamePage::step() {
         WatercolorStroke *lastStroke = 
             mWatercolorStrokes.getElement( mWatercolorStrokes.size() - 1 );
         
-        if( lastStroke->rightEnd > 0 ) {
+        if( lastStroke->rightEnd > 0 && 
+            lastStroke->waitingForCoinIDToFinish == -1 ) {
+
             anyStrokesStillAdding = true;
             }
         }
@@ -1802,7 +1821,22 @@ void PlayGamePage::step() {
                         
                         *( coin->dest->coinCount ) += coin->value;
                         }
-                
+                    
+                    // look for any strokes that are waiting for this
+                    // coin to land
+                    for( int s=0; s < mWatercolorStrokes.size(); s++ ) {
+                        WatercolorStroke *stroke = 
+                            mWatercolorStrokes.getElement( s );
+                    
+                        if( stroke->waitingForCoinIDToFinish ==
+                            coin->id ) {
+                            
+                            // this stroke can start drawing now
+                            stroke->waitingForCoinIDToFinish = -1;
+                            }
+                        }
+                    
+
                     mFlyingCoins[f].deleteElement( c );
                     }
                 }
@@ -2010,7 +2044,8 @@ void PlayGamePage::step() {
                         { &( mPlayerCoinSpots[p] ),
                           &( mPotCoinSpots[p] ),
                           0,
-                          coinValue };
+                          coinValue,
+                          nextCoinID++ };
                     mFlyingCoins[p].push_back( coin );
                     }
                 }            
@@ -2043,7 +2078,8 @@ void PlayGamePage::step() {
                             { &( mPlayerCoinSpots[p] ),
                               &( mPotCoinSpots[p] ),
                               0,
-                              coinValue };
+                              coinValue,
+                              nextCoinID++ };
                         mFlyingCoins[p].push_back( coin );
                         }
                     }
@@ -2163,7 +2199,8 @@ void PlayGamePage::step() {
                             { &( mPlayerCoinSpots[loser] ),
                               &( mPotCoinSpots[loser] ),
                               0,
-                              coinValue };
+                              coinValue,
+                              nextCoinID++ };
                         flyingQueue->push_back( coin );
                         }
                     
@@ -2209,7 +2246,8 @@ void PlayGamePage::step() {
                         { &( mPotCoinSpots[winner] ),
                           winnerCoinSpot,
                           0,
-                          coinValue };
+                          coinValue,
+                          nextCoinID++ };
                     flyingQueue->push_back( coin );
                     }
                 
@@ -2234,7 +2272,8 @@ void PlayGamePage::step() {
                         { &( mPotCoinSpots[loser] ),
                           winnerCoinSpot,
                           0,
-                          coinValue };
+                          coinValue,
+                          nextCoinID++ };
                     flyingQueue->push_back( coin );
                     }
 
@@ -2253,7 +2292,8 @@ void PlayGamePage::step() {
                         { &( mPotCoinSpots[loser] ),
                           &( mHouseCoinSpot ),
                           0,
-                          coinValue };
+                          coinValue,
+                          nextCoinID++ };
                     flyingQueue->push_back( coin );
                     }
                 
@@ -3500,6 +3540,21 @@ int PlayGamePage::getNetPotCoins( int inPlayerNumber ) {
 void PlayGamePage::addColumnStroke( int inColumn, SpriteHandle inSprite[6],
                                     char inSpeedUpStart, float inGlobalFade ) {
     
+    int lastFlyingCoinID = -1;
+    
+    for( int f=0; f<2; f++ ) {
+        if( mFlyingCoins[f].size() > 0 ) {
+            PendingFlyingCoin *coin = 
+                mFlyingCoins[f].getElement( mFlyingCoins[f].size() - 1 );
+            
+            if( coin->id > lastFlyingCoinID ) {
+                lastFlyingCoinID = coin->id;
+                }
+            }
+        }
+    
+        
+
     doublePair subPos = mColumnPositions[inColumn];
     subPos.y += 64 + 64 + 32;
     
@@ -3524,7 +3579,8 @@ void PlayGamePage::addColumnStroke( int inColumn, SpriteHandle inSprite[6],
 
         WatercolorStroke stroke = { subPos,
                                     inSprite[i], true, leftEnd, rightEnd,
-                                    inGlobalFade };
+                                    inGlobalFade,
+                                    lastFlyingCoinID };
     
         mWatercolorStrokes.push_back( stroke );
         
@@ -3536,6 +3592,21 @@ void PlayGamePage::addColumnStroke( int inColumn, SpriteHandle inSprite[6],
 
 void PlayGamePage::addRowStroke( int inRow, SpriteHandle inSprite[6],
                                  char inSpeedUpStart, float inGlobalFade ) {
+    
+    int lastFlyingCoinID = -1;
+    
+    for( int f=0; f<2; f++ ) {
+        if( mFlyingCoins[f].size() > 0 ) {
+            PendingFlyingCoin *coin = 
+                mFlyingCoins[f].getElement( mFlyingCoins[f].size() - 1 );
+            
+            if( coin->id > lastFlyingCoinID ) {
+                lastFlyingCoinID = coin->id;
+                }
+            }
+        }
+
+
     doublePair subPos = mRowPositions[inRow];
     subPos.x -= 64 + 64 + 32;
 
@@ -3559,7 +3630,8 @@ void PlayGamePage::addRowStroke( int inRow, SpriteHandle inSprite[6],
 
         WatercolorStroke stroke = { subPos,
                                     inSprite[i], false, leftEnd, rightEnd,
-                                    inGlobalFade };
+                                    inGlobalFade,
+                                    lastFlyingCoinID };
         
         mWatercolorStrokes.push_back( stroke );
         
