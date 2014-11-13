@@ -266,6 +266,8 @@ PlayGamePage::PlayGamePage()
           mParchmentSprite( loadSprite( "parchment.tga", true ) ),
           mInkGridSprite( loadSprite( "inkGrid.tga", false ) ),
           mColumnPickerSprite( loadWhiteSprite( "columnPicker.tga" ) ),
+          mColumnHeaderSprite( loadSprite( "ilMondo.tga", false ) ),
+          mRowHeaderSprite( loadSprite( "labisso.tga", false ) ),
           mRoundEnding( false ), 
           mRoundEndTime( 0 ),
           mRoundStarting( false ),
@@ -441,6 +443,9 @@ PlayGamePage::~PlayGamePage() {
 
     freeSprite( mParchmentSprite );
     freeSprite( mInkGridSprite );
+
+    freeSprite( mColumnHeaderSprite );
+    freeSprite( mRowHeaderSprite );
 
     for( int i=0; i<36; i++ ) {
         freeSprite( mInkNumberSprites[i] );
@@ -1415,6 +1420,17 @@ void PlayGamePage::draw( doublePair inViewCenter,
             }
         
 
+        doublePair headerPos = mInkGridCenter;
+        headerPos.y += 220;
+        
+        drawSprite( mColumnHeaderSprite, headerPos );
+        
+        headerPos = mInkGridCenter;
+        headerPos.x -= 220;
+
+        drawSprite( mRowHeaderSprite, headerPos );
+
+        
         setDrawColor( 1, 1, 1, 1 );
 
         for( int i=0; i<mWatercolorStrokes.size(); i++ ) {

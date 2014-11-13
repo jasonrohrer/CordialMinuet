@@ -286,6 +286,10 @@ class PlayGamePage : public ServerActionPage, public ActionListener {
         
         SpriteHandle mColumnPickerSprite;
         
+        SpriteHandle mColumnHeaderSprite;
+        SpriteHandle mRowHeaderSprite;
+        
+
 
         ColumnPicker mPickerUs, mPickerThem;
 
