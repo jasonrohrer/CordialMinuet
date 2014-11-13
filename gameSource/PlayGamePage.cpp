@@ -268,6 +268,7 @@ PlayGamePage::PlayGamePage()
           mColumnPickerSprite( loadWhiteSprite( "columnPicker.tga" ) ),
           mColumnHeaderSprite( loadSprite( "ilMondo.tga", false ) ),
           mRowHeaderSprite( loadSprite( "labisso.tga", false ) ),
+          mSigilSprite( loadSprite( "minosons.tga", false ) ),
           mRoundEnding( false ), 
           mRoundEndTime( 0 ),
           mRoundStarting( false ),
@@ -446,6 +447,7 @@ PlayGamePage::~PlayGamePage() {
 
     freeSprite( mColumnHeaderSprite );
     freeSprite( mRowHeaderSprite );
+    freeSprite( mSigilSprite );
 
     for( int i=0; i<36; i++ ) {
         freeSprite( mInkNumberSprites[i] );
@@ -1429,6 +1431,13 @@ void PlayGamePage::draw( doublePair inViewCenter,
         headerPos.x -= 220;
 
         drawSprite( mRowHeaderSprite, headerPos );
+
+        headerPos = mInkGridCenter;
+        headerPos.x -= 200;
+        headerPos.y += 206;
+        
+        drawSprite( mSigilSprite, headerPos );
+        
 
         
         setDrawColor( 1, 1, 1, 1 );
