@@ -269,6 +269,10 @@ PlayGamePage::PlayGamePage()
           mColumnHeaderSprite( loadSprite( "ilMondo.tga", false ) ),
           mRowHeaderSprite( loadSprite( "labisso.tga", false ) ),
           mSigilSprite( loadSprite( "minosons.tga", false ) ),
+          mGreenWatercolorHeaderSprite( 
+              loadSprite( "greenWatercolorHeader.tga", false ) ),
+          mRedWatercolorHeaderSprite( 
+              loadSprite( "redWatercolorHeader.tga", false ) ),
           mRoundEnding( false ), 
           mRoundEndTime( 0 ),
           mRoundStarting( false ),
@@ -448,6 +452,9 @@ PlayGamePage::~PlayGamePage() {
     freeSprite( mColumnHeaderSprite );
     freeSprite( mRowHeaderSprite );
     freeSprite( mSigilSprite );
+
+    freeSprite( mGreenWatercolorHeaderSprite );
+    freeSprite( mRedWatercolorHeaderSprite );
 
     for( int i=0; i<36; i++ ) {
         freeSprite( mInkNumberSprites[i] );
@@ -1422,25 +1429,36 @@ void PlayGamePage::draw( doublePair inViewCenter,
             }
         
 
+        doublePair columnHeaderPos = mInkGridCenter;
+        columnHeaderPos.y += 220;
+        
+        drawSprite( mColumnHeaderSprite, columnHeaderPos );
+        
+        doublePair rowHeaderPos = mInkGridCenter;
+        rowHeaderPos.x -= 220;
+
+        drawSprite( mRowHeaderSprite, rowHeaderPos );
+
         doublePair headerPos = mInkGridCenter;
-        headerPos.y += 220;
-        
-        drawSprite( mColumnHeaderSprite, headerPos );
-        
-        headerPos = mInkGridCenter;
-        headerPos.x -= 220;
-
-        drawSprite( mRowHeaderSprite, headerPos );
-
-        headerPos = mInkGridCenter;
         headerPos.x -= 200;
         headerPos.y += 206;
         
         drawSprite( mSigilSprite, headerPos );
         
 
+        setDrawColor( 0, 0, 0, 1 );
+                
+        columnHeaderPos.y += 9;
+        columnHeaderPos.x += 5;
+        drawSprite( mGreenWatercolorHeaderSprite, columnHeaderPos );
+        
+        rowHeaderPos.x -= 9;
+        rowHeaderPos.y += 3;
+        drawSprite( mRedWatercolorHeaderSprite, rowHeaderPos );
+        
         
         setDrawColor( 1, 1, 1, 1 );
+
 
         for( int i=0; i<mWatercolorStrokes.size(); i++ ) {
             // draw strokes until we find one that is still

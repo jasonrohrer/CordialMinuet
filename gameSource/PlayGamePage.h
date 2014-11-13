@@ -291,6 +291,9 @@ class PlayGamePage : public ServerActionPage, public ActionListener {
         
         SpriteHandle mSigilSprite;
         
+        SpriteHandle mGreenWatercolorHeaderSprite;
+        SpriteHandle mRedWatercolorHeaderSprite;
+        
 
 
         ColumnPicker mPickerUs, mPickerThem;
