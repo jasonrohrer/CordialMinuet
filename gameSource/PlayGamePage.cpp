@@ -500,6 +500,9 @@ void PlayGamePage::makeActive( char inFresh ) {
         }
 
 
+    mMoveDeadline = 0;
+    
+
     mScorePipToLabel = -1;
     mScorePipLabelFade = 0;
     mScorePipLabelFadeDelta = -1;
@@ -1231,6 +1234,10 @@ void PlayGamePage::draw( doublePair inViewCenter,
             if( secondsLeft < 11 ) {
                 doublePair pos = { 0, 300 };
                 
+                if( !mChimePlayed ) {
+                    playChime();
+                    mChimePlayed = true;
+                    }
                 
                 if( secondsLeft > 5 ) {
                     if( mMoveDeadlineFade < 1 ) {
@@ -1931,6 +1938,9 @@ void PlayGamePage::step() {
         mMessageState = waitingMove;
         mMoveDeadline = 0;
         
+        mWaitingStartTime = game_time( NULL );
+        mChimePlayed = false;
+        
         startRequest();
         }
     else if( mMessageState == sendingBet ) {
@@ -1946,7 +1956,10 @@ void PlayGamePage::step() {
 
         mMessageState = waitingBet;
         mMoveDeadline = 0;
-
+        
+        mWaitingStartTime = game_time( NULL );
+        mChimePlayed = false;
+        
         startRequest();
         }
     else if( mMessageState == sendingFold ) {
@@ -1976,6 +1989,9 @@ void PlayGamePage::step() {
         mMessageState = waitingEnd;
         mMoveDeadline = 0;
 
+        mWaitingStartTime = game_time( NULL );
+        mChimePlayed = false;
+
         startRequest();
         }
     else if( mMessageState == sendingStartNext ) {
@@ -1991,6 +2007,9 @@ void PlayGamePage::step() {
 
         mMessageState = waitingStartNext;
         mMoveDeadline = 0;
+        
+        mWaitingStartTime = game_time( NULL );
+        mChimePlayed = false;
 
         startRequest();
         }
@@ -2313,10 +2332,22 @@ void PlayGamePage::step() {
         if( mMessageState != gettingStateAtEnd &&
             mRunning && secondsLeft >= 0 ) {
             mMoveDeadline = game_time( NULL ) + secondsLeft;
+
+            int secondsWaiting = game_time( NULL ) - mWaitingStartTime;
+            
+            if( secondsWaiting > 10 ) {
+                playChime();
+                }
+            
+            mChimePlayed = false;
+        
             }
         else {
             // no deadline
             mMoveDeadline = 0;
+            
+            mWaitingStartTime = game_time( NULL );
+            mChimePlayed = false;
             }
 
         char *gameBoardString = getResponse( "boardLayout" );

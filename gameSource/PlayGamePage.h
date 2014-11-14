@@ -206,6 +206,15 @@ class PlayGamePage : public ServerActionPage, public ActionListener {
         float mMoveDeadlineFade;
         float mMoveDeadlineFadeDelta;
 
+        // time how long we've been waiting for opponent's move
+        // (only chime when we finally receive move if we've been waiting
+        // for a while)
+        time_t mWaitingStartTime;
+        
+        // track whether time running out chime has played yet
+        char mChimePlayed;
+        
+
 
         TextButton mCommitButton;
         TextButton mBetButton;
