@@ -6,6 +6,7 @@
 
 #include "serialWebRequests.h"
 
+#include "chime.h"
 
 
 #include "minorGems/game/Font.h"
@@ -574,6 +575,8 @@ void PlayGamePage::makeActive( char inFresh ) {
     mMessageState = gettingState;
     
     startRequest();
+    
+    playChime();
     }
 
 

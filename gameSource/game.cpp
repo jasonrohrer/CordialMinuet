@@ -74,6 +74,8 @@ CustomRandomSource randSource( 34957197 );
 #include "serialWebRequests.h"
 #include "TextField.h"
 
+#include "chime.h"
+
 
 
 
@@ -224,6 +226,8 @@ double transferCost = 0;
 
 int playerIsAdmin = 0;
 
+
+int moveWaitingSoundSprite = -1;
 
 
 static char wasPaused = false;
@@ -552,6 +556,9 @@ void initFrameDrawer( int inWidth, int inHeight, int inTargetFrameRate,
     currentGamePage->base_makeActive( true );
 
 
+    moveWaitingSoundSprite = loadSoundSprite( "chime.aiff" );
+
+    setSoundPlaying( true );
 
     initDone = true;
     }
@@ -613,6 +620,8 @@ void freeFrameDrawer() {
         delete [] userEmail;
         userEmail = NULL;
         }
+
+    freeSoundSprite( moveWaitingSoundSprite );
     }
 
 
@@ -1694,7 +1703,7 @@ void specialKeyUp( int inKey ) {
 
 
 char getUsesSound() {
-    return false;
+    return true;
     }
 
 
@@ -1763,3 +1772,8 @@ void getSoundSamples( Uint8 *inBuffer, int inLengthToFillInBytes ) {
     }
 
 
+
+
+void playChime() {
+    playSoundSprite( moveWaitingSoundSprite );
+    }
