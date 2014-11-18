@@ -1653,10 +1653,12 @@ function cm_formatBalanceForDisplay( $inDollars ) {
 
 
 function cm_getDepositFees() {
-    global $stripeFlatFee, $stripePercentage;
+    global $stripeFlatFee, $stripePercentage, $minDeposit, $maxDeposit;
 
     echo "$stripeFlatFee\n";
     echo "$stripePercentage\n";
+    echo "$minDeposit\n";
+    echo "$maxDeposit\n";
     echo "OK";
     }
 
@@ -1857,14 +1859,15 @@ function cm_makeDeposit() {
     $dollar_amount = cm_requestFilter(
         "dollar_amount", "/[0-9]+[.][0-9][0-9]/i", "0.00" );
 
-    global $minDeposit;
-    if( $dollar_amount < $minDeposit ) {
+    global $minDeposit, $maxDeposit;
+    if( $dollar_amount < $minDeposit || $dollar_amount > $maxDeposit ) {
         echo "DENIED";
         cm_queryDatabase( "COMMIT;" );
         cm_queryDatabase( "SET AUTOCOMMIT=1" );
         
         cm_log( "deposit for $email DENIED, ".
-                "bad dollar amount below $minDeposit, $dollar_amount" );
+                "bad dollar amount not in range [$minDeposit, $maxDeposit], ".
+                "$dollar_amount" );
         return;
         }
     

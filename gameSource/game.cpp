@@ -217,6 +217,9 @@ int serverSequenceNumber = 0;
 
 double depositFlatFee = 0;
 double depositPercentage = 0;
+double minDeposit = 2.00;
+double maxDeposit = 999999.99;
+
 
 double userBalance = 0;
 double checkCostUS = 0;
@@ -508,11 +511,13 @@ void initFrameDrawer( int inWidth, int inHeight, int inTargetFrameRate,
     accountCheckPage = new AccountCheckPage();
     
     
-    const char *resultNamesD[2] = { "flatFee",
-                                    "percentage" };
+    const char *resultNamesD[4] = { "flatFee",
+                                    "percentage",
+                                    "minDeposit",
+                                    "maxDeposit" };
     
     getDepositFeesPage = new ServerActionPage( "get_deposit_fees", 
-                                               2, resultNamesD, false );
+                                               4, resultNamesD, false );
 
 
     depositPage = new DepositPage();
@@ -1202,6 +1207,10 @@ void drawFrame( char inUpdate ) {
                     getDepositFeesPage->getResponseDouble( "flatFee" );
                 depositPercentage = 
                     getDepositFeesPage->getResponseDouble( "percentage" );
+                minDeposit = 
+                    getDepositFeesPage->getResponseDouble( "minDeposit" );
+                maxDeposit = 
+                    getDepositFeesPage->getResponseDouble( "maxDeposit" );
                 
                 currentGamePage = depositPage;
                 currentGamePage->base_makeActive( true );

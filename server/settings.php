@@ -303,6 +303,7 @@ $shutdownMessage =
 
 
 $minDeposit = "2.00";
+$maxDeposit = "999999.99";
 
 
 

@@ -35,6 +35,8 @@ extern char gamePlayingBack;
 
 extern double depositFlatFee;
 extern double depositPercentage;
+extern double minDeposit;
+extern double maxDeposit;
 
 
 
@@ -136,7 +138,8 @@ DepositPage::DepositPage()
     
     mAmountPicker.addActionListener( this );
     
-    mAmountPicker.setMin( 2 );
+    mAmountPicker.setMin( minDeposit );
+    mAmountPicker.setMax( maxDeposit );
     mAmountPicker.setValue( 5.00 );
 
 
@@ -393,7 +396,14 @@ void DepositPage::makeActive( char inFresh ) {
         mEmailField.setText( userEmail );
         mEmailField.cursorReset();
         }
+    
+    // truncate existing set value with any new limits
+    double oldValue = mAmountPicker.getValue();
 
+    mAmountPicker.setMin( minDeposit );
+    mAmountPicker.setMax( maxDeposit );
+
+    mAmountPicker.setValue( oldValue );
     
     recomputeFee();
     
