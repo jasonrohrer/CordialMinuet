@@ -228,6 +228,7 @@ int playerIsAdmin = 0;
 
 
 int moveWaitingSoundSprite = -1;
+int chipSoundSprites[4] = { -1, -1, -1, -1 };
 
 
 static char wasPaused = false;
@@ -557,6 +558,11 @@ void initFrameDrawer( int inWidth, int inHeight, int inTargetFrameRate,
 
 
     moveWaitingSoundSprite = loadSoundSprite( "chime.aiff" );
+    
+    chipSoundSprites[0] = loadSoundSprite( "chipSmall.aiff" );
+    chipSoundSprites[1] = loadSoundSprite( "chipBig.aiff" );
+    chipSoundSprites[2] = loadSoundSprite( "chipSmallRake.aiff" );
+    chipSoundSprites[3] = loadSoundSprite( "chipBigRake.aiff" );
 
     setSoundPlaying( true );
 
@@ -622,6 +628,10 @@ void freeFrameDrawer() {
         }
 
     freeSoundSprite( moveWaitingSoundSprite );
+
+    for( int i=0; i<4; i++ ) {
+        freeSoundSprite( chipSoundSprites[i] );
+        }
     }
 
 
@@ -1776,4 +1786,8 @@ void getSoundSamples( Uint8 *inBuffer, int inLengthToFillInBytes ) {
 
 void playChime() {
     playSoundSprite( moveWaitingSoundSprite );
+    }
+
+void playChipSound( int inSound ) {
+    playSoundSprite( chipSoundSprites[inSound] );
     }

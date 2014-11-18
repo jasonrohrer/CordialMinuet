@@ -579,6 +579,8 @@ void PlayGamePage::makeActive( char inFresh ) {
     
     startRequest();
     
+    mWaitingStartTime = game_time( NULL );
+
     playChime();
     }
 
@@ -866,7 +868,8 @@ void PlayGamePage::actionPerformed( GUIComponent *inTarget ) {
                       &( mPotCoinSpots[0] ),
                       0,
                       coinValue,
-                      nextCoinID++ };
+                      nextCoinID++,
+                      false };
                 mFlyingCoins[0].push_back( coin );
                 }
             }
@@ -1812,6 +1815,50 @@ void PlayGamePage::step() {
                     
                         // constant speed, regardless of how far we are moving
                         coin->progress += frameRateFactor * 5.0 / dist;
+
+                        if( ( ( coin->value == 1 && coin->progress >= .95 )
+                              ||
+                              // big coin sound takes longer to reach peak
+                              ( coin->progress >= .85 ) )
+                            &&
+                            ! coin->soundPlayed ) {
+                            // coin almost done, start sound
+
+                            
+                            if( coin->value == 1 ) {
+                                if( coin->dest->coinCount != NULL ) {
+                                    playChipSound( 0 );
+                                    }
+                                else {
+                                    // rake
+                                    playChipSound( 2 );
+                                    }
+                                }
+                            else {
+                                // big coin
+                                if( coin->dest->coinCount != NULL ) {
+                                    playChipSound( 1 );
+                                    }
+                                else {
+                                    // rake
+                                    playChipSound( 2 );
+                                    }
+                                }
+                            coin->soundPlayed = true;
+
+                            // mute any coin that is flying in parallel
+                            int parallelQueue = 0;
+                            if( f == 0 ) {
+                                parallelQueue = 1;
+                                }
+                            if( mFlyingCoins[parallelQueue].size() > c ) {
+                                PendingFlyingCoin *parallelCoin = 
+                                    mFlyingCoins[parallelQueue].
+                                    getElement( c );
+                                
+                                parallelCoin->soundPlayed = true;
+                                }
+                            }
                         }
                     else {
                         // no start or dest, this is a pause that runs
@@ -2067,7 +2114,8 @@ void PlayGamePage::step() {
                           &( mPotCoinSpots[p] ),
                           0,
                           coinValue,
-                          nextCoinID++ };
+                          nextCoinID++,
+                          false };
                     mFlyingCoins[p].push_back( coin );
                     }
                 }            
@@ -2101,7 +2149,8 @@ void PlayGamePage::step() {
                               &( mPotCoinSpots[p] ),
                               0,
                               coinValue,
-                              nextCoinID++ };
+                              nextCoinID++,
+                              false };
                         mFlyingCoins[p].push_back( coin );
                         }
                     }
@@ -2222,7 +2271,8 @@ void PlayGamePage::step() {
                               &( mPotCoinSpots[loser] ),
                               0,
                               coinValue,
-                              nextCoinID++ };
+                              nextCoinID++,
+                              false };
                         flyingQueue->push_back( coin );
                         }
                     
@@ -2269,7 +2319,8 @@ void PlayGamePage::step() {
                           winnerCoinSpot,
                           0,
                           coinValue,
-                          nextCoinID++ };
+                          nextCoinID++,
+                          false };
                     flyingQueue->push_back( coin );
                     }
                 
@@ -2295,7 +2346,8 @@ void PlayGamePage::step() {
                           winnerCoinSpot,
                           0,
                           coinValue,
-                          nextCoinID++ };
+                          nextCoinID++,
+                          false };
                     flyingQueue->push_back( coin );
                     }
 
@@ -2315,7 +2367,8 @@ void PlayGamePage::step() {
                           &( mHouseCoinSpot ),
                           0,
                           coinValue,
-                          nextCoinID++ };
+                          nextCoinID++,
+                          false };
                     flyingQueue->push_back( coin );
                     }
                 
@@ -2335,7 +2388,13 @@ void PlayGamePage::step() {
 
             int secondsWaiting = game_time( NULL ) - mWaitingStartTime;
             
-            if( secondsWaiting > 10 ) {
+            if( secondsWaiting > 10 &&
+                mFlyingCoins[0].size() == 0 &&
+                mFlyingCoins[1].size() == 0 ) {
+                
+                // don't play chime if there's already sound
+                // that will come from opponent's flying coins
+                
                 playChime();
                 }
             

@@ -79,6 +79,8 @@ typedef struct PendingFlyingCoin {
 
         // an incremented ID unique to each coin
         int id;
+
+        char soundPlayed;
         
     } PendingFlyingCoin;
 
