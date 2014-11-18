@@ -112,6 +112,10 @@ transferNote "WORLDWIDE RESIDENTS:##(%s)"
 transferBalanceLow "(BALANCE TOO LOW FOR TRANSFER)" 
 
 
+noWithdrawMethods "WITHDRAWAL IS DISABLED"
+
+
+
 withdrawMoney "WITHDRAW $"
 
 name "NAME"

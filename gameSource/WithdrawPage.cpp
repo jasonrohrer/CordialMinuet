@@ -213,22 +213,32 @@ static void drawButtonNote( Button *inButton, const char *inNoteKey,
 void WithdrawPage::draw( doublePair inViewCenter, 
                              double inViewSize ) {
 
-
+    char any = false;
+    
     if( mUSCheckAvailable ) {
         drawButtonNote( &mSendCheckUSButton, "checkNoteUS", 
                         "checkBalanceLowUS",
                         checkCostUS );
+        any = true;
         }
     if( mGlobalCheckAvailable ) {
         drawButtonNote( &mSendCheckGlobalButton, "checkNoteGlobal", 
                         "checkBalanceLowGlobal",
                         checkCostGlobal );
+        any = true;
         }
     if( mTransferAvailable ) {
         drawButtonNote( &mAccountTransferButton, "transferNote", 
                         "transferBalanceLow", 
                         transferCost );
+        any = true;
         }
     
+
+    if( !any && isResponseReady() ) {
+        doublePair center = { 0, 0 };
+        
+        drawMessage( "noWithdrawMethods", center );
+        }
     }
     
