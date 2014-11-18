@@ -3667,7 +3667,7 @@ function cm_endOldGames( $user_id ) {
     
     $numRows = mysql_numrows( $result );
 
-    global $cm_gameCoins;
+    global $cm_gameCoins, $areGamesAllowed;
     
     for( $i = 0; $i<$numRows; $i++ ) {
         $game_id = mysql_result( $result, $i, "game_id" );
@@ -3767,8 +3767,19 @@ function cm_endOldGames( $user_id ) {
                 $player_2_id = 0;
                 }
             }
-        
         // else player leaving in middle
+        else if( ! $areGamesAllowed ) {
+            // game force-ended by admin, return pots to players
+            $player_1_coins += $player_1_pot_coins;
+            $player_2_coins += $player_2_pot_coins;
+
+            if( $player_1_id == $user_id ) {
+                $player_1_id = 0;
+                }
+            else {
+                $player_2_id = 0;
+                }
+            }
         else if( $player_1_id == $user_id ) {
             $player_1_id = 0;
 
@@ -4545,6 +4556,8 @@ function cm_printGameState( $inHideOpponentSecretMoves = true ) {
     // than what is actually enforced
     $seconds_left -= 2;
     
+
+    global $areGamesAllowed;
     
     $running = 1;
     if( $player_1_id == 0 || $player_2_id == 0 ) {
@@ -5806,6 +5819,27 @@ function cm_waitMoveInternal( $inWaitOnSemaphore ) {
     $player_1_id = mysql_result( $result, 0, "player_1_id" );
     $player_2_id = mysql_result( $result, 0, "player_2_id" );
 
+
+    global $areGamesAllowed;
+    if( ! $areGamesAllowed ) {
+        
+        // first to wait ends game for the other
+
+        // endOldGames will return pots to each in this case
+        $otherPlayer = $player_2_id;
+            
+        if( $user_id == $player_2_id ) {
+            $otherPlayer = $player_1_id;
+            }
+        cm_endOldGames( $otherPlayer );
+
+        cm_queryDatabase( "COMMIT;" );
+        
+        echo "opponent_left\nOK";
+        return;        
+        }
+    
+    
     $player_1_pot_coins = mysql_result( $result, 0, "player_1_pot_coins" );
     $player_2_pot_coins = mysql_result( $result, 0, "player_2_pot_coins" );
     
