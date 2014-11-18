@@ -1713,7 +1713,8 @@ void specialKeyUp( int inKey ) {
 
 
 char getUsesSound() {
-    return true;
+    
+    return ! musicOff;
     }
 
 
@@ -1785,9 +1786,15 @@ void getSoundSamples( Uint8 *inBuffer, int inLengthToFillInBytes ) {
 
 
 void playChime() {
-    playSoundSprite( moveWaitingSoundSprite );
+    if( ! musicOff ) {
+        playSoundSprite( moveWaitingSoundSprite );
+        }
     }
 
+
+
 void playChipSound( int inSound ) {
-    playSoundSprite( chipSoundSprites[inSound] );
+    if( ! musicOff ) {
+        playSoundSprite( chipSoundSprites[inSound] );
+        }
     }
