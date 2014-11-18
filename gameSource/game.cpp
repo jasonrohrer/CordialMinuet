@@ -1212,8 +1212,17 @@ void drawFrame( char inUpdate ) {
                 maxDeposit = 
                     getDepositFeesPage->getResponseDouble( "maxDeposit" );
                 
-                currentGamePage = depositPage;
-                currentGamePage->base_makeActive( true );
+                if( maxDeposit <= 0 ) {
+                    extendedMessagePage->setMessageKey( 
+                        "depositBlocked" );
+                
+                    currentGamePage = extendedMessagePage;
+                    currentGamePage->base_makeActive( true );
+                    }
+                else {
+                    currentGamePage = depositPage;
+                    currentGamePage->base_makeActive( true );
+                    }
                 }
             }
         else if( currentGamePage == depositPage ) {
