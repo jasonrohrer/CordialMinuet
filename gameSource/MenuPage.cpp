@@ -41,6 +41,7 @@ MenuPage::MenuPage()
                        translate( "nextPage" ) ),
           mRefreshButton( mainFont, -200, -188, 
                           translate( "refresh" ) ),
+          mAreGamesAllowed( 2 ),
           mLimit( 9 ),
           mSkip( 0 ),
           mResponseProcessed( false ),
@@ -262,6 +263,11 @@ void MenuPage::draw( doublePair inViewCenter,
         
         drawMessage( "gameList", pos );
         }
+    else if( mAreGamesAllowed == 0 ) {
+        pos.x = 0;
+        pos.y = 0;
+        drawMessage( "gamesNotAllowed", pos );
+        }
     
     }
 
@@ -300,6 +306,20 @@ void MenuPage::step() {
         for( int i = 0; i<numLines; i++ ) {
             
             char *line = getResponse( i );
+
+            if( i == 0 ) {
+                // first line is are_games_allowed flag
+                sscanf( line, "%d", &mAreGamesAllowed );
+                
+                if( userBalance < 0.01 || mAreGamesAllowed != 1 ) {
+                    mNewGameButton.setVisible( false );
+                    }
+                else {
+                    mNewGameButton.setVisible( true );
+                    }
+                continue;
+                }
+            
 
             int numParts;
             
@@ -460,6 +480,9 @@ void MenuPage::makeActive( char inFresh ) {
         return;
         }
 
+    // returning to page, not sure again
+    mAreGamesAllowed = 2;
+    mNewGameButton.setVisible( false );
     
     mPrevButton.setVisible( false );
     mNextButton.setVisible( false );
@@ -467,13 +490,7 @@ void MenuPage::makeActive( char inFresh ) {
     
     clearListedGames();
     
-    if( userBalance < 0.01 ) {
-        mNewGameButton.setVisible( false );
-        }
-    else {
-        mNewGameButton.setVisible( true );
-        }
-    
+        
 
     mResponseProcessed = false;
     startRequest();

@@ -4373,6 +4373,19 @@ function cm_listGames() {
         return;
         }
 
+    global $areGamesAllowed;
+
+    if( !$areGamesAllowed ) {
+        echo "0\n";
+        echo "0#0\n";
+        echo "OK";
+        return;
+        }
+    else {
+        echo "1\n";
+        }
+    
+
     $user_id = cm_getUserID();
 
     cm_queryDatabase( "SET AUTOCOMMIT=0" );

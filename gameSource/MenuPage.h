@@ -47,7 +47,12 @@ class MenuPage : public ServerActionPage, public ActionListener {
         TextButton mRefreshButton;
 
         SimpleVector<GameRecord> mListedGames;
-        
+
+        // 2 if not sure
+        // 1 if allowed
+        // 0 if not allowed        
+        int mAreGamesAllowed;
+
         int mLimit;
         int mSkip;
 

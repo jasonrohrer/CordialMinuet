@@ -519,6 +519,7 @@ server.php?action=list_games
           &limit=[number]
 
 Returns:
+are_games_allowed
 dollar_cost
 dollar_cost
 dollar_cost

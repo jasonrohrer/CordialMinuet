@@ -302,6 +302,12 @@ $shutdownMessage =
 
 
 
+// set to 0 to shutdown in-progress games and
+// block the creation of new ones (for example, at the end of a tournament)
+$areGamesAllowed = 1;
+
+
+
 $minDeposit = "2.00";
 $maxDeposit = "999999.99";
 

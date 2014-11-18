@@ -153,6 +153,9 @@ recipientNotFound "NO ACCOUNT FOR THIS EMAIL"
 
 newGame "NEW GAME"
 
+gamesNotAllowed "GAMES CANNOT START NOW"
+
+
 buyIn "GAME STAKES:"
 
 create "CREATE"
