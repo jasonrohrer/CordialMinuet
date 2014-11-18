@@ -4528,11 +4528,20 @@ function cm_printGameState( $inHideOpponentSecretMoves = true ) {
     
     $numRows = mysql_numrows( $result );
 
+    
+    global $areGamesAllowed;
+
     if( $numRows != 1 ) {
-        cm_transactionDeny();
+        if( $areGamesAllowed ) {
+            cm_transactionDeny();
+            }
+        else {
+            echo "GAME_ENDED";
+            }
         return;
         }
     
+        
     $player_1_id = mysql_result( $result, 0, "player_1_id" );
     $player_2_id = mysql_result( $result, 0, "player_2_id" );
     $game_square = mysql_result( $result, 0, "game_square" );
@@ -4745,10 +4754,18 @@ function cm_makeMove() {
     
     $numRows = mysql_numrows( $result );
 
+    global $areGamesAllowed;
+
     if( $numRows != 1 ) {
-        cm_log( "Making a move for a game that doesn't exist ".
+        if( $areGamesAllowed ) {
+            cm_log(
+                "Making a move for a game that doesn't exist ".
                 "(or maybe game is in betting phases, so moves forbidden)" );
-        cm_transactionDeny();
+            cm_transactionDeny();
+            }
+        else {
+            echo "GAME_ENDED";
+            }
         return;
         }
     
@@ -4911,10 +4928,17 @@ function cm_makeRevealMove() {
     
     $numRows = mysql_numrows( $result );
 
+    global $areGamesAllowed;
+    
     if( $numRows != 1 ) {
-        cm_log( "Making a move for a game that doesn't exist ".
+        if( $areGamesAllowed ) {
+            cm_log( "Making a move for a game that doesn't exist ".
                 "(or maybe game is in betting phases, so moves forbidden)" );
-        cm_transactionDeny();
+            cm_transactionDeny();
+            }
+        else {
+            echo "GAME_ENDED";
+            }
         return;
         }
     
@@ -5078,9 +5102,16 @@ function cm_makeBet() {
     
     $numRows = mysql_numrows( $result );
 
+    global $areGamesAllowed;
+    
     if( $numRows != 1 ) {
-        cm_log( "Making a bet for a game that doesn't exist" );
-        cm_transactionDeny();
+        if( $areGamesAllowed ) {
+            cm_log( "Making a bet for a game that doesn't exist" );
+            cm_transactionDeny();
+            }
+        else {
+            echo "GAME_ENDED";
+            }
         return;
         }
     
@@ -5242,9 +5273,16 @@ function cm_foldBet() {
     
     $numRows = mysql_numrows( $result );
 
+    global $areGamesAllowed;
+    
     if( $numRows != 1 ) {
-        cm_log( "Folding a bet for a game that doesn't exist" );
-        cm_transactionDeny();
+        if( $areGamesAllowed ) {    
+            cm_log( "Folding a bet for a game that doesn't exist" );
+            cm_transactionDeny();
+            }
+        else {
+            echo "GAME_ENDED";
+            }
         return;
         }
     
@@ -5488,9 +5526,16 @@ function cm_endRound() {
     
     $numRows = mysql_numrows( $result );
 
+    global $areGamesAllowed;
+    
     if( $numRows != 1 ) {
-        cm_log( "Ending round for a game that doesn't exist" );
-        cm_transactionDeny();
+        if( $areGamesAllowed ) {
+            cm_log( "Ending round for a game that doesn't exist" );
+            cm_transactionDeny();
+            }
+        else {
+            echo "GAME_ENDED";
+            }
         return;
         }
     
@@ -5630,9 +5675,16 @@ function cm_startNextRound() {
     
     $numRows = mysql_numrows( $result );
 
+    global $areGamesAllowed;
+    
     if( $numRows != 1 ) {
-        cm_log( "Starting next round for a game that doesn't exist" );
-        cm_transactionDeny();
+        if( $areGamesAllowed ) {
+            cm_log( "Starting next round for a game that doesn't exist" );
+            cm_transactionDeny();
+            }
+        else {
+            echo "GAME_ENDED";
+            }
         return;
         }
     
@@ -5809,10 +5861,16 @@ function cm_waitMoveInternal( $inWaitOnSemaphore ) {
 
     $numRows = mysql_numrows( $result );
 
+    global $areGamesAllowed;
     
     if( $numRows == 0 ) {
-        cm_log( "Waiting on move for a game that doesn't exist" );
-        cm_transactionDeny();
+        if( $areGamesAllowed ) {
+            cm_log( "Waiting on move for a game that doesn't exist" );
+            cm_transactionDeny();
+            }
+        else {
+            echo "GAME_ENDED";
+            }
         return;
         }
 

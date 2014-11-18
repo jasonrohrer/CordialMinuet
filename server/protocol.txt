@@ -584,6 +584,10 @@ their move or bet.  If a player does not submit a move in time, they leave
 the game.
 
 
+Returns GAME_ENDED if the game was force-ended by the admin (both players
+might not receive this message---one might simply see the other player as
+gone).
+
 
 
 

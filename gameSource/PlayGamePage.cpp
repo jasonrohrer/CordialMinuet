@@ -283,6 +283,9 @@ PlayGamePage::PlayGamePage()
           mRoundStartTime( 0 ) {
     
     
+
+    addServerErrorString( "GAME_ENDED", "gameEnded" );
+    
     
     readCharacterGrid( "inkNumbers.tga", 6, 6, mInkNumberSprites );
 
@@ -339,13 +342,7 @@ PlayGamePage::PlayGamePage()
     mPickerThem.hardScoreUpdate = true;
     mPickerThem.mouseOver = false;
     mPickerThem.held = false;
-    mPickerThem.draw = false;
-    
-
-    // put status message on top of screen so that errors don't
-    // overlap with leave button
-    setStatusPositiion( true );
-    
+    mPickerThem.draw = false;    
 
     for( int i=0; i<2; i++ ) {
         mPlayerCoins[i] = -1;

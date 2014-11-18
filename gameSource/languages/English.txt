@@ -185,6 +185,7 @@ leave "LEAVE"
 
 gone "GONE"
 
+gameEnded "GAME ENDED"
 
 
 
