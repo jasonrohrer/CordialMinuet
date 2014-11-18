@@ -1653,7 +1653,47 @@ function cm_formatBalanceForDisplay( $inDollars ) {
 
 
 function cm_getDepositFees() {
-    global $stripeFlatFee, $stripePercentage, $minDeposit, $maxDeposit;
+
+    if( ! cm_verifyTransaction() ) {
+        return;
+        }
+
+    $user_id = cm_getUserID();
+
+    global $tableNamePrefix;
+    
+    
+    // does account for this email exist already?
+    $query = "SELECT num_deposits ".
+        "FROM $tableNamePrefix"."users ".
+        "WHERE user_id = '$user_id';";
+
+    $result = cm_queryDatabase( $query );
+    
+    $numRows = mysql_numrows( $result );
+
+    if( $numRows == 0 ) {
+        cm_transactionDeny();
+        return;
+        }
+
+    $num_deposits = mysql_result( $result, 0, "num_deposits" );
+
+    
+    global $stripeFlatFee, $stripePercentage, $minDeposit, $maxDeposit,
+        $maxNumLifetimeDeposits;
+
+    if( $maxNumLifetimeDeposits >= 0 ) {
+        // a limit is set
+        
+        if( $num_deposits >= $maxNumLifetimeDeposits ) {
+            // can't deposit more
+            $maxDeposit = 0;
+            $minDeposit = 0;
+            }
+        }
+    
+    
 
     echo "$stripeFlatFee\n";
     echo "$stripePercentage\n";

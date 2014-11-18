@@ -517,7 +517,7 @@ void initFrameDrawer( int inWidth, int inHeight, int inTargetFrameRate,
                                     "maxDeposit" };
     
     getDepositFeesPage = new ServerActionPage( "get_deposit_fees", 
-                                               4, resultNamesD, false );
+                                               4, resultNamesD, true );
 
 
     depositPage = new DepositPage();

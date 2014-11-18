@@ -305,6 +305,10 @@ $shutdownMessage =
 $minDeposit = "2.00";
 $maxDeposit = "999999.99";
 
+// can limit total number of deposits one player can make
+// (for running tournaments to limit re-buys).
+$maxNumLifetimeDeposits = -1;
+
 
 
 $housePotFraction = 0.10;

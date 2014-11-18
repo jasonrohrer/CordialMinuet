@@ -141,7 +141,9 @@ dollar_balance is dollars in ASCII floating point
 
 
 === Call:
-server.php?action=get_deposit_fees
+server.php?action=get_deposit_fees&user_id=[id number]
+                             &sequence_number=[number]
+                             &account_hmac=[hmac-sha1, hex-encoded]
 
 Returns:
 flat_fee
