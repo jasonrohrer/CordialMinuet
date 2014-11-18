@@ -3938,6 +3938,14 @@ function cm_joinGame() {
         return;
         }
 
+
+    global $areGamesAllowed;
+    if( ! $areGamesAllowed ) {
+        cm_log( "cm_joinGame denied, areGamesAllowed is off" );
+        cm_transactionDeny();
+        return;
+        }
+    
     $request_tag = cm_requestFilter( "request_tag", "/[A-F0-9]+/i", "" );
     
     global $tableNamePrefix ;
