@@ -21,6 +21,8 @@
 extern Font *mainFont;
 
 
+extern char *userEmail;
+
 
 
 
@@ -28,7 +30,7 @@ extern Font *mainFont;
 
 InPersonPage::InPersonPage()
         : ServerActionPage( "check_in_person_code", true ),
-          mCodeField( mainFont, 33, 0, 12, false, 
+          mCodeField( mainFont, 0, -100, 12, false, 
                       translate( "code" ),
                       NULL,
                       // forbid spaces
@@ -125,6 +127,10 @@ void InPersonPage::draw( doublePair inViewCenter,
     
     
     drawMessage( "seeCashier", labelPos, false );    
+
+    labelPos.y -= 100;
+    
+    drawMessage( userEmail, labelPos, false );    
     }
 
 
