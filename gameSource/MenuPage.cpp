@@ -14,6 +14,8 @@ extern double userBalance;
 
 extern Font *mainFont;
 
+extern char inPersonMode;
+
 
 
 void MenuPage::clearListedGames() {
@@ -317,6 +319,9 @@ void MenuPage::step() {
                 else {
                     mNewGameButton.setVisible( true );
                     }
+
+                delete [] line;
+                
                 continue;
                 }
             
@@ -490,6 +495,10 @@ void MenuPage::makeActive( char inFresh ) {
     
     clearListedGames();
     
+
+    if( inPersonMode ) {
+        mDepositButton.setVisible( false );
+        }
         
 
     mResponseProcessed = false;

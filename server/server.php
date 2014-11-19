@@ -489,6 +489,7 @@ if( $shutdownMode &&
       $action == "get_withdrawal_methods" ||
       $action == "send_check" ||
       $action == "account_transfer" ||
+      $action == "check_in_person_code" ||
       $action == "join_games" ||
       $action == "wait_game_start" ||
       $action == "leave_game" ||
@@ -527,6 +528,9 @@ else if( $action == "check_sequence_number" ) {
     }
 else if( $action == "check_hmac" ) {
     cm_checkHmac();
+    }
+else if( $action == "check_in_person_code" ) {
+    cm_checkInPersonCode();
     }
 else if( $action == "get_balance" ) {
     cm_getBalance();
@@ -609,6 +613,12 @@ else if( $action == "update_user" ) {
     }
 else if( $action == "toggle_card_proof" ) {
     cm_toggleCardProof();
+    }
+else if( $action == "in_person_deposit" ) {
+    cm_inPersonDeposit();
+    }
+else if( $action == "in_person_withdrawal" ) {
+    cm_inPersonWithdrawal();
     }
 else if( $action == "logout" ) {
     cm_logout();
@@ -893,6 +903,7 @@ function cm_setupDatabase() {
             "email VARCHAR(255) NOT NULL," .
             "UNIQUE KEY( email ),".
             "random_name VARCHAR(30) NOT NULL,".
+            "in_person_code VARCHAR(30) NOT NULL,".
             // 9 whole dollar digits (up to 999,999,999)
             // 4 fractional digits (0.0001 resolution)
             "dollar_balance DECIMAL(13, 4) NOT NULL,".
@@ -1646,6 +1657,34 @@ function cm_checkHmac() {
         }
 
     echo "OK";
+    }
+
+
+
+function cm_checkInPersonCode() {
+    if( ! cm_verifyTransaction() ) {
+        return;
+        }
+
+    
+    
+    $code = cm_requestFilter( "code", "/[A-Z0-9]+/i" );
+
+    $user_id = cm_getUserID();
+
+    global $tableNamePrefix;
+    
+    $query = "SELECT COUNT(*) FROM $tableNamePrefix"."users ".
+        "WHERE user_id = '$user_id' AND in_person_code = '$code';";
+
+    $result = cm_queryDatabase( $query );
+
+    if( mysql_result( $result, 0, 0 ) == 1 ) {
+        echo "OK";
+        }
+    else {
+        cm_transactionDeny();
+        }
     }
 
 
@@ -2643,18 +2682,28 @@ function cm_getWithdrawalMethods() {
         return;
         }
 
-    global $usCheckMethodAvailable, $globalCheckMethodAvailable,
-        $transferMethodAvailable, $usCheckCost, $globalCheckCost,
-        $transferCost;
-
-    if( $usCheckMethodAvailable ) {
-        echo "us_check#$usCheckCost\n";
+    $user_id = cm_getUserID();
+    
+    $in_person_code = cm_getUserData( $user_id, "in_person_code" );
+    
+    if( $in_person_code != "" ) {
+        echo "in_person#0.00\n";
         }
-    if( $globalCheckMethodAvailable ) {
-        echo "global_check#$globalCheckCost\n";
-        }
-    if( $transferMethodAvailable ) {
-        echo "account_transfer#$transferCost\n";
+    else {
+        
+        global $usCheckMethodAvailable, $globalCheckMethodAvailable,
+            $transferMethodAvailable, $usCheckCost, $globalCheckCost,
+            $transferCost;
+        
+        if( $usCheckMethodAvailable ) {
+            echo "us_check#$usCheckCost\n";
+            }
+        if( $globalCheckMethodAvailable ) {
+            echo "global_check#$globalCheckCost\n";
+            }
+        if( $transferMethodAvailable ) {
+            echo "account_transfer#$transferCost\n";
+            }
         }
     
     echo "OK";
@@ -6267,6 +6316,20 @@ function cm_getUserID() {
 
 
 
+function cm_getUserData( $user_id, $inColumnName ) {
+    global $tableNamePrefix;
+    
+    $query = "SELECT $inColumnName FROM $tableNamePrefix"."users ".
+        "WHERE user_id = '$user_id';";
+
+    $result = cm_queryDatabase( $query );
+
+    return mysql_result( $result, 0, 0 );
+    }
+
+
+
+
 
 // checks the ticket HMAC for the user ID and sequence number
 // attached to a transaction (also makes sure user isn't blocked!)
@@ -7156,6 +7219,15 @@ function cm_formatDataTable( $tableName, $whereClause,
 function cm_showDetail() {
     cm_checkPassword( "show_detail" );
 
+    cm_showDetailInternal();
+    }
+
+
+
+
+// version that assumes admin password already checked
+function cm_showDetailInternal() {
+    
     $user_id = cm_getUserID();
     
     echo "[<a href=\"server.php?action=show_data" .
@@ -7164,6 +7236,7 @@ function cm_showDetail() {
     global $tableNamePrefix;
 
     $query = "SELECT account_key, email, random_name, ".
+        "in_person_code, ".
         "admin_level, tax_info_on_file, ".
         "sequence_number, dollar_balance, total_buy_in, ".
         "total_won, total_lost, total_deposits, total_withdrawals, blocked ".
@@ -7195,12 +7268,43 @@ function cm_showDetail() {
     $email = $row[ "email" ];
     $sequence_number = $row[ "sequence_number" ];
 
+    $in_person_code = $row[ "in_person_code" ];
 
     echo "User ID: $user_id<br>\n";
     echo "Account Key: $account_key<br><br>\n";
     echo "Alias: $random_name<br><br>\n";
 
     echo "Balance: $dollar_balance<br><br>\n";
+
+
+    
+?>
+        <table border=1 cellpadding=20><tr><td>
+            <FORM ACTION="server.php" METHOD="post">
+    <INPUT TYPE="hidden" NAME="action" VALUE="in_person_deposit">
+    <INPUT TYPE="hidden" NAME="user_id" VALUE="<?php echo $user_id;?>">
+     $<INPUT TYPE="text" MAXLENGTH=40 SIZE=30 NAME="dollar_amount"
+            VALUE="0.00">            
+    <INPUT TYPE="Submit" VALUE="Deposit">
+    </FORM>
+                 </td><td>
+<?php
+
+?>
+            <FORM ACTION="server.php" METHOD="post">
+    <INPUT TYPE="hidden" NAME="action" VALUE="in_person_withdrawal">
+    <INPUT TYPE="hidden" NAME="user_id" VALUE="<?php echo $user_id;?>">
+     $<INPUT TYPE="text" MAXLENGTH=40 SIZE=30 NAME="dollar_amount"
+            VALUE="0.00">            
+    <INPUT TYPE="Submit" VALUE="Withdraw">
+    </FORM>
+             </td></tr></table><br>
+<?php
+
+                 
+
+
+    
     echo "Total Deposits: $total_deposits<br>\n";
     echo "Total Withdrawals: $total_withdrawals<br>\n";
     echo "Total Buy In: $total_buy_in<br>\n";
@@ -7221,6 +7325,9 @@ function cm_showDetail() {
     <INPUT TYPE="hidden" NAME="user_id" VALUE="<?php echo $user_id;?>">
     Email: <INPUT TYPE="text" MAXLENGTH=40 SIZE=30 NAME="email"
             VALUE="<?php echo $email;?>"><br>            
+    In Person Code: <INPUT TYPE="text"
+                           MAXLENGTH=40 SIZE=30 NAME="in_person_code"
+            VALUE="<?php echo $in_person_code;?>"><br>            
     Tax Info on File: <INPUT TYPE="checkbox" NAME="tax_info_on_file" VALUE=1
                  <?php echo $taxInfoChecked;?> ><br>
     Admin Level: <INPUT TYPE="text" MAXLENGTH=1 SIZE=2 NAME="admin_level"
@@ -7394,7 +7501,7 @@ function cm_blockUserID() {
     $blocked = cm_requestFilter( "blocked", "/[01]/" );
 
     // don't touch admin
-    if( cm_updateUser_internal( $user_id, $blocked, -1, -1, -1 ) ) {
+    if( cm_updateUser_internal( $user_id, $blocked, -1, -1, -1, -1 ) ) {
         cm_showData();
         }
     }
@@ -7409,11 +7516,13 @@ function cm_updateUser() {
 
     $blocked = cm_requestFilter( "blocked", "/[1]/", "0" );
     $email = cm_requestFilter( "email", "/[A-Z0-9._%+-]+@[A-Z0-9.-]+/i" );
+    $in_person_code = cm_requestFilter( "in_person_code", "/[A-Z0-9]+/i" );
     $admin_level = cm_requestFilter( "admin_level", "/[0-9]+/i" );
 
     $tax_info_on_file = cm_requestFilter( "tax_info_on_file", "/[1]/", "0" );
     
-    if( cm_updateUser_internal( $user_id, $blocked, $email, $admin_level,
+    if( cm_updateUser_internal( $user_id, $blocked, $email, $in_person_code,
+                                $admin_level,
                                 $tax_info_on_file) ) {
         cm_showDetail();
         }
@@ -7423,7 +7532,8 @@ function cm_updateUser() {
 
 // set any to -1 to leave unchanged
 // returns 1 on success
-function cm_updateUser_internal( $user_id, $blocked, $email, $admin_level,
+function cm_updateUser_internal( $user_id, $blocked, $email, $in_person_code,
+                                 $admin_level,
                                  $tax_info_on_file ) {
     
     global $tableNamePrefix;
@@ -7433,7 +7543,8 @@ function cm_updateUser_internal( $user_id, $blocked, $email, $admin_level,
     
 
     
-    $query = "SELECT user_id, blocked, email, admin_level, tax_info_on_file ".
+    $query = "SELECT user_id, blocked, email, in_person_code, ".
+        "admin_level, tax_info_on_file ".
         "FROM $tableNamePrefix"."users ".
         "WHERE user_id = '$user_id';";
     $result = cm_queryDatabase( $query );
@@ -7443,6 +7554,7 @@ function cm_updateUser_internal( $user_id, $blocked, $email, $admin_level,
     if( $numRows == 1 ) {
         $old_blocked = mysql_result( $result, 0, "blocked" );
         $old_email = mysql_result( $result, 0, "email" );
+        $old_in_person_code = mysql_result( $result, 0, "in_person_code" );
         $old_admin_level = mysql_result( $result, 0, "admin_level" );
         $old_tax_info_on_file = mysql_result( $result, 0, "tax_info_on_file" );
 
@@ -7451,6 +7563,9 @@ function cm_updateUser_internal( $user_id, $blocked, $email, $admin_level,
             }
         if( $email == -1 ) {
             $email = $old_email;
+            }
+        if( $in_person_code == -1 ) {
+            $in_person_code = $old_in_person_code;
             }
         if( $admin_level == -1 ) {
             $admin_level = $old_admin_level;
@@ -7462,6 +7577,7 @@ function cm_updateUser_internal( $user_id, $blocked, $email, $admin_level,
         
         $query = "UPDATE $tableNamePrefix"."users SET " .
             "blocked = '$blocked', email = '$email', ".
+            "in_person_code = '$in_person_code', ".
             "admin_level = '$admin_level', ".
             "tax_info_on_file = '$tax_info_on_file' " .
             "WHERE user_id = '$user_id';";
@@ -7505,6 +7621,108 @@ function cm_toggleCardProof() {
     
 
     cm_showDetail();
+    }
+
+
+
+
+
+
+
+function cm_inPersonDeposit() {
+    cm_checkPassword( "in_person_deposit" );
+
+
+    $user_id = cm_getUserID();
+
+    $dollar_amount = cm_requestFilter(
+        "dollar_amount", "/^[0-9]*([.][0-9][0-9])?/i", "0.00" );
+
+    if( $dollar_amount == 0 ) {
+        echo "ERROR:  Dollar amount invalid<br><br>";
+        cm_showDetailInternal();
+        return;
+        }
+    
+    global $tableNamePrefix;
+
+    $query = "UPDATE $tableNamePrefix". "users SET ".
+            "dollar_balance = dollar_balance + '$dollar_amount', ".
+            "num_deposits = num_deposits + 1, ".
+            "total_deposits = total_deposits + '$dollar_amount' ".
+            "WHERE user_id = $user_id;";
+    cm_queryDatabase( $query );
+    
+    cm_incrementStat( "deposit_count" );
+    cm_incrementStat( "total_deposits", $dollar_amount );
+    cm_updateMaxStat( "max_deposit", $dollar_amount );
+
+    
+    // log it
+
+    $query = "INSERT INTO $tableNamePrefix"."deposits ".
+        "SET user_id = '$user_id', deposit_time = CURRENT_TIMESTAMP, ".
+        "dollar_amount = '$dollar_amount', ".
+        "fee = '0', processing_id = 'in_person'; ";
+    
+    $result = cm_queryDatabase( $query );
+
+    cm_showDetailInternal();
+    }
+
+
+
+
+function cm_inPersonWithdrawal() {
+    cm_checkPassword( "in_person_withdrawal" );
+
+
+    $user_id = cm_getUserID();
+
+    $dollar_amount = cm_requestFilter(
+        "dollar_amount", "/^[0-9]*([.][0-9][0-9])?/i", "0.00" );
+
+    if( $dollar_amount == 0 ) {
+        echo "ERROR:  Dollar amount invalid<br><br>";
+        cm_showDetailInternal();
+        return;
+        }
+
+    global $tableNamePrefix;
+
+
+    $dollar_balance = cm_getUserData( $user_id, "dollar_balance" );
+
+    if( $dollar_amount > $dollar_balance ) {
+        echo "ERROR:  Dollar amount greater than balance<br><br>";
+        cm_showDetailInternal();
+        return;
+        }
+
+    $query = "UPDATE $tableNamePrefix". "users SET ".
+            "dollar_balance = dollar_balance - '$dollar_amount', ".
+            "num_withdrawals = num_withdrawals + 1, ".
+            "total_withdrawals = total_withdrawals + '$dollar_amount' ".
+            "WHERE user_id = $user_id;";
+    cm_queryDatabase( $query );
+
+
+    cm_incrementStat( "withdrawal_count" );
+    cm_incrementStat( "total_withdrawals", $dollar_amount );
+    cm_updateMaxStat( "max_withdrawal", $dollar_amount );
+
+    
+    // log it
+
+    $query = "INSERT INTO $tableNamePrefix"."withdrawals ".
+        "SET user_id = '$user_id', withdrawal_time = CURRENT_TIMESTAMP, ".
+        "dollar_amount = '$dollar_amount', ".
+        "fee = '0', ".
+        "reference_code = 'in_person' ; ";
+
+    $result = cm_queryDatabase( $query );
+
+    cm_showDetailInternal();
     }
 
 

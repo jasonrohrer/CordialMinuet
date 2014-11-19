@@ -48,6 +48,7 @@ WaitGamePage.cpp \
 PlayGamePage.cpp \
 ExtendedMessagePage.cpp \
 AutoUpdatePage.cpp \
+InPersonPage.cpp \
 
 
 

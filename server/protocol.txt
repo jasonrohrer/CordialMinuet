@@ -310,8 +310,14 @@ dollar_cost is ascii decimal cost in dollars
 Current method_name possibilities include:
 
 us_check
+global_check
+in_person
 account_transfer
 
+
+Note that in_person is only available for users that have an in_person_code
+set.  If this code is set, in_person is the only option available to these
+users.
 
 
 
@@ -769,3 +775,22 @@ start_next_round then wait_move to wait for their opponent to start_next_round.
 
 After that, the next call to get_game_state will return the new, starting state
 for the next round.
+
+
+
+
+
+=== Call:
+server.php?action=check_in_person_code
+          &code=[code]
+          &user_id=[id number]
+          &sequence_number=[number]
+          &account_hmac=[hmac-sha1, hex-encoded]  
+
+Returns:
+OK
+
+
+This is used for kiosks that support in-person deposits.
+
+The kiosk blocks until the user types in a code supplied by the cashier.

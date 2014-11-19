@@ -189,6 +189,12 @@ gameEnded "GAME ENDED"
 
 
 
+seeCashier "PLEASE SEE CASHIER"
+
+code "CODE"
+start "START"
+
+
 downloadingUpdate "DOWNLOADING UPDATE"
 applyingUpdate "APPLYING UPDATE"
 

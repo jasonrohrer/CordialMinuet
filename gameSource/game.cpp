@@ -62,6 +62,7 @@ CustomRandomSource randSource( 34957197 );
 #include "DepositDisplayPage.h"
 #include "ExistingAccountPage.h"
 #include "WithdrawPage.h"
+#include "InPersonPage.h"
 #include "SendCheckPage.h"
 #include "SendCheckGlobalPage.h"
 #include "AccountTransferPage.h"
@@ -96,6 +97,7 @@ MenuPage *menuPage;
 DepositDisplayPage *depositDisplayPage;
 ExistingAccountPage *existingAccountPage;
 WithdrawPage *withdrawPage;
+InPersonPage *inPersonPage;
 SendCheckPage *sendCheckPage;
 SendCheckGlobalPage *sendCheckGlobalPage;
 AccountTransferPage *accountTransferPage;
@@ -225,6 +227,10 @@ double userBalance = 0;
 double checkCostUS = 0;
 double checkCostGlobal = 0;
 double transferCost = 0;
+
+// gets set permanently to true for session if withdraw method list
+// ever contains in_person
+char inPersonMode = false;
 
 
 int playerIsAdmin = 0;
@@ -535,6 +541,7 @@ void initFrameDrawer( int inWidth, int inHeight, int inTargetFrameRate,
     existingAccountPage = new ExistingAccountPage();
     
     withdrawPage = new WithdrawPage();
+    inPersonPage = new InPersonPage();
     sendCheckPage = new SendCheckPage();
     sendCheckGlobalPage = new SendCheckGlobalPage();
     accountTransferPage = new AccountTransferPage();
@@ -601,6 +608,7 @@ void freeFrameDrawer() {
     delete depositDisplayPage;
     delete existingAccountPage;
     delete withdrawPage;
+    delete inPersonPage;
     delete sendCheckPage;
     delete sendCheckGlobalPage;
     delete accountTransferPage;
@@ -1367,6 +1375,13 @@ void drawFrame( char inUpdate ) {
                 currentGamePage = accountTransferPage;
                 currentGamePage->base_makeActive( true );
                 }
+            else if( withdrawPage->checkSignal( "inPerson" ) ) {
+                
+                inPersonMode = true;
+                
+                currentGamePage = inPersonPage;
+                currentGamePage->base_makeActive( true );
+                }
             }
         else if( currentGamePage == sendCheckPage ) {
             if( sendCheckPage->checkSignal( "back" ) ) {
@@ -1421,6 +1436,13 @@ void drawFrame( char inUpdate ) {
                     accountTransferPage->getWithdrawalAmount() );
                 
                 currentGamePage = withdrawalDisplayPage;
+                currentGamePage->base_makeActive( true );
+                }
+            }
+        else if( currentGamePage == inPersonPage ) {
+            if( inPersonPage->isResponseReady() ) {
+                
+                currentGamePage = getBalancePage;
                 currentGamePage->base_makeActive( true );
                 }
             }

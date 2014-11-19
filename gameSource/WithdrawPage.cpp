@@ -158,6 +158,9 @@ void WithdrawPage::step() {
                         mAccountTransferButton.setVisible( true );
                         }
                     }
+                else if( strcmp( parts[0], "in_person" ) == 0 ) {
+                    setSignal( "inPerson" );
+                    }
                 }
             
             

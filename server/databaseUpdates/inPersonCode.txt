@@ -1,0 +1,3 @@
+ALTER TABLE minuetServer_users ADD in_person_code VARCHAR(30) NOT NULL AFTER random_name;
+
+UPDATE minuetServer_users SET in_person_code = '';
