@@ -613,6 +613,15 @@ else if( $action == "toggle_card_proof" ) {
 else if( $action == "logout" ) {
     cm_logout();
     }
+else if( $action == "leaders_dollar" ) {
+    cm_leadersDollar();
+    }
+else if( $action == "leaders_profit" ) {
+    cm_leadersProfit();
+    }
+else if( $action == "leaders_profit_ratio" ) {
+    cm_leadersProfitRatio();
+    }
 else if( $action == "cm_setup" ) {
     global $setup_header, $setup_footer;
     echo $setup_header; 
@@ -826,14 +835,34 @@ function cm_setupDatabase() {
         if( cm_doesTableExist( $tableNamePrefix ."users" ) ) {
             // add a random name for each user
 
-            $query = "SELECT user_id FROM $tableNamePrefix"."users;";
+            $query = "SELECT user_id, email FROM $tableNamePrefix"."users;";
             $result = cm_queryDatabase( $query );
 
             $numRows = mysql_numrows( $result );
             for( $i=0; $i<$numRows; $i++ ) {
                 $user_id = mysql_result( $result, $i, "user_id" );
+                $email = mysql_result( $result, $i, "email" );
 
                 $random_name = cm_generateRandomName();
+
+                $message =
+                    "I just set up a new alias system for ".
+                    "Cordial Minuet.\n\n". 
+                    "These handles will be used for leaderboards and other ".
+                    "public purposes where your true ".
+                    "identity will be hidden.\n\n".
+                    "Your new alias is:  $random_name\n\n".
+                    "Please save this alias so that you can ".
+                    "reference it later.  Your alias is not used for ".
+                    "security purposes.  It's fine to share it ".
+                    "with friends or even publicly if you want to ".
+                    "reveal your identity.".
+                    "\n\n\n".
+                    "Enjoy the game!\n".
+                    "Jason\n\n";
+                
+                cm_mail( $email, "Cordial Minuet Alias",
+                         $message );
                 
                 $query = "UPDATE $tableNamePrefix"."users ".
                     "SET random_name = '$random_name' ".
@@ -1747,10 +1776,11 @@ function cm_handleRepeatResponse() {
 // formats dollar values with up to 4 fractional digits
 // adds $ and commas to separate thousands, trims off 00 if value
 // is a whole number of cents
-function cm_formatBalanceForDisplay( $inDollars ) {
+function cm_formatBalanceForDisplay( $inDollars,
+                                     $inForceFourDecimal = false ) {
     $result = number_format( $inDollars, 4 );
 
-    if( substr( $result, -2 ) === "00" ) {
+    if( !$inForceFourDecimal && substr( $result, -2 ) === "00" ) {
         $result = number_format( $inDollars, 2 );
         }
     return "\$$result";
@@ -7285,6 +7315,68 @@ function cm_showDetail() {
         }
     echo "</table>";
 
+    }
+
+
+function cm_leaders( $order_column_name, $inIsDollars = false ) {
+
+    global $tableNamePrefix, $leaderboardLimit, $leaderHeader, $leaderFooter;
+
+    eval( $leaderHeader );
+    
+    
+    $query = "SELECT random_name, ".
+        "dollar_balance, ".
+        "(dollar_balance + total_withdrawals) - total_deposits ".
+        " AS profit, ".
+        "(dollar_balance + total_withdrawals) /  total_deposits ".
+        " AS profit_ratio ".
+        "FROM $tableNamePrefix"."users ".
+        "ORDER BY $order_column_name DESC ".
+        "LIMIT $leaderboardLimit;";
+    $result = cm_queryDatabase( $query );
+
+    $numRows = mysql_numrows( $result );
+    
+    echo "<center><table border=0 cellspacing=6>";
+    
+    
+    for( $i=0; $i<$numRows; $i++ ) {
+        $random_name = mysql_result( $result, $i, "random_name" );
+        $value = mysql_result( $result, $i, $order_column_name );
+
+        if( $inIsDollars ) {
+            $value = cm_formatBalanceForDisplay( $value, true );
+            }
+
+        if( $i != 0 ) {
+            echo "<tr><td colspan=2><hr></td></tr>";
+            }
+
+        echo "<tr><td>$random_name</td>".
+            "<td align=right>$value</td></tr>";
+        }
+    echo "</table></center>";
+
+    eval( $leaderFooter );
+    }
+
+
+
+function cm_leadersDollar() {
+    cm_leaders( "dollar_balance", true );
+    }
+
+
+
+function cm_leadersProfit() {
+    cm_leaders( "profit", true );
+    }
+
+
+
+function cm_leadersProfitRatio() {
+    cm_leaders( "profit_ratio" );
     }
 
 

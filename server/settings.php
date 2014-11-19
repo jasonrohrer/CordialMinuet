@@ -280,6 +280,13 @@ $header = "include( \"header.php\" );";
 $footer = "include( \"footer.php\" );";
 
 
+// header and footers for leaderboards
+$leaderHeader = "include( \"header.php\" );";
+$leaderFooter = "include( \"footer.php\" );";
+
+$leaderboardLimit = 100;
+
+
 // for admin view
 $usersPerPage = 50;
 
