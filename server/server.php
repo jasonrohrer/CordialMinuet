@@ -649,6 +649,7 @@ else if( preg_match( "/server\.php/", $_SERVER[ "SCRIPT_NAME" ] ) ) {
     $allExist =
         cm_doesTableExist( $tableNamePrefix."server_globals" ) &&
         cm_doesTableExist( $tableNamePrefix."log" ) &&
+        cm_doesTableExist( $tableNamePrefix."random_nouns" ) &&
         cm_doesTableExist( $tableNamePrefix."users" ) &&
         cm_doesTableExist( $tableNamePrefix."cards" ) &&
         cm_doesTableExist( $tableNamePrefix."deposits" ) &&
@@ -693,6 +694,19 @@ cm_closeDatabase();
 
 
 
+
+
+function cm_generateRandomName() {
+    global $tableNamePrefix;
+
+    $query = "SELECT GROUP_CONCAT( temp.noun SEPARATOR ' ' ) AS random_name ".
+        "FROM ( SELECT noun FROM $tableNamePrefix"."random_nouns ".
+        "       ORDER BY RAND() LIMIT 2) AS temp;";
+
+    $result = cm_queryDatabase( $query );
+
+    return mysql_result( $result, 0, 0 );
+    }
 
 
 
@@ -758,6 +772,82 @@ function cm_setupDatabase() {
         }
 
 
+
+    // these words taken from a cognitive experiment database
+    // http://www.datavis.ca/online/paivio/
+    
+    $tableName = $tableNamePrefix . "random_nouns";
+    if( ! cm_doesTableExist( $tableName ) ) {
+
+        // a source list of character last names
+        // cumulative count is number of people in 1993 population
+        // who have this name or a more common name
+        // less common names have higher cumulative counts
+        $query =
+            "CREATE TABLE $tableName( " .
+            "id SMALLINT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT, ".
+            "noun VARCHAR(14) NOT NULL, ".
+            "UNIQUE KEY( noun ) );";
+
+        $result = cm_queryDatabase( $query );
+
+        echo "<B>$tableName</B> table created<BR>";
+
+
+        if( $file = fopen( "randomNouns.txt", "r" ) ) {
+            $firstLine = true;
+
+            $query = "INSERT INTO $tableName (noun) VALUES ";
+            /*
+			( 'bird' ),
+            ( 'monster' ),
+            ( 'ability' );
+            */
+
+            while( !feof( $file ) ) {
+                $noun = trim( fgets( $file) );
+                
+                if( ! $firstLine ) {
+                    $query = $query . ",";
+                    }
+                
+                $query = $query . " ( '$noun' )";
+            
+                $firstLine = false;
+                }
+            
+            fclose( $file );
+
+            $query = $query . ";";
+            
+            $result = cm_queryDatabase( $query );
+            }
+
+        if( cm_doesTableExist( $tableNamePrefix ."users" ) ) {
+            // add a random name for each user
+
+            $query = "SELECT user_id FROM $tableNamePrefix"."users;";
+            $result = cm_queryDatabase( $query );
+
+            $numRows = mysql_numrows( $result );
+            for( $i=0; $i<$numRows; $i++ ) {
+                $user_id = mysql_result( $result, $i, "user_id" );
+
+                $random_name = cm_generateRandomName();
+                
+                $query = "UPDATE $tableNamePrefix"."users ".
+                    "SET random_name = '$random_name' ".
+                    "WHERE user_id = '$user_id';";
+                cm_queryDatabase( $query );
+                }
+            }
+        }
+    else {
+        echo "<B>$tableName</B> table already exists<BR>";
+        }
+    
+    
+
     
     $tableName = $tableNamePrefix . "users";
     if( ! cm_doesTableExist( $tableName ) ) {
@@ -773,6 +863,7 @@ function cm_setupDatabase() {
             "UNIQUE KEY( account_key )," .
             "email VARCHAR(255) NOT NULL," .
             "UNIQUE KEY( email ),".
+            "random_name VARCHAR(30) NOT NULL,".
             // 9 whole dollar digits (up to 999,999,999)
             // 4 fractional digits (0.0001 resolution)
             "dollar_balance DECIMAL(13, 4) NOT NULL,".
@@ -1669,46 +1760,49 @@ function cm_formatBalanceForDisplay( $inDollars ) {
 
 
 function cm_getDepositFees() {
-
-    if( ! cm_verifyTransaction() ) {
-        return;
-        }
-
-    $user_id = cm_getUserID();
-
-    global $tableNamePrefix;
-    
-    
-    // does account for this email exist already?
-    $query = "SELECT num_deposits ".
-        "FROM $tableNamePrefix"."users ".
-        "WHERE user_id = '$user_id';";
-
-    $result = cm_queryDatabase( $query );
-    
-    $numRows = mysql_numrows( $result );
-
-    if( $numRows == 0 ) {
-        cm_transactionDeny();
-        return;
-        }
-
-    $num_deposits = mysql_result( $result, 0, "num_deposits" );
-
-    
     global $stripeFlatFee, $stripePercentage, $minDeposit, $maxDeposit,
         $maxNumLifetimeDeposits;
+    
 
-    if( $maxNumLifetimeDeposits >= 0 ) {
-        // a limit is set
+    $user_id = cm_getUserID();
+    
+    if( $user_id != "" ) {    
+        if( ! cm_verifyTransaction() ) {
+            return;
+            }
+
+        global $tableNamePrefix;
+    
+    
+        // does account for this email exist already?
+        $query = "SELECT num_deposits ".
+            "FROM $tableNamePrefix"."users ".
+            "WHERE user_id = '$user_id';";
+
+        $result = cm_queryDatabase( $query );
         
-        if( $num_deposits >= $maxNumLifetimeDeposits ) {
-            // can't deposit more
-            $maxDeposit = 0;
-            $minDeposit = 0;
+        $numRows = mysql_numrows( $result );
+        
+        if( $numRows == 0 ) {
+            cm_transactionDeny();
+            return;
+            }
+        
+        $num_deposits = mysql_result( $result, 0, "num_deposits" );
+
+    
+        
+        if( $maxNumLifetimeDeposits >= 0 ) {
+            // a limit is set
+            
+            if( $num_deposits >= $maxNumLifetimeDeposits ) {
+                // can't deposit more
+                $maxDeposit = 0;
+                $minDeposit = 0;
+                }
             }
         }
-    
+            
     
 
     echo "$stripeFlatFee\n";
@@ -1787,7 +1881,7 @@ function cm_makeDeposit() {
         }
     
     
-    $query = "SELECT user_id, account_key, dollar_balance, ".
+    $query = "SELECT user_id, account_key, random_name, dollar_balance, ".
         "total_deposits, last_request_tag, last_request_response, blocked ".
         "FROM $tableNamePrefix"."users ".
         "WHERE email = '$email' FOR UPDATE;";
@@ -1798,6 +1892,7 @@ function cm_makeDeposit() {
 
     $user_id = "";
     $account_key = "";
+    $random_name = "";
     $dollar_balance = 0;
     $total_deposits = 0;
     
@@ -1842,6 +1937,7 @@ function cm_makeDeposit() {
         
         
         $user_id = $row[ "user_id" ];
+        $random_name = $row[ "random_name" ];
 
         if( cm_getUserID() != $user_id ) {
             echo "ACCOUNT_EXISTS";
@@ -2260,12 +2356,14 @@ function cm_makeDeposit() {
                 $user_id_line = "user_id = '$temp_user_id',";
                 }
             
+            $random_name = cm_generateRandomName();
             
             // user_id auto-assigned (auto-increment)
             $query = "INSERT INTO $tableNamePrefix". "users SET ".
                 $user_id_line .
                 "account_key = '$account_key', ".
                 "email = '$email', ".
+                "random_name = '$random_name', ".
                 "dollar_balance = '$deposit_net', ".
                 "num_deposits = 1, ".
                 "total_deposits = '$deposit_net', ".
@@ -2461,6 +2559,7 @@ function cm_makeDeposit() {
         "Here are your account details:\n\n".
         "Email:  $email\n".
         "Account Key:  $account_key\n\n".
+        "Alias:  $random_name\n\n".
         "Please save these for future reference.  These account details ".
         "are saved locally by your game client, but you may need to enter ".
         "them again if you are playing the game from a different computer ".
@@ -6132,7 +6231,7 @@ function cm_transactionDeny( $inLogDetails = true ) {
 
 
 function cm_getUserID() {
-    return cm_requestFilter( "user_id", "/\d+/" );
+    return cm_requestFilter( "user_id", "/\d+/", "" );
     }
 
 
@@ -6431,6 +6530,7 @@ function cm_showDataUserList() {
 
         $keywordClause = "WHERE ( user_id LIKE '%$search%' " .
             "OR email LIKE '%$search%' ".
+            "OR random_name LIKE '%$search%' ".
             "OR account_key LIKE '%$search%' ) ";
 
         $searchDisplay = " matching <b>$search</b>";
@@ -6451,6 +6551,7 @@ function cm_showDataUserList() {
     
              
     $query = "SELECT user_id, account_key, email, ".
+        "random_name, ".
         "total_deposits, total_withdrawals, ".
         "dollar_balance, last_action_time, ".
         "blocked, games_started, ".
@@ -6510,6 +6611,7 @@ function cm_showDataUserList() {
     echo "<td>Blocked?</td>\n";
     echo "<td>".orderLink( "account_key", "Account Key" )."</td>\n";
     echo "<td>".orderLink( "email", "Email" )."</td>\n";
+    echo "<td>".orderLink( "random_name", "Alias" )."</td>\n";
     echo "<td>".orderLink( "total_deposits", "Deposits" )."</td>\n";
     echo "<td>".orderLink( "total_withdrawals", "Withdrawals" )."</td>\n";
     echo "<td>".orderLink( "dollar_balance", "Balance" )."</td>\n";
@@ -6525,6 +6627,7 @@ function cm_showDataUserList() {
         $user_id = mysql_result( $result, $i, "user_id" );
         $account_key = mysql_result( $result, $i, "account_key" );
         $email = mysql_result( $result, $i, "email" );
+        $random_name = mysql_result( $result, $i, "random_name" );
         $total_deposits = mysql_result( $result, $i, "total_deposits" );
         $total_withdrawals = mysql_result( $result, $i, "total_withdrawals" );
         $dollar_balance = mysql_result( $result, $i, "dollar_balance" );
@@ -6559,6 +6662,7 @@ function cm_showDataUserList() {
         echo "<td align=right>$blocked [$block_toggle]</td>\n";
         echo "<td>$account_key</td>\n";
         echo "<td>$email</td>\n";
+        echo "<td>$random_name</td>\n";
 
         $depositsString = cm_formatBalanceForDisplay( $total_deposits );
         $withdrawalsString = cm_formatBalanceForDisplay( $total_withdrawals );
@@ -6744,11 +6848,13 @@ function cm_makeAccount() {
     $salt = 0;
     $account_key = cm_generateAccountKey( $email, $salt );
 
+    $random_name = cm_generateRandomName();
             
     // user_id auto-assigned (auto-increment)
     $query = "INSERT INTO $tableNamePrefix". "users SET ".
         "account_key = '$account_key', ".
         "email = '$email', ".
+        "random_name = '$random_name', ".
         "dollar_balance = 0, ".
         "num_deposits = 0, ".
         "total_deposits = 0, ".
@@ -7027,7 +7133,7 @@ function cm_showDetail() {
      
     global $tableNamePrefix;
 
-    $query = "SELECT account_key, email, ".
+    $query = "SELECT account_key, email, random_name, ".
         "admin_level, tax_info_on_file, ".
         "sequence_number, dollar_balance, total_buy_in, ".
         "total_won, total_lost, total_deposits, total_withdrawals, blocked ".
@@ -7044,6 +7150,7 @@ function cm_showDetail() {
     $row = mysql_fetch_array( $result, MYSQL_ASSOC );
 
     $account_key = $row[ "account_key" ];
+    $random_name = $row[ "random_name" ];
     $dollar_balance = cm_formatBalanceForDisplay( $row[ "dollar_balance" ] );
     $total_deposits = cm_formatBalanceForDisplay( $row[ "total_deposits" ] );
     $total_withdrawals =
@@ -7061,6 +7168,7 @@ function cm_showDetail() {
 
     echo "User ID: $user_id<br>\n";
     echo "Account Key: $account_key<br><br>\n";
+    echo "Alias: $random_name<br><br>\n";
 
     echo "Balance: $dollar_balance<br><br>\n";
     echo "Total Deposits: $total_deposits<br>\n";

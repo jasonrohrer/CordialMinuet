@@ -141,7 +141,9 @@ dollar_balance is dollars in ASCII floating point
 
 
 === Call:
-server.php?action=get_deposit_fees&user_id=[id number]
+server.php?action=get_deposit_fees
+                   Optional:    
+                             &user_id=[id number]
                              &sequence_number=[number]
                              &account_hmac=[hmac-sha1, hex-encoded]
 
@@ -160,6 +162,9 @@ percentage is in decimal format as percentage points
 
 min_deposit and max_deposit are in decimal format as dollars and cents 
 
+Optional user_id, sequence_number, and account_hmac check specific 
+max/min for a given user.  Otherwise (e.g., for new accounts), returns
+global limits.
 
 
 
