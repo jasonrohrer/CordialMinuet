@@ -300,6 +300,11 @@ $shutdownMessage =
 "Should be back online soon.##".
 "--Jason";
 
+// turn on to disable clearing of old games and disable move timeouts
+// if server has gone down during live games, this will protect
+// players from being unfairly kicked when server brought back up
+$gracePeriod = 0;
+
 
 
 // set to 0 to shutdown in-progress games and
@@ -337,6 +342,11 @@ $withdrawalWithNoInfoYearlyLimit = "600.00";
 
 // 1 minute
 $moveTimeLimit = "0 0:01:02.000";
+
+// games with no action for this long are auto-ended and removed
+// should be substantially longer than $moveTimeLimit
+$staleGameTimeLimit = "0 0:02:00.000";
+
 
 // time limit for sending end_round after reveal
 // shorter than normal move time limit, so we don't keep

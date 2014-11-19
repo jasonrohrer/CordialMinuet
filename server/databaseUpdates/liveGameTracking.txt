@@ -1,0 +1,3 @@
+ALTER TABLE minuetServer_games ADD last_action_time DATETIME NOT NULL AFTER creation_time;
+
+UPDATE minuetServer_games SET last_action_time = CURRENT_TIMESTAMP;

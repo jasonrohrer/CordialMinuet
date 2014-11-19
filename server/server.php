@@ -902,6 +902,7 @@ function cm_setupDatabase() {
             "CREATE TABLE $tableName(" .
             "game_id BIGINT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT," .
             "creation_time DATETIME NOT NULL,".
+            "last_action_time DATETIME NOT NULL,".
             "player_1_id INT UNSIGNED NOT NULL," .
             "INDEX( player_1_id )," .
             "player_2_id INT UNSIGNED NOT NULL," .
@@ -1281,11 +1282,12 @@ function cm_clearLog() {
 // check if we should flush stale checkouts from the database
 // do this once every 2 minutes
 function cm_checkForFlush() {
-    global $tableNamePrefix, $chillTimeout, $forcedIgnoreTimeout, $gracePeriod;
+    global $tableNamePrefix, $staleGameTimeLimit, $gracePeriod;
 
 
     if( $gracePeriod ) {
         // skip flushing entirely during grace period
+        return;
         }
     
 
@@ -1297,19 +1299,9 @@ function cm_checkForFlush() {
 
     global $cm_flushInterval;
     
-    $staleTimeout = "0 0:05:0.000";
-    $staleLogTimeout = "10 0:00:0.000";
-    $staleLogTimeoutDeadOwners = "5 0:00:0.000";
-
-    // how long to keep maps in cache after they are flagged for deletion
-    // this gives us a chance to catch a map that was flagged accidentally
-    // (concurrency issue?) but is still referenced in database
-    $staleFlaggedMapTimeout = "0 0:20:0.000";
     
     // for testing:
     //$cm_flushInterval = "0 0:00:30.000";
-    //$staleTimeout = "0 0:01:0.000";
-    //$staleFlaggedMapTimeout = "0 0:02:0.000";
     
     
     cm_queryDatabase( "SET AUTOCOMMIT = 0;" );
@@ -1377,6 +1369,30 @@ function cm_checkForFlush() {
 
 
         // Execute flush operations here
+
+        // for each robber who quit game mid-robbery, clear robbery checkout
+        $query = "SELECT player_1_id, player_2_id ".
+            "FROM $tableNamePrefix"."games ".
+            "WHERE last_action_time < ".
+            "SUBTIME( CURRENT_TIMESTAMP, '$staleGameTimeLimit' ) FOR UPDATE;";
+
+        $result = cm_queryDatabase( $query );
+
+        $numRows = mysql_numrows( $result );
+    
+        for( $i=0; $i<$numRows; $i++ ) {
+            $player_1_id = mysql_result( $result, $i, "player_1_id" );
+            $player_2_id = mysql_result( $result, $i, "player_2_id" );
+
+            if( $player_1_id != 0 ) {
+                cm_endOldGames( $player_1_id );
+                }
+            if( $player_2_id != 0 ) {
+                cm_endOldGames( $player_2_id );
+                }
+            }
+        
+        cm_queryDatabase( "COMMIT;" );
         
         
         // flush done
@@ -4175,6 +4191,7 @@ function cm_joinGame() {
     $query = "INSERT INTO $tableNamePrefix"."games SET ".
         // game_id is auto-increment
         "creation_time = CURRENT_TIMESTAMP, ".
+        "last_action_time = CURRENT_TIMESTAMP, ".
         "player_1_id = '$user_id'," .
         "player_2_id = 0," .
         "dollar_amount = '$dollar_amount',".
@@ -4258,6 +4275,20 @@ function cm_joinGame() {
 
 
 
+
+function cm_keepGameAlive( $user_id ) {
+    global $tableNamePrefix;
+    
+    $query = "UPDATE $tableNamePrefix"."games ".
+        "SET last_action_time = CURRENT_TIMESTAMP ".
+        "WHERE player_1_id = '$user_id' OR player_2_id = '$user_id';";
+
+    cm_queryDatabase( $query );
+    }
+
+
+
+
 function cm_waitGameStart() {
     if( ! cm_verifyTransaction() ) {
         return;
@@ -4268,6 +4299,8 @@ function cm_waitGameStart() {
         
     $user_id = cm_getUserID();
 
+    cm_keepGameAlive( $user_id );
+    
     cm_queryDatabase( "SET AUTOCOMMIT=0" );
     
     $query = "SELECT semaphore_key, started ".
@@ -4355,6 +4388,8 @@ function cm_leaveGame() {
 
     $user_id = cm_getUserID();
 
+    cm_keepGameAlive( $user_id );
+    
     cm_queryDatabase( "SET AUTOCOMMIT=0" );
     
     cm_endOldGames( $user_id );
@@ -4508,6 +4543,8 @@ function cm_printGameState( $inHideOpponentSecretMoves = true ) {
     
 
     $user_id = cm_getUserID();
+
+    cm_keepGameAlive( $user_id );
 
 
     global $tableNamePrefix;
@@ -4728,6 +4765,8 @@ function cm_makeMove() {
     
     $user_id = cm_getUserID();
 
+    cm_keepGameAlive( $user_id );
+
     
     $our_column = cm_requestFilter( "our_column", "/[0-5]/", "0" );
 
@@ -4903,6 +4942,8 @@ function cm_makeRevealMove() {
         }
     
     $user_id = cm_getUserID();
+
+    cm_keepGameAlive( $user_id );
 
     
     $our_column = cm_requestFilter( "our_column", "/[0-5]/", "0" );
@@ -5081,6 +5122,8 @@ function cm_makeBet() {
     
     $user_id = cm_getUserID();
 
+    cm_keepGameAlive( $user_id );
+
     
     $bet = cm_requestFilter( "bet", "/[0-9]+/", "0" );
 
@@ -5258,6 +5301,9 @@ function cm_foldBet() {
 
     $user_id = cm_getUserID();
 
+    cm_keepGameAlive( $user_id );
+
+    
     global $tableNamePrefix;
 
 
@@ -5507,6 +5553,9 @@ function cm_endRound() {
     
     $user_id = cm_getUserID();
 
+    cm_keepGameAlive( $user_id );
+
+    
     global $tableNamePrefix;
 
 
@@ -5655,6 +5704,9 @@ function cm_startNextRound() {
     
     $user_id = cm_getUserID();
 
+    cm_keepGameAlive( $user_id );
+
+    
     global $tableNamePrefix;
 
 
@@ -5843,6 +5895,9 @@ function cm_waitMoveInternal( $inWaitOnSemaphore ) {
         
     $user_id = cm_getUserID();
 
+    cm_keepGameAlive( $user_id );
+
+    
     cm_queryDatabase( "SET AUTOCOMMIT=0" );
     
     $query = "SELECT player_1_id, player_2_id, ".
@@ -5958,6 +6013,14 @@ function cm_waitMoveInternal( $inWaitOnSemaphore ) {
         }
     else {
         // move not ready
+
+        global $gracePeriod;
+
+        if( $gracePeriod && $seconds_left <= 0 ) {
+            // don't time out during grace period
+            // add some extra seconds here
+            $seconds_left = 15;
+            }
         
         if( $seconds_left <= 0 ) {
             // deadline for opponent move has passed
@@ -6592,6 +6655,17 @@ function cm_generateHeader() {
 
     $totalLiveBuyIns = mysql_result( $result, 0, 0 );
 
+
+    $query = "SELECT COUNT(*) FROM $tableNamePrefix"."games;";
+    $result = cm_queryDatabase( $query );
+
+    $liveGames = mysql_result( $result, 0, 0 );
+
+
+    $liveGamesWord = "live games";
+    if( $liveGames == 1 ) {
+        $liveGamesWord = "live game";
+        }
     
 
     $query = "SELECT house_dollar_balance, house_withdrawals, ".
@@ -6634,6 +6708,7 @@ function cm_generateHeader() {
         "<td valign=top align=center width=50%>".
         "$sizeString ($perUserString per user)<br>".
         "$connectionCount active MySQL $connectionWord<br>".
+        "$liveGames $liveGamesWord<br>".
         "Users: $usersDay/d | $usersHour/h | $usersFiveMin/5m | ".
         "$usersMinute/m | $usersSecond/s<br>".
         "Player balance: $totalBalanceString | ".
