@@ -1,4 +1,6 @@
 
+del CordialMinuet_%version%_Windows.zip 
+del CordialMinuet_%version%_Windows.exe
 
 7z a -tzip CordialMinuet_%version%_Windows.zip CordialMinuet_%version% -r
 
