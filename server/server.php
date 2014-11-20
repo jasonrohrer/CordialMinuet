@@ -1501,7 +1501,6 @@ function cm_checkForFlush() {
 
         // Execute flush operations here
 
-        // for each robber who quit game mid-robbery, clear robbery checkout
         $query = "SELECT player_1_id, player_2_id ".
             "FROM $tableNamePrefix"."games ".
             "WHERE last_action_time < ".
@@ -7077,7 +7076,7 @@ function cm_showRecentUserEmails() {
     $query = "SELECT COUNT(*), GROUP_CONCAT( email separator ', ') ".
         "FROM $tableNamePrefix"."users ".
         "WHERE last_action_time > ".
-        "      SUBTIME( CURRENT_TIMESTAMP, '$day_limit 0:00:00' );";
+        "      DATE_SUB( CURRENT_TIMESTAMP, INTERVAL $day_limit DAY );";
         
     $result = cm_queryDatabase( $query );
 
