@@ -33,6 +33,7 @@ make || exit 1
 cd ../..
 
 mkdir -p graphics
+mkdir -p sounds
 mkdir -p settings
 mkdir -p languages
 
@@ -43,6 +44,7 @@ cp CordialMinuet/gameSource/CORDIAL_MINUET ./CORDIAL_MINUET
 cp CordialMinuet/documentation/Readme.txt .
 cp CordialMinuet/no_copyright.txt .
 cp CordialMinuet/gameSource/graphics/* ./graphics
+cp CordialMinuet/gameSource/sounds/* ./sounds
 cp CordialMinuet/gameSource/settings/* ./settings
 cp CordialMinuet/gameSource/languages/* ./languages
 cp CordialMinuet/gameSource/language.txt ./

@@ -28,7 +28,7 @@ rm -rf $buildDir $buildDir_Linux.tar.gz
 mkdir $buildDir
 
 cd $sourceWorkingDir
-cp -r CORDIAL_MINUET graphics languages language.txt no_copyright.txt Readme.txt settings ../$buildDir
+cp -r CORDIAL_MINUET graphics sounds languages language.txt no_copyright.txt Readme.txt settings ../$buildDir
 
 cd ..
 

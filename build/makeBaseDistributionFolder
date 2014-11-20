@@ -17,10 +17,12 @@ mkdir $baseFolder
 mkdir $baseFolder/graphics
 mkdir $baseFolder/settings
 mkdir $baseFolder/languages
+mkdir $baseFolder/sounds
 
 
 
 cp ../gameSource/graphics/*.tga $baseFolder/graphics
+cp ../gameSource/sounds/*.aiff $baseFolder/sounds
 cp ../gameSource/settings/*.ini $baseFolder/settings
 cp ../gameSource/languages/*.txt $baseFolder/languages
 cp ../gameSource/language.txt $baseFolder
