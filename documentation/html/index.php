@@ -78,6 +78,15 @@ If you answered YES to all, any, or even none of these, YOU may be one of the FE
 <img src="guessTiles.jpg" width=500 height=60 border=0><br>
 
 
+<br>
+<br>
+<form action="entry.php" method="POST">
+<table border=0 cellspacing=10><tr>
+<td><INPUT TYPE="text" MAXLENGTH=20 SIZE=20 NAME="wordA" VALUE="?"></td> 
+<td><INPUT TYPE="text" MAXLENGTH=20 SIZE=20 NAME="wordB" VALUE="?"></td>
+<td><INPUT TYPE="Submit" VALUE="ENTRY"></td>
+</tr></table>
+</form>
 
 </td>
 
