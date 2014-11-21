@@ -7444,7 +7444,7 @@ function cm_leaders( $order_column_name, $inIsDollars = false ) {
 
     $numRows = mysql_numrows( $result );
     
-    echo "<center><table border=0 cellspacing=6>";
+    echo "<center><table border=0 cellspacing=8>";
     
     
     for( $i=0; $i<$numRows; $i++ ) {
@@ -7456,10 +7456,12 @@ function cm_leaders( $order_column_name, $inIsDollars = false ) {
             }
 
         if( $i != 0 ) {
-            echo "<tr><td colspan=2><hr></td></tr>";
+            echo "<tr><td colspan=3><hr></td></tr>";
             }
 
-        echo "<tr><td>$random_name</td>".
+        $rowNum = $i + 1;
+        
+        echo "<tr><td align=right>$rowNum.</td><td>$random_name</td>".
             "<td align=right>$value</td></tr>";
         }
     echo "</table></center>";
