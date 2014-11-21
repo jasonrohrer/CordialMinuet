@@ -7501,7 +7501,7 @@ function cm_graphUserData( $inTitle, $inStatToGraph, $inWhereClause,
     $query = "SELECT stat_time, $inStatToGraph ".
         "FROM $tableNamePrefix"."user_stats ".
         "WHERE $inWhereClause ".
-        "LIMIT $inLimit;";
+        "ORDER BY stat_time DESC LIMIT $inLimit;";
     $result = cm_queryDatabase( $query );
 
     $numRows = mysql_numrows( $result );
@@ -7530,8 +7530,7 @@ function cm_graphUserData( $inTitle, $inStatToGraph, $inWhereClause,
             echo "+<br>";
             }
         echo "---<br>";
-        $hoursAgo = $inLimit - $i;
-        echo "$hoursAgo<br>";
+        echo "$i<br>";
         echo "</td>";
         }
     echo "</tr></table></center>";
