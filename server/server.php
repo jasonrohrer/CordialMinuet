@@ -7554,7 +7554,8 @@ function cm_usersGraph() {
 
     echo "<br><br><br>";
     cm_graphUserData( "Days Ago", "users_last_day",
-                      "HOUR(stat_time) = HOUR(CURRENT_TIMESTAMP)",
+                      "HOUR(stat_time) = HOUR(CURRENT_TIMESTAMP) AND ".
+                      "MINUTE(stat_time) <= 2",
                       14 );
 
 
