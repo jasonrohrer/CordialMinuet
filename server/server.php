@@ -632,6 +632,9 @@ else if( $action == "leaders_profit" ) {
 else if( $action == "leaders_profit_ratio" ) {
     cm_leadersProfitRatio();
     }
+else if( $action == "users_graph" ) {
+    cm_usersGraph();
+    }
 else if( $action == "cm_setup" ) {
     global $setup_header, $setup_footer;
     echo $setup_header; 
@@ -7485,6 +7488,57 @@ function cm_leadersProfit() {
 
 function cm_leadersProfitRatio() {
     cm_leaders( "profit_ratio" );
+    }
+
+
+
+
+function cm_usersGraph() {
+
+    global $tableNamePrefix, $leaderHeader, $leaderFooter;
+
+    eval( $leaderHeader );
+    
+    
+    $query = "SELECT stat_time, users_last_hour ".
+        "FROM $tableNamePrefix"."user_stats ".
+        "WHERE MINUTE(stat_time) <= 2 ".
+        "LIMIT 24;";
+    $result = cm_queryDatabase( $query );
+
+    $numRows = mysql_numrows( $result );
+    
+    echo "<center><table border=0 cellspacing=8> <tr>";
+
+    echo "<td align=right valign=bottom>";
+    echo "Users:<br><br>Hours ago:<br>";
+    echo "</td>";
+    echo "<td >";
+    echo "</td>";
+
+    $curColor = "#000000";
+    $altColor = "#333333";
+    
+    for( $i=0; $i<$numRows; $i++ ) {
+        echo "<td bgcolor='$curColor' align=center valign=bottom>";
+
+        $tempColor = $curColor;
+        $curColor = $altColor;
+        $altColor = $tempColor;
+        
+        $users_last_hour = mysql_result( $result, $i, "users_last_hour" );
+
+        for( $u=0; $u<$users_last_hour; $u++ ) {
+            echo "+<br>";
+            }
+        echo "---<br>";
+        $hoursAgo = 23 - $i;
+        echo "$hoursAgo<br>";
+        echo "</td>";
+        }
+    echo "</tr></table></center>";
+
+    eval( $leaderFooter );
     }
 
 
