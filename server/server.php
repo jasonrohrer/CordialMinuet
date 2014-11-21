@@ -7492,18 +7492,16 @@ function cm_leadersProfitRatio() {
 
 
 
+function cm_graphUserData( $inTitle, $inStatToGraph, $inWhereClause,
+                           $inLimit ) {
 
-function cm_usersGraph() {
-
-    global $tableNamePrefix, $leaderHeader, $leaderFooter;
-
-    eval( $leaderHeader );
+    global $tableNamePrefix;
     
     
-    $query = "SELECT stat_time, users_last_hour ".
+    $query = "SELECT stat_time, $inStatToGraph ".
         "FROM $tableNamePrefix"."user_stats ".
-        "WHERE MINUTE(stat_time) <= 2 ".
-        "LIMIT 24;";
+        "WHERE $inWhereClause ".
+        "LIMIT $inLimit;";
     $result = cm_queryDatabase( $query );
 
     $numRows = mysql_numrows( $result );
@@ -7511,7 +7509,7 @@ function cm_usersGraph() {
     echo "<center><table border=0 cellspacing=8> <tr>";
 
     echo "<td align=right valign=bottom>";
-    echo "Users:<br><br>Hours ago:<br>";
+    echo "Users:<br><br>$inTitle:<br>";
     echo "</td>";
     echo "<td >";
     echo "</td>";
@@ -7526,7 +7524,7 @@ function cm_usersGraph() {
         $curColor = $altColor;
         $altColor = $tempColor;
         
-        $users_last_hour = mysql_result( $result, $i, "users_last_hour" );
+        $users_last_hour = mysql_result( $result, $i, "$inStatToGraph" );
 
         for( $u=0; $u<$users_last_hour; $u++ ) {
             echo "+<br>";
@@ -7537,6 +7535,27 @@ function cm_usersGraph() {
         echo "</td>";
         }
     echo "</tr></table></center>";
+    }
+
+
+
+
+
+function cm_usersGraph() {
+
+    
+    
+    global $tableNamePrefix, $leaderHeader, $leaderFooter;
+
+    eval( $leaderHeader );
+
+    cm_graphUserData( "Hours Ago", "users_last_hour", "MINUTE(stat_time) <= 2",
+                      24 );
+
+    echo "<br><br><br>";
+    cm_graphUserData( "Days Ago", "users_last_day", "HOUR(stat_time) = 0",
+                      14 );
+
 
     eval( $leaderFooter );
     }
