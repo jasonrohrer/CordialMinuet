@@ -7530,7 +7530,7 @@ function cm_graphUserData( $inTitle, $inStatToGraph, $inWhereClause,
             echo "+<br>";
             }
         echo "---<br>";
-        $hoursAgo = 23 - $i;
+        $hoursAgo = $inLimit - $i;
         echo "$hoursAgo<br>";
         echo "</td>";
         }
@@ -7553,7 +7553,8 @@ function cm_usersGraph() {
                       24 );
 
     echo "<br><br><br>";
-    cm_graphUserData( "Days Ago", "users_last_day", "HOUR(stat_time) = 0",
+    cm_graphUserData( "Days Ago", "users_last_day",
+                      "HOUR(stat_time) = HOUR(CURRENT_TIMESTAMP)",
                       14 );
 
 
