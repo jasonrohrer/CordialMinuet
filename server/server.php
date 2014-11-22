@@ -3917,7 +3917,13 @@ function cm_endOldGames( $user_id ) {
             }
             
         $housePotShare = floor( $potToRake * $housePotFraction );
-                
+
+        global $housePotLimit;
+
+        if( $housePotShare > $housePotLimit ) {
+            $housePotShare = $housePotLimit;
+            }
+        
         $pot -= $housePotShare;
         
 
@@ -5622,6 +5628,12 @@ function cm_makeRoundLoser( $inLoserID, $inTie = false ) {
 
         $houseCoins = floor( $pot * $housePotFraction );
 
+        global $housePotLimit;
+
+        if( $houseCoins > $housePotLimit ) {
+            $houseCoins = $housePotLimit;
+            }
+        
         $pot -= $houseCoins;
 
         $player_2_coins += $pot;
@@ -5644,6 +5656,12 @@ function cm_makeRoundLoser( $inLoserID, $inTie = false ) {
 
         $houseCoins = floor( $pot * $housePotFraction );
 
+        global $housePotLimit;
+
+        if( $houseCoins > $housePotLimit ) {
+            $houseCoins = $housePotLimit;
+            }
+        
         $pot -= $houseCoins;
 
         $player_1_coins += $pot;
