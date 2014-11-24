@@ -8,7 +8,11 @@ Version 9      ???
 
 Version 8      Live Server Fixes
 
---Added a tribute cap.
+--Added a tribute cap, initially at 4 coins.
+
+--Adjusted tribute percentage to 17, and lowered cap to 1.  Thus, at most one
+  coin is taken as tribute, but it is taken from all pots that are 6 or larger.
+
 
 
 

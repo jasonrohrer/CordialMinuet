@@ -329,10 +329,10 @@ $maxNumLifetimeDeposits = -1;
 
 
 
-$housePotFraction = 0.10;
+$housePotFraction = 0.17;
 
 // maximum number of coins taken by the house percentage
-$housePotLimit = 4;
+$housePotLimit = 1;
 
 
 
