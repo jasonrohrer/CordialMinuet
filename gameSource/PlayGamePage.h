@@ -237,6 +237,8 @@ class PlayGamePage : public ServerActionPage, public ActionListener {
 
         int mRevealChoiceForUs;
         
+        // track bet that hasn't been visually added to pot yet
+        int mLastUnflownBet;
 
         GameMessageState mMessageState;
         

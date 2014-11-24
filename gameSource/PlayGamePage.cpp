@@ -843,6 +843,8 @@ void PlayGamePage::actionPerformed( GUIComponent *inTarget ) {
             // bets simultaneously if they bet the same amount coincidentally).
             // SO... don't fly coins here... hold back bet from pot until
             // reveal to make this clear
+            
+            mLastUnflownBet = bet;
             }
         else {
             // we're the lower player, and if we match their bet, they 
@@ -869,6 +871,8 @@ void PlayGamePage::actionPerformed( GUIComponent *inTarget ) {
                       false };
                 mFlyingCoins[0].push_back( coin );
                 }
+
+            mLastUnflownBet = 0;
             }
         
 
@@ -2283,6 +2287,44 @@ void PlayGamePage::step() {
                         flyingQueue->push_back( coin );
                         }
                     
+                    if( mLastUnflownBet > 0 ) {
+                        // opponent folded to our bet, which wasn't
+                        // visibly added to pot yet
+                        
+                        SimpleVector<PendingFlyingCoin> *ourBetQueue = 
+                            flyingQueue;
+                        
+                        if( parallelOkay ) {
+                            ourBetQueue = &( mFlyingCoins[1] );
+                            }
+
+                        int coinValue = 1;
+                        if( mLastUnflownBet >= 10 ) {
+                            coinValue = 10;
+                            }
+                        
+                        for( int i=0; i<mLastUnflownBet; i += coinValue ) {
+                            if( mLastUnflownBet - i < coinValue ) {
+                                coinValue = 1;
+                                }
+                            
+                            PendingFlyingCoin coin = 
+                                { &( mPlayerCoinSpots[0] ),
+                                  &( mPotCoinSpots[0] ),
+                                  0,
+                                  coinValue,
+                                  nextCoinID++,
+                                  false };
+                            ourBetQueue->push_back( coin );
+                            }
+                        
+                        // these need to fly back to us after they
+                        // fly into the pot
+                        winnerPotToAward += mLastUnflownBet;
+                        mLastUnflownBet = 0;
+                        }
+                    
+
                     // insert a coin flight pause after this, so that loser's
                     // insufficient pot is shown on the screen for a bit
                     // before the coin distribution is shown
