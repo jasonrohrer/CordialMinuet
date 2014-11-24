@@ -2237,10 +2237,20 @@ void PlayGamePage::step() {
                 // (parallel used for [bets --> pot] only)
                 SimpleVector<PendingFlyingCoin> *flyingQueue;
                 
+                char parallelOkay = false;
                 if( mFlyingCoins[0].size() > mFlyingCoins[1].size() ) {
+                    // queue 0 more full, make these new
+                    // coins wait at the end of queue 1
+                    flyingQueue = &( mFlyingCoins[0] );
+                    }
+                else if( mFlyingCoins[0].size() == 
+                         mFlyingCoins[1].size() ) {
+                    parallelOkay = true;
                     flyingQueue = &( mFlyingCoins[0] );
                     }
                 else {
+                    // queue 1 more full, make these new
+                    // coins wait at the end of queue 1
                     flyingQueue = &( mFlyingCoins[1] );
                     }
                 
@@ -2326,6 +2336,14 @@ void PlayGamePage::step() {
                     // swap winner and loser before distributing
                     // loser's coins
                     winner = loser;
+                    winnerCoinSpot = 
+                        &( mPlayerCoinSpots[loser] );
+
+                    // let them fly in parallel if there aren't 
+                    // already coins flying
+                    if( parallelOkay ) {
+                        flyingQueue = &( mFlyingCoins[1] );
+                        }
                     }
 
                 coinValue = 1;

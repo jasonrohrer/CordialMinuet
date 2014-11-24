@@ -1,0 +1,19 @@
+Version 9      ???
+
+--Fixed client bug in coin distribution after a tie.
+
+
+
+
+
+Version 8      Live Server Fixes
+
+--Added a tribute cap.
+
+
+
+
+
+Version 8      2014-November-20
+
+First private alpha release.
