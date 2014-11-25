@@ -12,6 +12,8 @@ Version 9      ???
 --Fixed bug when opponent leaves game right before start of next round (board
   would fade back in and redraw all color strokes from the last round).
 
+--Fixed post-game report to show pre-buy-in balance and buy-in.
+
 
 
 
@@ -21,6 +23,9 @@ Version 8      Live Server Fixes
 
 --Adjusted tribute percentage to 17, and lowered cap to 1.  Thus, at most one
   coin is taken as tribute, but it is taken from all pots that are 6 or larger.
+
+--Fixed so that stale games are ended before fetching balance on menu screen
+  (for example, after force-quit or crash during a game).
 
 
 

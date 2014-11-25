@@ -1490,11 +1490,10 @@ void drawFrame( char inUpdate ) {
                 if( buyIn != 0 ) {
                     // buy-in happened
 
-                    userBalance -= buyIn;
-
                     // so there's a real cash-out
                     depositDisplayPage->setDeltaAmount( payout );
                     depositDisplayPage->setLeftGame( true );
+                    depositDisplayPage->setBuyIn( buyIn );
 
                     currentGamePage = depositDisplayPage;
                     currentGamePage->base_makeActive( true );

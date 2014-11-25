@@ -52,6 +52,12 @@ void DepositDisplayPage::setLeftGame( char inLeftGame ) {
     }
 
 
+
+void DepositDisplayPage::setBuyIn( double inBuyIn ) {
+    mBuyIn = inBuyIn;
+    }
+
+
         
 void DepositDisplayPage::actionPerformed( GUIComponent *inTarget ) {
     if( inTarget == &mOkayButton ) {
@@ -96,8 +102,19 @@ void DepositDisplayPage::draw( doublePair inViewCenter,
     
     doublePair pos = { 0, 0 };
     
+
+    double spacing = 64;
+    
+    if( mLeftGame ) {
+        spacing = 54;
+        }
+
     pos.x = 0;
     pos.y += 192;
+
+    if( mLeftGame ) {
+        pos.y += 2 * spacing;
+        }
     
     mainFont->drawString( translate( "oldBalance" ), pos, alignRight );
 
@@ -108,6 +125,7 @@ void DepositDisplayPage::draw( doublePair inViewCenter,
 
     char *deltaString = formatBalance( mDeltaAmount, fullPrecision );
 
+    char *buyInString = formatBalance( mBuyIn, fullPrecision );
 
     // estimate new balance for width measurements
     double newBalanceEstimate = mOldBalance;
@@ -117,6 +135,10 @@ void DepositDisplayPage::draw( doublePair inViewCenter,
         }
     else {
         newBalanceEstimate += mDeltaAmount;
+        }
+
+    if( mLeftGame ) {
+        newBalanceEstimate -= mBuyIn;
         }
     
     char *newBalanceEstimateString = 
@@ -130,6 +152,13 @@ void DepositDisplayPage::draw( doublePair inViewCenter,
     if( otherWidth > maxWidth ) {
         maxWidth = otherWidth;
         }
+
+    otherWidth = numbersFontFixed->measureString( buyInString );
+    if( otherWidth > maxWidth ) {
+        maxWidth = otherWidth;
+        }
+    
+
     
     otherWidth = numbersFontFixed->measureString( newBalanceEstimateString );
     
@@ -145,13 +174,28 @@ void DepositDisplayPage::draw( doublePair inViewCenter,
 
 
     pos.x = xOffset;
-    pos.y -= 64;
+    pos.y -= spacing;
     numbersFontFixed->drawString( oldBalanceString, pos, alignRight );
     
     delete [] oldBalanceString;
 
+    
+    if( mLeftGame ) {
+        pos.x = 0;
+        pos.y -= spacing;
+        
+        mainFont->drawString( translate( "joinedWithAmount" ), 
+                                      pos, alignRight );
+    
+        pos.x = xOffset;
+        pos.y -= spacing;
+        numbersFontFixed->drawString( buyInString, pos, alignRight );
+        }
+    delete [] buyInString;
+
+
     pos.x = 0;
-    pos.y -= 64;
+    pos.y -= spacing;
 
     const char *amountKey = "addedAmount";
     
@@ -162,16 +206,16 @@ void DepositDisplayPage::draw( doublePair inViewCenter,
         amountKey = "leftWithAmount";
         }
 
-    numbersFontFixed->drawString( translate( amountKey ), pos, alignRight );
+    mainFont->drawString( translate( amountKey ), pos, alignRight );
     
     pos.x = xOffset;
-    pos.y -= 64;
+    pos.y -= spacing;
     numbersFontFixed->drawString( deltaString, pos, alignRight );
     
     delete [] deltaString;
     
     pos.x = 0;
-    pos.y -= 64;
+    pos.y -= spacing;
  
     mainFont->drawString( translate( "newBalance" ), pos, alignRight );
     
@@ -183,7 +227,7 @@ void DepositDisplayPage::draw( doublePair inViewCenter,
                            fullPrecision );
     
         pos.x = xOffset;
-        pos.y -= 64;
+        pos.y -= spacing;
         numbersFontFixed->drawString( valueString, pos, alignRight );
     
         delete [] valueString;

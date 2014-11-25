@@ -20,7 +20,8 @@ class DepositDisplayPage : public ServerActionPage, public ActionListener {
         void setWithdraw( char inWithdraw );
 
         void setLeftGame( char inLeftGame );
-        
+        // for extra info on left game page
+        void setBuyIn( double inBuyIn );
 
         virtual void actionPerformed( GUIComponent *inTarget );
 
@@ -44,6 +45,6 @@ class DepositDisplayPage : public ServerActionPage, public ActionListener {
         double mOldBalance;
         double mDeltaAmount;
 
-
+        double mBuyIn;
 
     };
