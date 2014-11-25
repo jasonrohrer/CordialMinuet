@@ -222,6 +222,10 @@ double depositPercentage = 0;
 double minDeposit = 2.00;
 double maxDeposit = 999999.99;
 
+double minGameStakes = 0.01;
+double maxGameStakes = 999999999.99;
+
+
 
 double userBalance = 0;
 double checkCostUS = 0;

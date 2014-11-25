@@ -4218,6 +4218,15 @@ function cm_joinGame() {
         return;
         }
 
+    global $minGameStakes, $maxGameStakes;
+
+    if( $dollar_amount < $minGameStakes || $dollar_amount > $maxGameStakes ) {
+        cm_log( "cm_joinGame denied, dollar_amount $dollar_amount ".
+                "is not in allowed range [$minGameStakes, $maxGameStakes]" );
+        cm_transactionDeny();
+        return;
+        }
+
     
     $recomputedBalance = cm_recomputeBalanceFromHistory( $user_id );
     
@@ -4617,16 +4626,20 @@ function cm_listGames() {
         return;
         }
 
-    global $areGamesAllowed;
+    global $areGamesAllowed, $minGameStakes, $maxGameStakes;
 
     if( !$areGamesAllowed ) {
         echo "0\n";
+        echo "$minGameStakes\n";
+        echo "$maxGameStakes\n";
         echo "0#0\n";
         echo "OK";
         return;
         }
     else {
         echo "1\n";
+        echo "$minGameStakes\n";
+        echo "$maxGameStakes\n";
         }
     
 

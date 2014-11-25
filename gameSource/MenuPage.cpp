@@ -16,6 +16,9 @@ extern Font *mainFont;
 
 extern char inPersonMode;
 
+extern double minGameStakes;
+extern double maxGameStakes;
+
 
 
 void MenuPage::clearListedGames() {
@@ -303,7 +306,7 @@ void MenuPage::step() {
 
         int numLines = getNumResponseParts();
         
-        int numGames = numLines - 1;
+        int numGames = numLines - 4;
 
         for( int i = 0; i<numLines; i++ ) {
             
@@ -324,6 +327,22 @@ void MenuPage::step() {
                 
                 continue;
                 }
+            else if( i == 1 ) {
+                // second line is min_allowed_stakes
+                sscanf( line, "%lf", &minGameStakes );
+                
+                delete [] line;
+                
+                continue;
+                }
+            else if( i == 2 ) {
+                // third line is max_allowed_stakes
+                sscanf( line, "%lf", &maxGameStakes );
+                
+                delete [] line;
+                
+                continue;
+                }
             
 
             int numParts;
@@ -339,7 +358,7 @@ void MenuPage::step() {
                 sscanf( parts[0], "%lf", &( r.dollarAmount ) );
                     
                     
-                int b = buttonsToUse[numGames - 1][i];
+                int b = buttonsToUse[numGames - 1][i - 3];
                     
                 TextButton *button = mGameButtons.getElementDirect( b );
                     

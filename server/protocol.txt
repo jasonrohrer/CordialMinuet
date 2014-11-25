@@ -531,6 +531,8 @@ server.php?action=list_games
 
 Returns:
 are_games_allowed
+min_allowed_stakes
+max_allowed_stakes
 dollar_cost
 dollar_cost
 dollar_cost
@@ -554,6 +556,8 @@ more_pages is 1 if there are more pages of games after this, or 0 if not
 
 skip in the response indicates the skip that was used to generate the list.
 
+
+min_ and max_allowed_stakes are in ASCII floating point
 
 
 

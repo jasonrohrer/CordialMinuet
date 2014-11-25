@@ -350,6 +350,11 @@ $withdrawalWithNoInfoYearlyLimit = "600.00";
 
 
 
+$minGameStakes = "0.01";
+$maxGameStakes = "999999999.99";
+
+
+
 // 1 minute
 $moveTimeLimit = "0 0:01:02.000";
 

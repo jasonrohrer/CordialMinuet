@@ -21,14 +21,11 @@
 extern Font *mainFont;
 
 
-extern char *userEmail;
-extern char *accountKey;
-extern int serverSequenceNumber;
 
 extern double userBalance;
-extern double transferCost;
 
-
+extern double minGameStakes;
+extern double maxGameStakes;
 
 
 
@@ -119,8 +116,14 @@ void CreateGamePage::makeActive( char inFresh ) {
     
     checkIfCreateButtonVisible();
 
-    mAmountPicker.setMin( 0.01 );
-    mAmountPicker.setMax( userBalance );
+    mAmountPicker.setMin( minGameStakes );
+
+    double lowerLimit = userBalance;
+    if( userBalance > maxGameStakes ) {
+        lowerLimit = maxGameStakes;
+        }
+
+    mAmountPicker.setMax( lowerLimit );
 
     // make room in case of huge balance
     if( userBalance < 9999999 ) {

@@ -17,6 +17,12 @@ Version 9      ???
 --Typed credit card info is now replaced with 0 characters in recordedGame
   file.
 
+--Fixed bugs in game button placement on game list page.
+
+--Added support for setting min and max allowed game stakes on server and
+  through protocol in client.  This could be useful for tournaments and other
+  contests.
+
 
 
 
