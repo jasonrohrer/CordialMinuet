@@ -1775,7 +1775,7 @@ void PlayGamePage::step() {
             }
         }
 
-    if( ! mParchmentFadingOut && mParchmentFade > 0 ) {
+    if( ! mParchmentFadingOut && mParchmentFade > 0 && mRunning ) {
         mParchmentFade -= 0.02 * frameRateFactor;
         if( mParchmentFade < 0 ) {
             mParchmentFade = 0;

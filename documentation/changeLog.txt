@@ -9,6 +9,9 @@ Version 9      ???
 --Fixed bugs in possible score graph update when sliders are dragged over
   blocked columns or when one slider pushes another out of the way.
 
+--Fixed bug when opponent leaves game right before start of next round (board
+  would fade back in and redraw all color strokes from the last round).
+
 
 
 
