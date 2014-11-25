@@ -2709,6 +2709,7 @@ void PlayGamePage::step() {
                         mPickerUs.draw = true;
                         mPickerUs.pos.x = mColumnPositions[0].x - 27;
                         mPickerUs.targetColumn = -1;
+                        mPickerUs.trueClosestColumn = -1;
                         mPickerUs.lastPlayerDropColumn = -1;
                         mPickerUs.hardScoreUpdate = true;
                         mPickerUs.draggedInYet = false;
@@ -2719,6 +2720,7 @@ void PlayGamePage::step() {
                         mPickerThem.draw = true;
                         mPickerThem.pos.x = mColumnPositions[5].x + 27;
                         mPickerThem.targetColumn = -1;
+                        mPickerThem.trueClosestColumn = -1;
                         mPickerThem.lastPlayerDropColumn = -1;
                         mPickerThem.hardScoreUpdate = true;
                         mPickerThem.draggedInYet = false;
@@ -2758,6 +2760,7 @@ void PlayGamePage::step() {
                 mPickerUs.draw = true;
                 mPickerUs.pos.x = mColumnPositions[0].x - 27;
                 mPickerUs.targetColumn = -1;
+                mPickerUs.trueClosestColumn = -1;
                 mPickerUs.lastPlayerDropColumn = -1;
                 mPickerUs.hardScoreUpdate = true;
                 mPickerUs.draggedInYet = false;
@@ -3426,8 +3429,10 @@ void PlayGamePage::pickerReactToMouseMove( ColumnPicker *inPicker,
             }
         
         int oldTarget = inPicker->targetColumn;
+        int oldTrueClosest = inPicker->trueClosestColumn;
         
         inPicker->targetColumn = closestColumn;
+        inPicker->trueClosestColumn = trueClosestColumn;
         
         if( inPicker == &mPickerUs ) {
             if( ! mPickerThem.draw ) {
@@ -3443,19 +3448,7 @@ void PlayGamePage::pickerReactToMouseMove( ColumnPicker *inPicker,
             }
         
 
-        if( closestColumn != oldTarget ) {
-            
-            inPicker->hardScoreUpdate = false;
-            
-            // don't jump score graph to match closestColumn if
-            // we're currently dragging over an unpickable column, because
-            // that's confusing
-            if( trueClosestColumn == closestColumn ) {
-            
-                // jump score graph in realtime as we drag, but only if cached
-                computePossibleScores( true );
-                }
-            }
+        
 
         float delta = mColumnPositions[closestColumn].x - x;
 
@@ -3491,6 +3484,37 @@ void PlayGamePage::pickerReactToMouseMove( ColumnPicker *inPicker,
             // other picker can go back to where player last dropped it,
             // because it's clear now
             inOtherPicker->targetColumn = inOtherPicker->lastPlayerDropColumn;
+            }
+
+
+        if( inOtherPicker == &mPickerUs ) {
+            if( ! mPickerThem.draw ) {
+                // reveal step
+                mRevealChoiceForUs = inOtherPicker->targetColumn;
+                }
+            else {
+                mColumnChoiceForUs = inOtherPicker->targetColumn;
+                }
+            }
+        else {
+            mColumnChoiceForThem = inOtherPicker->targetColumn;
+            }
+
+
+        
+        if( closestColumn != oldTarget || 
+            trueClosestColumn != oldTrueClosest ) {
+            
+            inPicker->hardScoreUpdate = false;
+            
+            // don't jump score graph to match closestColumn if
+            // we're currently dragging over an unpickable column, because
+            // that's confusing
+            if( trueClosestColumn == closestColumn ) {
+            
+                // jump score graph in realtime as we drag, but only if cached
+                computePossibleScores( true );
+                }
             }
         }
     else if( inPicker->draw && ! inOtherPicker->held

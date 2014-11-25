@@ -117,6 +117,11 @@ typedef struct ColumnPicker {
         doublePair pos;
         int targetColumn;
         
+        // perhaps a blocked column that the picker
+        // can't go to
+        int trueClosestColumn;
+        
+
         // tracks where player last put this picker
         // targetColumn may change as picker gets out of way of other
         // picker, but it will return to lastPlayerDropColumn whenever

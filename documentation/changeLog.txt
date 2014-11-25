@@ -6,6 +6,9 @@ Version 9      ???
   larger bet is now shown moving into the pot before the payout---before, our
   larger bet was not shown moving into the pot).
 
+--Fixed bugs in possible score graph update when sliders are dragged over
+  blocked columns or when one slider pushes another out of the way.
+
 
 
 
