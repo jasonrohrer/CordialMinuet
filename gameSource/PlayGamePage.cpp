@@ -3062,6 +3062,111 @@ static void testAllTheirMovesWithFixedOurMove( int *inValues,
 
 
 
+// realize that choices for other player, and order of those choices,
+// don't matter for computing possible scores of a given player
+// Thus, we can save a bunch of computation time by computing them
+// separately than by walking entire game tree with 500K leaves.
+static void computePossibleScoresForPlayer( 
+    // these are -1 if not assigned yet
+    int inColumnsToPlayer[3],
+    int inRowsToPlayer[3],
+    char inColumnAvailable[6],
+    char inRowAvailable[6],
+    int *inGameBoard,
+    // where we should set flags when we compute that a score for this
+    // player is possible
+    char *inPossibleScoreMap ) {
+
+    for( int c=0; c<3; c++ ) {
+        
+        if( inColumnsToPlayer[c] == -1 ) {
+        
+            // set from each of available cols
+            for( int a=0; a<6; a++ ) {
+                
+                if( inColumnAvailable[a] ) {
+                    //mark as not avail
+
+                    inColumnAvailable[a] = false;
+                    
+                    inColumnsToPlayer[c] = a;
+
+                    // recurse
+                    computePossibleScoresForPlayer( 
+                        inColumnsToPlayer,
+                        inRowsToPlayer,
+                        inColumnAvailable,
+                        inRowAvailable,
+                        inGameBoard,
+                        inPossibleScoreMap );
+
+                    // undo what we set
+                    inColumnAvailable[a] = true;
+                    }
+                }
+            
+            // undo what we set and return
+            inColumnsToPlayer[c] = -1;
+            return;
+            }
+        }
+    // all cols set
+
+    for( int r=0; r<3; r++ ) {
+
+        if( inRowsToPlayer[r] == -1 ) {
+        
+            // set from each of available cols
+            for( int a=0; a<6; a++ ) {
+                
+                if( inRowAvailable[a] ) {
+                    //mark as not avail
+
+                    inRowAvailable[a] = false;
+                    
+                    inRowsToPlayer[r] = a;
+
+                    // recurse
+                    computePossibleScoresForPlayer( 
+                        inColumnsToPlayer,
+                        inRowsToPlayer,
+                        inColumnAvailable,
+                        inRowAvailable,
+                        inGameBoard,
+                        inPossibleScoreMap );
+
+                    // undo what we set
+                    inRowAvailable[a] = true;
+                    }
+                }
+            
+            // undo what we set and return
+            inRowAvailable[r] = -1;
+            return;
+            }
+        }
+
+    // both rows and cols set.
+
+    // compute score for player from these
+
+    // set it in inPossibleScoreMap
+    
+    int score = 0;
+    
+    for( int p=0; p<3; p++ ) {
+        score += 
+            inGameBoard[ inRowsToPlayer[p] * 6 + inColumnsToPlayer[p] ];
+        }
+    
+    inPossibleScoreMap[score] = true;
+
+    return;
+    }
+
+    
+
+
 
 void PlayGamePage::computePossibleScores( char inCachedOnly ) {
         
