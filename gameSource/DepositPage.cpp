@@ -512,6 +512,19 @@ void DepositPage::draw( doublePair inViewCenter,
 
 
 void DepositPage::step() {
+    
+    // replace recorded typing in sensitive data fields as 0
+    if( mCardNumberField.isFocused() 
+        || mExpireMonthField.isFocused() 
+        || mExpireYearField.isFocused()
+        || mCVCField.isFocused() ) {
+        obscureRecordedNumericTyping( true, '0' );
+        }
+    else {
+        obscureRecordedNumericTyping( false, '0' );
+        }
+
+
     ServerActionPage::step();
     
     if( ! isActionInProgress() ) {

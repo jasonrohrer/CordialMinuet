@@ -14,6 +14,9 @@ Version 9      ???
 
 --Fixed post-game report to show pre-buy-in balance and buy-in.
 
+--Typed credit card info is now replaced with 0 characters in recordedGame
+  file.
+
 
 
 
