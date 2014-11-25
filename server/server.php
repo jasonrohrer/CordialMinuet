@@ -493,6 +493,7 @@ if( $shutdownMode &&
       $action == "join_games" ||
       $action == "wait_game_start" ||
       $action == "leave_game" ||
+      $action == "get_balance" ||
       $action == "list_games" ||
       $action == "get_game_state" ||
       $action == "make_move" ||
@@ -1699,6 +1700,9 @@ function cm_getBalance() {
 
     $user_id = cm_getUserID();
 
+    cm_endOldGames( $user_id );
+    
+    
     global $tableNamePrefix;
     
     
