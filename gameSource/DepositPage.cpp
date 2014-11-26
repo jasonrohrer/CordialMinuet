@@ -113,6 +113,7 @@ DepositPage::DepositPage()
                          translate( "cancel" ) ),
           mClearButton( mainFont, 263, 126, 
                         translate( "clear" ) ),
+           mAtSignButton( mainFont, 263, 126, "@" ),
           mResponseProcessed( false ) {
 
 
@@ -120,19 +121,22 @@ DepositPage::DepositPage()
     addComponent( &mDepositButton );
     addComponent( &mCancelButton );
     addComponent( &mClearButton );
+    addComponent( &mAtSignButton );
     
 
     setButtonStyle( &mDepositButton );
     setButtonStyle( &mCancelButton );
     setButtonStyle( &mClearButton );
-    
+    setButtonStyle( &mAtSignButton );
 
     mDepositButton.addActionListener( this );
     mCancelButton.addActionListener( this );
     mClearButton.addActionListener( this );
+    mAtSignButton.addActionListener( this );
 
     
     mClearButton.setMouseOverTip( "clearTip" );
+    mAtSignButton.setMouseOverTip( "atSignTip" );
 
     addComponent( &mAmountPicker );
     
@@ -332,6 +336,7 @@ void DepositPage::actionPerformed( GUIComponent *inTarget ) {
         mDepositButton.setVisible( false );
         mCancelButton.setVisible( false );
         mClearButton.setVisible( false );
+        mAtSignButton.setVisible( false );
         
         for( int i=0; i<NUM_DEPOSIT_FIELDS; i++ ) {
             mFields[i]->setActive( false );
@@ -356,8 +361,12 @@ void DepositPage::actionPerformed( GUIComponent *inTarget ) {
 
         mClearButton.setVisible( false );
         mEmailFieldCanFocus = true;
+        mAtSignButton.setVisible( false );
         
         setSignal( "clearAccount" );
+        }
+    else if( inTarget == &mAtSignButton ) {
+        mEmailField.insertCharacter( '@' );
         }
     else if( inTarget == &mAmountPicker ) {
         recomputeFee();
@@ -434,10 +443,14 @@ void DepositPage::makeNotActive() {
 void DepositPage::makeFieldsActive() {
     if( mEmailFieldCanFocus ) {
         mEmailField.focus();
+        mAtSignButton.setVisible( true );
+        mClearButton.setVisible( false );
         }
     else {
         mEmailField.cursorReset();
         mCardNumberField.focus();
+        mAtSignButton.setVisible( false );
+        mClearButton.setVisible( true );
         }
     
     for( int i=0; i<NUM_DEPOSIT_FIELDS; i++ ) {
@@ -541,6 +554,7 @@ void DepositPage::step() {
         mCancelButton.setVisible( true );
         
         mClearButton.setVisible( ! mEmailFieldCanFocus );
+        mAtSignButton.setVisible( mEmailField.isFocused() );
         }
     
     if( !mResponseProcessed && isResponseReady() ) {

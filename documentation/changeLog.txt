@@ -39,6 +39,8 @@ Version 9      ???
 --Fixed so that clear button doesn't linger for one frame upon returing to
   deposit page after clearing account details.
 
+--Added an [@] button to the deposit page to help international keyboards.
+
 
 
 
