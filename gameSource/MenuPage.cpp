@@ -384,59 +384,22 @@ void MenuPage::step() {
 
                 char *tip = autoSprintf( translate( tipKey ),
                                          dollarString );
-                    
+                
+                delete [] dollarString;
+
                 button->setMouseOverTip( tip );
 
                 delete [] tip;
+                
 
-                if( r.dollarAmount < 1000 ) {
-                        
-                    button->setLabelText( dollarString );
-                    }
-                else {
-                    // too big to display on button
-                    char sizeChar = 'K';
-                        
-                    double trimmedAmount = r.dollarAmount / 1000;
-                        
-                    if( trimmedAmount >= 1000 ) {
-                        sizeChar = 'M';
-                        trimmedAmount = trimmedAmount / 1000;
-                        }
+                char *limitedDollarString = 
+                    formatDollarStringLimited( r.dollarAmount );
+                
+                button->setLabelText( limitedDollarString );
 
-                    if( trimmedAmount >= 1000 ) {
-                        sizeChar = 'B';
-                        trimmedAmount = trimmedAmount / 1000;
-                        }
-                        
-                    if( trimmedAmount >= 1000 ) {
-                        sizeChar = 'T';
-                        trimmedAmount = trimmedAmount / 1000;
-                        }
-                        
-                        
-                    const char *formatString = "$%.0f %c";
-                        
-                    if( trimmedAmount < 10 ) {
-                        formatString = "$%.1f %c";
-                        trimmedAmount = floor( 10 * trimmedAmount ) / 10;
-                        }
-                    else {
-                        trimmedAmount = floor( trimmedAmount );
-                        }
-
-                    char *trimmedString = autoSprintf( formatString,
-                                                       trimmedAmount,
-                                                       sizeChar );
-
-                    button->setLabelText( trimmedString );
-
-                    delete [] trimmedString;
-                    }
-                    
+                delete [] limitedDollarString;
 
                         
-                delete [] dollarString;
 
                 r.button = button;
                     

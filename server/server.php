@@ -4488,6 +4488,54 @@ function cm_keepGameAlive( $user_id ) {
 
 
 
+function cm_getOtherGameList( $user_id ) {
+    global $tableNamePrefix;
+    
+    $query = "SELECT dollar_amount ".
+        "FROM $tableNamePrefix"."games ".
+        "WHERE player_1_id = '$user_id' OR player_2_id = '$user_id';";
+
+    $result = cm_queryDatabase( $query );
+
+    $numRows = mysql_numrows( $result );
+
+    
+    if( $numRows == 0 ) {
+        return "#";
+        }
+    
+    $dollar_amount = mysql_result( $result, 0, "dollar_amount" );
+
+    $query = "SELECT dollar_amount ".
+        "FROM $tableNamePrefix"."games ".
+        "WHERE player_1_id != '$user_id' AND player_2_id != '$user_id' ".
+        "ORDER BY ABS( dollar_amount - $dollar_amount ) ASC LIMIT 3;";
+
+    $result = cm_queryDatabase( $query );
+
+    $numRows = mysql_numrows( $result );
+
+    $otherGameList = "";
+
+    if( $numRows == 0 ) {
+        $otherGameList = "#";
+        }
+    else {
+        $otherGameList = mysql_result( $result, 0, "dollar_amount" );
+        
+        for( $i=1; $i<$numRows; $i++ ) {
+            
+            $otherGameList .=
+                "#". mysql_result( $result, $i, "dollar_amount" );
+            }
+        }
+
+    return $otherGameList;
+    }
+
+
+
+
 function cm_waitGameStart() {
     if( ! cm_verifyTransaction() ) {
         return;
@@ -4499,6 +4547,10 @@ function cm_waitGameStart() {
     $user_id = cm_getUserID();
 
     cm_keepGameAlive( $user_id );
+    
+    
+    $otherGameList = cm_getOtherGameList( $user_id );
+    
     
     cm_queryDatabase( "SET AUTOCOMMIT=0" );
     
@@ -4523,7 +4575,9 @@ function cm_waitGameStart() {
     $started = mysql_result( $result, 0, "started" );
     
     if( $started != 0 ) {
-        echo "started\nOK";
+        echo "started\n";
+        echo "$otherGameList\n";
+        echo "OK";
         return;
         }
     else {
@@ -4535,9 +4589,14 @@ function cm_waitGameStart() {
         
         $result = semWait( $semaphore_key, $waitTimeout );
 
+        
+        $otherGameList = cm_getOtherGameList( $user_id );
 
+        
         if( $result == -2 ) {
-            echo "waiting\nOK";
+            echo "waiting\n";
+            echo "$otherGameList\n";
+            echo "OK";
             return;
             }
         else {
@@ -4564,12 +4623,16 @@ function cm_waitGameStart() {
 
             if( $player_2_id == 0 ) {
                 // sem signaled, but opponent still not there?
-                echo "waiting\nOK";
+                echo "waiting\n";
+                echo "$otherGameList\n";
+                echo "OK";
                 return;
                 }
             else {
                 // opponent present
-                echo "started\nOK";
+                echo "started\n";
+                echo "$otherGameList\n";
+                echo "OK";
                 return;
                 }
             

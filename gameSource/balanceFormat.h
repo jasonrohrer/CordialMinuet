@@ -15,3 +15,9 @@ char *formatBalance( double inBalance,
                      char inForceFullPrecision = false,
                      char *outFullPrecision = NULL );
 
+
+// formats a dollar value so that values above 1000 are truncated and 
+// abbreviated with K, M, etc.
+// inSpaceBeforeUnit controls "$100M" vs "$100 M" behavior
+char *formatDollarStringLimited( double inDollarAmount,
+                                 char inSpaceBeforeUnit = true );

@@ -164,6 +164,8 @@ create "CREATE"
 
 waitingStart "WAITING FOR OPPONENT"
 
+otherGames "OTHER GAMES:"
+
 
 
 gameList "JOIN GAME:"

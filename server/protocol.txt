@@ -489,15 +489,21 @@ server.php?action=wait_game_start
 
 Returns:
 started
+1.00#5.55#9.00
 OK
 
 or
 waiting
+1.00#5.55#9.00
 OK
 
 This call is for game creators who are waiting for an opponent to join
 their game.
 
+The list of dollar amounts (separated by #) after the status message provides
+notification about other similar game stakes that are waiting for an opponent
+(so that waiting player can see a list of other games).  List will be # if
+empty.
 
 
 

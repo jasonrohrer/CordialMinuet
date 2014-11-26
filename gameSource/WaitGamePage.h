@@ -41,4 +41,5 @@ class WaitGamePage : public ServerActionPage, public ActionListener {
 
         TextButton mCancelButton;                
         
+        SimpleVector<double> mOtherGames;
     };

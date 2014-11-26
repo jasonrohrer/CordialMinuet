@@ -1,6 +1,7 @@
 #include "balanceFormat.h"
 
 #include <string.h>
+#include <math.h>
 
 #include "minorGems/util/stringUtils.h"
 
@@ -103,5 +104,61 @@ char *formatBalance( double inBalance,
         }
     
     return addCommas( valueString );
+    }
+
+
+
+char *formatDollarStringLimited( double inDollarAmount,
+                                 char inSpaceBeforeUnit ) {
+    if( inDollarAmount < 1000 ) {
+        
+        return formatBalance( inDollarAmount );
+        }
+    else {
+        // too big to display on button
+        char sizeChar = 'K';
+        
+        double trimmedAmount = inDollarAmount / 1000;
+        
+        if( trimmedAmount >= 1000 ) {
+            sizeChar = 'M';
+            trimmedAmount = trimmedAmount / 1000;
+            }
+        
+        if( trimmedAmount >= 1000 ) {
+            sizeChar = 'B';
+            trimmedAmount = trimmedAmount / 1000;
+            }
+        
+        if( trimmedAmount >= 1000 ) {
+            sizeChar = 'T';
+            trimmedAmount = trimmedAmount / 1000;
+            }
+                        
+                        
+        const char *formatString;
+        
+        if( inSpaceBeforeUnit ) {
+            formatString = "$%.0f %c";
+            }
+        else {
+            formatString = "$%.0f%c";
+            }
+        
+
+        if( trimmedAmount < 10 ) {
+            formatString = "$%.1f %c";
+            trimmedAmount = floor( 10 * trimmedAmount ) / 10;
+            }
+        else {
+            trimmedAmount = floor( trimmedAmount );
+            }
+        
+        char *trimmedString = autoSprintf( formatString,
+                                           trimmedAmount,
+                                           sizeChar );
+        
+        return trimmedString;
+        }
     }
 

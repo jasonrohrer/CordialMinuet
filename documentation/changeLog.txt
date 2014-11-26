@@ -30,6 +30,9 @@ Version 9      ???
   that the calculation can now be done in realtime while smooth dragging 
   (thanks Ralph V).
 
+--List of three closest-valued other games now shown on the Waiting For
+  Opponent screen.
+
 
 
 
