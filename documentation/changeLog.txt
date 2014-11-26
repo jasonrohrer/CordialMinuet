@@ -23,6 +23,14 @@ Version 9      ???
   through protocol in client.  This could be useful for tournaments and other
   contests.
 
+--Rewrote the possible score calculation in a way that avoids redundant work by
+  calculating scores for each player separately instead of exploring the full
+  game tree.  This results in a 25x speedup for the calculation when placing
+  the first slider (visiting 24,000 leaves instead of 604,800 leaves), meaning
+  that the calculation can now be done in realtime while smooth dragging 
+  (thanks Ralph V).
+
+
 
 
 

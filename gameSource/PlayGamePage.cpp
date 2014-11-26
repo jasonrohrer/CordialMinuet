@@ -3141,7 +3141,7 @@ static void computePossibleScoresForPlayer(
                 }
             
             // undo what we set and return
-            inRowAvailable[r] = -1;
+            inRowsToPlayer[r] = -1;
             return;
             }
         }
@@ -3164,11 +3164,143 @@ static void computePossibleScoresForPlayer(
     return;
     }
 
+
+
+
+void PlayGamePage::computePossibleScoresFast() {
+    for( int i=0; i<MAX_SCORE_RANGE; i++ ) {
+        mOurPossibleScores[i] = false;
+        mTheirPossibleScores[i] = false;
+        
+        mOurPossibleScoresFromTheirPerspective[i] = false;
+        }
     
 
+    int columnsGivenUs[3];
+    int rowsGivenUs[3];
 
+    int columnsGivenThem[3];
+    int rowsGivenThem[3];
+    
+    char columnsAvail[6];
+    char rowsAvail[6];
+    
+    memset( columnsAvail, true, 6 );
+    memset( rowsAvail, true, 6 );
+
+    for( int i=0; i<3; i++ ) {
+        columnsGivenUs[i] = -1;
+        columnsGivenThem[i] = -1;
+        rowsGivenUs[i] = -1;
+        rowsGivenThem[i] = -1;
+        }
+    
+    char pendingChoiceUsUsed = false;
+    char pendingChoiceThemUsed = false;
+    
+    for( int i=0; i<3; i++ ) {
+        columnsGivenUs[i] = mOurChoices[i*2];
+        columnsGivenThem[i] = mOurChoices[i*2+1];
+        
+        if( columnsGivenUs[i] == -1 && ! pendingChoiceUsUsed ) {
+            columnsGivenUs[i] = mColumnChoiceForUs;
+            pendingChoiceUsUsed = true;
+            }
+
+        if( columnsGivenThem[i] == -1 && ! pendingChoiceThemUsed ) {
+            columnsGivenThem[i] = mColumnChoiceForThem;
+            pendingChoiceThemUsed = true;
+            }
+
+        if( columnsGivenUs[i] != -1 ) {
+            columnsAvail[ columnsGivenUs[i] ] = false;
+            }
+        if( columnsGivenThem[i] != -1 ) {
+            columnsAvail[ columnsGivenThem[i] ] = false;
+            }
+
+        rowsGivenUs[i] = mTheirChoices[i];
+        rowsGivenThem[i] = mTheirChoices[ 3 + i ];
+
+        if( rowsGivenUs[i] != -1 ) {
+            rowsAvail[ rowsGivenUs[i] ] = false;
+            }
+        if( rowsGivenThem[i] != -1 ) {
+            rowsAvail[ rowsGivenThem[i] ] = false;
+            }
+        }
+    
+        
+
+    // our possible scores from our perspective
+    computePossibleScoresForPlayer( 
+        columnsGivenUs,
+        rowsGivenUs,
+        columnsAvail,
+        rowsAvail,
+        mGameBoard,
+        mOurPossibleScores );
+
+
+    // their possible scores from our perspective
+    computePossibleScoresForPlayer( 
+        columnsGivenThem,
+        rowsGivenThem,
+        columnsAvail,
+        rowsAvail,
+        mGameBoard,
+        mTheirPossibleScores );
+
+
+    // if not final reveal
+    if( mTheirWonSquares[0] == -1 || 
+        mTheirWonSquares[1] == -1 ||
+        mTheirWonSquares[2] == -1 ) {
+        
+        
+        // clear info about what we've given ourselves
+        for( int i=0; i<3; i++ ) {
+
+            // but don't clear a pending reveal
+            if( columnsGivenUs[i] != -1 && 
+                // but don't clear a pending reveal
+                columnsGivenUs[i] != mRevealChoiceForUs ) {
+                
+                columnsAvail[ columnsGivenUs[i] ] = true;
+                
+                columnsGivenUs[i] = -1;
+                }
+            }
+        }
+    
+    
+     // our possible scores from their perspective
+    computePossibleScoresForPlayer( 
+        columnsGivenUs,
+        rowsGivenUs,
+        columnsAvail,
+        rowsAvail,
+        mGameBoard,
+        mOurPossibleScoresFromTheirPerspective );
+    }
+
+
+
+static char possibleScoreMethod = true;
+    
 
 void PlayGamePage::computePossibleScores( char inCachedOnly ) {
+    if( possibleScoreMethod ) {
+        computePossibleScoresFast();
+        }
+    else {
+        computePossibleScoresOld( inCachedOnly );
+        }
+    }
+
+
+
+void PlayGamePage::computePossibleScoresOld( char inCachedOnly ) {
         
     if( loadCacheRecord() ) {
         // cached!
@@ -3763,8 +3895,17 @@ void PlayGamePage::pointerUp( float inX, float inY ) {
 
 
 void PlayGamePage::keyDown( unsigned char inASCII ) {
+    
+    return;
+    
+    // these can be enabled for testing
+
     if( inASCII == 'w' || inASCII == 'W' ) {
         mShowWatercolorDemo = ! mShowWatercolorDemo;
+        }
+    if( inASCII == 'p' || inASCII == 'p' ) {
+        possibleScoreMethod = ! possibleScoreMethod;
+        computePossibleScores( false );
         }
     }
 

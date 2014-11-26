@@ -282,6 +282,8 @@ class PlayGamePage : public ServerActionPage, public ActionListener {
 
 
         void computePossibleScores( char inCachedOnly=false );
+        void computePossibleScoresOld( char inCachedOnly=false );
+        void computePossibleScoresFast();
 
         SpriteHandle mScorePipSprite;
         SpriteHandle mScorePipExtraSprite;
