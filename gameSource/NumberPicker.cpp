@@ -22,7 +22,8 @@ NumberPicker::NumberPicker( Font *inDisplayFont,
                             double inX, double inY,
                             int inMaxMainDigits,
                             int inMaxFractionDigits,
-                            const char *inLabelText )
+                            const char *inLabelText,
+                            char inUseCommas )
         : PageComponent( inX, inY ),
           mFont( inDisplayFont ),
           mMaxTotalDigits( inMaxMainDigits + inMaxFractionDigits ),
@@ -30,6 +31,7 @@ NumberPicker::NumberPicker( Font *inDisplayFont,
           mMaxFractionDigits( inMaxFractionDigits ),
           mUsableDigits( inMaxMainDigits + inMaxFractionDigits ),
           mAdjustable( true ),
+          mUseCommas( inUseCommas ),
           mLabelText( NULL ),
           mMax( DBL_MAX ), mMin( 0 ) {
 
@@ -52,7 +54,8 @@ NumberPicker::NumberPicker( Font *inDisplayFont,
             nextX -= spacing;
             }
         
-        if( mMaxMainDigits > 4 &&
+        if( mUseCommas && 
+            mMaxMainDigits > 4 &&
             ( i - mMaxFractionDigits ) != 0 &&
             ( i - mMaxFractionDigits ) % 3 == 0 ) {
             
@@ -355,7 +358,8 @@ void NumberPicker::draw() {
             nextX -= spacing;
             }
 
-        if( mMaxMainDigits > 4 &&
+        if( mUseCommas &&
+            mMaxMainDigits > 4 &&
             ( i - mMaxFractionDigits ) != 0 &&
             ( i - mMaxFractionDigits ) % 3 == 0 ) {
             

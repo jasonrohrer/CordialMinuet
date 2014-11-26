@@ -30,11 +30,9 @@ extern char *userEmail;
 
 InPersonPage::InPersonPage()
         : ServerActionPage( "check_in_person_code", true ),
-          mCodeField( mainFont, 0, -100, 12, false, 
-                      translate( "code" ),
-                      NULL,
-                      // forbid spaces
-                      " " ),
+          mCodePicker( mainFont, 80, -100, 6, 0, translate( "code" ),
+                       // don't use commas in code
+                       false ),
           mStartButton( mainFont, 0, -200, 
                         translate( "start" ) ) {
 
@@ -48,8 +46,9 @@ InPersonPage::InPersonPage()
 
     mStartButton.addActionListener( this );
 
-    addComponent( &mCodeField );
-    mCodeField.addActionListener( this );
+    addComponent( &mCodePicker );
+    mCodePicker.setMax( 999999 );
+    mCodePicker.setMin( 0 );
     }
 
 
@@ -68,32 +67,27 @@ void InPersonPage::actionPerformed( GUIComponent *inTarget ) {
 
         setupRequestParameterSecurity();
         
-        setParametersFromField( "code", &mCodeField );
+        setActionParameter( "code", (int)( mCodePicker.getValue() ) );
                 
         
         mStartButton.setVisible( false );
         
-        mCodeField.setActive( false );
-        mCodeField.unfocus();
+        mCodePicker.setAdjustable( false );
+        
         startRequest();
         }
     }
 
 
 
-void InPersonPage::makeActive( char inFresh ) {
-    
-    if( ! isActionInProgress() ) {
-        makeFieldsActive();
-        }
-    
+void InPersonPage::makeActive( char inFresh ) {    
 
 
     if( !inFresh ) {
         return;
         }
 
-    mCodeField.setText( "" );
+    mCodePicker.setValue( 0 );
     
     setStatus( NULL, true );
     
@@ -105,18 +99,6 @@ void InPersonPage::makeActive( char inFresh ) {
 
 
 
-void InPersonPage::makeNotActive() {
-    // paused? clear delete-held status
-    mCodeField.unfocus();
-    }
-
-
-
-
-void InPersonPage::makeFieldsActive() {
-    mCodeField.focus();
-    mCodeField.setActive( true );
-    }
 
 
 
@@ -141,9 +123,7 @@ void InPersonPage::step() {
     if( ! isActionInProgress() ) {
         checkIfStartButtonVisible();
 
-        if( ! mCodeField.isActive() ) {
-            makeFieldsActive();
-            }
+        mCodePicker.setAdjustable( true );
         }
     }
 
@@ -152,36 +132,17 @@ void InPersonPage::step() {
 void InPersonPage::checkIfStartButtonVisible() {
     char visible = true;
 
-    char *code = mCodeField.getText();
+    double code = mCodePicker.getValue();
     
-    if( strlen( code ) < 2 ) {
+    if( code == 0 ) {
         visible = false;
         }
-
-    delete [] code;
 
     mStartButton.setVisible( visible );
     }
 
     
 
-void InPersonPage::keyDown( unsigned char inASCII ) {
-    if( isActionInProgress() ) {
-        return;
-        }
-
-
-    if( inASCII == 10 || inASCII == 13 ) {
-        // enter key
-        
-        if( mCodeField.isFocused() && mStartButton.isVisible() ) {
-            // process enter on last field
-            actionPerformed( &mStartButton );
-            
-            return;
-            }
-        }
-    }
 
 
 

@@ -24,7 +24,8 @@ class NumberPicker : public PageComponent, public ActionListener,
                       double inX, double inY,
                       int inMaxMainDigits,
                       int inMaxFractionDigits,
-                      const char *inLabelText = NULL );
+                      const char *inLabelText = NULL,
+                      char inUseCommas = true );
 
         virtual ~NumberPicker();
 
@@ -63,6 +64,8 @@ class NumberPicker : public PageComponent, public ActionListener,
         int mUsableDigits;
         
         char mAdjustable;
+
+        char mUseCommas;
 
         char *mLabelText;
 

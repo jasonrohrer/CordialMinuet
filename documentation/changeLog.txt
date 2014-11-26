@@ -33,6 +33,9 @@ Version 9      ???
 --List of three closest-valued other games now shown on the Waiting For
   Opponent screen.
 
+--Changed to use a number picker to enter code for in-person kiosk mode instead
+  of a text field (so that kiosk can work without a keyboard).
+
 
 
 
