@@ -36,6 +36,8 @@ Version 9      ???
 --Changed to use a number picker to enter code for in-person kiosk mode instead
   of a text field (so that kiosk can work without a keyboard).
 
+--Fixed so that clear button doesn't linger for one frame upon returing to
+  deposit page after clearing account details.
 
 
 

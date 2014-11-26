@@ -353,6 +353,10 @@ void DepositPage::actionPerformed( GUIComponent *inTarget ) {
         mExpireYearField.setText( "" );
         mCVCField.setText( "" );
         mAmountPicker.setValue( 5.00 );
+
+        mClearButton.setVisible( false );
+        mEmailFieldCanFocus = true;
+        
         setSignal( "clearAccount" );
         }
     else if( inTarget == &mAmountPicker ) {
