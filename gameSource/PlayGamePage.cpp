@@ -3913,10 +3913,157 @@ void PlayGamePage::pointerUp( float inX, float inY ) {
     }
 
 
+static char pickingThemNext = false;
+
 
 
 void PlayGamePage::keyDown( unsigned char inASCII ) {
     
+    if( inASCII == 10 || inASCII == 13 ) {
+        if( mCommitButton.isVisible() ) {
+            actionPerformed( &mCommitButton );
+            }
+        else if( mBetButton.isVisible() ) {
+            actionPerformed( &mBetButton );
+            }
+        }
+
+    else if( inASCII == 'x' || inASCII == 'X' ) {
+        if( mFoldButton.isVisible() ) {
+            actionPerformed( &mFoldButton );
+            }
+        }
+
+    
+    else if( inASCII >= '1' && inASCII <= '6' ) {
+        // column pick
+        int colNumber = (int)( inASCII - '1' );
+        
+        char blockedColumns[6];
+        
+        if( mPickerUs.draw && ! mPickerThem.draw ) {
+            memset( blockedColumns, false, 6 );
+            // picking reveal, our-picks-for-them are blocked
+            for( int p=0; p<3; p++ ) {
+                int t = p * 2 + 1;
+                blockedColumns[ mOurChoices[t] ] = true;
+                }
+            }
+        else {
+            // only unpicked allowed
+            memcpy( blockedColumns, mColumnUsed, 6 );
+            }
+
+        if( mPickerUs.draw && mPickerThem.draw &&
+            !mPickerUs.held && !mPickerThem.held ) {
+            
+            if( mColumnChoiceForUs == -1  || ! pickingThemNext ) {
+                if( ! blockedColumns[ colNumber ] && 
+                    mColumnChoiceForThem != colNumber ) {
+                    
+                    mColumnChoiceForUs = colNumber;
+                    mPickerUs.targetColumn = colNumber;
+                    mPickerUs.trueClosestColumn = colNumber;
+                    mPickerUs.lastPlayerDropColumn = colNumber;
+                    mPickerUs.draggedInYet = true;
+
+                    computePossibleScores( true );
+                    
+                    pickingThemNext = true;
+
+                    mCommitFlashPreSteps = 0;
+                    mCommitFlashProgress = 1.0;
+                    mCommitFlashDirection = -1;
+                    
+                    mCommitButton.setNoHoverColor( 1, 1, 1, 
+                                                   mCommitFlashProgress );
+                    }
+                }
+            else if( pickingThemNext ) {
+                if( ! blockedColumns[ colNumber ]  && 
+                    mColumnChoiceForUs != colNumber ) {
+                    
+                    mColumnChoiceForThem = colNumber;
+                    mPickerThem.targetColumn = colNumber;
+                    mPickerThem.trueClosestColumn = colNumber;
+                    mPickerThem.lastPlayerDropColumn = colNumber;
+                    mPickerThem.draggedInYet = true;
+                    
+                    computePossibleScores( true );
+                    
+                    pickingThemNext = false;
+                    
+                    mCommitFlashPreSteps = 0;
+                    mCommitFlashProgress = 1.0;
+                    mCommitFlashDirection = -1;
+
+                    mCommitButton.setNoHoverColor( 1, 1, 1, 
+                                                   mCommitFlashProgress );
+                    
+                    mCommitButton.setVisible( true );
+                    mLeaveButton.setVisible( false );
+                    mLeaveConfirmButton.setVisible( false );
+                    }
+                }
+            }
+        else if( mPickerUs.draw && 
+                 ! mPickerThem.draw && 
+                 ! mPickerUs.held ) {
+            
+            if( ! blockedColumns[ colNumber ] ) {
+                mRevealChoiceForUs = colNumber;
+                mPickerUs.targetColumn = colNumber;
+                mPickerUs.trueClosestColumn = colNumber;
+                mPickerUs.lastPlayerDropColumn = colNumber;
+                mPickerUs.draggedInYet = true;
+
+                computePossibleScores( true );
+
+                pickingThemNext = false;
+                
+                mCommitFlashPreSteps = 0;
+                mCommitFlashProgress = 1.0;
+                mCommitFlashDirection = -1;
+
+                mCommitButton.setNoHoverColor( 1, 1, 1, 
+                                               mCommitFlashProgress );
+                                    
+                mCommitButton.setVisible( true );
+                mLeaveButton.setVisible( false );
+                mLeaveConfirmButton.setVisible( false );
+                }
+            }
+        }
+    
+    else if( inASCII == '0' &&
+        mColumnChoiceForUs != -1 && 
+        mColumnChoiceForThem != -1 ) {
+        // swap
+        
+        int temp = mColumnChoiceForThem;
+        mColumnChoiceForThem = mColumnChoiceForUs;
+        mColumnChoiceForUs = temp;
+        
+        mPickerUs.targetColumn = mColumnChoiceForUs;
+        mPickerUs.trueClosestColumn = mColumnChoiceForUs;
+        mPickerUs.lastPlayerDropColumn = mColumnChoiceForUs;
+        
+        mPickerThem.targetColumn = mColumnChoiceForThem;
+        mPickerThem.trueClosestColumn = mColumnChoiceForThem;    
+        mPickerThem.lastPlayerDropColumn = mColumnChoiceForThem;  
+        
+        computePossibleScores( true );
+
+        mCommitFlashPreSteps = 0;
+        mCommitFlashProgress = 1.0;
+        mCommitFlashDirection = -1;
+                
+        mCommitButton.setNoHoverColor( 1, 1, 1, 
+                                       mCommitFlashProgress );
+        }
+    
+    
+
     return;
     
     // these can be enabled for testing
@@ -3928,6 +4075,32 @@ void PlayGamePage::keyDown( unsigned char inASCII ) {
         possibleScoreMethod = ! possibleScoreMethod;
         computePossibleScores( false );
         }
+    }
+
+
+
+void PlayGamePage::specialKeyDown( int inKeyCode ) {
+    int betIncrement = 0;
+    
+    if( inKeyCode == MG_KEY_DOWN ) {
+        betIncrement = -1;
+        }
+    else if( inKeyCode == MG_KEY_UP ) {
+        betIncrement = 1;
+        }
+    else if( inKeyCode == MG_KEY_PAGE_DOWN ) {
+        betIncrement = -10;
+        }
+    else if( inKeyCode == MG_KEY_PAGE_UP ) {
+        betIncrement = 10;
+        }
+
+    if( betIncrement != 0 && mBetButton.isVisible() ) {
+        double old = mBetPicker.getValue();
+        
+        mBetPicker.setValue( old + betIncrement );
+        }
+    
     }
 
 

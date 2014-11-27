@@ -179,6 +179,8 @@ class PlayGamePage : public ServerActionPage, public ActionListener {
         
         virtual void keyDown( unsigned char inASCII );
         
+        virtual void specialKeyDown( int inKeyCode );
+
     protected:
         
         char mRunning;

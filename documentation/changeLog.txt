@@ -43,6 +43,7 @@ Version 9      ???
 
 --Confirmation for leaving game.
 
+--Added keyboard mode for playing game (thanks Zed).
 
 
 
