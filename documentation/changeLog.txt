@@ -54,6 +54,9 @@ Version 9      2014-November-27
 
 --Fixed server so that shutdownMode allows current game rounds to finish.
 
+--Improved behavior when picking sliders that overlap at edge of grid (thanks
+  Ralph V).
+
 
 
 

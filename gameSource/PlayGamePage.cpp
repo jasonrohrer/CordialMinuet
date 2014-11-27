@@ -1601,7 +1601,7 @@ void PlayGamePage::draw( doublePair inViewCenter,
             }
 
         // draw held picker on top
-        if( ! mPickerUs.held ) {
+        if( ! mPickerUs.held && ! mPickerUs.mouseOver ) {
             setUsColor();
             drawColumnPicker( &mPickerUs );
             }
@@ -1609,7 +1609,7 @@ void PlayGamePage::draw( doublePair inViewCenter,
         setThemColor();
         drawColumnPicker( &mPickerThem );
         
-        if( mPickerUs.held ) {
+        if( mPickerUs.held || mPickerUs.mouseOver ) {
             setUsColor();
             drawColumnPicker( &mPickerUs );
             }
@@ -3811,11 +3811,24 @@ void PlayGamePage::pickerReactToMouseMove( ColumnPicker *inPicker,
             }
         }
     else if( inPicker->draw && ! inOtherPicker->held
-        && inX > inPicker->pos.x - 32
-        && inX < inPicker->pos.x + 32
+        && inX > inPicker->pos.x - 22
+        && inX < inPicker->pos.x + 22
         && inY > inPicker->pos.y - 32
         && inY < inPicker->pos.y + 32 ) {
-        inPicker->mouseOver = true;
+
+        if( inOtherPicker->targetColumn == -1
+            && inX > inOtherPicker->pos.x - 22
+            && inX < inOtherPicker->pos.x + 22
+            && inY > inOtherPicker->pos.y - 32
+            && inY < inOtherPicker->pos.y + 32 ) {
+            
+            // if we're over both, and one is off end, give primacy
+            // to one that is off the end
+            inPicker->mouseOver = false;
+            }
+        else {
+            inPicker->mouseOver = true;
+            }
         }
     else {
         inPicker->mouseOver = false;
@@ -3874,33 +3887,45 @@ void PlayGamePage::pointerMove( float inX, float inY ) {
 
 
 void PlayGamePage::pointerDown( float inX, float inY ) {
-    if( mPickerUs.draw 
-        && inX > mPickerUs.pos.x - 32
-        && inX < mPickerUs.pos.x + 32
-        && inY > mPickerUs.pos.y - 32
-        && inY < mPickerUs.pos.y + 32 ) {
-        mPickerUs.held = true;
-        mPickerUs.heldOffset = roundf(inX) - mPickerUs.pos.x;
+    
+    ColumnPicker *dominantPicker = &mPickerUs;
+    ColumnPicker *nonDominantPicker = &mPickerThem;
+    
+    if( mPickerUs.targetColumn != -1 &&
+        mPickerThem.targetColumn == -1 ) {
+        dominantPicker = &mPickerThem;
+        nonDominantPicker = &mPickerUs;
+        }
+    
+
+
+    if( dominantPicker->draw 
+        && inX > dominantPicker->pos.x - 22
+        && inX < dominantPicker->pos.x + 22
+        && inY > dominantPicker->pos.y - 32
+        && inY < dominantPicker->pos.y + 32 ) {
+        dominantPicker->held = true;
+        dominantPicker->heldOffset = roundf(inX) - dominantPicker->pos.x;
         }
     else {
-        mPickerUs.held = false;
+        dominantPicker->held = false;
         }
 
     // never let both be held at same time
-    if( mPickerUs.held ) {
+    if( dominantPicker->held ) {
         return;
         }
     
-    if( mPickerThem.draw 
-        && inX > mPickerThem.pos.x - 32
-        && inX < mPickerThem.pos.x + 32
-        && inY > mPickerThem.pos.y - 32
-        && inY < mPickerThem.pos.y + 32 ) {
-        mPickerThem.held = true;
-        mPickerThem.heldOffset = roundf(inX) - mPickerThem.pos.x;
+    if( nonDominantPicker->draw 
+        && inX > nonDominantPicker->pos.x - 22
+        && inX < nonDominantPicker->pos.x + 22
+        && inY > nonDominantPicker->pos.y - 32
+        && inY < nonDominantPicker->pos.y + 32 ) {
+        nonDominantPicker->held = true;
+        nonDominantPicker->heldOffset = roundf(inX) - nonDominantPicker->pos.x;
         }
     else {
-        mPickerThem.held = false;
+        nonDominantPicker->held = false;
         }
     }
 
