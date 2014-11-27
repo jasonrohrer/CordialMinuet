@@ -1,4 +1,4 @@
-Version 9      ???
+Version 9      2014-November-27
 
 --Fixed client bug in coin distribution after a tie.
 
