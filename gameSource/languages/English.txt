@@ -184,6 +184,7 @@ commit "COMMIT"
 bet "BET"
 fold "FOLD"
 leave "LEAVE"
+leaveConfirm "LEAVE?"
 
 
 gone "GONE"

@@ -227,6 +227,7 @@ class PlayGamePage : public ServerActionPage, public ActionListener {
         TextButton mBetButton;
         TextButton mFoldButton;
         TextButton mLeaveButton;
+        TextButton mLeaveConfirmButton;
 
         NumberPicker mBetPicker;
         

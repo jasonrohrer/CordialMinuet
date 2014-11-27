@@ -257,6 +257,8 @@ PlayGamePage::PlayGamePage()
           mBetButton( mainFont, 0, -288, translate( "bet" ) ),
           mFoldButton( mainFont, 120, -288, translate( "fold" ) ),
           mLeaveButton( mainFont, 128, 288, translate( "leave" ) ),
+          mLeaveConfirmButton( mainFont, 
+                               -128, 288, translate( "leaveConfirm" ) ),
           mBetPicker( mainFont, -64, -288, 3, 0, "" ),
           mCommitFlashPreSteps( 0 ),
           mCommitFlashProgress( 1.0 ),
@@ -398,6 +400,7 @@ PlayGamePage::PlayGamePage()
     addComponent( &mBetButton );
     addComponent( &mFoldButton );
     addComponent( &mLeaveButton );
+    addComponent( &mLeaveConfirmButton );
     addComponent( &mBetPicker );
     
 
@@ -405,12 +408,14 @@ PlayGamePage::PlayGamePage()
     setButtonStyle( &mBetButton );
     setButtonStyle( &mFoldButton );
     setButtonStyle( &mLeaveButton );
+    setButtonStyle( &mLeaveConfirmButton );
     
 
     mCommitButton.addActionListener( this );
     mBetButton.addActionListener( this );
     mFoldButton.addActionListener( this );
     mLeaveButton.addActionListener( this );
+    mLeaveConfirmButton.addActionListener( this );
 
     clearCacheRecords();
 
@@ -519,6 +524,7 @@ void PlayGamePage::makeActive( char inFresh ) {
     mFoldButton.setVisible( false );
     
     mLeaveButton.setVisible( true );
+    mLeaveConfirmButton.setVisible( false );
 
     mBetPicker.setVisible( false );
 
@@ -659,6 +665,7 @@ void PlayGamePage::actionPerformed( GUIComponent *inTarget ) {
                 mCommitFlashDirection = -1;
                 
                 mLeaveButton.setVisible( false );
+                mLeaveConfirmButton.setVisible( false );
                 }
             else if( numMovesAlreadyMade == 6 ) {
                 if( mRevealChoiceForUs != -1 ) {
@@ -675,6 +682,7 @@ void PlayGamePage::actionPerformed( GUIComponent *inTarget ) {
                     
                     
                     mLeaveButton.setVisible( false );
+                    mLeaveConfirmButton.setVisible( false );
                     }
                 else {
                     mColumnButtons[mOurChoices[0]]->setVisible( true );
@@ -686,6 +694,7 @@ void PlayGamePage::actionPerformed( GUIComponent *inTarget ) {
                     setButtonStyle( &mCommitButton );
 
                     mLeaveButton.setVisible( true );
+                    mLeaveConfirmButton.setVisible( false );
                     }
                 }
             else {
@@ -717,6 +726,7 @@ void PlayGamePage::actionPerformed( GUIComponent *inTarget ) {
                 setButtonStyle( &mCommitButton );
 
                 mLeaveButton.setVisible( true );
+                mLeaveConfirmButton.setVisible( false );
                 }
 
             computePossibleScores();
@@ -757,6 +767,7 @@ void PlayGamePage::actionPerformed( GUIComponent *inTarget ) {
         setButtonStyle( &mCommitButton );
     
         mLeaveButton.setVisible( true );
+        mLeaveConfirmButton.setVisible( false );
     
         clearActionParameters();
 
@@ -827,6 +838,7 @@ void PlayGamePage::actionPerformed( GUIComponent *inTarget ) {
         mBetButton.setVisible( false );
         mFoldButton.setVisible( false );
         mLeaveButton.setVisible( true );
+        mLeaveConfirmButton.setVisible( false );
 
         clearActionParameters();
         
@@ -889,6 +901,7 @@ void PlayGamePage::actionPerformed( GUIComponent *inTarget ) {
         mBetButton.setVisible( false );
         mFoldButton.setVisible( false );
         mLeaveButton.setVisible( true );
+        mLeaveConfirmButton.setVisible( false );
         
         clearActionParameters();
         
@@ -903,6 +916,10 @@ void PlayGamePage::actionPerformed( GUIComponent *inTarget ) {
         startRequest();
         }
     else if( inTarget == &mLeaveButton ) {
+        mLeaveButton.setVisible( false );
+        mLeaveConfirmButton.setVisible( true );
+        }
+    else if( inTarget == &mLeaveConfirmButton ) {
         mMoveDeadline = 0;
         
         setSignal( "back" );
@@ -1691,7 +1708,7 @@ void PlayGamePage::step() {
 
         if( secondsLeft < 0 ) {
             // past deadline, force them to leave game
-            actionPerformed( &mLeaveButton );
+            actionPerformed( &mLeaveConfirmButton );
             }
         }
     
@@ -2688,6 +2705,7 @@ void PlayGamePage::step() {
             // game over
 
             mLeaveButton.setVisible( true );
+            mLeaveConfirmButton.setVisible( false );
             }
         else if( mMessageState == gettingState 
             ||
@@ -2801,6 +2819,7 @@ void PlayGamePage::step() {
                 mFoldButton.setVisible( true );
                 }
             mLeaveButton.setVisible( false );
+            mLeaveConfirmButton.setVisible( false );
             }
         
         computePossibleScores();
@@ -2867,6 +2886,7 @@ void PlayGamePage::step() {
             startRequest();
             
             mLeaveButton.setVisible( true );
+            mLeaveConfirmButton.setVisible( false );
             }
         else if( strcmp( status, "waiting" ) == 0 ) {
             // keep waiting
@@ -3884,6 +3904,7 @@ void PlayGamePage::pointerUp( float inX, float inY ) {
             mCommitFlashDirection = -1;
 
             mLeaveButton.setVisible( false );
+            mLeaveConfirmButton.setVisible( false );
             }
         }
     

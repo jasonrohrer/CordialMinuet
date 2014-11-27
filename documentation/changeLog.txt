@@ -41,6 +41,8 @@ Version 9      ???
 
 --Added an [@] button to the deposit page to help international keyboards.
 
+--Confirmation for leaving game.
+
 
 
 
