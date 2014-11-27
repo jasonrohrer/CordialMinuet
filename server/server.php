@@ -6339,8 +6339,8 @@ function cm_waitMoveInternal( $inWaitOnSemaphore ) {
 
             cm_queryDatabase( "COMMIT;" );
 
-            cm_log( "Waiting on semaphore with timeout $waitTimeout, ".
-                    "$seconds_left seconds left" );
+            //cm_log( "Waiting on semaphore with timeout $waitTimeout, ".
+            //        "$seconds_left seconds left" );
             
             $result = semWait( $semaphore_key, $waitTimeout );
             
