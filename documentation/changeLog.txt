@@ -57,6 +57,10 @@ Version 9      2014-November-27
 --Improved behavior when picking sliders that overlap at edge of grid (thanks
   Ralph V).
 
+--Added possible score hints when mousing over possible square for opponent or
+  self.  Lock onto square by clicking it to allow mousing over the locked
+  possible score graph (thanks Ralph V).
+
 
 
 

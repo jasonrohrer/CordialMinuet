@@ -245,6 +245,18 @@ class PlayGamePage : public ServerActionPage, public ActionListener {
 
         int mRevealChoiceForUs;
         
+        // if mousing over a column that we gave to them
+        // can update possible score graph
+        int mMouseOverTheirTurnNumber;
+        int mMouseOverTheirColumn;
+        int mMouseOverTheirRow;
+        
+        int mMouseOverOurRow;
+        char mMouseOverSquareLocked;
+        
+        
+
+
         // track bet that hasn't been visually added to pot yet
         int mLastUnflownBet;
 
@@ -318,6 +330,8 @@ class PlayGamePage : public ServerActionPage, public ActionListener {
         SpriteHandle mBlackWatercolorHFlippedSprites[6][6];
         
         SpriteHandle mColumnPickerSprite;
+        SpriteHandle mGuessSpriteRow;
+        SpriteHandle mGuessSpriteColumn;
         
         SpriteHandle mColumnHeaderSprite;
         SpriteHandle mRowHeaderSprite;
