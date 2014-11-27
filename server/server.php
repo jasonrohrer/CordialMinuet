@@ -492,17 +492,9 @@ if( $shutdownMode &&
       $action == "check_in_person_code" ||
       $action == "join_games" ||
       $action == "wait_game_start" ||
-      $action == "leave_game" ||
       $action == "get_balance" ||
       $action == "list_games" ||
-      $action == "get_game_state" ||
-      $action == "make_move" ||
-      $action == "make_reveal_move" ||
-      $action == "make_bet" ||
-      $action == "fold_bet" ||
-      $action == "end_round" ||
-      $action == "start_next_round" ||
-      $action == "wait_move" ) ) {
+      $action == "start_next_round" ) ) {
     
     echo "SHUTDOWN";
     global $shutdownMessage;

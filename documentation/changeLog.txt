@@ -52,6 +52,8 @@ Version 9      ???
 --Server now denies clients that are waiting for games to start when games have
   been force-ended by admin.
 
+--Fixed server so that shutdownMode allows current game rounds to finish.
+
 
 
 
