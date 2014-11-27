@@ -114,6 +114,7 @@ void DepositDisplayPage::draw( doublePair inViewCenter,
 
     if( mLeftGame ) {
         pos.y += 2 * spacing;
+        pos.y -= 31;
         }
     
     mainFont->drawString( translate( "oldBalance" ), pos, alignRight );
