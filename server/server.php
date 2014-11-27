@@ -4541,8 +4541,13 @@ function cm_waitGameStart() {
         return;
         }
     
-    global $tableNamePrefix ;
+    global $tableNamePrefix, $areGamesAllowed;
 
+    if( ! $areGamesAllowed ) {
+        cm_log( "cm_waitGameStart denied, areGamesAllowed is off" );
+        cm_transactionDeny();
+        return;
+        }
         
     $user_id = cm_getUserID();
 
@@ -6235,7 +6240,7 @@ function cm_waitMoveInternal( $inWaitOnSemaphore ) {
 
         cm_queryDatabase( "COMMIT;" );
         
-        echo "opponent_left\nOK";
+        echo "GAME_ENDED";
         return;        
         }
     

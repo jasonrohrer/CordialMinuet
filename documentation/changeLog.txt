@@ -47,6 +47,12 @@ Version 9      ???
 
 --Fixed server bug where bet DENIED if opponent has left (thanks Matt W).
 
+--Improved client behavior in middle of a game when games force-ended by admin.
+
+--Server now denies clients that are waiting for games to start when games have
+  been force-ended by admin.
+
+
 
 
 

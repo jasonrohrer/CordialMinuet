@@ -287,6 +287,7 @@ PlayGamePage::PlayGamePage()
     
 
     addServerErrorString( "GAME_ENDED", "gameEnded" );
+    addServerErrorStringSignal( "GAME_ENDED", "gameEnded" );
     
     
     readCharacterGrid( "inkNumbers.tga", 6, 6, mInkNumberSprites );
@@ -1982,6 +1983,41 @@ void PlayGamePage::step() {
 
 
     ServerActionPage::step();
+
+    if( checkSignal( "gameEnded" ) &&
+        mFlyingCoins[0].size() == 0 &&
+        mFlyingCoins[1].size() == 0 ) {
+        
+        // special case:
+        // all pot coins fly back to their owners
+
+        for( int p=0; p<2; p++ ) {
+                
+                        
+            int coinValue = 1;
+            if( mPotCoins[p] >= 10 ) {
+                coinValue = 10;
+                }
+
+            for( int i=0; i<mPotCoins[p]; i += coinValue ) {
+                if( mPotCoins[p] - i < coinValue ) {
+                    coinValue = 1;
+                    }
+
+                PendingFlyingCoin coin = 
+                    { &( mPotCoinSpots[p] ),
+                      &( mPlayerCoinSpots[p] ),
+                      0,
+                      coinValue,
+                      nextCoinID++,
+                      false };
+                mFlyingCoins[p].push_back( coin );
+                }
+            }
+        
+        clearSignal();
+        }
+    
 
     if( ! isResponseReady() ) {
         return;
