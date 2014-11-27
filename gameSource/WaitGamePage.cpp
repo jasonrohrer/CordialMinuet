@@ -69,6 +69,8 @@ void WaitGamePage::actionPerformed( GUIComponent *inTarget ) {
             clearWebRequestSerial( mWebRequest );
             mWebRequest = -1;
             }
+
+        mOtherGames.deleteAll();
         setSignal( "back" );
         }
     }
