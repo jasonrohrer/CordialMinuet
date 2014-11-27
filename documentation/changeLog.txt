@@ -45,6 +45,9 @@ Version 9      ???
 
 --Added keyboard mode for playing game (thanks Zed).
 
+--Fixed server bug where bet DENIED if opponent has left (thanks Matt W).
+
+
 
 
 Version 8      Live Server Fixes

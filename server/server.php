@@ -5464,7 +5464,8 @@ function cm_makeBet() {
         }
         
     
-
+    $otherID;
+    
     $ourCoins;
     $theirCoins;
     
@@ -5476,6 +5477,8 @@ function cm_makeBet() {
 
         $ourPotCoins = $player_1_pot_coins;
         $theirPotCoins = $player_2_pot_coins;
+
+        $otherID = $player_2_id;
         }
     else {
         $ourCoins = $player_2_coins;
@@ -5483,6 +5486,8 @@ function cm_makeBet() {
 
         $ourPotCoins = $player_2_pot_coins;
         $theirPotCoins = $player_1_pot_coins;
+
+        $otherID = $player_1_id;
         }
 
     if( $bet > $ourCoins ) {
@@ -5490,14 +5495,18 @@ function cm_makeBet() {
         cm_transactionDeny();
         return;
         }
-    if( $bet + $ourPotCoins > $theirCoins + $theirPotCoins ) {
+    if( $otherID != 0 &&
+        $bet + $ourPotCoins > $theirCoins + $theirPotCoins ) {
         cm_log( "Bet of $bet exceeds opponent player's available coins" );
         cm_transactionDeny();
         return;
         }
 
-    $ourPotCoins += $bet;
-    $ourCoins -= $bet;
+    if( $otherID != 0 ) {
+        // ignore bet if opponent has left
+        $ourPotCoins += $bet;
+        $ourCoins -= $bet;
+        }
     
 
     if( $player_1_id == $user_id ) {
