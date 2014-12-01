@@ -825,11 +825,11 @@ void PlayGamePage::actionPerformed( GUIComponent *inTarget ) {
                     break;
                     }
                 }
-            
+            /*
             addColumnStroke( mRevealChoiceForUs,
                              mBlackWatercolorVFlippedSprites[r],
                              true );
-            
+            */
             addRowStroke( r,
                           mBlackWatercolorHFlippedSprites[mRevealChoiceForUs],
                           false );
@@ -2733,10 +2733,11 @@ void PlayGamePage::step() {
                             addColumnStroke( c,
                                              mBlackWatercolorVSprites[r],
                                              false, 0.75 );
-                            
+                            /*
                             addRowStroke( r,
                                           mBlackWatercolorHSprites[c],
                                           false, 0.75 );
+                            */
                             }
 
                         ourWonSquareCount ++;
