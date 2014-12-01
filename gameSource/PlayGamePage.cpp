@@ -828,11 +828,11 @@ void PlayGamePage::actionPerformed( GUIComponent *inTarget ) {
             /*
             addColumnStroke( mRevealChoiceForUs,
                              mBlackWatercolorVFlippedSprites[r],
-                             true );
+                             true, 0.75 );
             */
             addRowStroke( r,
                           mBlackWatercolorHFlippedSprites[mRevealChoiceForUs],
-                          false );
+                          false, 0.75 );
 
             setActionParameter( "our_column", mRevealChoiceForUs );
             mColumnButtons[mRevealChoiceForUs]->setVisible( false );
@@ -2622,6 +2622,8 @@ void PlayGamePage::step() {
         
         int theirOldWonSquares[3];
         memcpy( theirOldWonSquares, mTheirWonSquares, 3 * sizeof( int ) );
+
+        int theirOldWonNumSquares = 0;
         
         for( int i=0; i<6; i++ ) {
             mRowUsed[i] = false;
@@ -2632,6 +2634,10 @@ void PlayGamePage::step() {
         for( int i=0; i<3; i++ ) {
             mOurWonSquares[i] = -1;
             mTheirWonSquares[i] = -1;
+
+            if( theirOldWonSquares[i] != -1 ) {
+                theirOldWonNumSquares++;
+                }
             }
         
         if( strcmp( ourMoves, "#" ) != 0 ) {
@@ -2752,8 +2758,21 @@ void PlayGamePage::step() {
                         mTheirWonSquares[ theirWonSquareCount ] =
                             theirWonIndex;
                         
-                        if( mTheirWonSquares[ theirWonSquareCount ] !=
-                            theirOldWonSquares[ theirWonSquareCount ] ) {
+
+                        // order of their won squares can change from
+                        // first reveal to final reveal
+                        // so, we have to check if a square is new
+                        // before masking it
+                        char presentBefore = false;
+                        
+                        for( int s=0; s<3; s++ ) {
+                            if( theirOldWonSquares[s] == theirWonIndex ) {
+                                presentBefore = true;
+                                break;
+                                }
+                            }
+
+                        if( !presentBefore ) {
                             
                             // a new won square
                             int r = 
@@ -2763,10 +2782,14 @@ void PlayGamePage::step() {
                             
                             addColumnStroke( c,
                                              mBlackWatercolorVSprites[r],
-                                             false );
-                            addRowStroke( r,
-                                          mBlackWatercolorHSprites[c],
-                                          false );
+                                             false, .75 );
+                            
+                            if( false && theirOldWonNumSquares == 0 ) {
+                                // initial reveal, mask row too
+                                addRowStroke( r,
+                                              mBlackWatercolorHSprites[c],
+                                              false, .75 );
+                                }
                             }
 
                         theirWonSquareCount ++;
