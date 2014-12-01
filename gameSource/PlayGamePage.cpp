@@ -825,14 +825,16 @@ void PlayGamePage::actionPerformed( GUIComponent *inTarget ) {
                     break;
                     }
                 }
-            /*
-            addColumnStroke( mRevealChoiceForUs,
-                             mBlackWatercolorVFlippedSprites[r],
-                             true, 0.75 );
-            */
+            
+            
             addRowStroke( r,
                           mBlackWatercolorHFlippedSprites[mRevealChoiceForUs],
                           false, 0.75 );
+            /*
+            addColumnStroke( mRevealChoiceForUs,
+                             mBlackWatercolorVFlippedSprites[r],
+                             true, 0.6 );
+            */
 
             setActionParameter( "our_column", mRevealChoiceForUs );
             mColumnButtons[mRevealChoiceForUs]->setVisible( false );
@@ -2784,11 +2786,11 @@ void PlayGamePage::step() {
                                              mBlackWatercolorVSprites[r],
                                              false, .75 );
                             
-                            if( false && theirOldWonNumSquares == 0 ) {
+                            if( theirOldWonNumSquares == 0 ) {
                                 // initial reveal, mask row too
                                 addRowStroke( r,
                                               mBlackWatercolorHSprites[c],
-                                              false, .75 );
+                                              false, .60 );
                                 }
                             }
 

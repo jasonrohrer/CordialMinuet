@@ -3,7 +3,9 @@ Version 10     ??
 --Fixed stale list of other games when returning to waiting for opponent.
 
 --Changed row coloring of our row to make our possible squares from their
-  perspective more visible.
+  perspective more visible.  Changed reveal black-stroking to ensure that
+  all squares in row that they gave to themselves are visible at the end
+  of the game.
 
 
 
