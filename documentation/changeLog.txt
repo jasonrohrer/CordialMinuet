@@ -1,4 +1,4 @@
-Version 10     ??
+Version 10     2014-December-2
 
 --Fixed stale list of other games when returning to waiting for opponent.
 
@@ -14,10 +14,12 @@ Version 10     ??
 
 
 
+
 Version 9      Live Server Fixes
 
 --Added detailed logging around ending games to catch DENIED bug during
   wait_move.
+
 
 
 
