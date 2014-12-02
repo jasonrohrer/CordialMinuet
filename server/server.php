@@ -3867,6 +3867,9 @@ function cm_endOldGames( $user_id ) {
         $player_1_id = mysql_result( $result, $i, "player_1_id" );
         $player_2_id = mysql_result( $result, $i, "player_2_id" );
 
+        cm_log( "Calling endOldGames for game $game_id, p1=$player_1_id, ".
+                "p2=$player_2_id, stack = " . cm_getBacktrace() );
+        
         $game_square = mysql_result( $result, $i, "game_square" );
 
         $old_player_1_id = $player_1_id;
@@ -4024,12 +4027,16 @@ function cm_endOldGames( $user_id ) {
             "player_2_pot_coins = 0 ".
             "WHERE game_id = '$game_id';";
 
+        cm_log( "endOldGames updated $game_id, p1=$player_1_id, ".
+                "p2=$player_2_id" );
+        
         cm_queryDatabase( $query );
         
         if( $player_1_id != 0 ||
             $player_2_id != 0 ) {
 
             // first player just left the game, payout both
+            cm_log( "endOldGames paying out both players for game $game_id" );
 
             $won = $player_1_payout - $dollar_amount;
             $lost = 0;
@@ -4089,6 +4096,8 @@ function cm_endOldGames( $user_id ) {
             // delete semaphore
             semRemove( $semaphore_key );
 
+            cm_log( "endOldGames deleting game $game_id" );
+            
             $query = "DELETE FROM $tableNamePrefix"."games ".
                 "WHERE game_id = '$game_id';";
 
