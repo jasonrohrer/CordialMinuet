@@ -7,6 +7,10 @@ Version 10     ??
   all squares in row that they gave to themselves are visible at the end
   of the game.
 
+--Changed FOLD key command to f instead of x (thanks Zed).
+
+--Added left/right arrow keys for picking reveal column (thanks Zed).
+
 
 
 

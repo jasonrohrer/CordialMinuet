@@ -4232,7 +4232,7 @@ void PlayGamePage::keyDown( unsigned char inASCII ) {
             }
         }
 
-    else if( inASCII == 'x' || inASCII == 'X' ) {
+    else if( inASCII == 'f' || inASCII == 'F' ) {
         if( mFoldButton.isVisible() ) {
             actionPerformed( &mFoldButton );
             }
@@ -4404,7 +4404,63 @@ void PlayGamePage::specialKeyDown( int inKeyCode ) {
         
         mBetPicker.setValue( old + betIncrement );
         }
-    
+
+
+    if( ( inKeyCode == MG_KEY_RIGHT ||
+          inKeyCode == MG_KEY_LEFT )
+        &&
+        mPickerUs.draw && ! mPickerThem.draw ) {
+        
+        // picking reveal, our-picks-for-them are blocked
+        
+        char blockedColumns[6];
+
+        memset( blockedColumns, false, 6 );
+        for( int p=0; p<3; p++ ) {
+            int t = p * 2 + 1;
+            blockedColumns[ mOurChoices[t] ] = true;
+            }
+
+        int colIncrement;
+        
+        if( inKeyCode == MG_KEY_RIGHT ) {
+            colIncrement = 1;
+            }
+        else if( inKeyCode == MG_KEY_LEFT ) {
+            colIncrement = -1;
+            }
+        
+
+        int newCol = mRevealChoiceForUs + colIncrement;
+
+        while( newCol < 6 && newCol >= 0 && blockedColumns[ newCol ] ) {
+            newCol += colIncrement;
+            }
+            
+        if( newCol >= 0 && newCol < 6 && ! blockedColumns[ newCol ] ) {
+            mRevealChoiceForUs = newCol;
+            mPickerUs.targetColumn = newCol;
+            mPickerUs.trueClosestColumn = newCol;
+            mPickerUs.lastPlayerDropColumn = newCol;
+            mPickerUs.draggedInYet = true;
+
+            computePossibleScores( true );
+
+            pickingThemNext = false;
+                
+            mCommitFlashPreSteps = 0;
+            mCommitFlashProgress = 1.0;
+            mCommitFlashDirection = -1;
+
+            mCommitButton.setNoHoverColor( 1, 1, 1, 
+                                           mCommitFlashProgress );
+                                    
+            mCommitButton.setVisible( true );
+            mLeaveButton.setVisible( false );
+            mLeaveConfirmButton.setVisible( false );
+            }
+        }
+
     }
 
 
