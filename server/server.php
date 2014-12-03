@@ -4574,10 +4574,6 @@ function cm_waitGameStart() {
     if( $numRows == 0 ) {
         cm_log( "Waiting on game that doesn't exist to start" );
 
-        cm_informAdmin(
-            "User $user_id waiting on game that doesn't exist to start at ".
-            date( DATE_RFC2822 ) );
-
         cm_transactionDeny();
         return;
         }
@@ -6219,6 +6215,9 @@ function cm_waitMoveInternal( $inWaitOnSemaphore ) {
     if( $numRows == 0 ) {
         if( $areGamesAllowed ) {
             cm_log( "Waiting on move for a game that doesn't exist" );
+            cm_informAdmin(
+                "User $user_id waiting on move for game that ".
+                "doesn't exist to start at ". date( DATE_RFC2822 ) );
             cm_transactionDeny();
             }
         else {
