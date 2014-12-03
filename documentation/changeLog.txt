@@ -6,9 +6,13 @@ Version 11     ???
 
 
 
+
 Version 10     Live Server Fixes
 
 --Even more detailed game logging to catch DENIED bug during wait_move.
+
+--Fixed other game list on waiting screen to ignore games that are ending due
+  to players leaving.
 
 
 

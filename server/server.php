@@ -4523,6 +4523,7 @@ function cm_getOtherGameList( $user_id ) {
     $query = "SELECT dollar_amount ".
         "FROM $tableNamePrefix"."games ".
         "WHERE player_1_id != '$user_id' AND player_2_id != '$user_id' ".
+        "AND started = 0 ".
         "ORDER BY ABS( dollar_amount - $dollar_amount ) ASC LIMIT 3;";
 
     $result = cm_queryDatabase( $query );
