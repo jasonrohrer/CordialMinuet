@@ -3849,7 +3849,8 @@ function cm_endOldGames( $user_id ) {
         "dollar_amount, player_1_coins, player_2_coins, ".
         "player_1_pot_coins, player_2_pot_coins, ".
         "player_1_moves, player_2_moves, ".
-        "player_1_bet_made, player_2_bet_made ".
+        "player_1_bet_made, player_2_bet_made, ".
+        "move_deadline, CURRENT_TIMESTAMP as now_time ". 
         "FROM $tableNamePrefix"."games ".
         "WHERE player_1_id = '$user_id' OR player_2_id = '$user_id' ".
         "FOR UPDATE;";
@@ -3868,7 +3869,7 @@ function cm_endOldGames( $user_id ) {
         $player_2_id = mysql_result( $result, $i, "player_2_id" );
 
         cm_log( "Calling endOldGames for game $game_id, p1=$player_1_id, ".
-                "p2=$player_2_id, stack = " . cm_getBacktrace() );
+                "p2=$player_2_id, stack = \n" . cm_getBacktrace() );
         
         $game_square = mysql_result( $result, $i, "game_square" );
 
@@ -3899,7 +3900,19 @@ function cm_endOldGames( $user_id ) {
         $player_1_move_count = count( $player_1_move_list );
         $player_2_move_count = count( $player_2_move_list );
 
+        $move_deadline = mysql_result( $result, $i, "move_deadline" );
+        $now_time = mysql_result( $result, $i, "now_time" );
 
+        cm_log( "endOldGames with ".
+                "p1Moves = $player_1_moves, ".
+                "p2Moves = $player_2_moves, ".
+                "p1Pot = $player_1_pot_coins, ".
+                "p2Pot = $player_1_pot_coins, ".
+                "p1BetMade = $player_1_bet_made, ".
+                "p2BetMade = $player_2_bet_made, ".
+                "move_deadline = $move_deadline, ".
+                "now_time = $now_time" );
+        
         
         $pot = $player_1_pot_coins + $player_2_pot_coins;
 
@@ -5028,6 +5041,9 @@ function cm_printGameState( $inHideOpponentSecretMoves = true ) {
 
 
 function cm_makeMove() {
+    sleep( 8 );
+    
+    
     if( ! cm_verifyTransaction() ) {
         return;
         }
@@ -5051,7 +5067,7 @@ function cm_makeMove() {
 
     cm_queryDatabase( "SET AUTOCOMMIT=0" );
     
-    $query = "SELECT player_1_id, player_2_id,".
+    $query = "SELECT game_id, player_1_id, player_2_id,".
         "player_1_bet_made, player_2_bet_made, ".
         "player_1_pot_coins, player_2_pot_coins, ".
         "player_1_moves, player_2_moves, semaphore_key ".
@@ -5080,6 +5096,10 @@ function cm_makeMove() {
             }
         return;
         }
+
+    $game_id = mysql_result( $result, 0, "game_id" );
+    cm_log( "Making move us $our_column, ".
+            "them $their_column for game $game_id" );
     
     $player_1_id = mysql_result( $result, 0, "player_1_id" );
     $player_2_id = mysql_result( $result, 0, "player_2_id" );
@@ -5227,7 +5247,7 @@ function cm_makeRevealMove() {
 
     cm_queryDatabase( "SET AUTOCOMMIT=0" );
     
-    $query = "SELECT player_1_id, player_2_id,".
+    $query = "SELECT game_id, player_1_id, player_2_id,".
         "player_1_bet_made, player_2_bet_made, ".
         "player_1_pot_coins, player_2_pot_coins, ".
         "player_1_moves, player_2_moves, semaphore_key ".
@@ -5255,6 +5275,10 @@ function cm_makeRevealMove() {
             }
         return;
         }
+
+    $game_id = mysql_result( $result, 0, "game_id" );
+    cm_log( "Making reveal move $our_column for game $game_id" );
+
     
     $player_1_id = mysql_result( $result, 0, "player_1_id" );
     $player_2_id = mysql_result( $result, 0, "player_2_id" );
@@ -5405,7 +5429,7 @@ function cm_makeBet() {
 
     cm_queryDatabase( "SET AUTOCOMMIT=0" );
     
-    $query = "SELECT player_1_id, player_2_id,".
+    $query = "SELECT game_id, player_1_id, player_2_id,".
         "player_1_moves, player_2_moves, ".
         "player_1_coins, player_2_coins, ".
         "player_1_bet_made, player_2_bet_made, ".
@@ -5430,6 +5454,10 @@ function cm_makeBet() {
             }
         return;
         }
+
+    $game_id = mysql_result( $result, 0, "game_id" );
+    cm_log( "Making bet $bet for game $game_id" );
+
     
     $player_1_id = mysql_result( $result, 0, "player_1_id" );
     $player_2_id = mysql_result( $result, 0, "player_2_id" );
@@ -5591,7 +5619,7 @@ function cm_foldBet() {
 
     cm_queryDatabase( "SET AUTOCOMMIT=0" );
     
-    $query = "SELECT player_1_id, player_2_id,".
+    $query = "SELECT game_id, player_1_id, player_2_id,".
         "player_1_pot_coins, player_2_pot_coins, semaphore_key ".
         "FROM $tableNamePrefix"."games ".
         "WHERE player_1_id = '$user_id' OR player_2_id = '$user_id' ".
@@ -5613,6 +5641,10 @@ function cm_foldBet() {
             }
         return;
         }
+
+    $game_id = mysql_result( $result, 0, "game_id" );
+    cm_log( "Folding bet for game $game_id" );
+
     
     $player_1_id = mysql_result( $result, 0, "player_1_id" );
     $player_2_id = mysql_result( $result, 0, "player_2_id" );
@@ -5855,7 +5887,7 @@ function cm_endRound() {
 
     cm_queryDatabase( "SET AUTOCOMMIT=0" );
     
-    $query = "SELECT player_1_id, player_2_id,".
+    $query = "SELECT game_id, player_1_id, player_2_id,".
         "game_square, ".
         "player_1_bet_made, player_2_bet_made, ".
         "player_1_moves, player_2_moves, ".
@@ -5881,6 +5913,10 @@ function cm_endRound() {
             }
         return;
         }
+
+    $game_id = mysql_result( $result, 0, "game_id" );
+    cm_log( "Ending round for game $game_id" );
+
     
     $player_1_id = mysql_result( $result, 0, "player_1_id" );
     $player_2_id = mysql_result( $result, 0, "player_2_id" );
@@ -6006,7 +6042,7 @@ function cm_startNextRound() {
 
     cm_queryDatabase( "SET AUTOCOMMIT=0" );
     
-    $query = "SELECT player_1_id, player_2_id,".
+    $query = "SELECT game_id, player_1_id, player_2_id,".
         "game_square, ".
         "player_1_bet_made, player_2_bet_made, ".
         "player_1_moves, player_2_moves, ".
@@ -6033,6 +6069,11 @@ function cm_startNextRound() {
             }
         return;
         }
+
+    
+    $game_id = mysql_result( $result, 0, "game_id" );
+    cm_log( "Starting next round for game $game_id" );
+
     
     $player_1_id = mysql_result( $result, 0, "player_1_id" );
     $player_2_id = mysql_result( $result, 0, "player_2_id" );
@@ -6194,7 +6235,7 @@ function cm_waitMoveInternal( $inWaitOnSemaphore ) {
     
     cm_queryDatabase( "SET AUTOCOMMIT=0" );
     
-    $query = "SELECT player_1_id, player_2_id, ".
+    $query = "SELECT game_id, player_1_id, player_2_id, ".
         "semaphore_key, player_1_moves, player_2_moves, ".
         "player_1_pot_coins, player_2_pot_coins, ".
         "player_1_bet_made, player_2_bet_made, ".
@@ -6265,6 +6306,11 @@ function cm_waitMoveInternal( $inWaitOnSemaphore ) {
 
 
     $seconds_left = mysql_result( $result, 0, "seconds_left" );
+
+    
+    $game_id = mysql_result( $result, 0, "game_id" );
+    cm_log( "Waiting move with $seconds_left seconds left for game $game_id" );
+
     
     
     $ourPotCoins;
@@ -8250,7 +8296,9 @@ function cm_log( $message ) {
         $user_id = cm_getUserID();
         
         if( $user_id != "" ) {
-            $message = "[user_id = $user_id] " . $message;
+            $sequence_number = cm_requestFilter( "sequence_number", "/\d+/" );
+            
+            $message = "[user_id = $user_id, #$sequence_number] " . $message;
             }
 
         $slashedMessage = mysql_real_escape_string( $message );
