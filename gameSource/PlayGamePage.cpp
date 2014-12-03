@@ -1814,6 +1814,17 @@ void PlayGamePage::step() {
 
         mParchmentFadingOut = true;
         
+        if( mMouseOverSquareLocked ) {
+            // clear locked square arrows once fade starts
+            mMouseOverTheirTurnNumber = -1;
+            mMouseOverTheirRow = -1;
+            mMouseOverTheirColumn = -1;
+            mMouseOverOurRow = -1;
+            mMouseOverSquareLocked = false;
+            
+            computePossibleScores( true );
+            }
+        
         if( mParchmentFade < 1 ) {
             // fade out before starting next round
             
@@ -4197,7 +4208,9 @@ void PlayGamePage::pointerUp( float inX, float inY ) {
     mPickerUs.held = false;
     mPickerThem.held = false;
 
-    if( mMouseOverTheirRow != -1 || mMouseOverOurRow != -1 ) {
+    // don't allow re-locking of square picks once fade-out has started
+    if( mParchmentFade == 0 && 
+        ( mMouseOverTheirRow != -1 || mMouseOverOurRow != -1 ) ) {
         
         // allow to change and relock if clicked when locked
         if( mMouseOverSquareLocked ) {

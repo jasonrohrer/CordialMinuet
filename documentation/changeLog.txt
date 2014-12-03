@@ -1,3 +1,12 @@
+Version 11     ???
+
+--Fixed so that you can't click on an opponent's possible square after the game
+  board starts fading out post-opponent-fold.  Before, the locked square
+  arrows would linger after the fade (thanks Nathan C).
+
+
+
+
 Version 10     2014-December-2
 
 --Fixed stale list of other games when returning to waiting for opponent.
