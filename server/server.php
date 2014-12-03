@@ -5041,9 +5041,7 @@ function cm_printGameState( $inHideOpponentSecretMoves = true ) {
 
 
 
-function cm_makeMove() {
-    sleep( 8 );
-    
+function cm_makeMove() {    
     
     if( ! cm_verifyTransaction() ) {
         return;
