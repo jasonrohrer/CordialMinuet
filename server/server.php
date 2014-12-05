@@ -4838,7 +4838,7 @@ function cm_printGameState( $inHideOpponentSecretMoves = true ) {
 
 
     
-    $query = "SELECT player_1_id, player_2_id,".
+    $query = "SELECT game_id, player_1_id, player_2_id,".
         "game_square, player_1_coins, player_2_coins, ".
         "player_1_pot_coins, player_2_pot_coins, ".
         "player_1_bet_made, player_2_bet_made, ".
@@ -4864,7 +4864,8 @@ function cm_printGameState( $inHideOpponentSecretMoves = true ) {
             }
         return;
         }
-    
+
+    $game_id = mysql_result( $result, 0, "game_id" );
         
     $player_1_id = mysql_result( $result, 0, "player_1_id" );
     $player_2_id = mysql_result( $result, 0, "player_2_id" );
@@ -5023,6 +5024,31 @@ function cm_printGameState( $inHideOpponentSecretMoves = true ) {
 
         // trim
         $your_moves = substr( $your_moves, 0, strlen( $their_moves ) );
+        }
+
+    if( $your_pot_coins > $their_pot_coins ) {
+        // we've bet more than them, so we're getting state out of order here
+        // we should be waiting for them to match our bet before getting
+        // state.  This should never happen, but a rogue client might
+        // do it.
+
+        $message = "Game id $game_id, we're getting game state ".
+            "when we shouldn't be, our pot = $your_pot_coins, ".
+            "their pot = $their_pot_coins, at " . date( DATE_RFC2822 );
+
+        cm_log( $message );
+        
+        cm_informAdmin( $message );
+
+        
+        // fix it to hide info
+
+        // default to showing only ante pots
+        $your_coins += $your_pot_coins - 1;
+        $their_coins += $their_pot_coins - 1;
+
+        $your_pot_coins = 1;
+        $their_pot_coins = 1;
         }
     
     
@@ -6315,13 +6341,40 @@ function cm_waitMoveInternal( $inWaitOnSemaphore ) {
     $ourPotCoins;
     $theirPotCoins;
 
+    $ourMoves;
+    $theirMoves;
+    
+    $ourBetMade;
+    $theirBetMade;
+
+    $weEndedRound;
+    $theyEndedRound;
+    
     if( $player_1_id == $user_id ) {
         $ourPotCoins = $player_1_pot_coins;
         $theirPotCoins = $player_2_pot_coins;
+
+        $ourMoves = $player_1_moves;
+        $theirMoves = $player_2_moves;
+
+        $ourBetMade = $player_1_bet_made;
+        $theirBetMade = $player_2_bet_made;
+
+        $weEndedRound = $player_1_ended_round;
+        $theyEndedRound = $player_2_ended_round;
         }
     else {
         $ourPotCoins = $player_2_pot_coins;
         $theirPotCoins = $player_1_pot_coins;
+
+        $ourMoves = $player_2_moves;
+        $theirMoves = $player_1_moves;
+
+        $ourBetMade = $player_2_bet_made;
+        $theirBetMade = $player_1_bet_made;
+
+        $weEndedRound = $player_2_ended_round;
+        $theyEndedRound = $player_1_ended_round;
         }
     
 
@@ -6329,13 +6382,13 @@ function cm_waitMoveInternal( $inWaitOnSemaphore ) {
         echo "opponent_left\nOK";
         return;
         }
-    else if( strlen( $player_2_moves ) == strlen( $player_1_moves ) &&
-             ( $player_1_bet_made == $player_2_bet_made ||
+    else if( strlen( $ourMoves ) <= strlen( $theirMoves ) &&
+             ( $ourBetMade <= $theirBetMade ||
                // watch for case where round ended without full bets made
                // (one player folded)
                ( $player_1_pot_coins == 0 && $player_2_pot_coins == 0 ) )
              &&
-             $player_1_ended_round == $player_2_ended_round &&
+             $weEndedRound <= $theyEndedRound &&
              $theirPotCoins >= $ourPotCoins ) {
 
         if( $player_1_pot_coins == 0 && $player_2_pot_coins == 0 ) {
