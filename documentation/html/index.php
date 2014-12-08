@@ -105,7 +105,7 @@ If you answered YES to all, any, or even none of these, YOU may be one of the FE
 <br>
 
 <u>A secret to win a fortune in games where numbers are foretold.</u><br>
-Cut with a scissor small slips of paper, on each of which you should write a number;  you can make as many numbers as you wish.  put all these slips in a large box, such that the numbers are facing down.  Take a spider, first trap it in a glass bottle for half an hour, then smash it with the magic wand, saying, "<i>Mihi prosint numera per Dominum Deum nostrum!</i>"  The spider will curl up and pretend to be dead, but it will not be.  Grab it, sprinkle it with holy water, and trap it in the box, where it must remain one entire night.  Whereupon, opening the box, you will observe the little slips of paper that have turned, and those numbers will be the good ones, and they will have luck at games.
+Cut with a scissor small slips of paper, on each of which you should write a number;  you can make as many numbers as you wish.  Put all these slips in a large box, such that the numbers are facing down.  Take a spider, first trap it in a glass bottle for half an hour, then smash it with the magic wand, saying, "<i>Mihi prosint numera per Dominum Deum nostrum!</i>"  The spider will curl up and pretend to be dead, but it will not be.  Grab it, sprinkle it with holy water, and trap it in the box, where it must remain one entire night.  Whereupon, opening the box, you will observe the little slips of paper that have turned, and those numbers will be the good ones, and they will have luck at games.
 
 
 </td>
