@@ -4888,7 +4888,8 @@ function cm_printGameState( $inHideOpponentSecretMoves = true ) {
 
     // give the player a grace period by giving them a shorter deadline
     // than what is actually enforced
-    $seconds_left -= 2;
+    global $moveLimitGraceSeconds;
+    $seconds_left -= $moveLimitGraceSeconds;
     
 
     global $areGamesAllowed;

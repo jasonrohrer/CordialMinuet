@@ -17,6 +17,9 @@ Version 10     Live Server Fixes
 --Finally found and fixed the DENIED BY SERVER bug during wait_move.  Server
   is now more robust when dealing with unexpected player request orderings.
 
+--Added a grace period to server-side enforcement of move time limit to allow
+  for one client retry during a network outage.
+
 
 
 

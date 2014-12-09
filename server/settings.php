@@ -355,8 +355,13 @@ $maxGameStakes = "999999999.99";
 
 
 
-// 1 minute
-$moveTimeLimit = "0 0:01:02.000";
+// 1 minute, plus grace period to cover one client retry
+$moveTimeLimit = "0 0:01:18.000";
+
+// don't tell the client about the grace period when giving them
+// the deadline
+$moveLimitGraceSeconds = 18;
+
 
 // games with no action for this long are auto-ended and removed
 // should be substantially longer than $moveTimeLimit
