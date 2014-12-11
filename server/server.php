@@ -7740,9 +7740,11 @@ function cm_graphUserData( $inTitle, $inStatToGraph, $inWhereClause,
         $curColor = $altColor;
         $altColor = $tempColor;
         
-        $users_last_hour = mysql_result( $result, $i, "$inStatToGraph" );
+        $users_count = mysql_result( $result, $i, "$inStatToGraph" );
 
-        for( $u=0; $u<$users_last_hour; $u++ ) {
+        echo "$users_count<br>";
+        
+        for( $u=0; $u<$users_count; $u++ ) {
             echo "+<br>";
             }
         echo "---<br>";

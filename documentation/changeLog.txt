@@ -20,6 +20,7 @@ Version 10     Live Server Fixes
 --Added a grace period to server-side enforcement of move time limit to allow
   for one client retry during a network outage.
 
+--Added number at the top of each bar on users graphs.
 
 
 
