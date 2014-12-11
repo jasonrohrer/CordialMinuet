@@ -7742,7 +7742,9 @@ function cm_graphUserData( $inTitle, $inStatToGraph, $inWhereClause,
         
         $users_count = mysql_result( $result, $i, "$inStatToGraph" );
 
-        echo "$users_count<br>";
+        if( $users_count > 5 ) {
+            echo "$users_count<br>";
+            }
         
         for( $u=0; $u<$users_count; $u++ ) {
             echo "+<br>";
