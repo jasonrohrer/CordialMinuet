@@ -4,6 +4,11 @@ Version 11     ???
   board starts fading out post-opponent-fold.  Before, the locked square
   arrows would linger after the fade (thanks Nathan C).
 
+--You can now mouse over your own won squares, after all your squares are set
+  but pre-reveal, to preview how revealing a given square will affect the score
+  graph (thanks MZO).
+
+
 
 
 

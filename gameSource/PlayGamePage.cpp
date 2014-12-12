@@ -3446,9 +3446,31 @@ void PlayGamePage::computePossibleScoresFast() {
                 // but don't clear a pending reveal
                 columnsGivenUs[i] != mRevealChoiceForUs ) {
                 
-                columnsAvail[ columnsGivenUs[i] ] = true;
-                
-                columnsGivenUs[i] = -1;
+                if( mOurWonSquares[0] != -1 &&
+                    mOurWonSquares[1] != -1 &&
+                    mOurWonSquares[2] != -1 
+                    &&
+                    ( ( mOurWonSquares[0] % 6 == columnsGivenUs[i] &&
+                        mOurWonSquares[0] / 6 == mMouseOverOurRow )
+                      ||
+                      ( mOurWonSquares[1] % 6 == columnsGivenUs[i] &&
+                        mOurWonSquares[1] / 6 == mMouseOverOurRow )
+                      ||
+                      ( mOurWonSquares[2] % 6 == columnsGivenUs[i] &&
+                        mOurWonSquares[2] / 6 == mMouseOverOurRow ) ) ) {
+                    
+                    // special case:
+                    // player is mousing over one of our won squares
+                    // after all picked, but pre-reveal
+                    
+                    // don't clear this column
+                    }
+                else {
+                    // clear it
+                    columnsAvail[ columnsGivenUs[i] ] = true;
+                    
+                    columnsGivenUs[i] = -1;
+                    }
                 }
             }
         }
@@ -4001,6 +4023,18 @@ void PlayGamePage::pointerMove( float inX, float inY ) {
         int oldMouseOverOurRow = mMouseOverOurRow;
         mMouseOverOurRow = -1;
     
+        
+        int numTheirWon = 0;
+        int numOurWon = 0;
+        for( int i=0; i<3; i++ ) {
+            if( mOurWonSquares[i] != -1 ) {
+                numOurWon++;
+                }
+            if( mTheirWonSquares[i] != -1 ) {
+                numTheirWon++;
+                }
+            }
+
 
         for( int c=0; c<6; c++ ) {
             if( inX >= mColumnPositions[c].x - 27 &&
@@ -4072,6 +4106,31 @@ void PlayGamePage::pointerMove( float inX, float inY ) {
                                 }
                             }
                     
+                        break;
+                        }
+                    else if( numOurWon == 3 && numTheirWon == 0 &&
+                             mRevealChoiceForUs == -1 && 
+                             c == mOurChoices[ i * 2 ] ) {
+                        
+                        // pre-reveal, allow them to mouse over
+                        // possible reveals for self
+                        
+                        for( int r=0; r<6; r++ ) {
+                            if( inY >= mRowPositions[r].y - 27 &&
+                                inY <= mRowPositions[r].y + 27 ) {
+                                
+                                int squareI = r * 6 + c;
+                                
+                                for( int i=0; i<3; i++ ) {
+                                    if( mOurWonSquares[i] == squareI ) {
+                                        mMouseOverOurRow = r;
+                                        break;
+                                        }
+                                    }
+                                
+                                break;
+                                }
+                            }
                         break;
                         }
                     }
