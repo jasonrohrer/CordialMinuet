@@ -567,6 +567,22 @@ min_ and max_allowed_stakes are in ASCII floating point
 
 
 
+
+
+
+NOTE:
+Most of the mid-game calls below can return GAME_ENDED if the game is 
+force-ended by the admin or GAME_EXPIRED if the game timed-out from underneath
+this player (in the case that this player had a broken connection while waiting
+for their opponent's move).
+
+When GAME_ENDED, all pot coins are returned to their owners.
+
+When GAME_EXPIRED, both pots go to the other player.
+
+
+
+
 === Call:
 server.php?action=get_game_state
           &user_id=[id number]

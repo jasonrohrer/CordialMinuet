@@ -191,6 +191,8 @@ gone "GONE"
 
 gameEnded "GAME ENDED"
 
+gameExpired "GAME TIMED OUT"
+
 
 
 seeCashier "PLEASE SEE CASHIER"

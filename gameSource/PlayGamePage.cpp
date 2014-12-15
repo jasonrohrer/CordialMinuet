@@ -295,6 +295,9 @@ PlayGamePage::PlayGamePage()
 
     addServerErrorString( "GAME_ENDED", "gameEnded" );
     addServerErrorStringSignal( "GAME_ENDED", "gameEnded" );
+
+    addServerErrorString( "GAME_ENDED", "gameExpired" );
+    addServerErrorStringSignal( "GAME_ENDED", "gameExpired" );
     
     
     readCharacterGrid( "inkNumbers.tga", 6, 6, mInkNumberSprites );
@@ -2078,6 +2081,42 @@ void PlayGamePage::step() {
                 PendingFlyingCoin coin = 
                     { &( mPotCoinSpots[p] ),
                       &( mPlayerCoinSpots[p] ),
+                      0,
+                      coinValue,
+                      nextCoinID++,
+                      false };
+                mFlyingCoins[p].push_back( coin );
+                }
+            }
+        
+        clearSignal();
+        }
+
+
+    if( checkSignal( "gameExpired" ) &&
+        mFlyingCoins[0].size() == 0 &&
+        mFlyingCoins[1].size() == 0 ) {
+        
+        // special case:
+        // all pot coins fly back to other player
+
+        for( int p=0; p<2; p++ ) {
+                
+                        
+            int coinValue = 1;
+            if( mPotCoins[p] >= 10 ) {
+                coinValue = 10;
+                }
+
+            for( int i=0; i<mPotCoins[p]; i += coinValue ) {
+                if( mPotCoins[p] - i < coinValue ) {
+                    coinValue = 1;
+                    }
+
+                PendingFlyingCoin coin = 
+                    { &( mPotCoinSpots[p] ),
+                      // destination: other player's coins
+                      &( mPlayerCoinSpots[1] ),
                       0,
                       coinValue,
                       nextCoinID++,

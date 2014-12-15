@@ -4857,7 +4857,7 @@ function cm_printGameState( $inHideOpponentSecretMoves = true ) {
 
     if( $numRows != 1 ) {
         if( $areGamesAllowed ) {
-            cm_transactionDeny();
+            echo "GAME_EXPIRED";
             }
         else {
             echo "GAME_ENDED";
@@ -5115,7 +5115,7 @@ function cm_makeMove() {
             cm_log(
                 "Making a move for a game that doesn't exist ".
                 "(or maybe game is in betting phases, so moves forbidden)" );
-            cm_transactionDeny();
+            echo "GAME_EXPIRED";
             }
         else {
             echo "GAME_ENDED";
@@ -5294,7 +5294,7 @@ function cm_makeRevealMove() {
         if( $areGamesAllowed ) {
             cm_log( "Making a move for a game that doesn't exist ".
                 "(or maybe game is in betting phases, so moves forbidden)" );
-            cm_transactionDeny();
+            echo "GAME_EXPIRED";
             }
         else {
             echo "GAME_ENDED";
@@ -5473,7 +5473,7 @@ function cm_makeBet() {
     if( $numRows != 1 ) {
         if( $areGamesAllowed ) {
             cm_log( "Making a bet for a game that doesn't exist" );
-            cm_transactionDeny();
+            echo "GAME_EXPIRED";
             }
         else {
             echo "GAME_ENDED";
@@ -5660,7 +5660,7 @@ function cm_foldBet() {
     if( $numRows != 1 ) {
         if( $areGamesAllowed ) {    
             cm_log( "Folding a bet for a game that doesn't exist" );
-            cm_transactionDeny();
+            echo "GAME_EXPIRED";
             }
         else {
             echo "GAME_ENDED";
@@ -5932,7 +5932,7 @@ function cm_endRound() {
     if( $numRows != 1 ) {
         if( $areGamesAllowed ) {
             cm_log( "Ending round for a game that doesn't exist" );
-            cm_transactionDeny();
+            echo "GAME_EXPIRED";
             }
         else {
             echo "GAME_ENDED";
@@ -6088,7 +6088,7 @@ function cm_startNextRound() {
     if( $numRows != 1 ) {
         if( $areGamesAllowed ) {
             cm_log( "Starting next round for a game that doesn't exist" );
-            cm_transactionDeny();
+            echo "GAME_EXPIRED";
             }
         else {
             echo "GAME_ENDED";
@@ -6282,10 +6282,12 @@ function cm_waitMoveInternal( $inWaitOnSemaphore ) {
     if( $numRows == 0 ) {
         if( $areGamesAllowed ) {
             cm_log( "Waiting on move for a game that doesn't exist" );
+            /*
             cm_informAdmin(
                 "User $user_id waiting on move for game that ".
-                "doesn't exist to start at ". date( DATE_RFC2822 ) );
-            cm_transactionDeny();
+                "doesn't exist at ". date( DATE_RFC2822 ) );
+            */
+            echo "GAME_EXPIRED";
             }
         else {
             echo "GAME_ENDED";
