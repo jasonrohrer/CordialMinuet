@@ -296,8 +296,8 @@ PlayGamePage::PlayGamePage()
     addServerErrorString( "GAME_ENDED", "gameEnded" );
     addServerErrorStringSignal( "GAME_ENDED", "gameEnded" );
 
-    addServerErrorString( "GAME_ENDED", "gameExpired" );
-    addServerErrorStringSignal( "GAME_ENDED", "gameExpired" );
+    addServerErrorString( "GAME_EXPIRED", "gameExpired" );
+    addServerErrorStringSignal( "GAME_EXPIRED", "gameExpired" );
     
     
     readCharacterGrid( "inkNumbers.tga", 6, 6, mInkNumberSprites );
