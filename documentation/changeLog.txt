@@ -8,6 +8,10 @@ Version 11     ???
   but pre-reveal, to preview how revealing a given square will affect the score
   graph (thanks MZO).
 
+--Changed behavior post-disconnect when the game has timed out out from
+  underneath a player (now displays a GAME TIMED OUT message instead of
+  DENIED BY SERVER).
+
 
 
 
