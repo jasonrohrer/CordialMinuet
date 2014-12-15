@@ -12,6 +12,10 @@ Version 11     ???
   underneath a player (now displays a GAME TIMED OUT message instead of
   DENIED BY SERVER).
 
+--Changed score graph to hold off on updating when opponent's move is received
+  until after some of the board ink is applied to preserve the anticipation
+  (thanks iisjreg).
+
 
 
 

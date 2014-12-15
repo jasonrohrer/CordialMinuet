@@ -107,6 +107,10 @@ typedef struct WatercolorStroke {
         // drawing
         // can be -1
         int waitingForCoinIDToFinish;
+
+        // flag for whether a computePossibleScores operation is pending
+        // the drawing of this stroke
+        char computePossibleScoresPending;
         
     } WatercolorStroke;
 
@@ -354,9 +358,14 @@ class PlayGamePage : public ServerActionPage, public ActionListener {
         SimpleVector<WatercolorStroke> mWatercolorStrokes;
         
         void addColumnStroke( int inColumn, SpriteHandle inSprite[6],
-                              char inSpeedUpStart, float inGlobalFade = 1.0 );
+                              char inSpeedUpStart, 
+                              char inScoreUpdatePending,
+                              float inGlobalFade = 1.0 );
+
         void addRowStroke( int inRow, SpriteHandle inSprite[6],
-                           char inSpeedUpStart, float inGlobalFade = 1.0 );
+                           char inSpeedUpStart, 
+                           char inScoreUpdatePending,
+                           float inGlobalFade = 1.0 );
         
 
         

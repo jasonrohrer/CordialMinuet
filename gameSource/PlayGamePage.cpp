@@ -803,11 +803,11 @@ void PlayGamePage::actionPerformed( GUIComponent *inTarget ) {
 
             addColumnStroke( mColumnChoiceForUs, 
                              mGreenWatercolorVSprites[mNextGreenVSprite],
-                             true );
+                             true, false );
             mNextGreenVSprite++;
             addColumnStroke( mColumnChoiceForThem, 
                              mRedWatercolorVSprites[mNextRedVSprite],
-                             false );
+                             false, false );
             mNextRedVSprite++;
 
             setActionParameter( "their_column", mColumnChoiceForThem );
@@ -832,7 +832,7 @@ void PlayGamePage::actionPerformed( GUIComponent *inTarget ) {
             
             addRowStroke( r,
                           mBlackWatercolorHFlippedSprites[mRevealChoiceForUs],
-                          false, 0.75 );
+                          false, false, 0.75 );
             /*
             addColumnStroke( mRevealChoiceForUs,
                              mBlackWatercolorVFlippedSprites[r],
@@ -1546,6 +1546,15 @@ void PlayGamePage::draw( doublePair inViewCenter,
                 }
             if( stroke->rightEnd > 0 ) {
                 stroke->rightEnd -= 0.02 * frameRateFactor;
+
+                if( stroke->rightEnd < 0.25 
+                    &&
+                    stroke->computePossibleScoresPending ) {
+                    
+                    computePossibleScores();
+                    stroke->computePossibleScoresPending = false;
+                    }
+                    
                 if( stroke->rightEnd < 0 ) {
                     stroke->rightEnd = 0;
                     }
@@ -2207,6 +2216,8 @@ void PlayGamePage::step() {
              mMessageState == gettingStatePostBet ||
              mMessageState == gettingStateAtEnd ) {
         
+        char newStrokesAdded = false;
+
         mRunning = getResponseInt( "running" );
         
 
@@ -2731,10 +2742,12 @@ void PlayGamePage::step() {
                             speedUp = false;
                             }
                         
+                        newStrokesAdded = true;
+                        
                         addRowStroke( 
                             mTheirChoices[ theirChoiceMapping[i] ],
                             mGreenWatercolorHSprites[mNextGreenHSprite],
-                            speedUp );
+                            speedUp, true );
                         mNextGreenHSprite++;
                         }
                     }
@@ -2766,9 +2779,11 @@ void PlayGamePage::step() {
                             int r = mOurWonSquares[ ourWonSquareCount ] / 6;
                             int c = mOurWonSquares[ ourWonSquareCount ] % 6;
                             
+                            newStrokesAdded = true;
+                            
                             addColumnStroke( c,
                                              mBlackWatercolorVSprites[r],
-                                             false, 0.75 );
+                                             false, false, 0.75 );
                             /*
                             addRowStroke( r,
                                           mBlackWatercolorHSprites[c],
@@ -2810,15 +2825,17 @@ void PlayGamePage::step() {
                             int c = 
                                 mTheirWonSquares[ theirWonSquareCount ] % 6;
                             
+                            newStrokesAdded = true;
+                            
                             addColumnStroke( c,
                                              mBlackWatercolorVSprites[r],
-                                             false, .75 );
+                                             false, true, .75 );
                             
                             if( theirOldWonNumSquares == 0 ) {
                                 // initial reveal, mask row too
                                 addRowStroke( r,
                                               mBlackWatercolorHSprites[c],
-                                              false, .60 );
+                                              false, false, .60 );
                                 }
                             }
 
@@ -2978,7 +2995,13 @@ void PlayGamePage::step() {
             mLeaveConfirmButton.setVisible( false );
             }
         
-        computePossibleScores();
+        // wait for strokes to add before jumping score graph
+        // (allow for supense of watching reveal without score
+        // graph giving it away).
+        if( ! newStrokesAdded ) {
+            computePossibleScores();
+            }
+        // else some strokes tagged to update score after they're done
 
         mMessageState = responseProcessed;
         }
@@ -4601,7 +4624,9 @@ int PlayGamePage::getNetPotCoins( int inPlayerNumber ) {
 
 
 void PlayGamePage::addColumnStroke( int inColumn, SpriteHandle inSprite[6],
-                                    char inSpeedUpStart, float inGlobalFade ) {
+                                    char inSpeedUpStart, 
+                                    char inScoreUpdatePending,
+                                    float inGlobalFade ) {
     
     int lastFlyingCoinID = -1;
     
@@ -4640,10 +4665,16 @@ void PlayGamePage::addColumnStroke( int inColumn, SpriteHandle inSprite[6],
                 }
             }
 
+        char scoreUpdate = false;
+        if( inScoreUpdatePending && i == 5 ) {
+            scoreUpdate = true;
+            }
+
         WatercolorStroke stroke = { subPos,
                                     inSprite[i], true, leftEnd, rightEnd,
                                     inGlobalFade,
-                                    lastFlyingCoinID };
+                                    lastFlyingCoinID,
+                                    scoreUpdate };
     
         mWatercolorStrokes.push_back( stroke );
         
@@ -4654,7 +4685,9 @@ void PlayGamePage::addColumnStroke( int inColumn, SpriteHandle inSprite[6],
     
 
 void PlayGamePage::addRowStroke( int inRow, SpriteHandle inSprite[6],
-                                 char inSpeedUpStart, float inGlobalFade ) {
+                                 char inSpeedUpStart, 
+                                 char inScoreUpdatePending,
+                                 float inGlobalFade ) {
     
     int lastFlyingCoinID = -1;
     
@@ -4690,11 +4723,17 @@ void PlayGamePage::addRowStroke( int inRow, SpriteHandle inSprite[6],
                 leftEnd = 0.5;
                 }
             }
+        
+        char scoreUpdate = false;
+        if( inScoreUpdatePending && i == 5 ) {
+            scoreUpdate = true;
+            }
 
         WatercolorStroke stroke = { subPos,
                                     inSprite[i], false, leftEnd, rightEnd,
                                     inGlobalFade,
-                                    lastFlyingCoinID };
+                                    lastFlyingCoinID,
+                                    scoreUpdate };
         
         mWatercolorStrokes.push_back( stroke );
         
