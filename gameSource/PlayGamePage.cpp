@@ -2098,32 +2098,10 @@ void PlayGamePage::step() {
         mFlyingCoins[1].size() == 0 ) {
         
         // special case:
-        // all pot coins fly back to other player
-
-        for( int p=0; p<2; p++ ) {
-                
-                        
-            int coinValue = 1;
-            if( mPotCoins[p] >= 10 ) {
-                coinValue = 10;
-                }
-
-            for( int i=0; i<mPotCoins[p]; i += coinValue ) {
-                if( mPotCoins[p] - i < coinValue ) {
-                    coinValue = 1;
-                    }
-
-                PendingFlyingCoin coin = 
-                    { &( mPotCoinSpots[p] ),
-                      // destination: other player's coins
-                      &( mPlayerCoinSpots[1] ),
-                      0,
-                      coinValue,
-                      nextCoinID++,
-                      false };
-                mFlyingCoins[p].push_back( coin );
-                }
-            }
+        // we're not sure WHAT happened
+        // did our bet make it through?  Who gets what coins?
+        // we don't know, so just show game frozen in last-known state
+        // Let post-leave screen sort it out.
         
         clearSignal();
         }
