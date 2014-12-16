@@ -335,6 +335,11 @@ $housePotFraction = 0.17;
 $housePotLimit = 1;
 
 
+// the number of coins that the house takes from each player
+// at the start of each table
+$houseTableCoins = 0;
+
+
 
 // deposit threshold before we require more information from the user
 // (to verify that card is not stolen, etc.)

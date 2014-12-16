@@ -4400,6 +4400,10 @@ function cm_joinGame() {
 
 
     global $cm_gameCoins;
+
+    global $houseTableCoins;
+
+    $playerStartingCoins = $cm_gameCoins - $houseTableCoins;
     
     $query = "INSERT INTO $tableNamePrefix"."games SET ".
         // game_id is auto-increment
@@ -4417,8 +4421,8 @@ function cm_joinGame() {
         "player_1_ended_round = 0,".
         "player_2_ended_round = 0,".
         "move_deadline = CURRENT_TIMESTAMP, ".
-        "player_1_coins = $cm_gameCoins, ".
-        "player_2_coins = $cm_gameCoins, ".
+        "player_1_coins = $playerStartingCoins, ".
+        "player_2_coins = $playerStartingCoins, ".
         "player_1_pot_coins = 0, ".
         "player_2_pot_coins = 0, ".
         "semaphore_key = '$semaphore_key';";
