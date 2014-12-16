@@ -8,7 +8,7 @@
 
 // server will tell clients to upgrade to this version
 global $cm_version;
-$cm_version = "10";
+$cm_version = "11";
 
 
 // leave an older version here IF older clients can also connect safely

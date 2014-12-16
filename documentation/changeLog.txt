@@ -1,4 +1,4 @@
-Version 11     ???
+Version 11     2014-December-16
 
 --Fixed so that you can't click on an opponent's possible square after the game
   board starts fading out post-opponent-fold.  Before, the locked square
