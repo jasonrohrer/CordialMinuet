@@ -1,3 +1,13 @@
+Version 12     ???
+
+--Fixed decimal precision formatting glitch on post-game result screen when
+  starting balance has only two decimals.
+
+
+
+
+
+
 Version 11     2014-December-16
 
 --Fixed so that you can't click on an opponent's possible square after the game

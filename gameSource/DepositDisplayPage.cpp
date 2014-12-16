@@ -119,12 +119,30 @@ void DepositDisplayPage::draw( doublePair inViewCenter,
     
     mainFont->drawString( translate( "oldBalance" ), pos, alignRight );
 
-    char fullPrecision = false;
+    char fullPrecisionBalance = false;
+    char fullPrecisionDelta = false;
     
-    char *oldBalanceString = 
-        formatBalance( mOldBalance, false, &fullPrecision );
 
-    char *deltaString = formatBalance( mDeltaAmount, fullPrecision );
+    // test both to see if either needs full precisoin
+    char *oldBalanceString = 
+        formatBalance( mOldBalance, false, &fullPrecisionBalance );
+
+    char *deltaString = formatBalance( mDeltaAmount, false, 
+                                       &fullPrecisionDelta );
+
+
+    delete [] oldBalanceString;
+    delete [] deltaString;
+    
+    char fullPrecision = fullPrecisionBalance || fullPrecisionDelta;
+
+    // reformat with same precision setting for all
+
+    oldBalanceString = formatBalance( mOldBalance, fullPrecision );
+
+    deltaString = formatBalance( mDeltaAmount, fullPrecision );
+    
+
 
     char *buyInString = formatBalance( mBuyIn, fullPrecision );
 
