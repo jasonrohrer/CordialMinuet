@@ -382,4 +382,30 @@ $staleGameTimeLimit = "0 0:02:00.000";
 $endRoundTimeLimit = "0 0:00:15.000";
 
 
+
+
+// tournament settings
+// for a single-stake tournament that is running now, embedded in the
+// main game on the live server
+
+// to switch off tournament completely
+// otherwise, times below determine live interval
+$tournamentLive = 1;
+
+// no spaces, limit 255 characters
+$tournamentCodeName = "test_name";
+
+// all buy-ins matching this amount will count toward tournament
+$tournamentStake = 0.51;
+
+// number of coins taken from each player at the start of the table
+// used to discourage table-hopping in search of an accomplice
+$tournamentHouseTableCoins = 5;
+
+$tournamentStartTime = "22-Dec-2014 10:00:00 -0800";
+$tournamentEndTime = "22-Dec-2014 12:00:00 -0800";
+
+
+
+
 ?>

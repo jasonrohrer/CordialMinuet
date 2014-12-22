@@ -671,6 +671,7 @@ else if( preg_match( "/server\.php/", $_SERVER[ "SCRIPT_NAME" ] ) ) {
         cm_doesTableExist( $tableNamePrefix."withdrawals" ) &&
         cm_doesTableExist( $tableNamePrefix."game_ledger" ) &&
         cm_doesTableExist( $tableNamePrefix."games" ) &&
+        cm_doesTableExist( $tableNamePrefix."tournament_stats" ) &&
         cm_doesTableExist( $tableNamePrefix."server_stats" ) &&
         cm_doesTableExist( $tableNamePrefix."user_stats" );
     
@@ -1126,6 +1127,29 @@ function cm_setupDatabase() {
 
         cm_queryDatabase( "COMMIT;" );
         cm_queryDatabase( "SET AUTOCOMMIT = 1;" );
+        }
+    else {
+        echo "<B>$tableName</B> table already exists<BR>";
+        }
+
+
+
+    $tableName = $tableNamePrefix . "tournament_stats";
+    if( ! cm_doesTableExist( $tableName ) ) {
+
+        $query =
+            "CREATE TABLE $tableName(" .
+            "user_id INT NOT NULL," .
+            "tournament_code_name VARCHAR(255) NOT NULL," .
+            "PRIMARY KEY( user_id, tournament_code_name )," .
+            "num_games_started INT NOT NULL,".
+            "INDEX( num_games_started ),".
+            "net_dollars DECIMAL(13, 4) NOT NULL,".
+            "INDEX( net_dollars ) ) ENGINE = INNODB;";
+
+        $result = cm_queryDatabase( $query );
+
+        echo "<B>$tableName</B> table created<BR>";
         }
     else {
         echo "<B>$tableName</B> table already exists<BR>";
@@ -4069,7 +4093,14 @@ function cm_endOldGames( $user_id ) {
 
             cm_addLedgerEntry( $old_player_1_id, $game_id, $player_1_payout );
 
+            $tournamentLive = cm_isTournamentLive( $dollar_amount );
 
+            if( $tournamentLive ) {
+                cm_tournamentCashOut( $old_player_1_id, $player_1_payout );
+                }
+
+            
+            
             $won = $player_2_payout - $dollar_amount;
             $lost = 0;
             
@@ -4087,6 +4118,11 @@ function cm_endOldGames( $user_id ) {
             cm_queryDatabase( $query );
 
             cm_addLedgerEntry( $old_player_2_id, $game_id, $player_2_payout );
+
+
+            if( $tournamentLive ) {
+                cm_tournamentCashOut( $old_player_2_id, $player_2_payout );
+                }
 
             
             $query = "UPDATE $tableNamePrefix"."server_globals ".
@@ -4155,6 +4191,75 @@ function cm_getNewSquare() {
     
     
     return $output[0];
+    }
+
+
+
+
+function cm_tournamentBuyIn( $user_id ) {
+    global $tableNamePrefix, $tournamentCodeName, $tournamentStake;
+
+
+    $query = "INSERT INTO $tableNamePrefix"."tournament_stats ".
+        "SET user_id = '$user_id', ".
+        "    tournament_code_name = '$tournamentCodeName', ".
+        "    net_dollars = - $tournamentStake, ".
+        "    num_games_started = 1 ".
+        "ON DUPLICATE KEY UPDATE ".
+        "    net_dollars = net_dollars - $tournamentStake, ".
+        "    num_games_started = num_games_started + 1;";
+
+    cm_queryDatabase( $query );
+    }
+
+
+
+function cm_tournamentCashOut( $user_id, $inDollarsOut ) {
+    global $tableNamePrefix, $tournamentCodeName;
+
+
+    $query = "UPDATE $tableNamePrefix"."tournament_stats ".
+        "SET user_id = '$user_id', ".
+        "    net_dollars = net_dollars + $inDollarsOut ".
+        "WHERE user_id = $user_id AND ".
+        "      tournament_code_name = '$tournamentCodeName';";
+
+    cm_queryDatabase( $query );
+    }
+
+
+
+function cm_isTournamentLive( $inStakes ) {
+    global $tournamentLive, $tournamentStake,
+        $tournamentStartTime, $tournamentEndTime;
+
+    if( ! $tournamentLive || $tournamentStake != $inStakes ) {
+        return false;
+        }
+    $time = time();
+
+    $startTime = strtotime( $tournamentStartTime );
+    $endTime = strtotime( $tournamentEndTime );
+
+
+    if( $time >= $startTime && $time <= $endTime ) {
+        return true;
+        }
+    
+    return false;
+    }
+
+
+
+// returns -1 if not, or stake if is live
+function cm_getTournamentStake() {
+    global $tournamentStake;
+
+    if( ! cm_isTournamentLive( $tournamentStake ) ) {
+        return -1;
+        }
+
+    return $tournamentStake;
     }
 
 
@@ -4330,6 +4435,13 @@ function cm_joinGame() {
 
         cm_addLedgerEntry( $player_1_id, $game_id, - $dollar_amount );
         cm_addLedgerEntry( $user_id, $game_id, - $dollar_amount );
+
+
+        if( cm_isTournamentLive( $dollar_amount ) ) {
+            cm_tournamentBuyIn( $player_1_id, $dollar_amount );
+            cm_tournamentBuyIn( $user_id, $dollar_amount );
+            }
+        
         
         $query = "UPDATE $tableNamePrefix"."users ".
             "SET games_joined = games_joined + 1 ".
@@ -4749,12 +4861,34 @@ function cm_listGames() {
 
     global $tableNamePrefix;
 
+
+    $tournamentStake = cm_getTournamentStake();
+
+    $skipAdjust = 0;
+
+    $ignoreClause = "";
+    if( $tournamentStake != -1 ) {
+        // leave room for tournament stake which appears on every page
+        $limit --;
+
+        // estimate that client shows 9 per page
+        $pages = $skip / 9;
+
+        $skipAdjust = $pages;
+        
+        // we've been inserting a dummy entry on each page
+        $skip -= $skipAdjust;
+
+        $ignoreClause = " AND dollar_amount != $tournamentStake ";        
+        }
+
+    
     // get one extra, beyond requested limit, to detect presence
     // of additional pages beyond limit  
     $query_limit = $limit + 1;
     
     $query = "SELECT dollar_amount FROM $tableNamePrefix"."games ".
-        "WHERE player_2_id = 0 AND started = 0 ".
+        "WHERE player_2_id = 0 AND started = 0 $ignoreClause".
         "ORDER BY dollar_amount ASC ".
         "LIMIT $skip, $query_limit;";
 
@@ -4762,6 +4896,10 @@ function cm_listGames() {
     
     $numRows = mysql_numrows( $result );
 
+
+    
+    
+    
     if( $numRows == 0 && $skip != 0 ) {
         // gone off end (maybe game list has changed since player loaded
         // last page)
@@ -4770,7 +4908,7 @@ function cm_listGames() {
         $skip = 0;
 
         $query = "SELECT dollar_amount FROM $tableNamePrefix"."games ".
-            "WHERE player_2_id = 0 AND started = 0 ".
+            "WHERE player_2_id = 0 AND started = 0 $ignoreClause".
             "ORDER BY dollar_amount ASC ".
             "LIMIT $skip, $query_limit;";
         
@@ -4779,7 +4917,16 @@ function cm_listGames() {
         $numRows = mysql_numrows( $result );
         }
     
-    
+
+    if( $tournamentStake != -1 ) {
+        // always stick tournament stakes at top of list
+        echo "$tournamentStake\n";
+
+        // adjust back to the skip they requested (unless we wrapped around)
+        if( $skip != 0 ) {
+            $skip += $skipAdjust;
+            }
+        }
 
     for( $i=0; $i < $numRows && $i < $limit; $i++ ) {
         $dollar_amount = mysql_result( $result, $i, "dollar_amount" );
