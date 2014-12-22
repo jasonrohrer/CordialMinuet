@@ -393,17 +393,17 @@ $endRoundTimeLimit = "0 0:00:15.000";
 $tournamentLive = 1;
 
 // no spaces, limit 255 characters
-$tournamentCodeName = "test_name";
+$tournamentCodeName = "test";
 
 // all buy-ins matching this amount will count toward tournament
-$tournamentStake = 0.51;
+$tournamentStake = 0.10;
 
 // number of coins taken from each player at the start of the table
 // used to discourage table-hopping in search of an accomplice
 $tournamentHouseTableCoins = 5;
 
-$tournamentStartTime = "22-Dec-2014 10:00:00 -0800";
-$tournamentEndTime = "22-Dec-2014 12:00:00 -0800";
+$tournamentStartTime = "22-Dec-2014 13:00:00 -0800";
+$tournamentEndTime = "23-Dec-2014 13:00:00 -0800";
 
 
 

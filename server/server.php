@@ -625,6 +625,9 @@ else if( $action == "leaders_profit" ) {
 else if( $action == "leaders_profit_ratio" ) {
     cm_leadersProfitRatio();
     }
+else if( $action == "tournament_report" ) {
+    cm_tournamentReport();
+    }
 else if( $action == "users_graph" ) {
     cm_usersGraph();
     }
@@ -7888,6 +7891,148 @@ function cm_leadersProfit() {
 
 function cm_leadersProfitRatio() {
     cm_leaders( "profit_ratio" );
+    }
+
+
+
+
+function cm_formatDuration( $seconds ) {
+    $days = floor( $seconds / 86400 );
+    $seconds -= $days * 86400;
+
+    $hours = floor( $seconds / 3600 );
+    $seconds -= $hours * 3600;
+            
+    $minutes = floor( $seconds / 60 );
+    $seconds -= $minutes * 60;
+
+    $timeString = '';
+    if( $days > 0 ) {
+        $timeString .= "$days day";
+        if( $days > 1 ) {
+            $timeString .= 's';
+            }
+        }
+    if( $hours > 0 ) {
+        if( $timeString != '' ) {
+            $timeString .= ' and ';
+            }
+        $timeString .= "$hours hour";
+        if( $hours > 1 ) {
+            $timeString .= 's';
+            }
+        }
+    if( ( $days == 0 || $hours == 0 ) && $minutes > 0 ) {
+        if( $timeString != '' ) {
+            $timeString .= ' and ';
+            }
+        $timeString .= "$minutes minute";
+        if( $minutes > 1 ) {
+            $timeString .= 's';
+            }
+        }
+    if( ( $days == 0 && $hours == 0
+          ||
+          ( $days == 0 || $hours == 0 ) && $minutes == 0 ) 
+        &&
+        $seconds > 0 ) {
+
+        if( $timeString != '' ) {
+            $timeString .= ' and ';
+            }
+        $timeString .= "$seconds second";
+        if( $seconds > 1 ) {
+            $timeString .= 's';
+            }
+        
+        }
+    
+    return $timeString;
+    }
+
+
+
+function cm_tournamentReport() {
+    $code_name = cm_requestFilter( "code_name", "/[A-Z0-9_]+/i", "" );
+
+
+    global $tableNamePrefix, $leaderboardLimit, $leaderHeader, $leaderFooter;
+
+    eval( $leaderHeader );
+
+
+    global $tournamentStartTime, $tournamentEndTime, $tournamentCodeName;
+    
+    $time = time();
+
+    $startTime = strtotime( $tournamentStartTime );
+    $endTime = strtotime( $tournamentEndTime );
+
+
+    if( $code_name == $tournamentCodeName ) {
+        
+        if( $time > $endTime ) {
+            echo "<center>This tournament is over.<br><br></center>";
+            }
+        else if( $time < $startTime ) {
+
+            $timeString = cm_formatDuration( $startTime - $time );
+
+            echo "<br><br><br><center>This tournament will ".
+                "start in $timeString.<br><br></center>";
+            return;
+            }
+        else {
+            // live
+            $timeString = cm_formatDuration( $endTime - $time );
+
+            echo "<center>This tournament is live and will ".
+                "end in $timeString.<br><br></center>";
+            }
+        }
+    
+    
+    $query = "SELECT num_games_started, net_dollars, random_name ".
+        "FROM $tableNamePrefix"."tournament_stats as stats ".
+        "LEFT JOIN $tableNamePrefix"."users as users ".
+        "     ON stats.user_id = users.user_id ".
+        "WHERE tournament_code_name = '$code_name' ".
+        "ORDER BY net_dollars DESC;";
+    $result = cm_queryDatabase( $query );
+
+    $numRows = mysql_numrows( $result );
+    
+    echo "<center><table border=0 cellspacing=10>";
+
+    echo "<tr><td align=right></td>".
+            "<td></td><td></td>".
+            "<td valign=bottom align=right>Profit</td><td></td>".
+            "<td valign=bottom>Games<br>Played</td></tr>";
+
+    echo "<tr><td colspan=6><hr></td></tr>";
+
+    
+    for( $i=0; $i<$numRows; $i++ ) {
+        $random_name = mysql_result( $result, $i, "random_name" );
+        $num_games_started = mysql_result( $result, $i, "num_games_started" );
+        $net_dollars = mysql_result( $result, $i, "net_dollars" );
+
+        $net_dollars = cm_formatBalanceForDisplay( $net_dollars, true );
+
+        if( $i != 0 ) {
+            echo "<tr><td colspan=6><hr></td></tr>";
+            }
+
+        $rowNum = $i + 1;
+        
+        echo "<tr><td align=right>$rowNum.</td>".
+            "<td>$random_name</td><td></td>".
+            "<td align=right>$net_dollars</td><td></td>".
+            "<td align=right>$num_games_started</td></tr>";
+        }
+    echo "</table></center>";
+
+    eval( $leaderFooter );
     }
 
 
