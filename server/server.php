@@ -4034,6 +4034,31 @@ function cm_endOldGames( $user_id ) {
         $player_1_pot_coins = 0;
         $player_2_pot_coins = 0;
 
+
+        global $houseTableCoins;
+
+        $tournamentLive = cm_isTournamentLive( $dollar_amount );
+        
+        if( $tournamentLive ) {
+            global $tournamentHouseTableCoins;
+
+            $houseTableCoins = $tournamentHouseTableCoins;
+            }
+        
+        if( $player_1_coins < 100 && $player_2_coins < 100 ) {
+            // neither player recouped their table rake before one left
+            // return table rake to the remaining player
+
+            if( $old_player_1_id == $user_id ) {
+                $player_2_coins += $houseTableCoins;
+                }
+            else if( $old_player_2_id == $user_id ) {
+                $player_1_coins += $houseTableCoins;
+                }
+            }
+        
+
+        
         $player_1_payout =
             ( $player_1_coins * $dollar_amount ) / $cm_gameCoins;
 
@@ -4093,7 +4118,7 @@ function cm_endOldGames( $user_id ) {
 
             cm_addLedgerEntry( $old_player_1_id, $game_id, $player_1_payout );
 
-            $tournamentLive = cm_isTournamentLive( $dollar_amount );
+            
 
             if( $tournamentLive ) {
                 cm_tournamentCashOut( $old_player_1_id, $player_1_payout );
@@ -4515,6 +4540,12 @@ function cm_joinGame() {
 
     global $houseTableCoins;
 
+    if( cm_isTournamentLive( $dollar_amount ) ) {
+        global $tournamentHouseTableCoins;
+        $houseTableCoins = $tournamentHouseTableCoins;
+        }
+    
+    
     $playerStartingCoins = $cm_gameCoins - $houseTableCoins;
     
     $query = "INSERT INTO $tableNamePrefix"."games SET ".
