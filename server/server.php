@@ -4229,9 +4229,13 @@ function cm_getNewSquare() {
 
 
 
-function cm_tournamentBuyIn( $user_id ) {
+function cm_tournamentBuyIn( $user_id, $inIsHouse = false ) {
     global $tableNamePrefix, $tournamentCodeName, $tournamentStake;
 
+    if( $inIsHouse ) {
+        // house doesn't pay in
+        $tournamentStake = 0;
+        }
 
     $query = "INSERT INTO $tableNamePrefix"."tournament_stats ".
         "SET user_id = '$user_id', ".
@@ -4474,8 +4478,11 @@ function cm_joinGame() {
 
 
         if( cm_isTournamentLive( $dollar_amount ) ) {
-            cm_tournamentBuyIn( $player_1_id, $dollar_amount );
-            cm_tournamentBuyIn( $user_id, $dollar_amount );
+            cm_tournamentBuyIn( $player_1_id );
+            cm_tournamentBuyIn( $user_id );
+
+	    // make sure house stat line exists
+	    cm_tournamentBuyIn( 0, true );
             }
         
         
@@ -7526,13 +7533,13 @@ function cm_showStats() {
 
     $numRows = mysql_numrows( $result );
 
-    echo "Tournaments:";
-    echo "<br><table border=1>\n";
+    echo "Total House Rake for Tournaments:";
+    echo "<br><table border=1 cellpadding=10>\n";
 
     for( $i=0; $i<$numRows; $i++ ) {
-        $update_time = mysql_field_name( $result, $i, "update_time" );
-        $code_name = mysql_field_name( $result, $i, "tournament_code_name" );
-        $net_dollars = mysql_field_name( $result, $i, "net_dollars" );
+        $update_time = mysql_result( $result, $i, "update_time" );
+        $code_name = mysql_result( $result, $i, "tournament_code_name" );
+        $net_dollars = mysql_result( $result, $i, "net_dollars" );
 
         $net_dollars = cm_formatBalanceForDisplay( $net_dollars );
         
@@ -8031,7 +8038,7 @@ function cm_tournamentReport() {
         "     ON stats.user_id = users.user_id ".
         "WHERE tournament_code_name = '$code_name' ".
         // don't show house on leaderboard
-        "AND user_id != 0 ".
+        "AND stats.user_id != 0 ".
         "ORDER BY net_dollars DESC;";
     $result = cm_queryDatabase( $query );
 
