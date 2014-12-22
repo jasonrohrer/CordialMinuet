@@ -1145,6 +1145,7 @@ function cm_setupDatabase() {
             "user_id INT NOT NULL," .
             "tournament_code_name VARCHAR(255) NOT NULL," .
             "PRIMARY KEY( user_id, tournament_code_name )," .
+            "update_time DATETIME NOT NULL," .
             "num_games_started INT NOT NULL,".
             "INDEX( num_games_started ),".
             "net_dollars DECIMAL(13, 4) NOT NULL,".
@@ -4160,6 +4161,10 @@ function cm_endOldGames( $user_id ) {
 
             cm_addLedgerEntry( 0, $game_id, $house_payout );
 
+            if( $tournamentLive ) {
+                cm_tournamentCashOut( 0, $house_payout );
+                }
+            
             cm_incrementStat( "total_house_rake", $house_payout );
             cm_updateMaxStat( "max_house_rake", $house_payout );
             
@@ -4231,9 +4236,11 @@ function cm_tournamentBuyIn( $user_id ) {
     $query = "INSERT INTO $tableNamePrefix"."tournament_stats ".
         "SET user_id = '$user_id', ".
         "    tournament_code_name = '$tournamentCodeName', ".
+        "    update_time = CURRENT_TIMESTAMP, ".
         "    net_dollars = - $tournamentStake, ".
         "    num_games_started = 1 ".
         "ON DUPLICATE KEY UPDATE ".
+        "    update_time = CURRENT_TIMESTAMP, ".
         "    net_dollars = net_dollars - $tournamentStake, ".
         "    num_games_started = num_games_started + 1;";
 
@@ -4248,6 +4255,7 @@ function cm_tournamentCashOut( $user_id, $inDollarsOut ) {
 
     $query = "UPDATE $tableNamePrefix"."tournament_stats ".
         "SET user_id = '$user_id', ".
+        "    update_time = CURRENT_TIMESTAMP, ".
         "    net_dollars = net_dollars + $inDollarsOut ".
         "WHERE user_id = $user_id AND ".
         "      tournament_code_name = '$tournamentCodeName';";
@@ -7509,6 +7517,31 @@ function cm_showStats() {
     cm_checkPassword( "show_stats" );
 
     cm_generateHeader();
+
+    $query = "SELECT update_time, tournament_code_name, net_dollars ".
+        "FROM $tableNamePrefix"."tournament_stats ".
+        "WHERE user_id = 0 ".
+        "ORDER BY update_time DESC;";
+    $result = cm_queryDatabase( $query );
+
+    $numRows = mysql_numrows( $result );
+
+    echo "Tournaments:";
+    echo "<br><table border=1>\n";
+
+    for( $i=0; $i<$numRows; $i++ ) {
+        $update_time = mysql_field_name( $result, $i, "update_time" );
+        $code_name = mysql_field_name( $result, $i, "tournament_code_name" );
+        $net_dollars = mysql_field_name( $result, $i, "net_dollars" );
+
+        $net_dollars = cm_formatBalanceForDisplay( $net_dollars );
+        
+        echo "<tr><td>$update_time</td>".
+            "<td>$code_name</td><td>$net_dollars</td></tr>";
+        }
+    echo "</table><br><br>";
+    
+
     
     $query = "SELECT * ".
         "FROM $tableNamePrefix"."server_stats ORDER BY stat_date;";
@@ -7997,6 +8030,8 @@ function cm_tournamentReport() {
         "LEFT JOIN $tableNamePrefix"."users as users ".
         "     ON stats.user_id = users.user_id ".
         "WHERE tournament_code_name = '$code_name' ".
+        // don't show house on leaderboard
+        "AND user_id != 0 ".
         "ORDER BY net_dollars DESC;";
     $result = cm_queryDatabase( $query );
 

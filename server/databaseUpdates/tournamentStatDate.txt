@@ -1,0 +1,3 @@
+ALTER TABLE minuetServer_tournament_stats ADD update_time DATETIME NOT NULL AFTER tournament_code_name;
+
+UPDATE minuetServer_tournament_stats SET update_time = CURRENT_TIMESTAMP;
