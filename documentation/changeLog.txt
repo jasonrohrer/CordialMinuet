@@ -7,6 +7,16 @@ Version 12     ???
 
 
 
+Version 11     Live Server Fixes
+
+--Setting for a house table rake (coins taken from each player at the start of
+  a table).  To support tournament mode.
+
+--Support for time limited, single-stake tournament embedded in main game.
+
+
+
+
 
 Version 11     2014-December-16
 
