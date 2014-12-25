@@ -1,11 +1,13 @@
 <?php
 
 $wordA = entry_requestFilter(
-        "wordA", "/[a-z]+/", "" );
+        "wordA", "/[a-z]+/i", "" );
 
 $wordB = entry_requestFilter(
-        "wordB", "/[a-z]+/", "" );
+        "wordB", "/[a-z]+/i", "" );
 
+$wordA = strtolower( $wordA );
+$wordB = strtolower( $wordB );
 
 header( "Location: ./$wordA$wordB" );
 
