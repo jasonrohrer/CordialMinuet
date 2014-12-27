@@ -625,6 +625,9 @@ else if( $action == "leaders_profit" ) {
 else if( $action == "leaders_profit_ratio" ) {
     cm_leadersProfitRatio();
     }
+else if( $action == "leaders_win_loss_ratio" ) {
+    cm_leadersWinLossRatio();
+    }
 else if( $action == "tournament_report" ) {
     cm_tournamentReport();
     }
@@ -7068,7 +7071,7 @@ function cm_showDataUserList() {
         "total_deposits, total_withdrawals, ".
         "dollar_balance, last_action_time, ".
         "blocked, games_started, ".
-        "(dollar_balance + total_withdrawals) /  total_deposits ".
+        "(total_buy_in + total_won - total_lost) /  total_buy_in ".
         " AS profit_ratio ".
         "FROM $usersTable ".
         "$keywordClause ".
@@ -7881,8 +7884,14 @@ function cm_leaders( $order_column_name, $inIsDollars = false ) {
         "dollar_balance, ".
         "(dollar_balance + total_withdrawals) - total_deposits ".
         " AS profit, ".
-        "(dollar_balance + total_withdrawals) /  total_deposits ".
-        " AS profit_ratio ".
+        "( total_buy_in + total_won - total_lost + 20 / games_started ) / ".
+        "( total_buy_in + 20 / games_started )".
+        " AS profit_ratio, ".
+        // watch for divide by 0, or almost zero, that makes this
+        // blow up for people who haven't played much
+        "( total_won + 20 / games_started ) / ".
+        "( total_lost + 20 / games_started ) ".
+        " AS win_loss ".
         "FROM $tableNamePrefix"."users ".
         "ORDER BY $order_column_name DESC ".
         "LIMIT $leaderboardLimit;";
@@ -7931,6 +7940,11 @@ function cm_leadersProfit() {
 
 function cm_leadersProfitRatio() {
     cm_leaders( "profit_ratio" );
+    }
+
+
+function cm_leadersWinLossRatio() {
+    cm_leaders( "win_loss" );
     }
 
 

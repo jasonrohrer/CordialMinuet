@@ -14,6 +14,7 @@ Version 11     Live Server Fixes
 
 --Support for time limited, single-stake tournament embedded in main game.
 
+--Improved formulas used on leaderboards.
 
 
 
