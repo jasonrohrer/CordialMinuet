@@ -2462,6 +2462,8 @@ function cm_makeDeposit() {
                 }
             
             $random_name = cm_generateRandomName();
+
+            global $eloStartingRating;
             
             // user_id auto-assigned (auto-increment)
             $query = "INSERT INTO $tableNamePrefix". "users SET ".
@@ -2476,6 +2478,7 @@ function cm_makeDeposit() {
                 "total_withdrawals = 0, ".
                 "total_won = 0, ".
                 "total_lost = 0, ".
+                "elo_rating = $eloStartingRating, ".
                 "sequence_number = 0, ".
                 "request_sequence_number = 0, ".
                 "last_action_time = CURRENT_TIMESTAMP, ".
@@ -7423,7 +7426,9 @@ function cm_makeAccount() {
     $account_key = cm_generateAccountKey( $email, $salt );
 
     $random_name = cm_generateRandomName();
-            
+
+    global $eloStartingRating;
+    
     // user_id auto-assigned (auto-increment)
     $query = "INSERT INTO $tableNamePrefix". "users SET ".
         "account_key = '$account_key', ".
@@ -7436,6 +7441,7 @@ function cm_makeAccount() {
         "total_withdrawals = 0, ".
         "total_won = 0, ".
         "total_lost = 0, ".
+        "elo_rating = $eloStartingRating, ".
         "sequence_number = 0, ".
         "request_sequence_number = 0, ".
         "last_action_time = CURRENT_TIMESTAMP, ".
