@@ -3931,6 +3931,12 @@ void PlayGamePage::pickerReactToMouseMove( ColumnPicker *inPicker,
 
         float delta = mColumnPositions[closestColumn].x - x;
 
+        if( delta == 0 ) {
+            // an exact mouse movement that puts delta at 0 can cause
+            // our loop to run forever below
+            delta = 1;
+            }
+
         if( inOtherPicker->draw && 
             closestColumn == inOtherPicker->targetColumn ) {
             // push it out of the way

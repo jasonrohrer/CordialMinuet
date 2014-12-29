@@ -3,6 +3,8 @@ Version 12     ???
 --Fixed decimal precision formatting glitch on post-game result screen when
   starting balance has only two decimals.
 
+--Fixed possible freeze when dragging pickers (thanks Benjamin Y).
+
 
 
 
