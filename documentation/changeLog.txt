@@ -5,6 +5,8 @@ Version 12     ???
 
 --Fixed possible freeze when dragging pickers (thanks Benjamin Y).
 
+--Fixed column pickers bouncing back and forth at low target framerates
+  (thanks Zed).
 
 
 

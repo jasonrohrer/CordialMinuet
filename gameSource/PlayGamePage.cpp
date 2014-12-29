@@ -1733,6 +1733,9 @@ int PlayGamePage::slidePicker( ColumnPicker *inPicker ) {
         inPicker->pos.x != 
         mColumnPositions[inPicker->targetColumn].x ) {
         
+        float oldTotalDelta = 
+            mColumnPositions[inPicker->targetColumn].x - inPicker->pos.x;
+
         // Purho Easing function
         float delta = 0.2 * frameRateFactor *
             ( mColumnPositions[inPicker->targetColumn].x - inPicker->pos.x );
@@ -1744,7 +1747,13 @@ int PlayGamePage::slidePicker( ColumnPicker *inPicker ) {
             delta = ceilf( delta );
             }
         
-        inPicker->pos.x += delta;
+        if( fabsf( oldTotalDelta ) < fabsf( delta ) ) {
+            // would move past the end!    
+            inPicker->pos.x = mColumnPositions[inPicker->targetColumn].x;
+            }
+        else {
+            inPicker->pos.x += delta;
+            }
         
 
         // pickers could move via keyboard commands too
