@@ -634,6 +634,9 @@ else if( $action == "leaders_win_loss_ratio" ) {
 else if( $action == "leaders_elo" ) {
     cm_leadersElo();
     }
+else if( $action == "leaders_elo_all" ) {
+    cm_leadersEloAll();
+    }
 else if( $action == "tournament_report" ) {
     cm_tournamentReport();
     }
@@ -8024,6 +8027,13 @@ function cm_leadersElo() {
     global $eloProvisionalGames;
     cm_leaders( "elo_rating", false,
                 "WHERE games_started > $eloProvisionalGames", true  );
+    }
+
+
+function cm_leadersEloAll() {
+    global $eloProvisionalGames;
+    cm_leaders( "elo_rating", false,
+                "", true  );
     }
 
 

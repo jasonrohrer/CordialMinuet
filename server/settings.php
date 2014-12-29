@@ -390,7 +390,7 @@ $eloStartingRating = 1000;
 
 // how many games a new player must play before their rating starts
 // affecting other players
-$eloProvisionalGames = 30;
+$eloProvisionalGames = 20;
 
 $eloKProvisional = 64;
 
