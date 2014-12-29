@@ -4145,7 +4145,7 @@ function cm_endOldGames( $user_id ) {
 
 
             $result = cm_computeNewElo( $ratingA, $ratingB, $aN, $bN,
-                                        $payoutA, $payoutB );
+                                        $payoutA, $payoutB, $house_payout );
 
             $ratingA = $result[0];
             $ratingB = $result[1];
@@ -8506,29 +8506,48 @@ function cm_computeExpectedScore( $inRatingA, $inRatingB ) {
 // N is number of games played so far
 // returns 2-element array with new ratings, $ratingA first
 function cm_computeNewElo( $ratingA, $ratingB, $aN, $bN,
-                           $payoutA, $payoutB ) {
+                           $payoutA, $payoutB, $payoutHouse ) {
 
     global $eloProvisionalGames, $eloKProvisional, $eloKMain;
     
     $aE = cm_computeExpectedScore( $ratingA, $ratingB );
     $bE = 1 - $aE;
 
+
+    $buyIn = ( $payoutA + $payoutB + $payoutHouse ) / 2;
+    
     // score is win, loss, draw
     //            1,    0,  0.5
+
+    // NOTE:  unlike Chess, it's possible for both players to lose money
+    // It's also possible for one to draw while the other loses,
+    // or both to draw.
+    // Only one player can win, however.
     $aS;
-    if( $payoutA > $payoutB ) {
+    if( $payoutA > $buyIn ) {
         $aS = 1;
         }
-    else if( $payoutA < $payoutB ) {
+    else if( $payoutA < $buyIn ) {
         $aS = 0;
         }
     else {
         $aS = 0.5;
         }
+    
+    $bS;
+    if( $payoutB > $buyIn ) {
+        $bS = 1;
+        }
+    else if( $payoutA < $buyIn ) {
+        $bS = 0;
+        }
+    else {
+        $bS = 0.5;
+        }
 
-    $bS = 1 - $aS;
-            
-            
+    // thus, unlike Chess, $bS != 1 - $aS
+    
+    
     $aK = $eloKProvisional;
     $aProvisional = true;
     if( $aN > $eloProvisionalGames ) {
@@ -8543,11 +8562,13 @@ function cm_computeNewElo( $ratingA, $ratingB, $aN, $bN,
         $bProvisional = false;
         }
 
-    // scale K, affect on ratings, based on number of chips taken by winner
-    // tie games have no effect on Elo
+    // scale K, affect on ratings, based on fraction of chips taken by winner
+    // PLUS the fraciton of chips taken by house
+    // tie games affect Elo more the longer they last (as tribute grows)
     // taking half of your opponent's chips has half effect on Elo
     // taking all of your opponent's chips has full effect on Elo
-    $kScale = abs( ($payoutA - $payoutB) / ( $payoutA + $payoutB ) );
+    $kScale = ( abs($payoutA - $payoutB) + $payoutHouse ) /
+        ( $payoutA + $payoutB + $payoutHouse );
 
     $aK *= $kScale;
     $bK *= $kScale;
@@ -8633,6 +8654,16 @@ function cm_recomputeElo() {
             $userB = mysql_result( $result2, 1, "user_id" );
             $payoutB = mysql_result( $result2, 1, "dollar_delta" );
 
+
+            $query = "SELECT dollar_delta ".
+                "FROM $tableNamePrefix"."game_ledger ".
+                "WHERE dollar_delta >= 0 ".
+                "AND game_id = $game_id AND user_id = 0;";
+
+            $result3 = cm_queryDatabase( $query );
+            $payoutHouse = mysql_result( $result3, 0, "dollar_delta" );
+
+            
             $ratingA = $eloRatings[ $userA ];
             $ratingB = $eloRatings[ $userB ];
 
@@ -8641,7 +8672,8 @@ function cm_recomputeElo() {
             
 
             $resultArray = cm_computeNewElo( $ratingA, $ratingB, $aN, $bN,
-                                             $payoutA, $payoutB );
+                                             $payoutA, $payoutB,
+                                             $payoutHouse );
 
             $ratingA = $resultArray[0];
             $ratingB = $resultArray[1];
