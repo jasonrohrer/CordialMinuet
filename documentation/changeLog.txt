@@ -8,6 +8,9 @@ Version 12     ???
 --Fixed column pickers bouncing back and forth at low target framerates
   (thanks Zed).
 
+--Fixed crash when halfFrameRate would push frame rate to 0.
+
+
 
 
 
