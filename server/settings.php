@@ -397,7 +397,7 @@ $eloKProvisional = 64;
 $eloKMain = 32;
 
 // should manual recompute action be shown in admin UI
-$eloManualRecompute = false;
+$eloManualRecompute = true;
 
 
 

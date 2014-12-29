@@ -8513,9 +8513,20 @@ function cm_computeNewElo( $ratingA, $ratingB, $aN, $bN,
     $aE = cm_computeExpectedScore( $ratingA, $ratingB );
     $bE = 1 - $aE;
 
-    // score is fraction of payout between 0 and 1
-    $aS = $payoutA / ( $payoutA + $payoutB );
-    $bS = $payoutB / ( $payoutA + $payoutB );
+    // score is win, loss, draw
+    //            1,    0,  0.5
+    $aS;
+    if( $payoutA > $payoutB ) {
+        $aS = 1;
+        }
+    else if( $payoutA < $payoutB ) {
+        $aS = 0;
+        }
+    else {
+        $aS = 0.5;
+        }
+
+    $bS = 1 - $aS;
             
             
     $aK = $eloKProvisional;
@@ -8532,6 +8543,15 @@ function cm_computeNewElo( $ratingA, $ratingB, $aN, $bN,
         $bProvisional = false;
         }
 
+    // scale K, affect on ratings, based on number of chips taken by winner
+    // tie games have no effect on Elo
+    // taking half of your opponent's chips has half effect on Elo
+    // taking all of your opponent's chips has full effect on Elo
+    $kScale = abs( ($payoutA - $payoutB) / ( $payoutA + $payoutB ) );
+
+    $aK *= $kScale;
+    $bK *= $kScale;
+
     // provisional doesn't affect non-provisional
     if( $bProvisional && ! $aProvisional ) {
         $aK = 0;
@@ -8539,7 +8559,8 @@ function cm_computeNewElo( $ratingA, $ratingB, $aN, $bN,
     if( $aProvisional && ! $bProvisional ) {
         $bK = 0;
         }
-            
+
+    
             
     $ratingA += $aK * ( $aS - $aE );
     $ratingB += $bK * ( $bS - $bE );
