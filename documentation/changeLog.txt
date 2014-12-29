@@ -16,6 +16,8 @@ Version 11     Live Server Fixes
 
 --Improved formulas used on leaderboards.
 
+--Added Elo ratings.
+
 
 
 

@@ -613,6 +613,9 @@ else if( $action == "in_person_deposit" ) {
 else if( $action == "in_person_withdrawal" ) {
     cm_inPersonWithdrawal();
     }
+else if( $action == "recompute_elo" ) {
+    cm_recomputeElo();
+    }
 else if( $action == "logout" ) {
     cm_logout();
     }
@@ -627,6 +630,9 @@ else if( $action == "leaders_profit_ratio" ) {
     }
 else if( $action == "leaders_win_loss_ratio" ) {
     cm_leadersWinLossRatio();
+    }
+else if( $action == "leaders_elo" ) {
+    cm_leadersElo();
     }
 else if( $action == "tournament_report" ) {
     cm_tournamentReport();
@@ -921,6 +927,7 @@ function cm_setupDatabase() {
             "total_buy_in DECIMAL(13, 2) NOT NULL,".
             "total_won DECIMAL(13, 4) NOT NULL,".
             "total_lost DECIMAL(13, 4) NOT NULL,".
+            "elo_rating INT NOT NULL,".
             "last_buy_in DECIMAL(13, 2) NOT NULL,".
             "last_pay_out DECIMAL(13, 4) NOT NULL,".
             "sequence_number INT UNSIGNED NOT NULL," .
@@ -4107,6 +4114,47 @@ function cm_endOldGames( $user_id ) {
             // first player just left the game, payout both
             cm_log( "endOldGames paying out both players for game $game_id" );
 
+
+
+            // update Elo ratings
+            $query = "SELECT elo_rating, games_started ".
+                "FROM $tableNamePrefix"."users ".
+                "WHERE user_id = $old_player_1_id;";
+
+            $result = cm_queryDatabase( $query );
+
+            $ratingA = mysql_result( $result, 0, "elo_rating" );
+            $aN = mysql_result( $result, 0, "games_started" );
+            $payoutA = $player_1_payout;
+
+            $query = "SELECT elo_rating, games_started ".
+                "FROM $tableNamePrefix"."users ".
+                "WHERE user_id = $old_player_2_id;";
+
+            $result = cm_queryDatabase( $query );
+
+            $ratingB = mysql_result( $result, 0, "elo_rating" );
+            $bN = mysql_result( $result, 0, "games_started" );
+            $payoutB = $player_2_payout;
+
+
+            $result = cm_computeNewElo( $ratingA, $ratingB, $aN, $bN,
+                                        $payoutA, $payoutB );
+
+            $ratingA = $result[0];
+            $ratingB = $result[1];
+            
+            $query = "UPDATE $tableNamePrefix"."users ".
+                "SET elo_rating = $ratingA WHERE user_id = $old_player_1_id;";
+            cm_queryDatabase( $query );
+
+            $query = "UPDATE $tableNamePrefix"."users ".
+                "SET elo_rating = $ratingB WHERE user_id = $old_player_2_id;";
+            cm_queryDatabase( $query );
+            
+
+
+            
             $won = $player_1_payout - $dollar_amount;
             $lost = 0;
             
@@ -7072,7 +7120,8 @@ function cm_showDataUserList() {
         "dollar_balance, last_action_time, ".
         "blocked, games_started, ".
         "(total_buy_in + total_won - total_lost) /  total_buy_in ".
-        " AS profit_ratio ".
+        " AS profit_ratio, ".
+        "elo_rating ".
         "FROM $usersTable ".
         "$keywordClause ".
         "ORDER BY $order_by DESC ".
@@ -7132,6 +7181,7 @@ function cm_showDataUserList() {
     echo "<td>".orderLink( "total_withdrawals", "Withdrawals" )."</td>\n";
     echo "<td>".orderLink( "dollar_balance", "Balance" )."</td>\n";
     echo "<td>".orderLink( "profit_ratio", "Profit Ratio" )."</td>\n";
+    echo "<td>".orderLink( "elo_rating", "Elo" )."</td>\n";
     echo "<td>".orderLink( "games_started", "Games" )."</td>\n";
     
     echo "<td>".orderLink( "last_action_time", "Action" )."</td>\n";
@@ -7148,6 +7198,7 @@ function cm_showDataUserList() {
         $total_withdrawals = mysql_result( $result, $i, "total_withdrawals" );
         $dollar_balance = mysql_result( $result, $i, "dollar_balance" );
         $profit_ratio = mysql_result( $result, $i, "profit_ratio" );
+        $elo_rating = mysql_result( $result, $i, "elo_rating" );
         $games_started = mysql_result( $result, $i, "games_started" );
         $last_action_time = mysql_result( $result, $i, "last_action_time" );
         $blocked = mysql_result( $result, $i, "blocked" );
@@ -7188,6 +7239,7 @@ function cm_showDataUserList() {
         echo "<td>$withdrawalsString</td>\n";
         echo "<td>$balanceString</td>\n";
         echo "<td>$profit_ratio</td>\n";
+        echo "<td>$elo_rating</td>\n";
         echo "<td>$games_started</td>\n";
         echo "<td>$last_action_time</td>\n";
         echo "</tr>\n";
@@ -7318,6 +7370,12 @@ function cm_generateHeader() {
 
     $leakedMoneyString = cm_formatBalanceForDisplay( $leaked_money );
 
+
+    global $eloManualRecompute;
+    if( $eloManualRecompute ) {
+        echo "[<a href=\"server.php?action=recompute_elo" .
+            "\">Recompute Elo</a>]<br>";
+        }
     
     
     echo "<table width='100%' border=0><tr>".
@@ -7873,12 +7931,18 @@ function cm_showDetailInternal() {
     }
 
 
-function cm_leaders( $order_column_name, $inIsDollars = false ) {
+function cm_leaders( $order_column_name, $inIsDollars = false,
+                     $inWhereClause = "", $inUnlimited = false ) {
 
     global $tableNamePrefix, $leaderboardLimit, $leaderHeader, $leaderFooter;
 
     eval( $leaderHeader );
-    
+
+    $limitClause = "LIMIT $leaderboardLimit";
+
+    if( $inUnlimited ) {
+        $limitClause = "";
+        }
     
     $query = "SELECT random_name, ".
         "dollar_balance, ".
@@ -7891,10 +7955,12 @@ function cm_leaders( $order_column_name, $inIsDollars = false ) {
         // blow up for people who haven't played much
         "( total_won + 20 / games_started ) / ".
         "( total_lost + 20 / games_started ) ".
-        " AS win_loss ".
+        " AS win_loss, ".
+        "elo_rating ".
         "FROM $tableNamePrefix"."users ".
+        "$inWhereClause ".
         "ORDER BY $order_column_name DESC ".
-        "LIMIT $leaderboardLimit;";
+        "$limitClause;";
     $result = cm_queryDatabase( $query );
 
     $numRows = mysql_numrows( $result );
@@ -7945,6 +8011,13 @@ function cm_leadersProfitRatio() {
 
 function cm_leadersWinLossRatio() {
     cm_leaders( "win_loss" );
+    }
+
+
+function cm_leadersElo() {
+    global $eloProvisionalGames;
+    cm_leaders( "elo_rating", false,
+                "WHERE games_started > $eloProvisionalGames", true  );
     }
 
 
@@ -8404,6 +8477,165 @@ function cm_inPersonWithdrawal() {
 
     cm_showDetailInternal();
     }
+
+
+
+// computes expected score, aE, for A based on Elo ratings of two players
+// Expected score for B is 1 - aE
+function cm_computeExpectedScore( $inRatingA, $inRatingB ) {
+    return 1 / ( 1 + pow( 10, ( $inRatingB - $inRatingA ) / 400 ) );
+    }
+
+
+// N is number of games played so far
+// returns 2-element array with new ratings, $ratingA first
+function cm_computeNewElo( $ratingA, $ratingB, $aN, $bN,
+                           $payoutA, $payoutB ) {
+
+    global $eloProvisionalGames, $eloKProvisional, $eloKMain;
+    
+    $aE = cm_computeExpectedScore( $ratingA, $ratingB );
+    $bE = 1 - $aE;
+
+    // score is fraction of payout between 0 and 1
+    $aS = $payoutA / ( $payoutA + $payoutB );
+    $bS = $payoutB / ( $payoutA + $payoutB );
+            
+            
+    $aK = $eloKProvisional;
+    $aProvisional = true;
+    if( $aN > $eloProvisionalGames ) {
+        $aK = $eloKMain;
+        $aProvisional = false;
+        }
+
+    $bK = $eloKProvisional;
+    $bProvisional = true;
+    if( $bN > $eloProvisionalGames ) {
+        $bK = $eloKMain;
+        $bProvisional = false;
+        }
+
+    // provisional doesn't affect non-provisional
+    if( $bProvisional && ! $aProvisional ) {
+        $aK = 0;
+        }
+    if( $aProvisional && ! $bProvisional ) {
+        $bK = 0;
+        }
+            
+            
+    $ratingA += $aK * ( $aS - $aE );
+    $ratingB += $bK * ( $bS - $bE );
+
+    $result = array();
+
+    $result[ 0 ] = $ratingA;
+    $result[ 1 ] = $ratingB;
+
+    return $result;
+    }
+
+
+
+function cm_recomputeElo() {
+    cm_checkPassword( "recompute_elo" );
+
+    echo "[<a href=\"server.php?action=show_data" .
+         "\">Main</a>]<br><br><br>";
+
+    global $tableNamePrefix;
+
+    global $eloStartingRating, $eloProvisionalGames,
+        $eloKProvisional, $eloKMain;
+
+    
+    cm_queryDatabase( "SET AUTOCOMMIT = 0;" );
+    
+    $query = "SELECT user_id from $tableNamePrefix"."users FOR UPDATE;";
+    
+    $result = cm_queryDatabase( $query );
+
+    $eloRatings = array();
+
+    $gamesPlayed = array();
+
+
+    $numRows = mysql_numrows( $result );
+            
+    for( $i=0; $i<$numRows; $i++ ) {
+        $user_id = mysql_result( $result, $i, "user_id" );
+
+        $eloRatings[ $user_id ] = $eloStartingRating;
+        $gamesPlayed[ $user_id ] = 0;
+        }
+
+    $query = "SELECT game_id FROM $tableNamePrefix"."game_ledger ".
+        "WHERE game_id != 0 GROUP BY game_id;";
+    
+    $result = cm_queryDatabase( $query );
+    $numRows = mysql_numrows( $result );
+            
+    for( $i=0; $i<$numRows; $i++ ) {
+        $game_id = mysql_result( $result, $i, "game_id" );
+
+        $query = "SELECT user_id, dollar_delta ".
+            "FROM $tableNamePrefix"."game_ledger ".
+            "WHERE dollar_delta >= 0 ".
+            "AND game_id = $game_id AND user_id != 0;";
+        
+
+        $result2 = cm_queryDatabase( $query );
+        $numRows2 = mysql_numrows( $result2 );
+
+        if( $numRows2 == 2 ) {
+            // count the result
+            $userA = mysql_result( $result2, 0, "user_id" );
+            $payoutA = mysql_result( $result2, 0, "dollar_delta" );
+
+            $userB = mysql_result( $result2, 1, "user_id" );
+            $payoutB = mysql_result( $result2, 1, "dollar_delta" );
+
+            $ratingA = $eloRatings[ $userA ];
+            $ratingB = $eloRatings[ $userB ];
+
+            $aN = $gamesPlayed[ $userA ];
+            $bN = $gamesPlayed[ $userB ];
+            
+
+            $resultArray = cm_computeNewElo( $ratingA, $ratingB, $aN, $bN,
+                                             $payoutA, $payoutB );
+
+            $ratingA = $resultArray[0];
+            $ratingB = $resultArray[1];
+            
+            echo "$userA elo changing to $ratingA<br>";
+            echo "$userB elo changing to $ratingB<br>";
+            
+            
+            
+            $eloRatings[ $userA ] = $ratingA;
+            $eloRatings[ $userB ] = $ratingB;
+            
+            $gamesPlayed[ $userA ] ++;
+            $gamesPlayed[ $userB ] ++; 
+            }
+        }
+
+    foreach( $eloRatings as $user_id => $elo ) {
+        echo "Final update $user_id to elo $elo<br>";
+        $query = "UPDATE $tableNamePrefix"."users ".
+            "SET elo_rating = $elo WHERE user_id = $user_id;";
+
+        cm_queryDatabase( $query );
+        }
+
+    cm_queryDatabase( "COMMIT;" );
+    cm_queryDatabase( "SET AUTOCOMMIT=1;" );
+
+    echo "Done<br>";
+    }
+
 
 
 

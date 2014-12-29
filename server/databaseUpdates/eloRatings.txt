@@ -1,0 +1,3 @@
+ALTER TABLE minuetServer_users ADD elo_rating INT NOT NULL AFTER total_lost;
+
+update minuetServer_users set elo_rating = 1000;

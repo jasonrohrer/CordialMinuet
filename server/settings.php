@@ -383,6 +383,23 @@ $endRoundTimeLimit = "0 0:00:15.000";
 
 
 
+// for Elo rating system
+
+// rating of brand new players
+$eloStartingRating = 1000;
+
+// how many games a new player must play before their rating starts
+// affecting other players
+$eloProvisionalGames = 30;
+
+$eloKProvisional = 64;
+
+$eloKMain = 32;
+
+// should manual recompute action be shown in admin UI
+$eloManualRecompute = true;
+
+
 
 // tournament settings
 // for a single-stake tournament that is running now, embedded in the
