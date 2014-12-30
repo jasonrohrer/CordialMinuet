@@ -4526,7 +4526,8 @@ function cm_joinGame() {
             "SET dollar_balance = dollar_balance - $dollar_amount, ".
             "games_started = games_started + 1, ".
             "total_buy_in = total_buy_in + $dollar_amount, ".
-            "last_buy_in = $dollar_amount ".
+            "last_buy_in = $dollar_amount, ".
+            "last_pay_out = -1 ".
             "WHERE user_id = '$player_1_id' OR user_id = '$user_id';";
         cm_queryDatabase( $query );
 
@@ -7952,18 +7953,37 @@ function cm_leaders( $order_column_name, $inIsDollars = false,
     if( $inUnlimited ) {
         $limitClause = "";
         }
-    
+
+    // h is a factor that hides effect of user's live game from leaderboards
+    //   thus, you can't check for changes in the leaderboard to detect who
+    //   you're playing against.
+    // g is a factor that hides effect of a game that was just started on
+    //   game count as it impacts leaderboards
+    // Q is the factor in profit_ratio and win_loss that accounts for players
+    //   with too few games played
+
+    // the (SELECT alias) trick, found on StackOverflow, allows us to
+    // reuse alias in other calculations.  Thus, we can define h, g, and Q
+    // once and reuse them in more complicated calculations
     $query = "SELECT random_name, ".
-        "dollar_balance, ".
-        "(dollar_balance + total_withdrawals) - total_deposits ".
+        // h is non-zero (last_buy_in) only if player is still in game
+        "if( last_pay_out = -1, last_buy_in, 0 ) AS h, ".
+        // g is -1 if player is still in the game
+        "if( last_buy_in != 0 AND last_pay_out = -1, -1, 0 ) as g, ".
+        // Q factor depends on number of games started
+        //     (which we disguise with g)
+        "20 / ( games_started + (SELECT g) ) as Q, ".
+        
+        "dollar_balance + (SELECT h) AS dollar_balance, ".
+        "(dollar_balance + (SELECT h) + total_withdrawals) - total_deposits ".
         " AS profit, ".
-        "( total_buy_in + total_won - total_lost + 20 / games_started ) / ".
-        "( total_buy_in + 20 / games_started )".
+        "( total_buy_in - (SELECT h) + total_won - total_lost + (SELECT Q) ) ".
+        "  / ( total_buy_in - (SELECT h) + (SELECT Q) )".
         " AS profit_ratio, ".
         // watch for divide by 0, or almost zero, that makes this
         // blow up for people who haven't played much
-        "( total_won + 20 / games_started ) / ".
-        "( total_lost + 20 / games_started ) ".
+        "( total_won + (SELECT Q) ) / ".
+        "( total_lost + (SELECT Q) ) ".
         " AS win_loss, ".
         "elo_rating ".
         "FROM $tableNamePrefix"."users ".

@@ -25,6 +25,10 @@ Version 11     Live Server Fixes
 
 --Added Elo ratings.
 
+--Fixed leaderboards to hide effects of live games (so you can't check who
+  you're playing against by watching changes in leaderboard numbers).
+
+
 
 
 
