@@ -28,6 +28,8 @@ Version 11     Live Server Fixes
 --Fixed leaderboards to hide effects of live games (so you can't check who
   you're playing against by watching changes in leaderboard numbers).
 
+--Improved security by passing Yubikey through a regexp and not logging failed
+  admin passwords (thanks Cayce U).
 
 
 

@@ -9347,8 +9347,7 @@ function cm_checkPassword( $inFunctionName ) {
             
             echo "Incorrect password.";
 
-            cm_log( "Failed $inFunctionName access with password:  ".
-                    "$password" );
+            cm_log( "Failed $inFunctionName access with bad password." );
             }
         else {
             echo "Session expired.";
@@ -9365,8 +9364,8 @@ function cm_checkPassword( $inFunctionName ) {
             global $yubikeyIDs, $yubicoClientID, $yubicoSecretKey,
                 $serverSecretKey;
             
-            $yubikey = $_REQUEST[ "yubikey" ];
-
+            $yubikey = cm_requestFilter( "yubikey", "/[a-z]+/", "" );
+            
             $index = array_search( $password, $accessPasswords );
             $yubikeyIDList = preg_split( "/:/", $yubikeyIDs[ $index ] );
 
