@@ -31,6 +31,10 @@ Version 11     Live Server Fixes
 --Improved security by passing Yubikey through a regexp and not logging failed
   admin passwords (thanks Cayce U).
 
+--Fixed to pass user-submitted credit card data through a regexp to prevent
+  exec injection attacks.  Card data was validated as being properly encrypted,
+  but after decryption, it was trusted blindly (thanks Cayce U).
+
 
 
 

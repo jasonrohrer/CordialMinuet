@@ -2194,10 +2194,11 @@ function cm_makeDeposit() {
     // card data came through okay
     // if charge goes through, we are set to trust this client
 
-    $cardNumber = $dataParts[0];
-    $month = $dataParts[1];
-    $year = $dataParts[2];
-    $cvc = $dataParts[3];
+    $cardNumber = cm_inputFilter( $dataParts[0], "/\d+/", 0 );
+    $month = cm_inputFilter( $dataParts[1], "/\d\d/", "01" );
+    $year = cm_inputFilter( $dataParts[2], "/\d\d\d\d/", "1901" );
+    // 3 or 4 digits
+    $cvc = cm_inputFilter( $dataParts[3], "/\d\d\d\d?/", "111" );
 
     $cents_amount = round( $dollar_amount * 100 );
     
@@ -9251,9 +9252,16 @@ function cm_requestFilter( $inRequestVariable, $inRegex, $inDefault = "" ) {
     if( ! isset( $_REQUEST[ $inRequestVariable ] ) ) {
         return $inDefault;
         }
-    
-    $numMatches = preg_match( $inRegex,
-                              $_REQUEST[ $inRequestVariable ], $matches );
+
+    return cm_inputFilter( $_REQUEST[ $inRequestVariable ], $inRegex,
+                           $inDefault );
+    }
+
+
+
+// filters users input using a regex match
+function cm_inputFilter( $inInput, $inRegex, $inDefault = "" ) {
+    $numMatches = preg_match( $inRegex, $inInput, $matches );
 
     if( $numMatches != 1 ) {
         return $inDefault;
@@ -9261,8 +9269,6 @@ function cm_requestFilter( $inRequestVariable, $inRegex, $inDefault = "" ) {
         
     return $matches[0];
     }
-
-
 
 
 
