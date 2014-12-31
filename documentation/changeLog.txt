@@ -10,6 +10,9 @@ Version 12     ???
 
 --Fixed crash when halfFrameRate would push frame rate to 0.
 
+--Added settings for controlling watercolor stroke darkness to accommodate
+  various monitor brightnesses (specifically for PAX booth monitors).
+
 
 
 

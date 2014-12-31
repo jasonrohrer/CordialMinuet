@@ -14,6 +14,7 @@
 #include "minorGems/game/drawUtils.h"
 
 #include "minorGems/util/stringUtils.h"
+#include "minorGems/util/SettingsManager.h"
 
 
 
@@ -53,6 +54,12 @@ static void setThemColor() {
 
 
 static doublePair lastMousePos = { 0, 0 };
+
+
+static float greenStrokeFade;
+static float redStrokeFade;
+static float blackStrokeFade;
+
 
 
 
@@ -292,6 +299,13 @@ PlayGamePage::PlayGamePage()
           mRoundStartTime( 0 ) {
     
     
+    greenStrokeFade = 
+        SettingsManager::getFloatSetting( "greenStrokeFade", 1.0f );
+    redStrokeFade = 
+        SettingsManager::getFloatSetting( "redStrokeFade", 1.0f );
+    blackStrokeFade = 
+        SettingsManager::getFloatSetting( "blackStrokeFade", 1.0f );
+
 
     addServerErrorString( "GAME_ENDED", "gameEnded" );
     addServerErrorStringSignal( "GAME_ENDED", "gameEnded" );
@@ -803,11 +817,11 @@ void PlayGamePage::actionPerformed( GUIComponent *inTarget ) {
 
             addColumnStroke( mColumnChoiceForUs, 
                              mGreenWatercolorVSprites[mNextGreenVSprite],
-                             true, false );
+                             true, false, greenStrokeFade );
             mNextGreenVSprite++;
             addColumnStroke( mColumnChoiceForThem, 
                              mRedWatercolorVSprites[mNextRedVSprite],
-                             false, false );
+                             false, false, redStrokeFade );
             mNextRedVSprite++;
 
             setActionParameter( "their_column", mColumnChoiceForThem );
@@ -832,7 +846,7 @@ void PlayGamePage::actionPerformed( GUIComponent *inTarget ) {
             
             addRowStroke( r,
                           mBlackWatercolorHFlippedSprites[mRevealChoiceForUs],
-                          false, false, 0.75 );
+                          false, false, 0.75 * blackStrokeFade );
             /*
             addColumnStroke( mRevealChoiceForUs,
                              mBlackWatercolorVFlippedSprites[r],
@@ -1469,11 +1483,18 @@ void PlayGamePage::draw( doublePair inViewCenter,
         drawSprite( mSigilSprite, headerPos );
         
 
-        setDrawColor( 0, 0, 0, 1 );
+        setDrawColor( 1 - greenStrokeFade, 
+                      1 - greenStrokeFade, 
+                      1 - greenStrokeFade, 1 );
                 
         columnHeaderPos.y += 9;
         columnHeaderPos.x += 5;
         drawSprite( mGreenWatercolorHeaderSprite, columnHeaderPos );
+
+
+        setDrawColor( 1 - redStrokeFade, 
+                      1 - redStrokeFade, 
+                      1 - redStrokeFade, 1 );
         
         rowHeaderPos.x -= 9;
         rowHeaderPos.y += 3;
@@ -2756,7 +2777,7 @@ void PlayGamePage::step() {
                         addRowStroke( 
                             mTheirChoices[ theirChoiceMapping[i] ],
                             mGreenWatercolorHSprites[mNextGreenHSprite],
-                            speedUp, true );
+                            speedUp, true, greenStrokeFade );
                         mNextGreenHSprite++;
                         }
                     }
@@ -2792,7 +2813,8 @@ void PlayGamePage::step() {
                             
                             addColumnStroke( c,
                                              mBlackWatercolorVSprites[r],
-                                             false, false, 0.75 );
+                                             false, false, 
+                                             0.75 * blackStrokeFade );
                             /*
                             addRowStroke( r,
                                           mBlackWatercolorHSprites[c],
@@ -2838,13 +2860,15 @@ void PlayGamePage::step() {
                             
                             addColumnStroke( c,
                                              mBlackWatercolorVSprites[r],
-                                             false, true, .75 );
+                                             false, true, 
+                                             .75 * blackStrokeFade );
                             
                             if( theirOldWonNumSquares == 0 ) {
                                 // initial reveal, mask row too
                                 addRowStroke( r,
                                               mBlackWatercolorHSprites[c],
-                                              false, false, .60 );
+                                              false, false, 
+                                              .60 * blackStrokeFade );
                                 }
                             }
 
