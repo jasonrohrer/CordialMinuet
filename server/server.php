@@ -8570,7 +8570,7 @@ function cm_computeNewElo( $ratingA, $ratingB, $aN, $bN,
     if( $payoutB > $buyIn ) {
         $bS = 1;
         }
-    else if( $payoutA < $buyIn ) {
+    else if( $payoutB < $buyIn ) {
         $bS = 0;
         }
     else {
