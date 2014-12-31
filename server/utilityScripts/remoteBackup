@@ -1,0 +1,8 @@
+echo
+echo "Preparing to pull Cordial Minuet backups from server."
+echo
+echo -n "Press ENTER when ready: "
+
+read X
+
+rsync -rvtz --delete jcr14@cordialminuet.com:backups/ ~/backups/CordialMinuet
