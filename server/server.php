@@ -1566,7 +1566,7 @@ function cm_checkForFlush() {
         cm_queryDatabase( "COMMIT;" );
 
         $query = "DELETE ".
-            "FROM $tableNamePrefix"."logs ".
+            "FROM $tableNamePrefix"."log ".
             "WHERE entry_time < ".
             "DATE_SUB( CURRENT_TIMESTAMP, INTERVAL $logFlushDays DAY );";
 
