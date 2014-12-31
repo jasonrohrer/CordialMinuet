@@ -35,7 +35,7 @@ Version 11     Live Server Fixes
   exec injection attacks.  Card data was validated as being properly encrypted,
   but after decryption, it was trusted blindly (thanks Cayce U).
 
---Logs are now flushed after 2 weeks to save database space.
+--Logs are now flushed after 30 days to save database space.
 
 
 

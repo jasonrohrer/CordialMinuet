@@ -1472,8 +1472,8 @@ function cm_checkForFlush() {
     //$cm_flushInterval = "0 0:00:30.000";
     
 
-    // flush logs after 14 days
-    $logFlushInterval = "14 0:00:00.000";
+    // flush logs after 30 days
+    $logFlushDays = 30;
     
     
     cm_queryDatabase( "SET AUTOCOMMIT = 0;" );
@@ -1565,11 +1565,10 @@ function cm_checkForFlush() {
         
         cm_queryDatabase( "COMMIT;" );
 
-
         $query = "DELETE ".
             "FROM $tableNamePrefix"."logs ".
             "WHERE entry_time < ".
-            "SUBTIME( CURRENT_TIMESTAMP, '$logFlushInterval' );";
+            "DATE_SUB( CURRENT_TIMESTAMP, INTERVAL $logFlushDays DAY );";
 
         $result = cm_queryDatabase( $query );
         cm_queryDatabase( "COMMIT;" );
