@@ -8540,7 +8540,7 @@ function cm_computeExpectedScore( $inRatingA, $inRatingB ) {
 function cm_computeNewElo( $ratingA, $ratingB, $aN, $bN,
                            $payoutA, $payoutB, $payoutHouse ) {
 
-    global $eloProvisionalGames, $eloKProvisional, $eloKMain;
+  global $eloProvisionalGames, $eloKProvisional, $eloKMain, $eloFloor;
     
     $aE = cm_computeExpectedScore( $ratingA, $ratingB );
     $bE = 1 - $aE;
@@ -8617,6 +8617,13 @@ function cm_computeNewElo( $ratingA, $ratingB, $aN, $bN,
             
     $ratingA += $aK * ( $aS - $aE );
     $ratingB += $bK * ( $bS - $bE );
+
+    if( $ratingA < $eloFloor ) {
+        $ratingA = $eloFloor;
+        }
+    if( $ratingB < $eloFloor ) {
+        $ratingB = $eloFloor;
+        }
 
     $result = array();
 

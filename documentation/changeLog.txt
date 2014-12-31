@@ -37,6 +37,9 @@ Version 11     Live Server Fixes
 
 --Logs are now flushed after 30 days to save database space.
 
+--Added an Elo rating floor of 1, and moved starting point to 1.
+
+
 
 
 Version 11     2014-December-16
