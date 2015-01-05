@@ -1,3 +1,7 @@
+#ifndef MENU_PAGE_INCLUDED
+#define MENU_PAGE_INCLUDED
+
+
 #include "ServerActionPage.h"
 
 
@@ -13,6 +17,14 @@
 
 typedef struct GameRecord {
         double dollarAmount;
+        
+
+        char isTournament;
+        double tournamentStakes;
+        int tournamentSecondsLeft;
+        unsigned int referenceSeconds;
+        
+
         TextButton *button;
     } GameRecord;
 
@@ -33,7 +45,7 @@ class MenuPage : public ServerActionPage, public ActionListener {
   
         virtual void makeActive( char inFresh );
         
-        double getJoinedGameDollarAmount();
+        GameRecord getJoinedGame();
 
     protected:
         
@@ -65,5 +77,9 @@ class MenuPage : public ServerActionPage, public ActionListener {
         void clearListedGames();
 
 
-        double mJoinedGameDollarAmount;
+        GameRecord mJoinedGame;
     };
+
+
+
+#endif

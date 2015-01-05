@@ -1,0 +1,7 @@
+
+ALTER TABLE minuetServer_tournament_stats ADD entry_fee DECIMAL(13, 4) NOT NULL  AFTER tournament_code_name;
+
+ALTER TABLE minuetServer_tournament_stats ADD prize DECIMAL(13, 4) NOT NULL  AFTER entry_fee;
+
+
+UPDATE minuetServer_tournament_stats SET entry_fee=0, prize=0;

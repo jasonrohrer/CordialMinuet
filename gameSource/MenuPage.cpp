@@ -49,8 +49,7 @@ MenuPage::MenuPage()
           mAreGamesAllowed( 2 ),
           mLimit( 9 ),
           mSkip( 0 ),
-          mResponseProcessed( false ),
-          mJoinedGameDollarAmount( 0 ) {
+          mResponseProcessed( false ) {
 
     addComponent( &mDepositButton );
     addComponent( &mWithdrawButton );
@@ -218,8 +217,8 @@ void MenuPage::actionPerformed( GUIComponent *inTarget ) {
                 
                 if( r->dollarAmount <= userBalance ) {
                     
-                    mJoinedGameDollarAmount = r->dollarAmount;
-                
+                    mJoinedGame = *r;
+                    
                     setSignal( "join" );
                     }
                 
@@ -351,10 +350,75 @@ void MenuPage::step() {
 
             delete [] line;
 
-            if( numParts == 1 && i != numLines - 1 ) {
-                    
+            if( numParts == 4 && i == 3 ) {
+                // fourth line MAY be tournament info
+                
                 GameRecord r;
                     
+                r.isTournament = true;
+
+
+                sscanf( parts[1], "%lf", &( r.dollarAmount ) );
+                sscanf( parts[2], "%lf", &( r.tournamentStakes ) );
+                sscanf( parts[3], "%d", &( r.tournamentSecondsLeft ) );
+
+                r.referenceSeconds = game_time( NULL );
+
+                int b = buttonsToUse[numGames - 1][i - 3];
+
+
+                TextButton *button = mGameButtons.getElementDirect( b );
+                    
+                button->setVisible( true );
+                    
+                char *dollarString = formatBalance( r.dollarAmount );
+                
+                const char *tipKey = "enterTournamentButtonTip";
+                
+                if( r.dollarAmount > userBalance ) {
+                    tipKey = "cannotJoinButtonTip";
+                    
+                    button->setHoverColor( 1, 1, 1, 0.5 );
+                    button->setNoHoverColor( 1, 1, 1, 0.5 );
+                    button->setDragOverColor( 1, 1, 1, 0.5 );
+                    }
+                else {
+                    button->setHoverColor( 1, 1, 0, 1 );
+                    button->setNoHoverColor( 1, 1, 0, 1 );
+                    button->setDragOverColor( 1, 1, 0, 1 );
+                    }
+                
+
+                char *tip = autoSprintf( translate( tipKey ),
+                                         dollarString );
+                
+                delete [] dollarString;
+
+                button->setMouseOverTip( tip );
+
+                delete [] tip;
+                
+
+                char *limitedDollarString = 
+                    formatDollarStringLimited( r.dollarAmount );
+                
+                button->setLabelText( limitedDollarString );
+
+                delete [] limitedDollarString;
+
+                        
+
+                r.button = button;
+                    
+                mListedGames.push_back( r );                
+                }
+            else if( numParts == 1 && i != numLines - 1 ) {
+                // normal game buy-in
+
+                GameRecord r;
+                    
+                r.isTournament = false;
+                
                 sscanf( parts[0], "%lf", &( r.dollarAmount ) );
                     
                     
@@ -489,8 +553,8 @@ void MenuPage::makeActive( char inFresh ) {
 
 
 
-double MenuPage::getJoinedGameDollarAmount() {
-    return mJoinedGameDollarAmount;
+GameRecord MenuPage::getJoinedGame() {
+    return mJoinedGame;
     }
 
 

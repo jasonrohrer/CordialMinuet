@@ -413,17 +413,21 @@ $eloManualRecompute = false;
 $tournamentLive = 1;
 
 // no spaces, limit 255 characters
-$tournamentCodeName = "test";
+$tournamentCodeName = "test2";
+
+// up-front fee for entering the tournament
+$tournamentEntryFee = "5.00";
 
 // all buy-ins matching this amount will count toward tournament
-$tournamentStake = 0.10;
+$tournamentStake = "0.10";
 
-// number of coins taken from each player at the start of the table
-// used to discourage table-hopping in search of an accomplice
-$tournamentHouseTableCoins = 5;
+// how much one player can profit from another before being unable to
+// replay that other again
+// Eliminates the problem of feeding profit off of dummy accounts
+$tournamentPairProfitLimit = 0.20;
 
-$tournamentStartTime = "22-Dec-2014 13:00:00 -0800";
-$tournamentEndTime = "23-Dec-2014 13:00:00 -0800";
+$tournamentStartTime = "05-Jan-2015 10:00:00 -0800";
+$tournamentEndTime = "08-Jan-2015 13:00:00 -0800";
 
 
 

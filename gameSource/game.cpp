@@ -67,6 +67,7 @@ CustomRandomSource randSource( 34957197 );
 #include "SendCheckGlobalPage.h"
 #include "AccountTransferPage.h"
 #include "CreateGamePage.h"
+#include "EnterTournamentPage.h"
 #include "WaitGamePage.h"
 #include "PlayGamePage.h"
 #include "ExtendedMessagePage.h"
@@ -103,6 +104,7 @@ SendCheckGlobalPage *sendCheckGlobalPage;
 AccountTransferPage *accountTransferPage;
 DepositDisplayPage *withdrawalDisplayPage;
 CreateGamePage *createGamePage;
+EnterTournamentPage *enterTournamentPage;
 WaitGamePage *waitGamePage;
 ServerActionPage *leaveGamePage;
 ServerActionPage *joinGamePage;
@@ -554,6 +556,7 @@ void initFrameDrawer( int inWidth, int inHeight, int inTargetFrameRate,
     withdrawalDisplayPage->setWithdraw( true );
 
     createGamePage = new CreateGamePage();
+    enterTournamentPage = new EnterTournamentPage();
     waitGamePage = new WaitGamePage();
         
     const char *resultNamesE[2] = { "buy_in_dollar_amount", 
@@ -618,6 +621,7 @@ void freeFrameDrawer() {
     delete accountTransferPage;
     delete withdrawalDisplayPage;
     delete createGamePage;
+    delete enterTournamentPage;
     delete waitGamePage;
     delete leaveGamePage;
     delete joinGamePage;
@@ -1344,18 +1348,26 @@ void drawFrame( char inUpdate ) {
                 currentGamePage->base_makeActive( true );
                 }
             else if( menuPage->checkSignal( "join" ) ) {
-                double dollarAmount = menuPage->getJoinedGameDollarAmount();
+                GameRecord r = menuPage->getJoinedGame();
                 
-                char *dollarString = autoSprintf( "%.2f", dollarAmount );
+                if( r.isTournament ) {
+                    enterTournamentPage->setTournamentInfo( r );
+                    
+                    currentGamePage = enterTournamentPage;
+                    currentGamePage->base_makeActive( true );
+                    }
+                else {
+                    char *dollarString = autoSprintf( "%.2f", r.dollarAmount );
                 
-                joinGamePage->setupRequestParameterSecurity();
-                
-                joinGamePage->setParametersFromString( "dollar_amount",
-                                                       dollarString );
-                delete [] dollarString;
-                
-                currentGamePage = joinGamePage;
-                currentGamePage->base_makeActive( true );
+                    joinGamePage->setupRequestParameterSecurity();
+                    
+                    joinGamePage->setParametersFromString( "dollar_amount",
+                                                           dollarString );
+                    delete [] dollarString;
+                    
+                    currentGamePage = joinGamePage;
+                    currentGamePage->base_makeActive( true );
+                    }
                 }
             }
         else if( currentGamePage == withdrawPage ) {
@@ -1510,6 +1522,16 @@ void drawFrame( char inUpdate ) {
                     currentGamePage = getBalancePage;
                     currentGamePage->base_makeActive( true );
                     }
+                }
+            }
+        else if( currentGamePage == enterTournamentPage ) {
+            if( enterTournamentPage->isResponseReady() ) {
+                currentGamePage = getBalancePage;
+                currentGamePage->base_makeActive( true );
+                }
+            else if( enterTournamentPage->checkSignal( "back" ) ) {
+                currentGamePage = getBalancePage;
+                currentGamePage->base_makeActive( true );
                 }
             }
         else if( currentGamePage == joinGamePage ) {

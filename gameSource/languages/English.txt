@@ -177,7 +177,29 @@ refresh "REFRESH"
 
 
 joinButtonTip "JOIN FOR %s"
+enterTournamentButtonTip "JOIN TOURNAMENT FOR %s"
 cannotJoinButtonTip "CANNOT AFFORD %s"
+
+
+entryFee "ENTRY FEE:"
+tournamentStakes "PER GAME STAKES:"
+tournamentTimeLeft "TIME REMAINING:"
+
+day " DAY"
+days " DAYS"
+
+hour " HOUR"
+hours " HOURS"
+
+minute " MINUTE"
+minutes " MINUTES"
+
+second " SECOND"
+seconds " SECONDS"
+
+tournamentExplain "NET PROFIT IN %s GAMES##BY DEADLINE DETERMINES WINNERS"
+
+enterTournament "PAY ENTRY FEE"
  
 
 commit "COMMIT"

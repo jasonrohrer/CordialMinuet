@@ -555,6 +555,9 @@ else if( $action == "leave_game" ) {
 else if( $action == "list_games" ) {
     cm_listGames();
     }
+else if( $action == "enter_tournament" ) {
+    cm_enterTournament();
+    }
 else if( $action == "get_game_state" ) {
     cm_getGameState();
     }
@@ -687,6 +690,7 @@ else if( preg_match( "/server\.php/", $_SERVER[ "SCRIPT_NAME" ] ) ) {
         cm_doesTableExist( $tableNamePrefix."game_ledger" ) &&
         cm_doesTableExist( $tableNamePrefix."games" ) &&
         cm_doesTableExist( $tableNamePrefix."tournament_stats" ) &&
+        cm_doesTableExist( $tableNamePrefix."tournament_pairings" ) &&
         cm_doesTableExist( $tableNamePrefix."server_stats" ) &&
         cm_doesTableExist( $tableNamePrefix."user_stats" );
     
@@ -1158,11 +1162,38 @@ function cm_setupDatabase() {
             "user_id INT NOT NULL," .
             "tournament_code_name VARCHAR(255) NOT NULL," .
             "PRIMARY KEY( user_id, tournament_code_name )," .
+            "entry_fee DECIMAL(13, 4) NOT NULL,".
+            "prize DECIMAL(13, 4) NOT NULL,".
             "update_time DATETIME NOT NULL," .
             "num_games_started INT NOT NULL,".
             "INDEX( num_games_started ),".
             "net_dollars DECIMAL(13, 4) NOT NULL,".
             "INDEX( net_dollars ) ) ENGINE = INNODB;";
+
+        $result = cm_queryDatabase( $query );
+
+        echo "<B>$tableName</B> table created<BR>";
+        }
+    else {
+        echo "<B>$tableName</B> table already exists<BR>";
+        }
+
+
+    // net dollars user_id profited whie playing against opponent
+    // a given tournament.
+    // Can be negative if player lost money while playing opponent.
+    $tableName = $tableNamePrefix . "tournament_pairings";
+    if( ! cm_doesTableExist( $tableName ) ) {
+
+        $query =
+            "CREATE TABLE $tableName(" .
+            "user_id INT NOT NULL," .
+            "user_id_opponent INT NOT NULL," .
+            "tournament_code_name VARCHAR(255) NOT NULL," .
+            "PRIMARY KEY( user_id, user_id_opponent, tournament_code_name )," .
+            "update_time DATETIME NOT NULL," .
+            "num_games_started INT NOT NULL,".
+            "net_dollars DECIMAL(13, 4) NOT NULL ) ENGINE = INNODB;";
 
         $result = cm_queryDatabase( $query );
 
@@ -1776,12 +1807,25 @@ function cm_getBalance() {
 function cm_recomputeBalanceFromHistory( $user_id ) {
     global $tableNamePrefix;
 
-    $query = "SELECT (SELECT COALESCE( SUM( dollar_amount - fee), 0 ) ".
-        "  FROM $tableNamePrefix"."deposits WHERE user_id = '$user_id') - ".
+    $p = $tableNamePrefix;
+    
+    $query ="SELECT ".
+
+        "(SELECT COALESCE( SUM( dollar_amount - fee), 0 ) ".
+        "  FROM $p"."deposits WHERE user_id = '$user_id') - ".
+
         "(SELECT COALESCE( SUM( dollar_amount + fee), 0 ) ".
-        "  FROM $tableNamePrefix"."withdrawals WHERE user_id = '$user_id') + ".
+        "  FROM $p"."withdrawals WHERE user_id = '$user_id') + ".
+
         "(SELECT COALESCE( SUM( dollar_delta), 0 ) ".
-        "  FROM $tableNamePrefix"."game_ledger WHERE user_id = '$user_id') ".
+        "  FROM $p"."game_ledger WHERE user_id = '$user_id') -".
+
+        "(SELECT COALESCE( SUM( entry_fee ), 0 ) ".
+        "  FROM $p"."tournament_stats WHERE user_id = '$user_id') +".
+
+        "(SELECT COALESCE( SUM( prize ), 0 ) ".
+        "  FROM $p"."tournament_stats WHERE user_id = '$user_id') ".
+
         "AS recomputed_balance;";
     $result = cm_queryDatabase( $query );
 
@@ -4194,7 +4238,11 @@ function cm_endOldGames( $user_id ) {
             
 
             if( $tournamentLive ) {
-                cm_tournamentCashOut( $old_player_1_id, $player_1_payout );
+                // this will do nothing if players not in tournament
+                cm_tournamentCashOut( $old_player_1_id,
+                                      // opponent
+                                      $old_player_2_id,
+                                      $player_1_payout );
                 }
 
             
@@ -4219,7 +4267,11 @@ function cm_endOldGames( $user_id ) {
 
 
             if( $tournamentLive ) {
-                cm_tournamentCashOut( $old_player_2_id, $player_2_payout );
+                // this will do nothing if players not in tournament
+                cm_tournamentCashOut( $old_player_2_id,
+                                      // opponent
+                                      $old_player_1_id,
+                                      $player_2_payout );
                 }
 
             
@@ -4229,10 +4281,6 @@ function cm_endOldGames( $user_id ) {
             cm_queryDatabase( $query );
 
             cm_addLedgerEntry( 0, $game_id, $house_payout );
-
-            if( $tournamentLive ) {
-                cm_tournamentCashOut( 0, $house_payout );
-                }
             
             cm_incrementStat( "total_house_rake", $house_payout );
             cm_updateMaxStat( "max_house_rake", $house_payout );
@@ -4297,40 +4345,70 @@ function cm_getNewSquare() {
 
 
 
-
-function cm_tournamentBuyIn( $user_id, $inIsHouse = false ) {
-    global $tableNamePrefix, $tournamentCodeName, $tournamentStake;
-
-    if( $inIsHouse ) {
-        // house doesn't pay in
-        $tournamentStake = 0;
-        }
+function cm_addUserToTournament( $user_id ) {
+    global $tableNamePrefix, $tournamentEntryFee,
+        $tournamentCodeName, $tournamentStake;    
 
     $query = "INSERT INTO $tableNamePrefix"."tournament_stats ".
         "SET user_id = '$user_id', ".
         "    tournament_code_name = '$tournamentCodeName', ".
+        "    entry_fee = $tournamentEntryFee, ".
+        "    prize = 0, ".        
         "    update_time = CURRENT_TIMESTAMP, ".
         "    net_dollars = - $tournamentStake, ".
-        "    num_games_started = 1 ".
-        "ON DUPLICATE KEY UPDATE ".
-        "    update_time = CURRENT_TIMESTAMP, ".
-        "    net_dollars = net_dollars - $tournamentStake, ".
-        "    num_games_started = num_games_started + 1;";
-
+        "    num_games_started = 1;";
+    
     cm_queryDatabase( $query );
     }
 
 
 
-function cm_tournamentCashOut( $user_id, $inDollarsOut ) {
-    global $tableNamePrefix, $tournamentCodeName;
+function cm_tournamentBuyIn( $user_id, $inOpponentID ) {
+    global $tableNamePrefix, $tournamentCodeName, $tournamentStake;
+
+    $query = "UPDATE $tableNamePrefix"."tournament_stats ".
+        "SET update_time = CURRENT_TIMESTAMP, ".
+        "    net_dollars = net_dollars - $tournamentStake, ".
+        "    num_games_started = num_games_started + 1 ".
+        "WHERE user_id = $user_id;";
+
+    cm_queryDatabase( $query );
+
+
+    $query = "INSERT INTO $tableNamePrefix"."tournament_pairings ".
+        "SET user_id = '$user_id', user_id_opponent = $inOpponentID, ".
+        "    tournament_code_name = '$tournamentCodeName', ".
+        "    update_time = CURRENT_TIMESTAMP, ".
+        "    net_dollars = 0, ".
+        "    num_games_started = 1 ".
+        "ON DUPLICATE KEY UPDATE ".
+        "    update_time = CURRENT_TIMESTAMP, ".
+        "    num_games_started = num_games_started + 1;";
+    
+    cm_queryDatabase( $query );
+    }
+
+
+
+function cm_tournamentCashOut( $user_id, $inOpponentID, $inDollarsOut ) {
+    global $tableNamePrefix, $tournamentCodeName, $tournamentStake;
 
 
     $query = "UPDATE $tableNamePrefix"."tournament_stats ".
-        "SET user_id = '$user_id', ".
-        "    update_time = CURRENT_TIMESTAMP, ".
+        "SET update_time = CURRENT_TIMESTAMP, ".
         "    net_dollars = net_dollars + $inDollarsOut ".
         "WHERE user_id = $user_id AND ".
+        "      tournament_code_name = '$tournamentCodeName';";
+
+    cm_queryDatabase( $query );
+
+    
+    $profit = $inDollarsOut - $tournamentStake;
+
+    $query = "UPDATE $tableNamePrefix"."tournament_pairings ".
+        "SET update_time = CURRENT_TIMESTAMP, ".
+        "    net_dollars = net_dollars + $profit ".
+        "WHERE user_id = $user_id AND user_id_opponent = $inOpponentID AND".
         "      tournament_code_name = '$tournamentCodeName';";
 
     cm_queryDatabase( $query );
@@ -4369,6 +4447,25 @@ function cm_getTournamentStake() {
         }
 
     return $tournamentStake;
+    }
+
+
+
+function cm_isUserInTournament( $user_id ) {
+    global $tableNamePrefix, $tournamentCodeName;
+
+    $query = "SELECT COUNT(*) FROM $tableNamePrefix"."tournament_stats ".
+        "WHERE user_id = $user_id ".
+        "AND tournament_code_name = '$tournamentCodeName';";
+
+    $result = cm_queryDatabase( $query );
+
+    if( mysql_result( $result, 0, 0 ) == 1 ) {
+        return true;
+        }
+    else {
+        return false;
+        }
     }
 
 
@@ -4493,7 +4590,67 @@ function cm_joinGame() {
     cm_endOldGames( $user_id );
 
 
+    $tournamentPairingClause = "";
 
+
+    if( cm_isTournamentLive( $dollar_amount ) &&
+        cm_isUserInTournament( $user_id ) ) {
+
+        // user in a live tournament at this stake level
+        
+        global $tournamentCodeName;
+
+        $tableName = "$tableNamePrefix"."tournament_stats";
+        
+        // limit user to joining others in tournament
+        $tournamentPairingClause =
+            "AND ( SELECT COUNT(*) FROM $tableName ".
+            "      WHERE user_id = player_1_id ".
+            "      AND tournament_code_name = '$tournamentCodeName' ) > 0 ";
+
+
+        $tableName = "$tableNamePrefix"."tournament_pairings";
+
+        // limit user to joining with those that they've not made too much
+        // profit from already in tournament
+        global $tournamentPairProfitLimit;
+
+        $pLimit = $tournamentPairProfitLimit;
+
+        $tournamentPairingClause .=
+            "AND ( ".
+            //     Either no games played between them yet
+            "      ( SELECT COUNT(*) FROM $tableName ".
+            "        WHERE user_id = $user_id ".
+            "        AND user_id_opponent = player_1_id ) = 0 ".
+            "      OR ".
+            //     Or profit in either direction below limit
+            "      ( SELECT net_dollars FROM $tableName ".
+            "        WHERE user_id = $user_id ".
+            "        AND user_id_opponent = player_1_id ) < $pLimit ".
+            "      AND ".
+            "      ( SELECT net_dollars FROM $tableName ".
+            "        WHERE user_id = player_1_id ".
+            "        AND user_id_opponent = $user_id ) < $pLimit )";
+        }
+    else if( cm_isTournamentLive( $dollar_amount ) &&
+        ! cm_isUserInTournament( $user_id ) ) {    
+
+        // live tournament happening at this stake level
+        // BUT user not participating
+
+        // make sure they're only paired with NON-tournament players
+
+        global $tournamentCodeName;
+
+        $tableName = "$tableNamePrefix"."tournament_stats";
+        
+        $tournamentPairingClause =
+            "AND ( SELECT COUNT(*) FROM $tableName ".
+            "      WHERE user_id = player_1_id ".
+            "      AND tournament_code_name = '$tournamentCodeName' ) = 0 ";
+        }
+    
     
     // does a game already exist with this value?
 
@@ -4501,6 +4658,7 @@ function cm_joinGame() {
         "FROM $tableNamePrefix"."games ".
         "WHERE player_1_id != 0 AND player_2_id = 0 AND started = 0 ".
         "AND dollar_amount = '$dollar_amount' ".
+        "$tournamentPairingClause ".
         "LIMIT 1 FOR UPDATE;";
 
     $result = cm_queryDatabase( $query );
@@ -4548,11 +4706,13 @@ function cm_joinGame() {
 
 
         if( cm_isTournamentLive( $dollar_amount ) ) {
-            cm_tournamentBuyIn( $player_1_id );
-            cm_tournamentBuyIn( $user_id );
-
-	    // make sure house stat line exists
-	    cm_tournamentBuyIn( 0, true );
+            if( cm_isUserInTournament( $player_1_id )
+                &&
+                cm_isUserInTournament( $user_id ) ) {
+                
+                cm_tournamentBuyIn( $player_1_id, $user_id );
+                cm_tournamentBuyIn( $user_id, $player_1_id );
+                }
             }
         
         
@@ -4628,10 +4788,6 @@ function cm_joinGame() {
 
     global $houseTableCoins;
 
-    if( cm_isTournamentLive( $dollar_amount ) ) {
-        global $tournamentHouseTableCoins;
-        $houseTableCoins = $tournamentHouseTableCoins;
-        }
     
     
     $playerStartingCoins = $cm_gameCoins - $houseTableCoins;
@@ -4983,11 +5139,21 @@ function cm_listGames() {
 
     $tournamentStake = cm_getTournamentStake();
 
+
+    $tournamentStakeForUser = $tournamentStake;
+    
+    
+    if( $tournamentStake != -1 ) {
+        if( ! cm_isUserInTournament( $user_id ) ) {
+            $tournamentStakeForUser = -1;
+            }
+        }
+    
     $skipAdjust = 0;
 
     $ignoreClause = "";
     if( $tournamentStake != -1 ) {
-        // leave room for tournament stake which appears on every page
+        // leave room for tournament info/stake which appears on every page
         $limit --;
 
         // estimate that client shows 9 per page
@@ -5037,15 +5203,32 @@ function cm_listGames() {
         }
     
 
-    if( $tournamentStake != -1 ) {
-        // always stick tournament stakes at top of list
+    if( $tournamentStakeForUser != -1 ) {
+        // always stick tournament stake at top of list
         echo "$tournamentStake\n";
+        }
+    else if( $tournamentStake != -1 ) {
+        // tournament running, but user not in it, stick info at top
+        global $tournamentEntryFee;
 
+        global $tournamentEndTime;
+        $time = time();
+        $endTime = strtotime( $tournamentEndTime );
+
+        $secondsLeft = $endTime - $time;
+        
+        echo "T#$tournamentEntryFee#$tournamentStake#$secondsLeft\n";
+        }
+
+    
+    if( $tournamentStake != -1 ) {
         // adjust back to the skip they requested (unless we wrapped around)
         if( $skip != 0 ) {
             $skip += $skipAdjust;
             }
         }
+
+    
 
     for( $i=0; $i < $numRows && $i < $limit; $i++ ) {
         $dollar_amount = mysql_result( $result, $i, "dollar_amount" );
@@ -5061,6 +5244,164 @@ function cm_listGames() {
         }
     echo "OK";
     }
+
+
+
+
+function cm_enterTournament() {
+    if( ! cm_verifyTransaction() ) {
+        return;
+        }
+
+    if( cm_handleRepeatResponse() ) {
+        return;
+        }
+
+
+    global $areGamesAllowed;
+    if( ! $areGamesAllowed ) {
+        cm_log( "cm_enterTournament denied, areGamesAllowed is off" );
+        cm_transactionDeny();
+        return;
+        }
+    
+    $request_tag = cm_requestFilter( "request_tag", "/[A-F0-9]+/i", "" );
+    
+    global $tableNamePrefix ;
+
+        
+    $user_id = cm_getUserID();
+
+    cm_queryDatabase( "SET AUTOCOMMIT=0" );
+
+    
+    $query = "SELECT account_key, dollar_balance, ".
+        "request_sequence_number ".
+        "FROM $tableNamePrefix"."users ".
+        "WHERE user_id = '$user_id' FOR UPDATE;";
+
+    $result = cm_queryDatabase( $query );
+
+
+    $numRows = mysql_numrows( $result );
+
+    
+    if( $numRows == 0 ) {
+        cm_log( "cm_enterTournament denied, user $user_id not found" );
+        cm_transactionDeny();
+        return;
+        }
+
+    $row = mysql_fetch_array( $result, MYSQL_ASSOC );
+
+    
+
+    $account_key = $row[ "account_key" ];
+    $dollar_balance = $row[ "dollar_balance" ];
+    $old_request_sequence_number = $row[ "request_sequence_number" ];
+
+
+    $request_sequence_number =
+        cm_requestFilter( "request_sequence_number", "/\d+/" );
+
+
+    if( $request_sequence_number < $old_request_sequence_number ) {
+        cm_log( "cm_enterTournament denied, stale request sequence number" );
+        cm_transactionDeny();
+        return;
+        }
+
+    // two fractional digits here
+    $fee_dollar_amount = cm_requestFilter(
+        "fee_dollar_amount", "/[0-9]+[.][0-9][0-9]/i", "0.00" );
+
+    if( ! cm_verifyCheckHMAC( $account_key, $request_sequence_number,
+                              "fee_dollar_amount", $fee_dollar_amount ) ) {
+        return;
+        }
+
+
+    global $tournamentEntryFee;
+    
+    if( cm_getTournamentStake() == -1 ||
+        $fee_dollar_amount != $tournamentEntryFee ) {
+
+        cm_log( "cm_enterTournament denied, no live tournament has ".
+                "requested entry fee $fee_dollar_amount" );
+        cm_transactionDeny();
+        return;
+        }
+
+    
+    $recomputedBalance = cm_recomputeBalanceFromHistory( $user_id );
+    
+    if( $dollar_balance != $recomputedBalance ) {
+
+        $message = "User $user_id table dollar balance = $dollar_balance, ".
+            "but recomputed balance = $recomputedBalance, ".
+            "blocking enter_tournament.";
+
+        cm_log( $message );
+        cm_informAdmin( $message );
+        
+        cm_transactionDeny();
+
+        return;
+        }
+
+    global $tournamentEntryFee, $tournamentStake;
+    
+    if( $fee_dollar_amount + $tournamentStake > $dollar_balance ) {
+        cm_log( "cm_enterTournament denied, ".
+                "balance too low to cover entry fee plus first game stake" );
+        cm_transactionDeny();
+        return;
+        }
+    
+
+    if( cm_isUserInTournament( $user_id ) ) {
+        cm_log( "cm_enterTournament denied, ".
+                "user is already in the tournament" );
+        cm_transactionDeny();
+        return;
+        }
+    
+
+    
+    // if we got here, we've got a valid request
+        
+    cm_endOldGames( $user_id );
+
+
+
+
+    $response = "OK";
+
+    $query = "UPDATE $tableNamePrefix"."users ".
+        "SET dollar_balance = dollar_balance - $fee_dollar_amount, ".
+        "last_request_response = '$response' ".
+        "WHERE user_id = '$user_id';";
+    cm_queryDatabase( $query );
+
+
+    $query = "UPDATE $tableNamePrefix"."server_globals ".
+        "SET house_dollar_balance = ".
+        "  house_dollar_balance + $fee_dollar_amount;";
+    cm_queryDatabase( $query );
+
+    
+    cm_addUserToTournament( $user_id );
+
+    
+    cm_queryDatabase( "COMMIT;" );
+    cm_queryDatabase( "SET AUTOCOMMIT =1;" );
+
+
+    echo $response;
+    }
+
+
+
 
 
 
