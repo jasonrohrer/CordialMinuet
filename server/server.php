@@ -1839,6 +1839,37 @@ function cm_recomputeBalanceFromHistory( $user_id ) {
 
 
 
+function cm_recomputeHouseBalanceFromHistory() {
+    global $tableNamePrefix;
+
+    $p = $tableNamePrefix;
+    
+    $query ="SELECT ".
+
+        "(SELECT COALESCE( SUM( dollar_delta), 0 ) ".
+        "  FROM $p"."game_ledger WHERE user_id = '0') +".
+
+        "(SELECT COALESCE( SUM( entry_fee ), 0 ) ".
+        "  FROM $p"."tournament_stats ) -".
+
+        "(SELECT COALESCE( SUM( prize ), 0 ) ".
+        "  FROM $p"."tournament_stats ) - ".
+        
+        "( SELECT house_withdrawals FROM  $p"."server_globals ) ".
+
+        "AS recomputed_balance;";
+    $result = cm_queryDatabase( $query );
+
+    if( mysql_numrows( $result ) == 0 ) {
+        return 0;
+        }
+    else {
+        return mysql_result( $result, 0, 0 );
+        }
+    }
+
+
+
 // does not include fees (total actually sent to player this year)
 function cm_computeAmountWithdrawnThisYear( $user_id ) {
     global $tableNamePrefix;
@@ -7730,6 +7761,9 @@ function cm_generateHeader() {
 
     $leakedMoneyString = cm_formatBalanceForDisplay( $leaked_money );
 
+    $houseBalanceRecomputed = cm_formatBalanceForDisplay(
+        cm_recomputeHouseBalanceFromHistory() );
+    
 
     global $eloManualRecompute;
     if( $eloManualRecompute ) {
@@ -7750,12 +7784,13 @@ function cm_generateHeader() {
         "Users: $usersDay/d | $usersHour/h | $usersFiveMin/5m | ".
         "$usersMinute/m | $usersSecond/s<br>".
         "Player balance: $totalBalanceString | ".
-        "Live buy-ins: $totalLiveBuyInString | ".
+        "Live buy-ins: $totalLiveBuyInString<br> ".
         "Deposits: $totalDepositsString | ".
         "Withdrawals: $totalWithdrawalsString<br>".
         "House balance: $houseBalanceString | ".
         "House withdrawals: $houseWithdrawalsString | ".
         "Leaked: $leakedMoneyString<br>".
+        "Recomputed House balance: $houseBalanceRecomputed <br>".
         "Chexx Balance: $checkAccountBalanceString</td>".
         "<td valign=top align=right width=25%>[<a href=\"server.php?action=logout" .
             "\">Logout</a>]</td>".

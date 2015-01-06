@@ -13,6 +13,8 @@ Version 12     ???
 --Added settings for controlling watercolor stroke darkness to accommodate
   various monitor brightnesses (specifically for PAX booth monitors).
 
+--Added display of recomputed house balance in admin UI.
+
 
 
 
