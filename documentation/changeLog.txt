@@ -15,6 +15,9 @@ Version 12     ???
 
 --Added display of recomputed house balance in admin UI.
 
+--Fixed server to correct for reset of auto_increment game_id values after
+  a MySQL restart.  Now game_ids are guaranteed unique.
+
 
 
 

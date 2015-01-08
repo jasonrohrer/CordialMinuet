@@ -4903,12 +4903,6 @@ function cm_joinGame() {
 
     global $startingSemKey;
 
-    $query = "SELECT COALESCE( MAX( semaphore_key ) + 1, $startingSemKey ) ".
-        "FROM $tableNamePrefix"."games;";
-
-    $result = cm_queryDatabase( $query );
-
-    $semaphore_key = mysql_result( $result, 0, 0 );
     
     // add game to the game table
 
@@ -4923,6 +4917,19 @@ function cm_joinGame() {
     
     $query = "INSERT INTO $tableNamePrefix"."games SET ".
         // game_id is auto-increment
+        // however, auto-increment can reset after server restart
+        // games are removed from this table after they end
+        // the auto-increment restart means game_ids may not be unique
+        // (since they are also used in the game_ledger table, we must
+        //  enformce their uniqueness)
+        "game_id = ".
+        "  1 + ".
+        "  GREATEST( ".
+        "    ( SELECT COALESCE( MAX( game_id ), 0 ) ".
+        "             FROM $tableNamePrefix"."games AS temp ),".
+        "    ( SELECT COALESCE( MAX( game_id ), 0 ) ".
+        "             FROM $tableNamePrefix"."game_ledger ) ".
+        "          ),".
         "creation_time = CURRENT_TIMESTAMP, ".
         "last_action_time = CURRENT_TIMESTAMP, ".
         "player_1_id = '$user_id'," .
@@ -4941,7 +4948,9 @@ function cm_joinGame() {
         "player_2_coins = $playerStartingCoins, ".
         "player_1_pot_coins = 0, ".
         "player_2_pot_coins = 0, ".
-        "semaphore_key = '$semaphore_key';";
+        "semaphore_key = ".
+        "   ( SELECT COALESCE( MAX( semaphore_key ) + 1, $startingSemKey ) ".
+        "             FROM $tableNamePrefix"."games as temp2 );";
     $result = mysql_query( $query );
 
     
@@ -4986,7 +4995,9 @@ function cm_joinGame() {
         cm_transactionDeny();
         return;
         }
-    
+
+    cm_queryDatabase( "COMMIT;" );
+    cm_queryDatabase( "SET AUTOCOMMIT=1" );
     
 
     $response = "OK";
