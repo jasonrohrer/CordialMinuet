@@ -643,6 +643,9 @@ else if( $action == "leaders_elo_provisional" ) {
 else if( $action == "tournament_report" ) {
     cm_tournamentReport();
     }
+else if( $action == "tournament_prizes" ) {
+    cm_tournamentPrizes();
+    }
 else if( $action == "users_graph" ) {
     cm_usersGraph();
     }
@@ -8582,6 +8585,120 @@ function cm_tournamentReport() {
             "<td>$random_name</td><td></td>".
             "<td align=right>$net_dollars</td><td></td>".
             "<td align=right>$num_games_started</td></tr>";
+        }
+    echo "</table></center>";
+
+    eval( $leaderFooter );
+    }
+
+
+// solves geometric series for (a) where r=$r and m=$m
+// where the sum of the prizes is $P
+// (a) is the minimum prize (the first term in the geometric series
+// prize n = (a) * (1.5)^(n-1)
+function cm_PminFormula( $P, $r, $m ) {
+    // formula for P = Pmin *(1 - r^m)/(1-r)
+
+    // thus Pmin = P * (1-r) / (1 - r^m )
+
+    return $P * (1-$r) / ( 1 - pow( $r, $m ) );
+    }
+
+
+// returns an array of prizes, one for each player
+function cm_tournamentGetPrizes( $inNumPlayers ) {
+
+    global $tournamentPrizePoolFraction, $tournamentMinPrize,
+        $tournamentEntryFee, $tournamentPrizeRatio;
+
+    $prizePool = $inNumPlayers * $tournamentEntryFee *
+        $tournamentPrizePoolFraction;
+
+    
+    // number of players that will get a non-zero prize
+    $m = 1;
+    $r = $tournamentPrizeRatio;
+    
+    while( $m <= $inNumPlayers &&
+           cm_PminFormula( $prizePool, $r, $m ) >= $tournamentMinPrize ) {
+        $m++;
+        }
+
+    $m--;
+
+    $minPrize = 0;
+    if( $m > 0 ) {
+        $minPrize = cm_PminFormula( $prizePool, $r, $m );
+        }
+    
+    $numWithoutPrizes = $inNumPlayers - $m;
+
+    $result = array();
+
+    $i = $inNumPlayers - 1;
+
+    for( $j=0; $j<$numWithoutPrizes; $j++ ) {
+        $result[$i] = 0;
+        $i --;
+        }
+
+    $currentPrize = $minPrize;
+
+    for( $j=0; $j<$m; $j++ ) {
+        $result[$i] = $currentPrize;
+
+        $currentPrize *= $r;
+        
+        $i --;
+        }
+
+    return $result;
+    }
+
+
+
+
+function cm_tournamentPrizes() {
+    $code_name = cm_requestFilter( "code_name", "/[A-Z0-9_]+/i", "" );
+
+    global $tableNamePrefix, $leaderboardLimit, $leaderHeader, $leaderFooter;
+
+    eval( $leaderHeader );
+    
+    global $tournamentCodeName;
+
+    if( $code_name != $tournamentCodeName ) {
+
+        echo "<br><br><br><center>This tournament is not active.".
+            "<br><br></center>";
+        return;
+        }
+
+    $num_players = cm_requestFilter( "num_players", "/[0-9]+/i", "1" );
+
+    $prizes = cm_tournamentGetPrizes( $num_players );
+
+    
+    echo "<center><table border=0 cellspacing=10>";
+
+    echo "<tr><td valign=bottom align=right>Place</td><td></td>".
+            "<td valign=bottom align=right>Prize</td></tr>";
+
+    echo "<tr><td colspan=3><hr></td></tr>";
+
+    $numRows = count( $prizes );
+    
+    for( $i=0; $i<$numRows; $i++ ) {
+                
+        if( $i != 0 ) {
+            echo "<tr><td colspan=3><hr></td></tr>";
+            }
+
+        $rowNum = $i + 1;
+        $prize = cm_formatBalanceForDisplay( $prizes[$i] );
+        
+        echo "<tr><td align=right>$rowNum.</td><td></td>".
+            "<td align=right>$prize</td></tr>";
         }
     echo "</table></center>";
 

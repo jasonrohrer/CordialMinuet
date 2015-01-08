@@ -431,11 +431,12 @@ $tournamentEndTime = "08-Jan-2015 13:00:00 -0800";
 
 
 // how much of the entry fees go toward prizes.
-$tournamentPrizePoolFraction = "0.75";
+$tournamentPrizePoolFraction = "0.80";
 
 // minimum prize to give out
-$tournamentMinPrize = "6.00";
+$tournamentMinPrize = "5.00";
 
+$tournamentPrizeRatio = 1.5;
 
 
 ?>
