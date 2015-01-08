@@ -413,7 +413,7 @@ $eloManualRecompute = false;
 $tournamentLive = 1;
 
 // no spaces, limit 255 characters
-$tournamentCodeName = "test3";
+$tournamentCodeName = "test4";
 
 // up-front fee for entering the tournament
 $tournamentEntryFee = "5.00";
@@ -426,8 +426,8 @@ $tournamentStake = "0.10";
 // Eliminates the problem of feeding profit off of dummy accounts
 $tournamentPairProfitLimit = 0.20;
 
-$tournamentStartTime = "05-Jan-2015 10:00:00 -0800";
-$tournamentEndTime = "08-Jan-2015 13:00:00 -0800";
+$tournamentStartTime = "05-Jan-2015 11:00:00 -0800";
+$tournamentEndTime = "08-Jan-2015 11:40:00 -0800";
 
 
 // how much of the entry fees go toward prizes.

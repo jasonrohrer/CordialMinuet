@@ -1614,7 +1614,8 @@ function cm_checkForFlush() {
             
             $query = "SELECT COUNT(*), COALESCE( SUM(prize), 0 ) ".
                 "FROM $tableNamePrefix"."tournament_stats ".
-                "WHERE tournament_code_name = '$code_name' FOR UPDATE;";
+                "WHERE tournament_code_name = '$tournamentCodeName' ".
+                "FOR UPDATE;";
         
             $result = cm_queryDatabase( $query );
             
@@ -1624,10 +1625,10 @@ function cm_checkForFlush() {
             if( $prizesPaid == 0 ) {
 
                 $query = "SELECT user_id, net_dollars ".
-                    "FROM $tableNamePrefix"."tournament_stats".
-                    "WHERE tournament_code_name = '$code_name' ".
+                    "FROM $tableNamePrefix"."tournament_stats ".
+                    "WHERE tournament_code_name = '$tournamentCodeName' ".
                     // ignore any house entries
-                    "AND stats.user_id != 0 ".
+                    "AND user_id != 0 ".
                     "ORDER BY net_dollars DESC FOR UPDATE;";
                 $result = cm_queryDatabase( $query );
                 
@@ -1660,7 +1661,8 @@ function cm_checkForFlush() {
 
                         $query = "UPDATE $tableNamePrefix"."tournament_stats ".
                             "SET prize = $prize ".
-                            "WHERE tournament_code_name = '$code_name' ".
+                            "WHERE tournament_code_name = ".
+                            "    '$tournamentCodeName' ".
                             "AND user_id = $user_id;";
                         cm_queryDatabase( $query );
 
@@ -2025,12 +2027,25 @@ function cm_handleRepeatResponse() {
 // is a whole number of cents
 function cm_formatBalanceForDisplay( $inDollars,
                                      $inForceFourDecimal = false ) {
+    $negative = false;
+    
+    if( $inDollars < 0 ) {
+        $inDollars *= -1;
+        $negative = true;
+        }
+        
     $result = number_format( $inDollars, 4 );
 
     if( !$inForceFourDecimal && substr( $result, -2 ) === "00" ) {
         $result = number_format( $inDollars, 2 );
         }
-    return "\$$result";
+
+    if( $negative ) {
+        return "-\$$result";
+        }
+    else {
+        return "\$$result";
+        }
     }
 
 
@@ -8105,9 +8120,14 @@ function cm_showStats() {
         if( $net_prizes == 0 ) {
             $house_profit = "Est. $house_profit";
             }
+
+        global $fullServerURL;
+        $link = "$fullServerURL?action=tournament_report&code_name=$code_name";
+        
         
         echo "<tr><td>$update_time</td>".
-            "<td>$code_name</td><td align=right>$house_profit</td></tr>";
+            "<td><a href=$link>$code_name</code></td>".
+            "<td align=right>$house_profit</td></tr>";
         }
     echo "</table><br><br>";
     
@@ -8166,6 +8186,8 @@ function cm_showStats() {
 
 function cm_formatDataTable( $tableName, $whereClause,
                              $fieldNames, $columnLabels, $dollarFieldNames,
+                             // array of true/false for each dollar field
+                             $fourDigitsFlags,
                              $linkLabel = "",
                              $linkPrefix = "",
                              // these database fields are appended
@@ -8189,6 +8211,11 @@ function cm_formatDataTable( $tableName, $whereClause,
     foreach( $columnLabels as $label ) {
         echo "<td><b>$label:</b></td>";
         }
+
+    if( $linkPrefix != "" ) {
+        echo "<td></td>";
+        }
+    
     echo "</tr>";
     
         
@@ -8198,11 +8225,19 @@ function cm_formatDataTable( $tableName, $whereClause,
         foreach( $fieldNames as $field ) {
             $fieldValue = mysql_result( $result, $i, "$field" );
 
+            $align = "left";
+            
             if( in_array( $field, $dollarFieldNames ) ) {
-                $fieldValue = cm_formatBalanceForDisplay( $fieldValue );
+                $index = array_search( $field, $dollarFieldNames );
+
+                $fourDigits = $fourDigitsFlags[ $index ];
+                $fieldValue = cm_formatBalanceForDisplay( $fieldValue,
+                                                          $fourDigits );
+
+                $align = "right";
                 }
             
-            echo "<td>$fieldValue</td>";
+            echo "<td align=$align>$fieldValue</td>";
             }
 
         if( $linkPrefix != "" ) {
@@ -8354,6 +8389,7 @@ function cm_showDetailInternal() {
                         array( "Fingerprint", "MMYYYY", "Last Used",
                                "Proof on File" ),
                         array( ),
+                        array( ),
                         "Toggle Proof",
                         "server.php?action=toggle_card_proof&user_id=$user_id",
                         array( "fingerprint", "exp_date" ) );
@@ -8364,7 +8400,8 @@ function cm_showDetailInternal() {
                         array( "deposit_time", "processing_id",
                                "dollar_amount", "fee" ),
                         array( "Date", "ID", "Total Amount", "Fee" ),
-                        array( "dollar_amount", "fee" ) );
+                        array( "dollar_amount", "fee" ),
+                        array( false, false ) );
 
     
     echo "<br><HR><br>Withdrawals:<br>";
@@ -8378,7 +8415,8 @@ function cm_showDetailInternal() {
                         array( "Date", "Check Amount", "Fee", "Name",
                                "Address", "Address", "City", "State",
                                "Province", "Country", "Post Code", "Ref" ),
-                        array( "dollar_amount", "fee" ) );
+                        array( "dollar_amount", "fee" ),
+                        array( false, false ) );
     
 
     echo "<br><HR><br>Game Ledger:<br>";
@@ -8386,7 +8424,8 @@ function cm_showDetailInternal() {
                         array( "entry_time", "game_id",
                                "dollar_delta" ),
                         array( "Date", "Game ID", "Delta" ),
-                        array( "dollar_delta" ) );
+                        array( "dollar_delta" ),
+                        array( true ) );
 
 
     echo "<br><HR><br>Game Partners:<br>";
@@ -8430,6 +8469,24 @@ function cm_showDetailInternal() {
         }
     echo "</table>";
 
+
+
+
+    echo "<br><HR><br>Tournaments:<br>";
+
+    cm_formatDataTable( "tournament_stats", "WHERE user_id = '$user_id'",
+                        array( "update_time", "tournament_code_name",
+                               "entry_fee",
+                               "num_games_started", "net_dollars", "prize" ),
+                        array( "Date", "Code name",
+                               "Entry fee", "Games", "Profit",
+                               "Prize" ),
+                        array( "entry_fee", "net_dollars", "prize" ),
+                        array( false, true, true ),
+                        "Leaderboard",
+                        "server.php?action=tournament_report",
+                        array( "tournament_code_name" ) );
+    
     }
 
 
@@ -8608,7 +8665,8 @@ function cm_formatDuration( $seconds ) {
 
 
 function cm_tournamentReport() {
-    $code_name = cm_requestFilter( "code_name", "/[A-Z0-9_]+/i", "" );
+    $code_name = cm_requestFilter( "tournament_code_name",
+                                   "/[A-Z0-9_]+/i", "" );
 
 
     global $tableNamePrefix, $leaderboardLimit, $leaderHeader, $leaderFooter;
@@ -8876,7 +8934,7 @@ function cm_tournamentPrizes() {
             }
 
         $rowNum = $i + 1;
-        $prize = cm_formatBalanceForDisplay( $prizes[$i] );
+        $prize = cm_formatBalanceForDisplay( $prizes[$i], true );
         
         echo "<tr><td align=right>$rowNum.</td><td></td>".
             "<td align=right>$prize</td></tr>";
