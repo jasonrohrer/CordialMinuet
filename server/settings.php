@@ -389,10 +389,10 @@ $endRoundTimeLimit = "0 0:00:15.000";
 // for Elo rating system
 
 // rating of brand new players
-$eloStartingRating = 0;
+$eloStartingRating = 1;
 
 // elo ratings cannot fall below this
-$eloFloor = 0;
+$eloFloor = 1;
 
 // how many games a new player must play before their rating starts
 // affecting other players
