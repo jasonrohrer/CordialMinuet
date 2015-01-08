@@ -572,7 +572,7 @@ tournament_info will contain the following structure:
 
 T#entry_fee#stakes#seconds_left
 
-entry_fee is the up-front cost of the tournametn in ASCII floating point
+entry_fee is the up-front cost of the tournament in ASCII floating point
 stakes is the fixed stake level for games in the tournament
 seconds_left is an integer number of seconds left until the tournament ends.
 

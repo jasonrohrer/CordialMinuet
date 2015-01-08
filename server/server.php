@@ -1599,6 +1599,86 @@ function cm_checkForFlush() {
         
         cm_queryDatabase( "COMMIT;" );
 
+
+
+        
+        // payout tournament prizes if tournament just ended
+
+        global $tournamentCodeName, $tournamentEndTime;
+
+        $time = time();
+
+        $endTime = strtotime( $tournamentEndTime );
+
+        if( $time >= $endTime ) {
+            
+            $query = "SELECT COUNT(*), COALESCE( SUM(prize), 0 ) ".
+                "FROM $tableNamePrefix"."tournament_stats ".
+                "WHERE tournament_code_name = '$code_name' FOR UPDATE;";
+        
+            $result = cm_queryDatabase( $query );
+            
+            $numPlayers = mysql_result( $result, 0, 0 );
+            $prizesPaid = mysql_result( $result, 0, 1 );
+
+            if( $prizesPaid == 0 ) {
+
+                $query = "SELECT user_id, net_dollars ".
+                    "FROM $tableNamePrefix"."tournament_stats".
+                    "WHERE tournament_code_name = '$code_name' ".
+                    // ignore any house entries
+                    "AND stats.user_id != 0 ".
+                    "ORDER BY net_dollars DESC FOR UPDATE;";
+                $result = cm_queryDatabase( $query );
+                
+                $numRows = mysql_numrows( $result );
+
+                $scores = array();
+
+                for( $i=0; $i<$numRows; $i++ ) {
+                    $net_dollars = mysql_result( $result, $i, "net_dollars" );
+                    
+                    $scores[$i] = $net_dollars;
+                    }                    
+                    
+                $prizes = cm_tournamentGetPrizes( $numPlayers, $scores );
+                
+                $prizeTotal = array_sum( $prizes );
+                
+                if( $prizeTotal > 0 ) {
+
+                    for( $i=0; $i<$numRows; $i++ ) {
+                        $user_id = mysql_result( $result, $i, "user_id" );
+
+                        $prize = $prizes[ $i ];
+
+                        $query = "UPDATE $tableNamePrefix"."users ".
+                            "SET dollar_balance = dollar_balance + ".
+                            "$prize ".
+                            "WHERE user_id = $user_id;";
+                        cm_queryDatabase( $query );
+
+                        $query = "UPDATE $tableNamePrefix"."tournament_stats ".
+                            "SET prize = $prize ".
+                            "WHERE tournament_code_name = '$code_name' ".
+                            "AND user_id = $user_id;";
+                        cm_queryDatabase( $query );
+
+                        }
+                    
+                    $query = "UPDATE $tableNamePrefix"."server_globals ".
+                        "SET house_dollar_balance = ".
+                        "  house_dollar_balance - $prizeTotal;";
+                    cm_queryDatabase( $query );
+                    }
+                }
+            
+            cm_queryDatabase( "COMMIT;" );
+            }
+        
+
+
+        
         $query = "DELETE ".
             "FROM $tableNamePrefix"."log ".
             "WHERE entry_time < ".
@@ -4389,8 +4469,8 @@ function cm_addUserToTournament( $user_id ) {
         "    entry_fee = $tournamentEntryFee, ".
         "    prize = 0, ".        
         "    update_time = CURRENT_TIMESTAMP, ".
-        "    net_dollars = - $tournamentStake, ".
-        "    num_games_started = 1;";
+        "    net_dollars = 0, ".
+        "    num_games_started = 0;";
     
     cm_queryDatabase( $query );
     }
@@ -4948,6 +5028,9 @@ function cm_getOtherGameList( $user_id ) {
     $query = "SELECT dollar_amount ".
         "FROM $tableNamePrefix"."games ".
         "WHERE player_1_id != '$user_id' AND player_2_id != '$user_id' ".
+        // during tournament, don't show same-stake games that we're
+        // blocked from playing
+        "AND dollar_amount != $dollar_amount ".
         "AND started = 0 ".
         "ORDER BY ABS( dollar_amount - $dollar_amount ) ASC LIMIT 3;";
 
@@ -7987,26 +8070,44 @@ function cm_showStats() {
 
     cm_generateHeader();
 
-    $query = "SELECT update_time, tournament_code_name, net_dollars ".
+    $query = "SELECT MAX(update_time) as last_update, ".
+        "tournament_code_name, SUM( entry_fee ) as net_fees, ".
+        "SUM( prize ) as net_prizes, ".
+        "SUM( entry_fee ) - SUM( prize ) as house_profit  ".
         "FROM $tableNamePrefix"."tournament_stats ".
-        "WHERE user_id = 0 ".
-        "ORDER BY update_time DESC;";
+        "GROUP BY tournament_code_name ORDER BY last_update DESC;";
     $result = cm_queryDatabase( $query );
 
     $numRows = mysql_numrows( $result );
 
-    echo "Total House Rake for Tournaments:";
+    echo "House Net for Tournaments:";
     echo "<br><table border=1 cellpadding=10>\n";
 
     for( $i=0; $i<$numRows; $i++ ) {
-        $update_time = mysql_result( $result, $i, "update_time" );
+        
+        $update_time = mysql_result( $result, $i, "last_update" );
         $code_name = mysql_result( $result, $i, "tournament_code_name" );
-        $net_dollars = mysql_result( $result, $i, "net_dollars" );
+        $house_profit = mysql_result( $result, $i, "house_profit" );
 
-        $net_dollars = cm_formatBalanceForDisplay( $net_dollars );
+        $net_fees = mysql_result( $result, $i, "net_fees" );
+        $net_prizes = mysql_result( $result, $i, "net_prizes" );
+
+        if( $net_prizes == 0 ) {
+            // prizes not paid yet, estimate
+            global $tournamentPrizePoolFraction;
+            
+            $house_profit = $net_fees * $tournamentPrizePoolFraction;
+            }
+        
+        
+        $house_profit = cm_formatBalanceForDisplay( $house_profit );
+
+        if( $net_prizes == 0 ) {
+            $house_profit = "Est. $house_profit";
+            }
         
         echo "<tr><td>$update_time</td>".
-            "<td>$code_name</td><td>$net_dollars</td></tr>";
+            "<td>$code_name</td><td align=right>$house_profit</td></tr>";
         }
     echo "</table><br><br>";
     
@@ -8544,9 +8645,17 @@ function cm_tournamentReport() {
                 "end in $timeString.<br><br></center>";
             }
         }
+
+    $query = "SELECT COALESCE( SUM(prize), 0 ) ".
+        "FROM $tableNamePrefix"."tournament_stats ".
+        "WHERE tournament_code_name = '$code_name';";
+
+    $result = cm_queryDatabase( $query );
+
+    $prizesPaid = mysql_result( $result, 0, 0 );
     
     
-    $query = "SELECT num_games_started, net_dollars, random_name ".
+    $query = "SELECT num_games_started, prize, net_dollars, random_name ".
         "FROM $tableNamePrefix"."tournament_stats as stats ".
         "LEFT JOIN $tableNamePrefix"."users as users ".
         "     ON stats.user_id = users.user_id ".
@@ -8557,34 +8666,87 @@ function cm_tournamentReport() {
     $result = cm_queryDatabase( $query );
 
     $numRows = mysql_numrows( $result );
+
+
+    $prizes;
+    $prizeTitle = "Prize<br>Paid";
+    
+    if( $prizesPaid == 0 ) {
+
+        $scores = array();
+
+        for( $i=0; $i<$numRows; $i++ ) {
+            $net_dollars = mysql_result( $result, $i, "net_dollars" );
+
+            $scores[$i] = $net_dollars;
+            }
+        
+        $prizes = cm_tournamentGetPrizes( $numRows, $scores );
+        $prizeTitle = "Tentative<br>Prize";
+        }
+
     
     echo "<center><table border=0 cellspacing=10>";
 
     echo "<tr><td align=right></td>".
             "<td></td><td></td>".
             "<td valign=bottom align=right>Profit</td><td></td>".
-            "<td valign=bottom>Games<br>Played</td></tr>";
+            "<td valign=bottom>Games<br>Played</td><td></td>".
+            "<td valign=bottom>$prizeTitle</td></tr>";
 
-    echo "<tr><td colspan=6><hr></td></tr>";
+    echo "<tr><td colspan=8><hr></td></tr>";
 
-    
+
+    $places = array();
+
+    for( $i=$numRows -1; $i>=0; $i-- ) {
+        $net_dollars = mysql_result( $result, $i, "net_dollars" );
+
+        $places[$i] = $i + 1;
+
+
+        if( $i < $numRows -1 ) {
+
+            if( $net_dollars ==
+                mysql_result( $result, $i + 1, "net_dollars" ) ) {
+
+                // tied with player below
+                $places[$i] = $places[$i+1];
+                }
+            }
+        }
+        
+        
     for( $i=0; $i<$numRows; $i++ ) {
         $random_name = mysql_result( $result, $i, "random_name" );
         $num_games_started = mysql_result( $result, $i, "num_games_started" );
         $net_dollars = mysql_result( $result, $i, "net_dollars" );
 
+        $prize;
+        if( $prizesPaid > 0 ) {
+            $prize = mysql_result( $result, $i, "prize" );
+            }
+        else {
+            $prize = $prizes[$i];
+            }
+        $prize = cm_formatBalanceForDisplay( $prize, true );
+        
         $net_dollars = cm_formatBalanceForDisplay( $net_dollars, true );
 
         if( $i != 0 ) {
-            echo "<tr><td colspan=6><hr></td></tr>";
+            echo "<tr><td colspan=8><hr></td></tr>";
             }
 
-        $rowNum = $i + 1;
+        $rowNum = $places[$i];
         
         echo "<tr><td align=right>$rowNum.</td>".
             "<td>$random_name</td><td></td>".
             "<td align=right>$net_dollars</td><td></td>".
-            "<td align=right>$num_games_started</td></tr>";
+            "<td align=right>$num_games_started</td><td></td>".
+            "<td align=right>$prize</td></tr>";
+
+        $previousNetDollars = $net_dollars;
+        $previousPrize = $prize;
         }
     echo "</table></center>";
 
@@ -8606,7 +8768,10 @@ function cm_PminFormula( $P, $r, $m ) {
 
 
 // returns an array of prizes, one for each player
-function cm_tournamentGetPrizes( $inNumPlayers ) {
+// $inPlayerScores is an array of scores, one for each player, starting
+// with first place (to deal with ties---tying players get score of lowest
+// place in their tie group)
+function cm_tournamentGetPrizes( $inNumPlayers, $inPlayerScores ) {
 
     global $tournamentPrizePoolFraction, $tournamentMinPrize,
         $tournamentEntryFee, $tournamentPrizeRatio;
@@ -8647,6 +8812,15 @@ function cm_tournamentGetPrizes( $inNumPlayers ) {
     for( $j=0; $j<$m; $j++ ) {
         $result[$i] = $currentPrize;
 
+        if( $inPlayerScores[$i] == $inPlayerScores[$i+1] ) {
+            // tie with lower player
+            // get same prize as lower player
+            $result[$i] = $result[$i+1];
+            }
+
+        // current prize keeps going up, regardes of ties
+        // (so when we finally get to a non-tying player, they
+        //  get the prize associated with their place).
         $currentPrize *= $r;
         
         $i --;
@@ -8676,7 +8850,14 @@ function cm_tournamentPrizes() {
 
     $num_players = cm_requestFilter( "num_players", "/[0-9]+/i", "1" );
 
-    $prizes = cm_tournamentGetPrizes( $num_players );
+    $dummyScores = array();
+
+    for( $i=0; $i<$num_players; $i++ ) {
+        $dummyScores[$i] = $num_players - $i;
+        }
+    
+    
+    $prizes = cm_tournamentGetPrizes( $num_players, $dummyScores );
 
     
     echo "<center><table border=0 cellspacing=10>";
