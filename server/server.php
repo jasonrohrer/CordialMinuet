@@ -1242,8 +1242,15 @@ function cm_setupDatabase() {
             "max_game_stakes DECIMAL(13, 2) NOT NULL DEFAULT 0.00, ".
 
             "total_house_rake DECIMAL(13, 4) NOT NULL DEFAULT 0.0000, ".
-            "max_house_rake DECIMAL(13, 4) NOT NULL DEFAULT 0.0000 ".
+            "max_house_rake DECIMAL(13, 4) NOT NULL DEFAULT 0.0000, ".
             
+            "round_count INT UNSIGNED NOT NULL DEFAULT 0, ".
+            "fold_count INT UNSIGNED NOT NULL DEFAULT 0, ".
+
+            "one_ante_fold_count INT UNSIGNED NOT NULL DEFAULT 0, ".
+
+            "reveal_count INT UNSIGNED NOT NULL DEFAULT 0 ".
+
             ");";
         
 
@@ -4869,6 +4876,7 @@ function cm_joinGame() {
         cm_queryDatabase( "SET AUTOCOMMIT=1" );
 
         cm_incrementStat( "game_count" );
+        cm_incrementStat( "round_count" );
         cm_incrementStat( "total_buy_in", $dollar_amount * 2 );
 
         cm_updateMaxStat( "max_game_stakes", $dollar_amount );
@@ -6353,7 +6361,16 @@ function cm_makeBet() {
         "player_2_pot_coins = '$player_2_pot_coins' ".
         $deadlineUpdate .
         "WHERE player_1_id = '$user_id' OR player_2_id = '$user_id';";
+
+
+    if( $player_1_bet_made && $player_2_bet_made &&
+        $player_1_pot_coins == $player_2_pot_coins &&
+        strlen( $player_2_moves ) == 13 ) {
+
+        cm_incrementStat( "reveal_count" );
+        }
     
+        
 
     $result = cm_queryDatabase( $query );
     
@@ -6448,6 +6465,16 @@ function cm_foldBet() {
         return;
         }
 
+    cm_incrementStat( "fold_count" );
+
+    global $anteCoins;
+    
+    if( $user_id == $player_1_id && $player_1_pot_coins <= $anteCoins
+        ||
+        $user_id == $player_2_id && $player_2_pot_coins <= $anteCoins ) {
+
+        cm_incrementStat( "one_ante_fold_count" );
+        }
     
     cm_makeRoundLoser( $user_id );
 
@@ -6925,6 +6952,8 @@ function cm_startNextRound() {
             
             $player_1_bet_made = 1;
             $player_2_bet_made = 1;
+
+            cm_incrementStat( "round_count" );
             }
         else {
             // one player is out of coins

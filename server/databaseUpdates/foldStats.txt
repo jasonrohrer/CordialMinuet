@@ -1,0 +1,7 @@
+ALTER TABLE minuetServer_server_stats ADD  round_count INT UNSIGNED NOT NULL DEFAULT 0 AFTER max_house_rake;
+
+ALTER TABLE minuetServer_server_stats ADD  fold_count INT UNSIGNED NOT NULL DEFAULT 0 AFTER round_count;
+
+ALTER TABLE minuetServer_server_stats ADD  one_ante_fold_count INT UNSIGNED NOT NULL DEFAULT 0 AFTER fold_count;
+
+ALTER TABLE minuetServer_server_stats ADD reveal_count  INT UNSIGNED NOT NULL DEFAULT 0 AFTER one_ante_fold_count;

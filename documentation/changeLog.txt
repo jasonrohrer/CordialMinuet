@@ -20,6 +20,7 @@ Version 12     ???
 
 --Added support for setting antes greater than 1 on server.
 
+--Added server stats for tracking rounds, folds, one-ante folds, and reveals.
 
 
 
