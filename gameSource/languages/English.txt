@@ -178,6 +178,8 @@ refresh "REFRESH"
 
 joinButtonTip "JOIN FOR %s"
 enterTournamentButtonTip "JOIN TOURNAMENT FOR %s"
+tournamentMatchButtonTip "TOURNAMENT MATCH FOR %s"
+
 cannotJoinButtonTip "CANNOT AFFORD %s"
 
 
