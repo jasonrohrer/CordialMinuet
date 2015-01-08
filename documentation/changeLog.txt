@@ -1,4 +1,4 @@
-Version 12     ???
+Version 12     2015-January-8
 
 --Fixed decimal precision formatting glitch on post-game result screen when
   starting balance has only two decimals.
@@ -21,6 +21,7 @@ Version 12     ???
 --Added support for setting antes greater than 1 on server.
 
 --Added server stats for tracking rounds, folds, one-ante folds, and reveals.
+
 
 
 
