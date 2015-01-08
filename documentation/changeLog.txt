@@ -18,6 +18,8 @@ Version 12     ???
 --Fixed server to correct for reset of auto_increment game_id values after
   a MySQL restart.  Now game_ids are guaranteed unique.
 
+--Added support for setting antes greater than 1 on server.
+
 
 
 

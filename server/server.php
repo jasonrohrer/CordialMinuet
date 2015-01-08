@@ -4804,14 +4804,14 @@ function cm_joinGame() {
         $player_1_id = mysql_result( $result, 0, "player_1_id" );
         $semaphore_key = mysql_result( $result, 0, "semaphore_key" );
 
-        global $moveTimeLimit;
+        global $moveTimeLimit, $anteCoins;
         
         $query = "UPDATE $tableNamePrefix"."games ".
             "SET player_2_id = '$user_id', started = 1,  ".
-            "player_1_coins = player_1_coins - 1, ".
-            "player_2_coins = player_2_coins - 1, ".
-            "player_1_pot_coins = player_1_pot_coins + 1, ".
-            "player_2_pot_coins = player_2_pot_coins + 1, ".
+            "player_1_coins = player_1_coins - $anteCoins, ".
+            "player_2_coins = player_2_coins - $anteCoins, ".
+            "player_1_pot_coins = player_1_pot_coins + $anteCoins, ".
+            "player_2_pot_coins = player_2_pot_coins + $anteCoins, ".
             // buy-ins are done, ready for first moves to be made
             "player_1_bet_made = 1, player_2_bet_made = 1, ".
             "move_deadline = ADDTIME( CURRENT_TIMESTAMP, '$moveTimeLimit' ) ".
@@ -6906,12 +6906,22 @@ function cm_startNextRound() {
             // start a new game
 
             $game_square = cm_getNewSquare();
+
+            global $anteCoins;
+
+            // ante shrinks if one player cannot afford it
+            if( $player_1_coins < $anteCoins ) {
+                $anteCoins = $player_1_coins;
+                }
+            if( $player_2_coins < $anteCoins ) {
+                $anteCoins = $player_2_coins;
+                }
             
-            $player_1_coins --;
-            $player_2_coins --;
+            $player_1_coins -= $anteCoins;
+            $player_2_coins -= $anteCoins;
             
-            $player_1_pot_coins = 1;
-            $player_2_pot_coins = 1;
+            $player_1_pot_coins = $anteCoins;
+            $player_2_pot_coins = $anteCoins;
             
             $player_1_bet_made = 1;
             $player_2_bet_made = 1;

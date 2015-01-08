@@ -359,6 +359,9 @@ $minGameStakes = "0.01";
 $maxGameStakes = "999999999.99";
 
 
+// number of coins in ante for each round
+$anteCoins = 1;
+
 
 // 1 minute, plus grace period to cover one client retry
 $moveTimeLimit = "0 0:01:18.000";
