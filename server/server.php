@@ -5322,7 +5322,7 @@ function cm_listGames() {
 
     if( $tournamentStakeForUser != -1 ) {
         // always stick tournament stake at top of list
-        echo "$tournamentStake\n";
+        echo "T$tournamentStake\n";
         }
     else if( $tournamentStake != -1 ) {
         // tournament running, but user not in it, stick info at top

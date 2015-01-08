@@ -419,8 +419,17 @@ void MenuPage::step() {
                     
                 r.isTournament = false;
                 
-                sscanf( parts[0], "%lf", &( r.dollarAmount ) );
-                    
+                char isTournamentMatch = false;
+                if( strlen( parts[0] ) > 1 &&
+                    parts[0][0] =='T' ) {
+
+                    isTournamentMatch = true;
+                    sscanf( parts[0], "T%lf", &( r.dollarAmount ) );
+                    }
+                else {
+                    sscanf( parts[0], "%lf", &( r.dollarAmount ) );
+                    }
+                
                     
                 int b = buttonsToUse[numGames - 1][i - 3];
                     
@@ -431,7 +440,7 @@ void MenuPage::step() {
                 char *dollarString = formatBalance( r.dollarAmount );
                 
                 const char *tipKey = "joinButtonTip";
-                
+
                 if( r.dollarAmount > userBalance ) {
                     tipKey = "cannotJoinButtonTip";
                     
@@ -440,9 +449,19 @@ void MenuPage::step() {
                     button->setDragOverColor( 1, 1, 1, 0.5 );
                     }
                 else {
-                    button->setHoverColor( 1, 1, 1, 1 );
-                    button->setNoHoverColor( 1, 1, 1, 1 );
-                    button->setDragOverColor( 1, 1, 1, 1 );
+                    
+                    if( isTournamentMatch ) {
+                        tipKey = "tournamentMatchButtonTip";
+
+                        button->setHoverColor( 1, 1, 0.5, 1 );
+                        button->setNoHoverColor( 1, 1, 0.5, 1 );
+                        button->setDragOverColor( 1, 1, 0.5, 1 );
+                        }
+                    else {                        
+                        button->setHoverColor( 1, 1, 1, 1 );
+                        button->setNoHoverColor( 1, 1, 1, 1 );
+                        button->setDragOverColor( 1, 1, 1, 1 );
+                        }
                     }
                 
 
