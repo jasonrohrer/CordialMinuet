@@ -1,3 +1,21 @@
+Version 12     Live Server Fixes
+
+--Fixed precision bug in computing house balance change after tournament
+  prizes are paid.
+
+--Changed so that the buy-in for a tournament match isn't counted against your
+  profit stat until the match ends (matches that go over deadline simply don't
+  count instead of counting as a profit loss for both players).
+
+--Fixed a bug in pairwise tournament feeding blocking so that it only blocks
+  based on current tournament pairwise profits.
+
+--Fixed prize calculations to handle settings where every player gets a prize.
+
+
+
+
+
 Version 12     2015-January-8
 
 --Fixed decimal precision formatting glitch on post-game result screen when

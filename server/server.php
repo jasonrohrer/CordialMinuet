@@ -1674,10 +1674,21 @@ function cm_checkForFlush() {
                         cm_queryDatabase( $query );
 
                         }
+
+                    // don't trust $prizeTotal because of precision issues
+
+                    // instead, sum decimal prizes as they appear in database
+
+                    $query = "SELECT SUM(prize) ".
+                        "FROM $tableNamePrefix"."tournament_stats ".
+                        "WHERE tournament_code_name = '$tournamentCodeName';";
+                    $result = cm_queryDatabase( $query );
+
+                    $truePrizeTotal = mysql_result( $result, 0, 0 );
                     
                     $query = "UPDATE $tableNamePrefix"."server_globals ".
                         "SET house_dollar_balance = ".
-                        "  house_dollar_balance - $prizeTotal;";
+                        "  house_dollar_balance - $truePrizeTotal;";
                     cm_queryDatabase( $query );
                     }
                 }
@@ -4500,11 +4511,14 @@ function cm_addUserToTournament( $user_id ) {
 
 
 function cm_tournamentBuyIn( $user_id, $inOpponentID ) {
-    global $tableNamePrefix, $tournamentCodeName, $tournamentStake;
+    global $tableNamePrefix, $tournamentCodeName;
 
+    // don't count buy in against profit until cash out
+    // thus, a game that doesn't end before the deadline simply doesn't count
+    // (instead of counting as negative profit for the buy-in that
+    //  didn't cash out by the deadline)
     $query = "UPDATE $tableNamePrefix"."tournament_stats ".
         "SET update_time = CURRENT_TIMESTAMP, ".
-        "    net_dollars = net_dollars - $tournamentStake, ".
         "    num_games_started = num_games_started + 1 ".
         "WHERE user_id = $user_id;";
 
@@ -4529,17 +4543,17 @@ function cm_tournamentBuyIn( $user_id, $inOpponentID ) {
 function cm_tournamentCashOut( $user_id, $inOpponentID, $inDollarsOut ) {
     global $tableNamePrefix, $tournamentCodeName, $tournamentStake;
 
+    $profit = $inDollarsOut - $tournamentStake;
 
     $query = "UPDATE $tableNamePrefix"."tournament_stats ".
         "SET update_time = CURRENT_TIMESTAMP, ".
-        "    net_dollars = net_dollars + $inDollarsOut ".
+        "    net_dollars = net_dollars + $profit ".
         "WHERE user_id = $user_id AND ".
         "      tournament_code_name = '$tournamentCodeName';";
 
     cm_queryDatabase( $query );
 
     
-    $profit = $inDollarsOut - $tournamentStake;
 
     $query = "UPDATE $tableNamePrefix"."tournament_pairings ".
         "SET update_time = CURRENT_TIMESTAMP, ".
@@ -4758,16 +4772,21 @@ function cm_joinGame() {
             //     Either no games played between them yet
             "      ( SELECT COUNT(*) FROM $tableName ".
             "        WHERE user_id = $user_id ".
-            "        AND user_id_opponent = player_1_id ) = 0 ".
+            "        AND user_id_opponent = player_1_id ".
+            "        AND tournament_code_name = '$tournamentCodeName' ) = 0 ".
             "      OR ".
             //     Or profit in either direction below limit
             "      ( SELECT net_dollars FROM $tableName ".
             "        WHERE user_id = $user_id ".
-            "        AND user_id_opponent = player_1_id ) < $pLimit ".
+            "        AND user_id_opponent = player_1_id ".
+            "        AND tournament_code_name = '$tournamentCodeName' ) ".
+            "      < $pLimit ".
             "      AND ".
             "      ( SELECT net_dollars FROM $tableName ".
             "        WHERE user_id = player_1_id ".
-            "        AND user_id_opponent = $user_id ) < $pLimit )";
+            "        AND user_id_opponent = $user_id ".
+            "        AND tournament_code_name = '$tournamentCodeName' ) ".
+            "      < $pLimit )";
         }
     else if( cm_isTournamentLive( $dollar_amount ) &&
         ! cm_isUserInTournament( $user_id ) ) {    
@@ -8920,7 +8939,8 @@ function cm_tournamentGetPrizes( $inNumPlayers, $inPlayerScores ) {
     for( $j=0; $j<$m; $j++ ) {
         $result[$i] = $currentPrize;
 
-        if( $inPlayerScores[$i] == $inPlayerScores[$i+1] ) {
+        if( $i < $inNumPlayers - 1 &&
+            $inPlayerScores[$i] == $inPlayerScores[$i+1] ) {
             // tie with lower player
             // get same prize as lower player
             $result[$i] = $result[$i+1];
