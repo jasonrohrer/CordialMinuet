@@ -8968,7 +8968,17 @@ function cm_tournamentPrizes() {
     
     $prizes = cm_tournamentGetPrizes( $num_players, $dummyScores );
 
-    
+?>
+            <center><FORM ACTION="server.php" METHOD="get">
+    <INPUT TYPE="hidden" NAME="action" VALUE="tournament_prizes">
+    <INPUT TYPE="hidden" NAME="tournament_code_name"
+                 VALUE="<?php echo $code_name;?>">
+    <INPUT TYPE="text" MAXLENGTH=9 SIZE=9 NAME="num_players"
+             VALUE="<?php echo $num_players;?>"> Players 
+    <INPUT TYPE="Submit" VALUE="Recompute">
+    </FORM></center><br><br>
+<?php
+
     echo "<center><table border=0 cellspacing=10>";
 
     echo "<tr><td valign=bottom align=right>Place</td><td></td>".
