@@ -8996,9 +8996,29 @@ function cm_tournamentPrizes() {
     <INPUT TYPE="text" MAXLENGTH=9 SIZE=9 NAME="num_players"
              VALUE="<?php echo $num_players;?>"> Players 
     <INPUT TYPE="Submit" VALUE="Recompute">
-    </FORM></center><br><br>
+    </FORM></center><br>
 <?php
+                 
+    global $tournamentEntryFee, $tournamentPrizePoolFraction;
+    
+    $entryFeeString = cm_formatBalanceForDisplay( $tournamentEntryFee );
 
+    $prizePool =
+        $tournamentEntryFee * $num_players * $tournamentPrizePoolFraction;
+    $prizePool = cm_formatBalanceForDisplay( $prizePool );
+
+    echo "<center><table border=0 cellpadding=10>";
+    
+    echo "<tr><td align=right>Entry fee</td><td>=</td>".
+        "<td align=right>$entryFeeString</td></tr>";
+
+    echo "<tr><td align=right>Total prize pool</td><td>=</td>".
+        "<td align=right>$prizePool</td></tr>";
+
+    echo "</table></center><br>";
+    
+    
+                 
     echo "<center><table border=0 cellspacing=10>";
 
     echo "<tr><td valign=bottom align=right>Place</td><td></td>".

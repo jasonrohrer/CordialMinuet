@@ -12,6 +12,7 @@ Version 12     Live Server Fixes
 
 --Fixed prize calculations to handle settings where every player gets a prize.
 
+--Added entry fee and prize pool display to tournament prize list.
 
 
 
