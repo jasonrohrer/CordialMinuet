@@ -8941,7 +8941,8 @@ function cm_tournamentGetPrizes( $inNumPlayers, $inPlayerScores ) {
 
 
 function cm_tournamentPrizes() {
-    $code_name = cm_requestFilter( "code_name", "/[A-Z0-9_]+/i", "" );
+    $code_name = cm_requestFilter( "tournament_code_name",
+                                   "/[A-Z0-9_]+/i", "" );
 
     global $tableNamePrefix, $leaderboardLimit, $leaderHeader, $leaderFooter;
 
