@@ -9,6 +9,11 @@ $wordB = entry_requestFilter(
 $wordA = strtolower( $wordA );
 $wordB = strtolower( $wordB );
 
+if( $wordA == 'origin' && $wordB == 'ensemble' ) {
+    $wordA = 'increment';
+    $wordB = 'ensemble';
+    }
+
 header( "Location: ./$wordA$wordB" );
 
 
