@@ -9048,15 +9048,19 @@ function cm_tournamentPrizes() {
 
 
 function cm_graphUserData( $inTitle, $inStatToGraph, $inWhereClause,
+                           $inGroupByClause,
                            $inLimit ) {
 
     global $tableNamePrefix;
     
-    
-    $query = "SELECT stat_time, $inStatToGraph ".
-        "FROM $tableNamePrefix"."user_stats ".
-        "WHERE $inWhereClause ".
-        "ORDER BY stat_time DESC LIMIT $inLimit;";
+    // use GROUP BY clause to filter out duplicates in sub query
+    // request 2x as many as needed in sub query
+    $query = "SELECT stat_time, $inStatToGraph FROM ".
+        "( SELECT stat_time, $inStatToGraph ".
+        "  FROM $tableNamePrefix"."user_stats ".
+        "  WHERE $inWhereClause ".
+        "  ORDER BY stat_time DESC LIMIT $inLimit * 2 ) AS temp ".
+        "GROUP BY $inGroupByClause ORDER BY stat_time DESC LIMIT $inLimit;";
     $result = cm_queryDatabase( $query );
 
     $numRows = mysql_numrows( $result );
@@ -9108,12 +9112,14 @@ function cm_usersGraph() {
     eval( $leaderHeader );
 
     cm_graphUserData( "Hours Ago", "users_last_hour", "MINUTE(stat_time) <= 2",
+                      "HOUR( stat_time )",
                       24 );
 
     echo "<br><br><br>";
     cm_graphUserData( "Days Ago", "users_last_day",
                       "HOUR(stat_time) = HOUR(CURRENT_TIMESTAMP) AND ".
                       "MINUTE(stat_time) <= 2",
+                      "DATE( stat_time )",
                       14 );
 
 
