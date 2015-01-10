@@ -9055,12 +9055,14 @@ function cm_graphUserData( $inTitle, $inStatToGraph, $inWhereClause,
     
     // use GROUP BY clause to filter out duplicates in sub query
     // request 2x as many as needed in sub query
+    $doubleLimit = 2 * $inLimit;
     $query = "SELECT stat_time, $inStatToGraph FROM ".
         "( SELECT stat_time, $inStatToGraph ".
         "  FROM $tableNamePrefix"."user_stats ".
         "  WHERE $inWhereClause ".
-        "  ORDER BY stat_time DESC LIMIT $inLimit * 2 ) AS temp ".
+        "  ORDER BY stat_time DESC LIMIT $doubleLimit ) AS temp ".
         "GROUP BY $inGroupByClause ORDER BY stat_time DESC LIMIT $inLimit;";
+    
     $result = cm_queryDatabase( $query );
 
     $numRows = mysql_numrows( $result );
@@ -9117,7 +9119,8 @@ function cm_usersGraph() {
 
     echo "<br><br><br>";
     cm_graphUserData( "Days Ago", "users_last_day",
-                      "HOUR(stat_time) = HOUR(CURRENT_TIMESTAMP) AND ".
+                      "HOUR(stat_time) = ".
+		      " GREATEST( HOUR(CURRENT_TIMESTAMP) - 1, 0 ) AND ".
                       "MINUTE(stat_time) <= 2",
                       "DATE( stat_time )",
                       14 );
