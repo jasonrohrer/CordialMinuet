@@ -329,7 +329,7 @@ $maxNumLifetimeDeposits = -1;
 
 
 
-$housePotFraction = 0.17;
+$housePotFraction = 0.13;
 
 // maximum number of coins taken by the house percentage
 $housePotLimit = 1;
@@ -360,7 +360,7 @@ $maxGameStakes = "999999999.99";
 
 
 // number of coins in ante for each round
-$anteCoins = 1;
+$anteCoins = 3;
 
 
 // 1 minute, plus grace period to cover one client retry
