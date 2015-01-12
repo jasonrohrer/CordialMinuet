@@ -16,6 +16,9 @@ Version 12     Live Server Fixes
 
 --Fixed active users graph to filter out duplicates.
 
+--Fixed tournament so that tied players split the total prize sum at their
+  prize levels (thanks Josh C).
+
 
 
 

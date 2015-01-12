@@ -8896,8 +8896,8 @@ function cm_PminFormula( $P, $r, $m ) {
 
 // returns an array of prizes, one for each player
 // $inPlayerScores is an array of scores, one for each player, starting
-// with first place (to deal with ties---tying players get score of lowest
-// place in their tie group)
+// with first place (to deal with ties---tying players split total prize
+// in their tie group)
 function cm_tournamentGetPrizes( $inNumPlayers, $inPlayerScores ) {
 
     global $tournamentPrizePoolFraction, $tournamentMinPrize,
@@ -8939,20 +8939,67 @@ function cm_tournamentGetPrizes( $inNumPlayers, $inPlayerScores ) {
     for( $j=0; $j<$m; $j++ ) {
         $result[$i] = $currentPrize;
 
-        if( $i < $inNumPlayers - 1 &&
-            $inPlayerScores[$i] == $inPlayerScores[$i+1] ) {
-            // tie with lower player
-            // get same prize as lower player
-            $result[$i] = $result[$i+1];
-            }
-
-        // current prize keeps going up, regardes of ties
-        // (so when we finally get to a non-tying player, they
-        //  get the prize associated with their place).
         $currentPrize *= $r;
         
         $i --;
         }
+
+
+    // now go back and deal with ties
+    $tieStart = -1;
+    $tieSum = 0;
+    for( $i=1; $i<$inNumPlayers; $i++ ) {
+
+        if( $inPlayerScores[$i] == $inPlayerScores[$i-1] ) {
+            
+            if( $tieStart == -1 ) {
+                // start of a new tie group
+                $tieStart = $i-1;
+                $tieSum += $result[$i] + $result[$i-1];
+                }
+            else {
+                // continuation of a tie group
+                $tieSum += $result[$i];
+                }
+            }
+        else if( $tieStart != -1 ) {
+            // end of a tie group
+
+            // round sum first
+            $tieSum = number_format( $tieSum, 4 );
+            
+            $tiePrize = $tieSum / ( $i - $tieStart );
+
+            // round down to nearest 10000th of dollar
+            $tiePrize = floor( $tiePrize * 10000 ) / 10000;
+            
+            for( $j=$tieStart; $j<$i; $j++ ) {
+                $result[$j] = $tiePrize;
+                }
+            $tieStart = -1;
+            $tieSum = 0;
+            }
+        }
+    
+    if( $tieStart != -1 ) {
+        // a tie that ran all the way to the end of the list
+
+        // round sum first
+        $tieSum = number_format( $tieSum, 4 );
+        
+        $tiePrize = $tieSum / ( $inNumPlayers - $tieStart );
+
+        // round down to nearest 10000th of dollar
+        $tiePrize = floor( $tiePrize * 10000 ) / 10000;
+        
+        for( $j=$tieStart; $j<$inNumPlayers; $j++ ) {
+            $result[$j] = $tiePrize;
+            }
+        $tieStart = -1;
+        $tieSum = 0;
+        }
+    
+            
 
     return $result;
     }
