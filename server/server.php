@@ -1636,7 +1636,7 @@ function cm_checkForFlush() {
         
         // payout tournament prizes if tournament just ended
 
-        global $tournamentCodeName, $tournamentEndTime;
+        global $tournamentLive, $tournamentCodeName, $tournamentEndTime;
 
         $time = time();
 
