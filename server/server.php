@@ -8606,33 +8606,7 @@ function cm_leaders( $order_column_name, $inIsDollars = false,
 
     $nextPrevLinks = "";
     
-    if( !$inUnlimited ) {
-        global $action;
-
-        
-        $nextPrevLinks .= "<br><center>";
-        
-        $nextSkip = $skip + $leaderboardLimit;
-        $prevSkip = $skip - $leaderboardLimit;
-        if( $prevSkip < 0 ) {
-            $prevSkip = 0;
-            }
-
-        if( $skip > 0 ) {
-            $nextPrevLinks .= "[<a href=\"server.php?action=$action" .
-                "&skip=$prevSkip\">".
-                "Previous Page</a>] --- ";
-            }
-        
-        $nextPrevLinks .= "[<a href=\"server.php?action=$action" .
-            "&skip=$nextSkip\">".
-            "Next Page</a>]";
-
-        $nextPrevLinks .= "</center><br>";
-        }
-
-
-    echo $nextPrevLinks;
+    
     
     
     // h is a factor that hides effect of user's live game from leaderboards
@@ -8674,6 +8648,43 @@ function cm_leaders( $order_column_name, $inIsDollars = false,
     $result = cm_queryDatabase( $query );
 
     $numRows = mysql_numrows( $result );
+
+
+    if( !$inUnlimited ) {
+        global $action;
+
+        
+        $nextPrevLinks .= "<br><center>";
+        
+        $nextSkip = $skip + $leaderboardLimit;
+        $prevSkip = $skip - $leaderboardLimit;
+        if( $prevSkip < 0 ) {
+            $prevSkip = 0;
+            }
+
+        if( $skip > 0 ) {
+            $nextPrevLinks .= "[<a href=\"server.php?action=$action" .
+                "&skip=$prevSkip\">".
+                "Previous Page</a>]";
+            }
+
+        if( $numRows == $leaderboardLimit ) {    
+            if( $skip > 0 ) {
+                $nextPrevLinks .= " --- ";
+                }
+            
+            $nextPrevLinks .= "[<a href=\"server.php?action=$action" .
+                "&skip=$nextSkip\">".
+                "Next Page</a>]";
+            }
+        
+        $nextPrevLinks .= "</center><br>";
+        }
+
+
+    echo $nextPrevLinks;
+
+
     
     echo "<center><table border=0 cellspacing=8>";
     
