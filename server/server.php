@@ -1642,7 +1642,7 @@ function cm_checkForFlush() {
 
         $endTime = strtotime( $tournamentEndTime );
 
-        if( $time >= $endTime ) {
+        if( $tournamentLive && $time >= $endTime ) {
             
             $query = "SELECT COUNT(*), COALESCE( SUM(prize), 0 ) ".
                 "FROM $tableNamePrefix"."tournament_stats ".
