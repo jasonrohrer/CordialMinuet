@@ -25,6 +25,9 @@ Version 12     Live Server Fixes
 
 --Added Next and Previous links to scroll through full leaderboards.
 
+--Fixed to retry random name picking 10 times when creating a new account
+  (there are only 443,556 possible names, so duplicate names will be necessary
+  at some point, but avoid them as much as possible).
 
 
 

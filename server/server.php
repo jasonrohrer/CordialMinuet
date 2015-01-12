@@ -737,13 +737,38 @@ cm_closeDatabase();
 function cm_generateRandomName() {
     global $tableNamePrefix;
 
-    $query = "SELECT GROUP_CONCAT( temp.noun SEPARATOR ' ' ) AS random_name ".
-        "FROM ( SELECT noun FROM $tableNamePrefix"."random_nouns ".
-        "       ORDER BY RAND() LIMIT 2) AS temp;";
+    $foundUnique = false;
+    $tryCount = 0;
 
-    $result = cm_queryDatabase( $query );
+    $name = "";
+    
+    while( ! $foundUnique && $tryCount < 10 ) {
+        
+    
+        $query =
+            "SELECT GROUP_CONCAT( temp.noun SEPARATOR ' ' ) AS random_name ".
+            "FROM ( SELECT noun FROM $tableNamePrefix"."random_nouns ".
+            "       ORDER BY RAND() LIMIT 2) AS temp;";
 
-    return mysql_result( $result, 0, 0 );
+        $result = cm_queryDatabase( $query );
+
+        $name = mysql_result( $result, 0, 0 );
+
+        
+        $query = "SELECT COUNT(*) from $tableNamePrefix"."users ".
+            "WHERE random_name = '$name';";
+
+        $result = cm_queryDatabase( $query );
+
+        if( 0 == mysql_result( $result, 0, 0 ) ) {
+            $foundUnique = true;
+            }
+        
+        
+        $tryCount ++;
+        }
+    
+    return $name;
     }
 
 
