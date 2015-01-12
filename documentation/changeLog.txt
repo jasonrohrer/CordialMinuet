@@ -23,6 +23,8 @@ Version 12     Live Server Fixes
   over (so you can't reload leaderboard and look for the uptick to figure out
   who you just joined a game with) (thanks Benjamin Y).
 
+--Added Next and Previous links to scroll through full leaderboards.
+
 
 
 

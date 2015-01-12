@@ -8569,12 +8569,47 @@ function cm_leaders( $order_column_name, $inIsDollars = false,
 
     eval( $leaderHeader );
 
-    $limitClause = "LIMIT $leaderboardLimit";
+    $skip = cm_requestFilter( "skip", "/\d+/", 0 );
+    
+    $limitClause = "LIMIT $skip, $leaderboardLimit";
 
     if( $inUnlimited ) {
         $limitClause = "";
+        $skip = 0;
         }
 
+
+    $nextPrevLinks = "";
+    
+    if( !$inUnlimited ) {
+        global $action;
+
+        
+        $nextPrevLinks .= "<br><center>";
+        
+        $nextSkip = $skip + $leaderboardLimit;
+        $prevSkip = $skip - $leaderboardLimit;
+        if( $prevSkip < 0 ) {
+            $prevSkip = 0;
+            }
+
+        if( $skip > 0 ) {
+            $nextPrevLinks .= "[<a href=\"server.php?action=$action" .
+                "&skip=$prevSkip\">".
+                "Previous Page</a>] --- ";
+            }
+        
+        $nextPrevLinks .= "[<a href=\"server.php?action=$action" .
+            "&skip=$nextSkip\">".
+            "Next Page</a>]";
+
+        $nextPrevLinks .= "</center><br>";
+        }
+
+
+    echo $nextPrevLinks;
+    
+    
     // h is a factor that hides effect of user's live game from leaderboards
     //   thus, you can't check for changes in the leaderboard to detect who
     //   you're playing against.
@@ -8630,13 +8665,16 @@ function cm_leaders( $order_column_name, $inIsDollars = false,
             echo "<tr><td colspan=3><hr></td></tr>";
             }
 
-        $rowNum = $i + 1;
+        $rowNum = $i + 1 + $skip;
         
         echo "<tr><td align=right>$rowNum.</td><td>$random_name</td>".
             "<td align=right>$value</td></tr>";
         }
     echo "</table></center>";
 
+    echo $nextPrevLinks;
+    
+    
     eval( $leaderFooter );
     }
 
