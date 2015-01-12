@@ -8208,7 +8208,7 @@ function cm_showStats() {
             // prizes not paid yet, estimate
             global $tournamentPrizePoolFraction;
             
-            $house_profit = $net_fees * $tournamentPrizePoolFraction;
+            $house_profit = $net_fees * ( 1 - $tournamentPrizePoolFraction );
             }
         
         
