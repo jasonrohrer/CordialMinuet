@@ -1,0 +1,1 @@
+ALTER TABLE minuetServer_tournament_stats CHANGE num_games_started num_games_finished INT NOT NULL;

@@ -19,6 +19,10 @@ Version 12     Live Server Fixes
 --Fixed tournament so that tied players split the total prize sum at their
   prize levels (thanks Josh C).
 
+--Fixed tournament stats to not uptick game count for a player until game is
+  over (so you can't reload leaderboard and look for the uptick to figure out
+  who you just joined a game with) (thanks Benjamin Y).
+
 
 
 

@@ -1168,8 +1168,8 @@ function cm_setupDatabase() {
             "entry_fee DECIMAL(13, 4) NOT NULL,".
             "prize DECIMAL(13, 4) NOT NULL,".
             "update_time DATETIME NOT NULL," .
-            "num_games_started INT NOT NULL,".
-            "INDEX( num_games_started ),".
+            "num_games_finished INT NOT NULL,".
+            "INDEX( num_games_finished ),".
             "net_dollars DECIMAL(13, 4) NOT NULL,".
             "INDEX( net_dollars ) ) ENGINE = INNODB;";
 
@@ -4503,7 +4503,7 @@ function cm_addUserToTournament( $user_id ) {
         "    prize = 0, ".        
         "    update_time = CURRENT_TIMESTAMP, ".
         "    net_dollars = 0, ".
-        "    num_games_started = 0;";
+        "    num_games_finished = 0;";
     
     cm_queryDatabase( $query );
     }
@@ -4517,9 +4517,11 @@ function cm_tournamentBuyIn( $user_id, $inOpponentID ) {
     // thus, a game that doesn't end before the deadline simply doesn't count
     // (instead of counting as negative profit for the buy-in that
     //  didn't cash out by the deadline)
+    //
+    // Don't uptick num_games_finished until cash-out (so you can't watch
+    // this stat on leaderboard to figure out who you're playing against)
     $query = "UPDATE $tableNamePrefix"."tournament_stats ".
-        "SET update_time = CURRENT_TIMESTAMP, ".
-        "    num_games_started = num_games_started + 1 ".
+        "SET update_time = CURRENT_TIMESTAMP ".
         "WHERE user_id = $user_id;";
 
     cm_queryDatabase( $query );
@@ -4547,7 +4549,8 @@ function cm_tournamentCashOut( $user_id, $inOpponentID, $inDollarsOut ) {
 
     $query = "UPDATE $tableNamePrefix"."tournament_stats ".
         "SET update_time = CURRENT_TIMESTAMP, ".
-        "    net_dollars = net_dollars + $profit ".
+        "    net_dollars = net_dollars + $profit, ".
+        "    num_games_finished = num_games_finished + 1 ".
         "WHERE user_id = $user_id AND ".
         "      tournament_code_name = '$tournamentCodeName';";
 
@@ -8546,7 +8549,7 @@ function cm_showDetailInternal() {
     cm_formatDataTable( "tournament_stats", "WHERE user_id = '$user_id'",
                         array( "update_time", "tournament_code_name",
                                "entry_fee",
-                               "num_games_started", "net_dollars", "prize" ),
+                               "num_games_finished", "net_dollars", "prize" ),
                         array( "Date", "Code name",
                                "Entry fee", "Games", "Profit",
                                "Prize" ),
@@ -8782,7 +8785,7 @@ function cm_tournamentReport() {
     $prizesPaid = mysql_result( $result, 0, 0 );
     
     
-    $query = "SELECT num_games_started, prize, net_dollars, random_name ".
+    $query = "SELECT num_games_finished, prize, net_dollars, random_name ".
         "FROM $tableNamePrefix"."tournament_stats as stats ".
         "LEFT JOIN $tableNamePrefix"."users as users ".
         "     ON stats.user_id = users.user_id ".
@@ -8846,7 +8849,9 @@ function cm_tournamentReport() {
         
     for( $i=0; $i<$numRows; $i++ ) {
         $random_name = mysql_result( $result, $i, "random_name" );
-        $num_games_started = mysql_result( $result, $i, "num_games_started" );
+        $num_games_finished = mysql_result( $result, $i,
+                                            "num_games_finished" );
+
         $net_dollars = mysql_result( $result, $i, "net_dollars" );
 
         $prize;
@@ -8869,7 +8874,7 @@ function cm_tournamentReport() {
         echo "<tr><td align=right>$rowNum.</td>".
             "<td>$random_name</td><td></td>".
             "<td align=right>$net_dollars</td><td></td>".
-            "<td align=right>$num_games_started</td><td></td>".
+            "<td align=right>$num_games_finished</td><td></td>".
             "<td align=right>$prize</td></tr>";
 
         $previousNetDollars = $net_dollars;
