@@ -6523,7 +6523,7 @@ function cm_foldBet() {
         cm_incrementStat( "one_ante_fold_count" );
         }
     
-    cm_makeRoundLoser( $user_id );
+    cm_makeRoundLoser( $game_id, $user_id );
 
     
     cm_queryDatabase( "COMMIT;" );
@@ -6553,7 +6553,7 @@ function cm_foldBet() {
 // starts a new game after, if possible
 // assumes autocommit is off and caller will commit after
 // $inTie forces all pot coins to be returned
-function cm_makeRoundLoser( $inLoserID, $inTie = false ) {
+function cm_makeRoundLoser( $inGameID, $inLoserID, $inTie = false ) {
     global $tableNamePrefix;
 
 
@@ -6564,7 +6564,8 @@ function cm_makeRoundLoser( $inLoserID, $inTie = false ) {
         "player_1_bet_made, player_2_bet_made, ".
         "player_1_pot_coins, player_2_pot_coins ".
         "FROM $tableNamePrefix"."games ".
-        "WHERE player_1_id = '$inLoserID' OR player_2_id = '$inLoserID' ".
+        "WHERE ( player_1_id = '$inLoserID' OR player_2_id = '$inLoserID' )".
+        "     AND game_id = '$inGameID' ".
         "FOR UPDATE;";
 
     $result = cm_queryDatabase( $query );
@@ -6573,7 +6574,10 @@ function cm_makeRoundLoser( $inLoserID, $inTie = false ) {
 
     if( $numRows != 1 ) {
         cm_log( "Making a round loser for a game that doesn't exist" );
-        cm_transactionDeny();
+
+        // don't count this as a transaction error
+        // game could have been ended by one player leaving out from under
+        // us
         return;
         }
     
@@ -6823,8 +6827,9 @@ function cm_endRound() {
         $player_2_ended_round = 1;
         }
 
-    
-    if( $player_1_ended_round == 1 && $player_2_ended_round == 1 ) {
+    // watch for case where other player left
+    if( $player_1_id != 0 && $player_2_id != 0 &&
+        $player_1_ended_round == 1 && $player_2_ended_round == 1 ) {
 
         $loserID = cm_computeLoser( $game_square,
                                     $player_1_id, $player_2_id,
@@ -6836,8 +6841,8 @@ function cm_endRound() {
             $tie = true;
             }
 
-        
-        cm_makeRoundLoser( $loserID, $tie );
+        cm_log( "Making $loserID the loser (tie = $tie)for game $game_id" );
+        cm_makeRoundLoser( $game_id, $loserID, $tie );
         }
 
     global $endRoundTimeLimit;
