@@ -1621,11 +1621,16 @@ function cm_checkForFlush() {
             $player_1_id = mysql_result( $result, $i, "player_1_id" );
             $player_2_id = mysql_result( $result, $i, "player_2_id" );
 
+            // force tie (pots returned to both players)
+            // if end of round not reached and both players still in the game
+            // (both players failed to update last_action_time in time,
+            //  which means a connection error for both)
+            
             if( $player_1_id != 0 ) {
-                cm_endOldGames( $player_1_id );
+                cm_endOldGames( $player_1_id, true );
                 }
             if( $player_2_id != 0 ) {
-                cm_endOldGames( $player_2_id );
+                cm_endOldGames( $player_2_id, true );
                 }
             }
         
@@ -4113,7 +4118,7 @@ function cm_addLedgerEntry( $user_id, $game_id, $dollar_delta ) {
 // assumes that autocommit is off
 
 // returns payout to $user_id
-function cm_endOldGames( $user_id ) {
+function cm_endOldGames( $user_id, $inForceTie = false ) {
     global $tableNamePrefix;
     
     $query = "SELECT game_id, semaphore_key, player_1_id, player_2_id, ".
@@ -4254,8 +4259,8 @@ function cm_endOldGames( $user_id ) {
                 }
             }
         // else player leaving in middle
-        else if( ! $areGamesAllowed ) {
-            // game force-ended by admin, return pots to players
+        else if( $inForceTie || ! $areGamesAllowed ) {
+            // game force-ended by admin, or tie forced, return pots to players
             $player_1_coins += $player_1_pot_coins;
             $player_2_coins += $player_2_pot_coins;
 

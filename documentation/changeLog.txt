@@ -32,6 +32,7 @@ Version 12     Live Server Fixes
 --Fixed rare DENIED BY SERVER error when your opponent leaves game right at the
   end of a round (thanks Pilam69).
 
+--Fixed to return pots to both players in cases where both time out.
 
 
 
