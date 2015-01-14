@@ -5082,12 +5082,55 @@ function cm_joinGame() {
 
 function cm_keepGameAlive( $user_id ) {
     global $tableNamePrefix;
+
+
+    // make sure this game isn't past move deadline
+    // due to lack of actions from both players
+
+    // if so, then there might have been a server connection issue
+    // should end game now for both and split pot, even though $user_id seems
+    // to be reconnected now
+    cm_queryDatabase( "SET AUTOCOMMIT=0" );
+
+    global $moveTimeLimit;
+    
+    $query = "SELECT player_1_id, player_2_id ".
+        "FROM $tableNamePrefix"."games ".
+        "WHERE  ( player_1_id = '$user_id' OR player_2_id = '$user_id' ) ".
+        " AND last_action_time < ".
+        "     SUBTIME( CURRENT_TIMESTAMP, '$moveTimeLimit' ) FOR UPDATE;";
+
+    $result = cm_queryDatabase( $query );
+
+    $numRows = mysql_numrows( $result );
+
+    if( $numRows > 0 ) {
+        $player_1_id = mysql_result( $result, 0, "player_1_id" );
+        $player_2_id = mysql_result( $result, 0, "player_2_id" );
+
+        // force tie (pots returned to both players)
+        // if end of round not reached and both players still in the game
+        // (both players failed to update last_action_time in time,
+        //  which means a connection error for both)
+            
+        if( $player_1_id != 0 ) {
+            cm_endOldGames( $player_1_id, true );
+            }
+        if( $player_2_id != 0 ) {
+            cm_endOldGames( $player_2_id, true );
+            }
+        }
+
+
     
     $query = "UPDATE $tableNamePrefix"."games ".
         "SET last_action_time = CURRENT_TIMESTAMP ".
         "WHERE player_1_id = '$user_id' OR player_2_id = '$user_id';";
 
     cm_queryDatabase( $query );
+
+    cm_queryDatabase( "COMMIT;" );
+    cm_queryDatabase( "SET AUTOCOMMIT=1" );
     }
 
 
