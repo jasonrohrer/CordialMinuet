@@ -1086,6 +1086,7 @@ function cm_setupDatabase() {
             "dollar_amount DECIMAL(11, 2) NOT NULL,".
             "INDEX( dollar_amount )," .
             "started TINYINT UNSIGNED NOT NULL,".
+            "round_number INT UNSIGNED NOT NULL," .
             // 36-cell square, numbers from 1 to 36, separated by #
             // character
             "game_square CHAR(125) NOT NULL,".
@@ -4863,7 +4864,9 @@ function cm_joinGame() {
         $player_1_id = mysql_result( $result, 0, "player_1_id" );
         $semaphore_key = mysql_result( $result, 0, "semaphore_key" );
 
-        global $moveTimeLimit, $anteCoins;
+        global $moveTimeLimit;
+
+        $anteCoins = cm_getAnte( 1 );
         
         $query = "UPDATE $tableNamePrefix"."games ".
             "SET player_2_id = '$user_id', started = 1,  ".
@@ -4996,6 +4999,7 @@ function cm_joinGame() {
         "player_2_id = 0," .
         "dollar_amount = '$dollar_amount',".
         "started = 0,".
+        "round_number = 1,".
         "game_square = '$square',".
         "player_1_moves = '#',".
         "player_2_moves = '#',".
@@ -6491,6 +6495,14 @@ function cm_makeBet() {
 
 
 
+function cm_getAnte( $round_number ) {
+    global $anteCoins, $anteIncrease;
+
+    return $anteCoins + floor( $anteIncrease * ( $round_number - 1 ) );
+    }
+
+
+
 
 function cm_foldBet() {
     if( ! cm_verifyTransaction() ) {
@@ -6512,6 +6524,7 @@ function cm_foldBet() {
     cm_queryDatabase( "SET AUTOCOMMIT=0" );
     
     $query = "SELECT game_id, player_1_id, player_2_id,".
+        "round_number, ".
         "player_1_pot_coins, player_2_pot_coins, semaphore_key ".
         "FROM $tableNamePrefix"."games ".
         "WHERE player_1_id = '$user_id' OR player_2_id = '$user_id' ".
@@ -6540,7 +6553,9 @@ function cm_foldBet() {
     
     $player_1_id = mysql_result( $result, 0, "player_1_id" );
     $player_2_id = mysql_result( $result, 0, "player_2_id" );
-    
+
+    $round_number = mysql_result( $result, 0, "round_number" );
+
     $player_1_pot_coins = mysql_result( $result, 0, "player_1_pot_coins" );
     $player_2_pot_coins = mysql_result( $result, 0, "player_2_pot_coins" );
 
@@ -6562,7 +6577,7 @@ function cm_foldBet() {
 
     cm_incrementStat( "fold_count" );
 
-    global $anteCoins;
+    $anteCoins = cm_getAnte( $round_number );
     
     if( $user_id == $player_1_id && $player_1_pot_coins <= $anteCoins
         ||
@@ -6950,6 +6965,7 @@ function cm_startNextRound() {
     cm_queryDatabase( "SET AUTOCOMMIT=0" );
     
     $query = "SELECT game_id, player_1_id, player_2_id,".
+        "round_number, ".
         "game_square, ".
         "player_1_bet_made, player_2_bet_made, ".
         "player_1_moves, player_2_moves, ".
@@ -6985,6 +7001,7 @@ function cm_startNextRound() {
     $player_1_id = mysql_result( $result, 0, "player_1_id" );
     $player_2_id = mysql_result( $result, 0, "player_2_id" );
 
+    $round_number = mysql_result( $result, 0, "round_number" );
     $game_square = mysql_result( $result, 0, "game_square" );
     
     $player_1_coins = mysql_result( $result, 0, "player_1_coins" );
@@ -7034,8 +7051,10 @@ function cm_startNextRound() {
 
             $game_square = cm_getNewSquare();
 
-            global $anteCoins;
-
+            $round_number ++;
+            
+            $anteCoins = cm_getAnte( $round_number );
+            
             // ante shrinks if one player cannot afford it
             if( $player_1_coins < $anteCoins ) {
                 $anteCoins = $player_1_coins;
@@ -7082,6 +7101,7 @@ function cm_startNextRound() {
             "player_2_moves = '#', ".
             "player_1_ended_round = '0', ".
             "player_2_ended_round = '0', ".
+            "round_number = $round_number, ".
             "game_square = '$game_square', ".
             "move_deadline = ".
             "ADDTIME( CURRENT_TIMESTAMP, '$moveTimeLimit' ) ".

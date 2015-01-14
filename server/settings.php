@@ -359,8 +359,14 @@ $minGameStakes = "0.01";
 $maxGameStakes = "999999999.99";
 
 
-// number of coins in ante for each round
-$anteCoins = 3;
+// number of coins in ante in first round
+$anteCoins = 1;
+
+// ante increase per round
+// can be fractional, as ante is floored to the nearest coin
+// thus, use 0.5 to have a 1-coin increase every other round
+$anteIncrease = 1;
+
 
 
 // 1 minute, plus grace period to cover one client retry

@@ -34,8 +34,11 @@ Version 12     Live Server Fixes
 
 --Fixed to return pots to both players in cases where both time out.
 
---Fixed so that in case where both players disconnect past the deadline and one reconnects first, that first-reconnecter doesn't win the pot by default (in these cases, the pot is split and returned to both players).
+--Fixed so that in case where both players disconnect past the deadline and one
+  reconnects first, that first-reconnecter doesn't win the pot by default (in
+  these cases, the pot is split and returned to both players).
 
+--Added server support for ante that goes up each round.
 
 
 

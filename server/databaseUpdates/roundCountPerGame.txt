@@ -1,0 +1,4 @@
+ALTER TABLE minuetServer_games ADD round_number INT UNSIGNED NOT NULL AFTER started;
+
+UPDATE minuetServer_games SET round_number = 1;
+
