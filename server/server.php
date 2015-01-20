@@ -8708,7 +8708,9 @@ function cm_leadersCached( $order_column_name, $inIsDollars = false,
         "  update_time, ".
         "  update_time < ".
         "   SUBTIME( CURRENT_TIMESTAMP, '$leaderboardUpdateInterval' ) ".
-        "  AS stale ".
+        "  AS stale, ".
+        "TIMESTAMPDIFF( SECOND, update_time, CURRENT_TIMESTAMP ) ".
+        "  AS seconds_old ".
         "FROM $tableNamePrefix"."leaderboard_cache ".
         "WHERE column_name = '$order_column_name' AND ".
         "  where_clause = '$inWhereClause' AND skip_number = $skip ".
@@ -8755,9 +8757,9 @@ function cm_leadersCached( $order_column_name, $inIsDollars = false,
         }
     else {
 
-        $updateTime = strtotime( mysql_result( $result, 0, "update_time" ) );
+        $seconds_old = mysql_result( $result, 0, "seconds_old");
 
-        $ageString = cm_formatDuration( time() - $updateTime );
+        $ageString = cm_formatDuration( $seconds_old );
         }
 
     eval( $leaderHeader );
