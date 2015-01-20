@@ -286,6 +286,8 @@ $leaderFooter = "include( \"footer.php\" );";
 
 $leaderboardLimit = 100;
 
+$leaderboardUpdateInterval = "0 0:05:00.000";
+
 
 // for admin view
 $usersPerPage = 50;

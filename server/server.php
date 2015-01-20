@@ -687,6 +687,7 @@ else if( preg_match( "/server\.php/", $_SERVER[ "SCRIPT_NAME" ] ) ) {
         cm_doesTableExist( $tableNamePrefix."log" ) &&
         cm_doesTableExist( $tableNamePrefix."random_nouns" ) &&
         cm_doesTableExist( $tableNamePrefix."users" ) &&
+        cm_doesTableExist( $tableNamePrefix."leaderboard_cache" ) &&
         cm_doesTableExist( $tableNamePrefix."cards" ) &&
         cm_doesTableExist( $tableNamePrefix."deposits" ) &&
         cm_doesTableExist( $tableNamePrefix."withdrawals" ) &&
@@ -972,6 +973,32 @@ function cm_setupDatabase() {
             "last_request_response TEXT NOT NULL,".
             "admin_level TINYINT UNSIGNED NOT NULL,".
             "blocked TINYINT UNSIGNED NOT NULL ) ENGINE = INNODB;";
+
+        $result = cm_queryDatabase( $query );
+
+        echo "<B>$tableName</B> table created<BR>";
+        }
+    else {
+        echo "<B>$tableName</B> table already exists<BR>";
+        }
+
+
+
+        $tableName = $tableNamePrefix . "leaderboard_cache";
+    if( ! cm_doesTableExist( $tableName ) ) {
+
+        // this table contains general info about each user
+        //
+        // sequence number used and incremented with each client request
+        // to prevent replay attacks
+        $query =
+            "CREATE TABLE $tableName(" .
+            "column_name VARCHAR(25) NOT NULL,".
+            "where_clause VARCHAR(255) NOT NULL,".
+            "skip_number INT UNSIGNED NOT NULL,".
+            "PRIMARY KEY( column_name, where_clause, skip_number ),".
+            "update_time DATETIME NOT NULL," .
+            "html_text MEDIUMTEXT NOT NULL ) ENGINE = INNODB;";
 
         $result = cm_queryDatabase( $query );
 
@@ -8660,12 +8687,117 @@ function cm_showDetailInternal() {
     }
 
 
+
+
+
+
+
+// note that $inWhereClause cannot exceed 255 characters (cache key is limited
+// to 255 for indexing)
+// $inColumnName must not exceed 25 characters.
+function cm_leadersCached( $order_column_name, $inIsDollars = false,
+                           $inWhereClause = "", $inUnlimited = false ) {
+    global $tableNamePrefix, $leaderboardUpdateInterval,
+        $leaderHeader, $leaderFooter;
+
+    $skip = cm_requestFilter( "skip", "/\d+/", 0 );
+
+    cm_queryDatabase( "SET AUTOCOMMIT = 0;" );
+    
+    $query = "SELECT html_text, ".
+        "  update_time, ".
+        "  update_time < ".
+        "   SUBTIME( CURRENT_TIMESTAMP, '$leaderboardUpdateInterval' ) ".
+        "  AS stale ".
+        "FROM $tableNamePrefix"."leaderboard_cache ".
+        "WHERE column_name = '$order_column_name' AND ".
+        "  where_clause = '$inWhereClause' AND skip_number = $skip ".
+        "FOR UPDATE;";
+
+    $result = cm_queryDatabase( $query );
+
+    $numRows = mysql_numrows( $result );
+
+    $stale = 1;
+
+    $html_text = '';
+    if( $numRows > 0 ) {
+
+        $stale = mysql_result( $result, 0, "stale" );
+
+        if( !$stale ) {
+
+            $html_text = mysql_result( $result, 0, "html_text" );
+            }
+        }
+
+
+    if( $stale ) {
+        ob_start();
+
+        cm_leaders( $order_column_name, $inIsDollars,
+                    $inWhereClause, $inUnlimited );
+
+        $html_text = ob_get_contents();
+
+        ob_end_clean();
+        }
+    
+    
+
+
+    // fixme:  show age of displayed text
+
+    $ageString = "";
+    
+    if( $stale ) {
+        $ageString = "0 seconds";
+        }
+    else {
+
+        $updateTime = strtotime( mysql_result( $result, 0, "update_time" ) );
+
+        $ageString = cm_formatDuration( time() - $updateTime );
+        }
+
+    eval( $leaderHeader );
+
+    
+    echo "<center>Updated $ageString ago.</center><br>";
+        
+    echo $html_text;
+    
+    eval( $leaderFooter );
+
+    
+    if( $stale ) {
+        
+
+        $query = "INSERT INTO $tableNamePrefix"."leaderboard_cache ".
+            "SET column_name = '$order_column_name', ".
+            "  where_clause = '$inWhereClause', skip_number = $skip, ".
+            "  update_time = CURRENT_TIMESTAMP,".
+            "  html_text = '$html_text'".
+            "ON DUPLICATE KEY UPDATE ".
+            "  update_time = CURRENT_TIMESTAMP, ".
+            "  html_text = '$html_text';";
+
+        cm_queryDatabase( $query );
+        }
+
+    cm_queryDatabase( "COMMIT;" );
+    cm_queryDatabase( "SET AUTOCOMMIT = 1;" );
+    }
+
+
+
+
+
+// does not included header or footer
 function cm_leaders( $order_column_name, $inIsDollars = false,
                      $inWhereClause = "", $inUnlimited = false ) {
 
-    global $tableNamePrefix, $leaderboardLimit, $leaderHeader, $leaderFooter;
-
-    eval( $leaderHeader );
+    global $tableNamePrefix, $leaderboardLimit;
 
     $skip = cm_requestFilter( "skip", "/\d+/", 0 );
     
@@ -8782,46 +8914,43 @@ function cm_leaders( $order_column_name, $inIsDollars = false,
     echo "</table></center>";
 
     echo $nextPrevLinks;
-    
-    
-    eval( $leaderFooter );
     }
 
 
 
 function cm_leadersDollar() {
-    cm_leaders( "dollar_balance", true );
+    cm_leadersCached( "dollar_balance", true );
     }
 
 
 
 function cm_leadersProfit() {
-    cm_leaders( "profit", true );
+    cm_leadersCached( "profit", true );
     }
 
 
 
 function cm_leadersProfitRatio() {
-    cm_leaders( "profit_ratio" );
+    cm_leadersCached( "profit_ratio" );
     }
 
 
 function cm_leadersWinLossRatio() {
-    cm_leaders( "win_loss" );
+    cm_leadersCached( "win_loss" );
     }
 
 
 function cm_leadersElo() {
     global $eloProvisionalGames;
-    cm_leaders( "elo_rating", false,
-                "WHERE games_started > $eloProvisionalGames", true  );
+    cm_leadersCached( "elo_rating", false,
+                "WHERE games_started > $eloProvisionalGames" );
     }
 
 
 function cm_leadersEloProvisional() {
     global $eloProvisionalGames;
-    cm_leaders( "elo_rating", false,
-                "WHERE games_started <= $eloProvisionalGames", true  );
+    cm_leadersCached( "elo_rating", false,
+                "WHERE games_started <= $eloProvisionalGames" );
     }
 
 

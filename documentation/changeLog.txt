@@ -40,6 +40,9 @@ Version 12     Live Server Fixes
 
 --Added server support for ante that goes up each round.
 
+--Leaderboards are now cached and only updated every 5 minutes.  Elo
+  leaderboard now uses paging.
+
 
 
 
