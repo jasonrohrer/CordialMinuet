@@ -8689,6 +8689,17 @@ function cm_showDetailInternal() {
 
 
 
+function cm_getLeadersSkip() {
+    global $leaderboardLimit;
+    
+    $skip = cm_requestFilter( "skip", "/\d+/", 0 );
+
+    // round to closest multiple of leaderboardLimit
+    // thus, can't bypass caching by skipping ahead 1
+    $skip = $leaderboardLimit * floor( $skip / $leaderboardLimit );
+
+    return $skip;
+    }
 
 
 
@@ -8700,7 +8711,7 @@ function cm_leadersCached( $order_column_name, $inIsDollars = false,
     global $tableNamePrefix, $leaderboardUpdateInterval,
         $leaderHeader, $leaderFooter;
 
-    $skip = cm_requestFilter( "skip", "/\d+/", 0 );
+    $skip = cm_getLeadersSkip();
 
     cm_queryDatabase( "SET AUTOCOMMIT = 0;" );
     
@@ -8801,7 +8812,8 @@ function cm_leaders( $order_column_name, $inIsDollars = false,
 
     global $tableNamePrefix, $leaderboardLimit;
 
-    $skip = cm_requestFilter( "skip", "/\d+/", 0 );
+    $skip = cm_getLeadersSkip();
+    
     
     $limitClause = "LIMIT $skip, $leaderboardLimit";
 
