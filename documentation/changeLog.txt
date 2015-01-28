@@ -43,7 +43,8 @@ Version 12     Live Server Fixes
 --Leaderboards are now cached and only updated every 5 minutes.  Elo
   leaderboard now uses paging.
 
---Fixed hole in leaderboard caching that let people force updates by skipping to sub-whole-page positions (thanks Ralph V).
+--Fixed hole in leaderboard caching that let people force updates by skipping
+  to sub-whole-page positions (thanks Ralph V).
 
 
 
