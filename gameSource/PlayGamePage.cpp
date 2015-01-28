@@ -44,16 +44,64 @@ static int cellXOffset = cellSize + borderWidth;
 static int nextCoinID = 0;
 
 
+static Color usColor( .51, 0.682, .122, 1 );
+static Color themColor( .85, .149, .216, 1 );
+
+static float ourHueShift = 0;
+static float theirHueShift = 0;
+
+
 static void setUsColor() {
-    setDrawColor( .51, 0.682, .122, 1 );
+    setDrawColor( usColor.r, usColor.g, usColor.b, 1 );
     }
 
 static void setThemColor() {
-    setDrawColor( .85, .149, .216, 1 );
+    setDrawColor( themColor.r, themColor.g, themColor.b, 1 );
     }
 
 
 static doublePair lastMousePos = { 0, 0 };
+
+
+
+static void shiftColorHue( Color *inColor, float inHueShift ) {
+    
+    float h, s, v;
+    
+    inColor->makeHSV( &h, &s, &v );
+
+    h += inHueShift;
+    
+    if( h > 1 ) {
+        h -= 1;
+        }
+    
+    Color *newColor = Color::makeColorFromHSV( h, s, v );
+    
+    inColor->setValues( newColor );
+    
+    delete newColor;
+    }
+
+
+
+static void shiftImageHue( Image *inImage, float inHueShift ) {
+    int h = inImage->getHeight();
+    int w = inImage->getWidth();
+    
+    int numPixels = h * w;
+    
+    for( int i=0; i<numPixels; i++ ) {
+        
+        Color c = inImage->getColor( i );
+        
+        shiftColorHue( &c, inHueShift );
+        
+        inImage->setColor( i, c );
+        }
+    }
+
+
 
 
 static float greenStrokeFade;
@@ -68,9 +116,15 @@ static float blackStrokeFade;
 // and each stroke divided up into 6 sub-strokes
 static void readWatercolorImages( const char *inTGAFileName,
                                   char inVertical,
-                                  SpriteHandle outSpriteArray[][6] ) {
+                                  SpriteHandle outSpriteArray[][6],
+                                  float inHueShift = 0 ) {
     
     Image *watercolorImage = readTGAFile( inTGAFileName );
+
+    if( inHueShift != 0 ) {
+        shiftImageHue( watercolorImage, inHueShift );
+        }
+    
     
     if( watercolorImage != NULL ) {
         int w = watercolorImage->getWidth();
@@ -289,16 +343,46 @@ PlayGamePage::PlayGamePage()
           mColumnHeaderSprite( loadSprite( "ilMondo.tga", false ) ),
           mRowHeaderSprite( loadSprite( "labisso.tga", false ) ),
           mSigilSprite( loadSprite( "minosons.tga", false ) ),
-          mGreenWatercolorHeaderSprite( 
-              loadSprite( "greenWatercolorHeader.tga", false ) ),
-          mRedWatercolorHeaderSprite( 
-              loadSprite( "redWatercolorHeader.tga", false ) ),
           mRoundEnding( false ), 
           mRoundEndTime( 0 ),
           mRoundStarting( false ),
           mRoundStartTime( 0 ) {
     
+
+    if( SettingsManager::getIntSetting( "colorBlindMode", 0 ) == 1 ) {
+
+        ourHueShift = 
+            SettingsManager::getFloatSetting( "colorBlindOurColorHueShift", 
+                                              0.0f );
+
+        theirHueShift = 
+            SettingsManager::getFloatSetting( "colorBlindTheirColorHueShift",
+                                              0.0f );
+        
+        
+        shiftColorHue( &usColor, ourHueShift );
+        shiftColorHue( &themColor, theirHueShift );
+        }
     
+    Image *greenHeader = readTGAFile( "greenWatercolorHeader.tga" );
+    Image *redHeader = readTGAFile( "redWatercolorHeader.tga" );
+    
+    if( ourHueShift != 0 ) {
+        shiftImageHue( greenHeader, ourHueShift );
+        }
+    if( theirHueShift != 0 ) {
+        shiftImageHue( redHeader, theirHueShift );
+        }
+    
+    
+    
+    mGreenWatercolorHeaderSprite = fillSprite( greenHeader, false );
+    mRedWatercolorHeaderSprite = fillSprite( redHeader, false );
+    
+    delete greenHeader;
+    delete redHeader;
+    
+
     greenStrokeFade = 
         SettingsManager::getFloatSetting( "greenStrokeFade", 1.0f );
     redStrokeFade = 
@@ -323,13 +407,13 @@ PlayGamePage::PlayGamePage()
 
     
     readWatercolorImages( "greenWatercolorV.tga", true, 
-                          mGreenWatercolorVSprites );
+                          mGreenWatercolorVSprites, ourHueShift );
 
     readWatercolorImages( "greenWatercolorH.tga", false, 
-                          mGreenWatercolorHSprites );
+                          mGreenWatercolorHSprites, ourHueShift );
 
     readWatercolorImages( "redWatercolorV.tga", true, 
-                          mRedWatercolorVSprites );
+                          mRedWatercolorVSprites, theirHueShift );
 
     readWatercolorImages( "blackWatercolorV.tga", true, 
                           mBlackWatercolorVSprites );

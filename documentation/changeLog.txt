@@ -1,3 +1,11 @@
+Version 13     ???
+
+--Added a color blind mode with adjustable color hue shifts (so that color
+  blind individuals can tweak their own color settings).
+ 
+
+
+
 Version 12     Live Server Fixes
 
 --Fixed precision bug in computing house balance change after tournament
