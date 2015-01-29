@@ -1,0 +1,31 @@
+When you start a game of Cordial Minuet, you specify a stake that your opponent must match in order to join your game.  This stake can be as small as a penny or as large as your entire balance.
+
+Once inside the game, you see yourself as green and your opponent as red, and you each start the game with 100 coins.  Each coin represents one one-hundredth of the stake that you're each bringing into the game.
+
+You've each pushed one coin into the center pot as an ante.  Whoever has the highest score by the end of the round will win whatever coins are in the pot.
+
+The numbers on the grid represent scores from 1 to 36.  You'll receive three scores throughout the round that will add together to make your total score.
+
+You score points by picking columns while your opponent is simultaneously picking rows.  You pick a column for yourself using the green slider and a column for your opponent using the red slider.
+
+Once both you and your opponent have committed your choices, you'll get to see what green row your opponent picked for you and where it intersects with your green column.  This number is added into your score.
+
+However, you don't get to see the row your opponent picked for themselves---this remains a mystery until the reveal at the end of the round.
+
+A betting step occurs between picks where you can optionally push more coins into the pot.  Whoever bets fewer coins has the opportunity to match, raise, or fold.  By folding, you give up the coins in the pot to your opponent and miss your chance to see what their score actually was.
+
+This picking process continues from the remaining columns and rows until no columns or rows are left, with a betting step following each pick.
+
+Then there's one final step where each player picks a scored cell to reveal, thus further narrowing down the possibility space of scores for both players.
+
+If both players make it through the final betting round without folding, all scored cells are revealed and the coins in the pot go to the player with the highest total score.
+
+Players then move on to the next round, playing with their remaining coins, and the ante goes up by one coin for each subsequent round in the same game.
+
+Throughout a round, the graph on the right side of the screen shows the possibility space of scores for both players.
+
+The red lines show what possible scores remain for your opponent, given the partial information that you have about them.  The green lines show what your opponent thinks your score could be, given the information you think they have about you.  And the little green dots show scores that are actually possible for you, given all of the information that you have. 
+
+The game continues until one player either leaves or runs out of coins.
+
+And that's how you play Cordial Minuet in two minutes.
