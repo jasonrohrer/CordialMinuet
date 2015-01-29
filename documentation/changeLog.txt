@@ -54,6 +54,10 @@ Version 12     Live Server Fixes
 --Fixed hole in leaderboard caching that let people force updates by skipping
   to sub-whole-page positions (thanks Ralph V).
 
+--Added leaderboard showing number of games started.
+
+
+
 
 
 Version 12     2015-January-8

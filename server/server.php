@@ -622,6 +622,9 @@ else if( $action == "recompute_elo" ) {
 else if( $action == "logout" ) {
     cm_logout();
     }
+else if( $action == "leaders_games" ) {
+    cm_leadersGames();
+    }
 else if( $action == "leaders_dollar" ) {
     cm_leadersDollar();
     }
@@ -8859,7 +8862,8 @@ function cm_leaders( $order_column_name, $inIsDollars = false,
         "( total_won + (SELECT Q) ) / ".
         "( total_lost + (SELECT Q) ) ".
         " AS win_loss, ".
-        "elo_rating ".
+        "elo_rating, ".
+        "games_started ".
         "FROM $tableNamePrefix"."users ".
         "$inWhereClause ".
         "ORDER BY $order_column_name DESC ".
@@ -8928,6 +8932,12 @@ function cm_leaders( $order_column_name, $inIsDollars = false,
     echo "</table></center>";
 
     echo $nextPrevLinks;
+    }
+
+
+
+function cm_leadersGames() {
+    cm_leadersCached( "games_started", false );
     }
 
 
