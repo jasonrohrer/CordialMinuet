@@ -614,7 +614,7 @@ void PlayGamePage::makeActive( char inFresh ) {
 
 
     mMoveDeadline = 0;
-    
+    mLastUnflownBet = 0;
 
     mScorePipToLabel = -1;
     mScorePipLabelFade = 0;
@@ -2607,6 +2607,12 @@ void PlayGamePage::step() {
                     houseRake += 
                         getNetPotCoins( loser ) - loserPotContribution;
                     }
+                
+                
+                // if bet hasn't flown yet, we're never going to show it fly
+                // make sure it doesn't hang around until next round
+                mLastUnflownBet = 0;
+                
 
 
                 CoinSpot *winnerCoinSpot = &( mPlayerCoinSpots[winner] );
