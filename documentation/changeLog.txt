@@ -2,7 +2,10 @@ Version 13     ???
 
 --Added a color blind mode with adjustable color hue shifts (so that color
   blind individuals can tweak their own color settings).
- 
+
+--Fixed to clear last pending flying bet after it is no longer needed (so it
+  doesn't show up next round or next game). 
+
 
 
 
@@ -56,6 +59,11 @@ Version 12     Live Server Fixes
 
 --Added leaderboard showing number of games started.
 
+--Added penalty of next round ante for player who leaves, paid to player who
+  stays.
+
+--Fixed DENIED BY SERVER bug when opponent leaves during betting after both
+  players have bet but not matched yet.
 
 
 

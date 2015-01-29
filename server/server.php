@@ -4154,6 +4154,7 @@ function cm_endOldGames( $user_id, $inForceTie = false ) {
     
     $query = "SELECT game_id, semaphore_key, player_1_id, player_2_id, ".
         "game_square, ".
+        "round_number, ".
         "dollar_amount, player_1_coins, player_2_coins, ".
         "player_1_pot_coins, player_2_pot_coins, ".
         "player_1_moves, player_2_moves, ".
@@ -4175,6 +4176,8 @@ function cm_endOldGames( $user_id, $inForceTie = false ) {
         $semaphore_key = mysql_result( $result, $i, "semaphore_key" );
         $player_1_id = mysql_result( $result, $i, "player_1_id" );
         $player_2_id = mysql_result( $result, $i, "player_2_id" );
+
+        $round_number = mysql_result( $result, $i, "round_number" );
 
         cm_log( "Calling endOldGames for game $game_id, p1=$player_1_id, ".
                 "p2=$player_2_id, stack = \n" . cm_getBacktrace() );
@@ -4247,6 +4250,22 @@ function cm_endOldGames( $user_id, $inForceTie = false ) {
         $pot -= $housePotShare;
         
 
+        $leaverPenalty = 0;
+        
+        if( $player_1_id != 0 &&
+            $player_2_id != 0 ) {
+
+            // whoever leaves pays next round ante to whoever stays
+            $next_round_number = $round_number + 1;
+            
+            $anteCoins = cm_getAnte( $next_round_number );
+
+            $leaverPenalty = $anteCoins;
+            
+            cm_log( "Leaver penalty = $leaverPenalty coins" );
+            }
+        
+        
         
         if( $player_1_id != 0 &&
             $player_2_id != 0 &&
@@ -4328,6 +4347,32 @@ function cm_endOldGames( $user_id, $inForceTie = false ) {
 
             $houseTableCoins = $tournamentHouseTableCoins;
             }
+
+
+        
+        if( $player_1_id != 0 ||
+            $player_2_id != 0 ) {
+
+            // one left just now, assess $leaverPenalty and pay to one
+            // who stayed
+
+            if( $player_1_id == 0 ) {
+                if( $leaverPenalty > $player_1_coins ) {
+                    $leaverPenalty = $player_1_coins;
+                    }
+                $player_1_coins -= $leaverPenalty;
+                $player_2_coins += $leaverPenalty;
+                }
+            else if( $player_2_id == 0 ) {
+                if( $leaverPenalty > $player_2_coins ) {
+                    $leaverPenalty = $player_2_coins;
+                    }
+                $player_2_coins -= $leaverPenalty;
+                $player_1_coins += $leaverPenalty;
+                }
+            }
+        
+
         
         if( $player_1_coins < 100 && $player_2_coins < 100 ) {
             // neither player recouped their table rake before one left
@@ -6408,11 +6453,21 @@ function cm_makeBet() {
     if( $player_1_bet_made && $player_2_bet_made &&
         $player_1_pot_coins == $player_2_pot_coins ) {
 
-        cm_log( "Making a bet when no bets allowed ".
-                "(both players have already placed matching bets ".
-                "or buy-ins)" );
-        cm_transactionDeny();
-        return;
+        if( $player_1_pot_coins == 0 && $player_2_pot_coins == 0
+            &&
+            ( $player_1_id == 0 || $player_2_id == 0 ) ) {
+
+            // other player left, OK this bet but do nothing with it
+            echo "OK";
+            return;
+            }
+        else {
+            cm_log( "Making a bet when no bets allowed ".
+                    "(both players have already placed matching bets ".
+                    "or buy-ins)" );
+            cm_transactionDeny();
+            return;
+            }
         }
         
     
