@@ -4255,14 +4255,9 @@ function cm_endOldGames( $user_id, $inForceTie = false ) {
         if( $player_1_id != 0 &&
             $player_2_id != 0 ) {
 
-            // whoever leaves pays next round ante to whoever stays
-            $next_round_number = $round_number + 1;
+            global $penaltyForLeaving;
             
-            $anteCoins = cm_getAnte( $next_round_number );
-
-            $leaverPenalty = $anteCoins;
-            
-            cm_log( "Leaver penalty = $leaverPenalty coins" );
+            $leaverPenalty = $penaltyForLeaving;
             }
         
         

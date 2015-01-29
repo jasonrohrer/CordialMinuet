@@ -370,6 +370,10 @@ $anteCoins = 1;
 $anteIncrease = 1;
 
 
+// number of coins paid by leaver to remaining player
+$penaltyForLeaving = 6;
+
+
 
 // 1 minute, plus grace period to cover one client retry
 $moveTimeLimit = "0 0:01:18.000";

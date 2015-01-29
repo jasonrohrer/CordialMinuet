@@ -9,6 +9,8 @@ Version 13     ???
 --Changed protocol so that a leaving opponent's remaining chip balance is still
   shown.  Thus, we can compute true house tribute even after opponent leaves.
 
+--Added a musicLoudness setting.
+
 
 
 
@@ -62,8 +64,7 @@ Version 12     Live Server Fixes
 
 --Added leaderboard showing number of games started.
 
---Added penalty of next round ante for player who leaves, paid to player who
-  stays.
+--Added fixed coin penalty for player who leaves, paid to player who stays.
 
 --Fixed DENIED BY SERVER bug when opponent leaves during betting after both
   players have bet but not matched yet.
