@@ -129,6 +129,7 @@ char initDone = false;
 float mouseSpeed;
 
 int musicOff;
+float musicLoudness;
 int diffHighlightsOff;
 
 int webRetrySeconds;
@@ -265,11 +266,11 @@ static int stepsBetweenDeleteRepeat;
 
 
 static const char *customDataFormatWriteString = 
-    "version%d_mouseSpeed%f_musicOff%d_"
+    "version%d_mouseSpeed%f_musicOff%d_musicLoudness%f"
     "_webRetrySeconds%d_accountKey%s_email%s";
 
 static const char *customDataFormatReadString = 
-    "version%d_mouseSpeed%f_musicOff%d_"
+    "version%d_mouseSpeed%f_musicOff%d_musicLoudness%f"
     "_webRetrySeconds%d_accountKey%10s_email%99s";
 
 
@@ -279,6 +280,8 @@ char *getCustomRecordedGameData() {
         SettingsManager::getFloatSetting( "mouseSpeed", 1.0f );
     int musicOffSetting = 
         SettingsManager::getIntSetting( "musicOff", 0 );
+    float musicLoudnessSetting = 
+        SettingsManager::getFloatSetting( "musicLoudness", 1.0f );
     int webRetrySecondsSetting = 
         SettingsManager::getIntSetting( "webRetrySeconds", 10 );
     
@@ -321,7 +324,8 @@ char *getCustomRecordedGameData() {
 
     char * result = autoSprintf(
         customDataFormatWriteString,
-        versionNumber, mouseSpeedSetting, musicOffSetting,
+        versionNumber, mouseSpeedSetting, musicOffSetting, 
+        musicLoudnessSetting,
         webRetrySecondsSetting, code, email );
 
     delete [] email;
@@ -425,6 +429,7 @@ void initFrameDrawer( int inWidth, int inHeight, int inTargetFrameRate,
     float mouseSpeedSetting = 1.0f;
     
     int musicOffSetting = 0;
+    float musicLoudnessSetting = 1.0f;
     int webRetrySecondsSetting = 10;
 
     userEmail = new char[100];
@@ -437,6 +442,7 @@ void initFrameDrawer( int inWidth, int inHeight, int inTargetFrameRate,
                           &readVersionNumber,
                           &mouseSpeedSetting, 
                           &musicOffSetting,
+                          &musicLoudnessSetting,
                           &webRetrySecondsSetting,
                           accountKey,
                           userEmail );
@@ -485,6 +491,7 @@ void initFrameDrawer( int inWidth, int inHeight, int inTargetFrameRate,
     mouseSpeed = mouseParam * inWidth / viewWidth;
 
     musicOff = musicOffSetting;
+    musicLoudness = musicLoudnessSetting;
     webRetrySeconds = webRetrySecondsSetting;
 
     serverURL = SettingsManager::getStringSetting( "reflectorURL" );
@@ -583,6 +590,7 @@ void initFrameDrawer( int inWidth, int inHeight, int inTargetFrameRate,
     chipSoundSprites[2] = loadSoundSprite( "chipSmallRake.aiff" );
     chipSoundSprites[3] = loadSoundSprite( "chipBigRake.aiff" );
 
+    setSoundLoudness( musicLoudness );
     setSoundPlaying( true );
 
     initDone = true;
