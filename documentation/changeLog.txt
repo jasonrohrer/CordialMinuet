@@ -6,6 +6,9 @@ Version 13     ???
 --Fixed to clear last pending flying bet after it is no longer needed (so it
   doesn't show up next round or next game). 
 
+--Changed protocol so that a leaving opponent's remaining chip balance is still
+  shown.  Thus, we can compute true house tribute even after opponent leaves.
+
 
 
 

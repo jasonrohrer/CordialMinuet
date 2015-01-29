@@ -2345,7 +2345,8 @@ void PlayGamePage::step() {
         pots[1] = getResponseInt( "theirPotCoins" );
 
         
-        if( coins[0] > 0 && coins[1] > 0 && 
+        if( mRunning &&
+            coins[0] > 0 && coins[1] > 0 && 
             pots[0] == 0 && pots[1] == 0 ) {
             
             // the post-reveal coin distribution has happened
@@ -2462,13 +2463,6 @@ void PlayGamePage::step() {
                 
 
                 int houseRake = rawTableTotal - reportedTableTotal;
-
-                
-                if( !mRunning ) {
-                    // other player left, don't have enough information
-                    // to compute the rake
-                    houseRake = 0;
-                    }
 
 
                 // this is known
@@ -2587,7 +2581,6 @@ void PlayGamePage::step() {
                         // these need to fly back to us after they
                         // fly into the pot
                         winnerPotToAward += mLastUnflownBet;
-                        mLastUnflownBet = 0;
                         }
                     
 
@@ -2606,13 +2599,7 @@ void PlayGamePage::step() {
                     // extra coins
                     houseRake += 
                         getNetPotCoins( loser ) - loserPotContribution;
-                    }
-                
-                
-                // if bet hasn't flown yet, we're never going to show it fly
-                // make sure it doesn't hang around until next round
-                mLastUnflownBet = 0;
-                
+                    }                
 
 
                 CoinSpot *winnerCoinSpot = &( mPlayerCoinSpots[winner] );
@@ -2704,7 +2691,10 @@ void PlayGamePage::step() {
                 }
             }
         
-                
+        
+        // if bet hasn't flown yet, we're never going to show it fly
+        // make sure it doesn't hang around until next round
+        mLastUnflownBet = 0;
         
             
         

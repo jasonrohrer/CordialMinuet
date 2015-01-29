@@ -8,7 +8,7 @@
 
 // server will tell clients to upgrade to this version
 global $cm_version;
-$cm_version = "12";
+$cm_version = "13";
 
 
 // leave an older version here IF older clients can also connect safely
@@ -16,7 +16,7 @@ $cm_version = "12";
 //  too).
 // NOTE that if old clients are incompatible, both numbers should be updated.
 global $cm_accountHmacVersion;
-$cm_accountHmacVersion = "12";
+$cm_accountHmacVersion = "13";
 
 
 
@@ -4402,12 +4402,12 @@ function cm_endOldGames( $user_id, $inForceTie = false ) {
 
 
         // now that payouts computed, any that have left take their coins
-        if( $player_1_id == 0 ) {
-            $player_1_coins = 0;
-            }
-        else if( $player_2_id == 0 ) {
-            $player_2_coins = 0;
-            }
+
+        // However, still show remaining coins for each player
+        // Client can detect game-over thorugh running=0 flag (
+        //   (triggered when one player ID is 0).
+        // Having remaining coin balances is necessary for client to compute
+        // and display correct house tribute.
         
         
         $query = "UPDATE $tableNamePrefix"."games ".
