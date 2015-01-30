@@ -1091,8 +1091,10 @@ void PlayGamePage::drawColumnPicker( ColumnPicker *inPicker ) {
             }
         }
 
-    if( mRunning && mLeaveConfirmButton.isVisible() ) {
-        
+
+    if( mLeaveConfirmButton.isVisible() &&
+        ! mHideLeavePenalty ) {
+                
         doublePair pos = mLeaveConfirmButton.getPosition();
         
         pos.y -= 52;
@@ -2370,6 +2372,15 @@ void PlayGamePage::step() {
             mRoundStartTime = game_time( NULL ) + 5;
             }
 
+        if( ! mRunning ||
+            ( pots[0] == 0 && pots[1] == 0 && 
+              ( coins[0] == 0 || coins[1] == 0 ) ) ) {
+            mHideLeavePenalty = true;
+            }
+        else {
+            mHideLeavePenalty = false;
+            }
+        
 
         if( mPlayerCoins[0] == -1 ) {
             // no info about coins until now, start of game

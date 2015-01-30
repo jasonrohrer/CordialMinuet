@@ -195,6 +195,7 @@ class PlayGamePage : public ServerActionPage, public ActionListener {
         int mPlayerCoins[2];
         int mPotCoins[2];
         
+        char mHideLeavePenalty;
         int mLeavePenalty;
 
         SpriteHandle mCoinSprite;
