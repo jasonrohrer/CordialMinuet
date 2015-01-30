@@ -4232,7 +4232,7 @@ void PlayGamePage::pointerMove( float inX, float inY ) {
 
 
     
-    if( !mMouseOverSquareLocked ) {
+    if( mParchmentFade == 0 && !mMouseOverSquareLocked ) {
         
         int oldMouseOverTheirRow = mMouseOverTheirRow;
         mMouseOverTheirRow = -1;
