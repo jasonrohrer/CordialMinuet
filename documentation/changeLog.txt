@@ -19,6 +19,10 @@ Version 13     ???
   have the same mouse-over information availble during the current betting
   step that you would have during the next picking step (thanks Jere).
 
+--Moved column picker starting positions out more so that they don't intersect
+  with clicked-mouseover-cell column markers.
+
+
 
 
 Version 12     Live Server Fixes
