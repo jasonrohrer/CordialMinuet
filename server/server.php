@@ -4296,6 +4296,11 @@ function cm_endOldGames( $user_id, $inForceTie = false ) {
                     }
                 }
 
+            if( $player_1_coins == 0 || $player_2_coins == 0 ) {
+                // one player won everything, no penalty for leaving
+                $leaverPenalty = 0;
+                }
+            
             if( $player_1_id == $user_id ) {
                 $player_1_id = 0;
                 }
