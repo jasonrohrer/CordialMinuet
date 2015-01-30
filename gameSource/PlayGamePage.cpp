@@ -1091,7 +1091,7 @@ void PlayGamePage::drawColumnPicker( ColumnPicker *inPicker ) {
             }
         }
 
-    if( mLeaveConfirmButton.isVisible() ) {
+    if( mRunning && mLeaveConfirmButton.isVisible() ) {
         
         doublePair pos = mLeaveConfirmButton.getPosition();
         
