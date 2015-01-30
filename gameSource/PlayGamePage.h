@@ -258,6 +258,10 @@ class PlayGamePage : public ServerActionPage, public ActionListener {
         int mMouseOverTheirColumn;
         int mMouseOverTheirRow;
         
+        // note that mMouseOverOurColumn is no used if mColumnChoiceForUs is 
+        // set or during pre-reveal click, because row is implied in those
+        // cases
+        int mMouseOverOurColumn;
         int mMouseOverOurRow;
         char mMouseOverSquareLocked;
         

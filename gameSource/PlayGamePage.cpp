@@ -60,6 +60,9 @@ static void setThemColor() {
     }
 
 
+static int columnPickerStartingOffset = 31;
+
+
 static doublePair lastMousePos = { 0, 0 };
 
 
@@ -329,6 +332,7 @@ PlayGamePage::PlayGamePage()
           mMouseOverTheirTurnNumber( -1 ),
           mMouseOverTheirColumn( -1 ),
           mMouseOverTheirRow( -1 ),
+          mMouseOverOurColumn( -1 ),
           mMouseOverOurRow( -1 ),
           mMouseOverSquareLocked( false ),
           mScorePipSprite( loadWhiteSprite( "scorePip.tga" ) ),
@@ -1790,7 +1794,21 @@ void PlayGamePage::draw( doublePair inViewCenter,
 
                 drawSprite( mGuessSpriteColumn, pos );
                 }
-            
+
+            if( mMouseOverOurColumn != -1 && 
+                ! ( mPickerUs.draw && 
+                    mPickerUs.targetColumn == mMouseOverOurColumn ) ) {
+                
+                pos.y = -228;
+                
+                pos.x = mColumnPositions[ mMouseOverOurColumn ].x;
+                
+                setUsColor();
+
+                setDrawFade( 0.75 );
+
+                drawSprite( mGuessSpriteColumn, pos );
+                }
             }
         
         }
@@ -1885,6 +1903,8 @@ int PlayGamePage::slidePicker( ColumnPicker *inPicker ) {
             mMouseOverTheirTurnNumber = -1;
             mMouseOverTheirRow = -1;
             mMouseOverTheirColumn = -1;
+            
+            mMouseOverOurColumn = -1;
             mMouseOverOurRow = -1;
             mMouseOverSquareLocked = false;
             
@@ -1962,6 +1982,8 @@ void PlayGamePage::step() {
             mMouseOverTheirTurnNumber = -1;
             mMouseOverTheirRow = -1;
             mMouseOverTheirColumn = -1;
+            
+            mMouseOverOurColumn = -1;
             mMouseOverOurRow = -1;
             mMouseOverSquareLocked = false;
             
@@ -2785,6 +2807,8 @@ void PlayGamePage::step() {
         mMouseOverTheirTurnNumber = -1;
         mMouseOverTheirRow = -1;
         mMouseOverTheirColumn = -1;
+        
+        mMouseOverOurColumn = -1;
         mMouseOverOurRow = -1;
         mMouseOverSquareLocked = false;
         
@@ -3037,7 +3061,8 @@ void PlayGamePage::step() {
                 else {
                     if( ! mPickerUs.draw ) {
                         mPickerUs.draw = true;
-                        mPickerUs.pos.x = mColumnPositions[0].x - 27;
+                        mPickerUs.pos.x = mColumnPositions[0].x -
+                            columnPickerStartingOffset;
                         mPickerUs.targetColumn = -1;
                         mPickerUs.trueClosestColumn = -1;
                         mPickerUs.lastPlayerDropColumn = -1;
@@ -3048,7 +3073,8 @@ void PlayGamePage::step() {
                         }
                     else if( ! mPickerThem.draw ) {
                         mPickerThem.draw = true;
-                        mPickerThem.pos.x = mColumnPositions[5].x + 27;
+                        mPickerThem.pos.x = mColumnPositions[5].x +
+                            columnPickerStartingOffset;
                         mPickerThem.targetColumn = -1;
                         mPickerThem.trueClosestColumn = -1;
                         mPickerThem.lastPlayerDropColumn = -1;
@@ -3088,7 +3114,8 @@ void PlayGamePage::step() {
                     }
                 
                 mPickerUs.draw = true;
-                mPickerUs.pos.x = mColumnPositions[0].x - 27;
+                mPickerUs.pos.x = mColumnPositions[0].x - 
+                    columnPickerStartingOffset;
                 mPickerUs.targetColumn = -1;
                 mPickerUs.trueClosestColumn = -1;
                 mPickerUs.lastPlayerDropColumn = -1;
@@ -3576,7 +3603,11 @@ void PlayGamePage::computePossibleScoresFast() {
             !pendingMouseOverSquareUsed ) {
             
             rowsGivenUs[i] = mMouseOverOurRow;
-                
+            
+            if( mMouseOverOurColumn != -1 ) {
+                columnsGivenUs[i] = mMouseOverOurColumn;
+                }
+
             pendingMouseOverSquareUsed = true;
             }
         
@@ -3973,14 +4004,18 @@ void PlayGamePage::pickerReactToMouseMove( ColumnPicker *inPicker,
         float x = inX - inPicker->heldOffset;
         
         if( !inPicker->draggedInYet ) {
-            if( x > mColumnPositions[5].x + 27 ) {
-                x = mColumnPositions[5].x + 27;
+            if( x > mColumnPositions[5].x + columnPickerStartingOffset ) {
+                
+                x = mColumnPositions[5].x + columnPickerStartingOffset;
+
                 if( inX > x ) {
                     inX = x;
                     }
                 }
-            else if( x < mColumnPositions[0].x - 27 ) {
-                x = mColumnPositions[0].x - 27;
+            else if( x < mColumnPositions[0].x - columnPickerStartingOffset ) {
+
+                x = mColumnPositions[0].x - columnPickerStartingOffset;
+                
                 if( inX < x ) {
                     inX = x;
                     }
@@ -4151,6 +4186,8 @@ void PlayGamePage::pickerReactToMouseMove( ColumnPicker *inPicker,
             mMouseOverTheirTurnNumber = -1;
             mMouseOverTheirRow = -1;
             mMouseOverTheirColumn = -1;
+
+            mMouseOverOurColumn = -1;
             mMouseOverOurRow = -1;
             mMouseOverSquareLocked = false;
             
@@ -4207,7 +4244,10 @@ void PlayGamePage::pointerMove( float inX, float inY ) {
 
         int oldMouseOverOurRow = mMouseOverOurRow;
         mMouseOverOurRow = -1;
-    
+
+        int oldMouseOverOurColumn = mMouseOverOurColumn;
+        mMouseOverOurColumn = -1;
+
         
         int numTheirWon = 0;
         int numOurWon = 0;
@@ -4225,13 +4265,17 @@ void PlayGamePage::pointerMove( float inX, float inY ) {
             if( inX >= mColumnPositions[c].x - 27 &&
                 inX <= mColumnPositions[c].x + 27 ) {
             
+                char hitsUsedColumn = false;
+                
                 for( int i=0; i<3; i++ ) {
                     if( c == mOurChoices[ i * 2 + 1 ] 
                         ||
                         ( mOurChoices[ i * 2 + 1 ] == -1 
                           && 
                           c == mColumnChoiceForThem ) ) {
-                    
+                
+                        hitsUsedColumn = true;
+    
                         // mouse over a column that we gave them
                     
                         for( int r=0; r<6; r++ ) {
@@ -4264,6 +4308,8 @@ void PlayGamePage::pointerMove( float inX, float inY ) {
                         }
                     else if( c == mColumnChoiceForUs ) {
                         
+                        hitsUsedColumn = true;
+
                         // mouse over a column that we are about to give
                         // ourself
                         
@@ -4297,6 +4343,8 @@ void PlayGamePage::pointerMove( float inX, float inY ) {
                              mRevealChoiceForUs == -1 && 
                              c == mOurChoices[ i * 2 ] ) {
                         
+                        hitsUsedColumn = true;
+
                         // pre-reveal, allow them to mouse over
                         // possible reveals for self
                         
@@ -4319,12 +4367,63 @@ void PlayGamePage::pointerMove( float inX, float inY ) {
                         break;
                         }
                     }
+                
+                
+
+                if( mColumnChoiceForUs == -1 && !hitsUsedColumn ) {
+                    
+                    for( int i=0; i<3; i++ ) {
+                        if( c == mOurChoices[ i * 2 ] ) {
+                            hitsUsedColumn = true;
+                            break;
+                            }
+                        }
+                    }
+                
+                if( mColumnChoiceForUs == -1 && !hitsUsedColumn ) {
+
+                    // falls in a totally unmarked column
+                    
+                    // treat mouse-over unmarked as if we are giving
+                    // this square to ourselves to see what happens
+                    
+                    for( int r=0; r<6; r++ ) {
+                        if( inY >= mRowPositions[r].y - 27 &&
+                            inY <= mRowPositions[r].y + 27 ) {
+                            
+                            char rowBlocked = false;
+                            
+                            for( int j=0; j<6; j++ ) {
+                                if( r == mTheirChoices[j] ) {
+                                    rowBlocked = true;
+                                    break;
+                                    }
+                                }
+                            
+                            if( !rowBlocked ) {
+                                // a possible row that they will
+                                // give us, in a column that we haven't 
+                                // picked yet
+                                
+                                mMouseOverOurColumn = c;
+                                mMouseOverOurRow = r;
+                                }
+                            
+
+                            break;
+                            }
+                        }
+
+                    }
+                
+                
                 break;
                 }
             }
             
         if( mMouseOverTheirRow != oldMouseOverTheirRow ||
             mMouseOverTheirColumn != oldMouseOverTheirColumn ||
+            mMouseOverOurColumn != oldMouseOverOurColumn ||
             mMouseOverOurRow != oldMouseOverOurRow ) {
             computePossibleScores( true );
             }

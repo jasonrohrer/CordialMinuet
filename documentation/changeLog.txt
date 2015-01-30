@@ -14,6 +14,11 @@ Version 13     ???
 --Changed protocol so that server tells client leave penalty, and client
   displays it to the leaver.
 
+--You can now mouse over uncolored squares, if no pick is pending, and see what
+  would happen if you won that square for yourself.  Thus, for example, you
+  have the same mouse-over information availble during the current betting
+  step that you would have during the next picking step (thanks Jere).
+
 
 
 Version 12     Live Server Fixes
