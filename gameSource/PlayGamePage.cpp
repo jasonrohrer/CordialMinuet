@@ -24,11 +24,11 @@ extern double frameRateFactor;
 
 
 
-const char *gameStatePartNames[9] = { "running", "boardLayout", 
+const char *gameStatePartNames[10] = { "running", "boardLayout", 
                                       "ourCoins", "theirCoins", 
                                       "ourPotCoins", "theirPotCoins",
                                       "ourMoves", "theirMoves",
-                                      "secondsLeft" };
+                                      "secondsLeft", "leavePenalty" };
 
 const char *waitMovePartNames[1] = { "status" };
 
@@ -307,7 +307,7 @@ static void readCharacterGrid( const char *inTGAFileName,
 
 
 PlayGamePage::PlayGamePage()
-        : ServerActionPage( "get_game_state", 9, gameStatePartNames ),
+        : ServerActionPage( "get_game_state", 10, gameStatePartNames ),
           mGameBoard( NULL ),
           mCoinSprite( loadWhiteSprite( "coin.tga" ) ),
           mCoinTenSprite( loadWhiteSprite( "coinTen.tga" ) ),
@@ -670,7 +670,7 @@ void PlayGamePage::makeActive( char inFresh ) {
         }
 
     setActionName( "get_game_state" );
-    setResponsePartNames( 9, gameStatePartNames );
+    setResponsePartNames( 10, gameStatePartNames );
 
     clearActionParameters();
     
@@ -1090,6 +1090,21 @@ void PlayGamePage::drawColumnPicker( ColumnPicker *inPicker ) {
                         pos );
             }
         }
+
+    if( mLeaveConfirmButton.isVisible() ) {
+        
+        doublePair pos = mLeaveConfirmButton.getPosition();
+        
+        pos.y -= 52;
+        
+        char *message = autoSprintf( translate( "leavePenalty" ), 
+                                     mLeavePenalty );
+        
+        drawMessage( message, pos );
+        
+        delete [] message;
+        }
+    
     }
 
 
@@ -2280,7 +2295,7 @@ void PlayGamePage::step() {
         
         // get end game state
         setActionName( "get_game_state" );
-        setResponsePartNames( 9, gameStatePartNames );
+        setResponsePartNames( 10, gameStatePartNames );
         
         clearActionParameters();
         mMessageState = gettingStateAtEnd;
@@ -2697,7 +2712,7 @@ void PlayGamePage::step() {
         mLastUnflownBet = 0;
         
             
-        
+        mLeavePenalty = getResponseInt( "leavePenalty" );
 
         int secondsLeft = getResponseInt( "secondsLeft" );
         
@@ -3128,7 +3143,7 @@ void PlayGamePage::step() {
             
             // get the new game state
             setActionName( "get_game_state" );
-            setResponsePartNames( 9, gameStatePartNames );
+            setResponsePartNames( 10, gameStatePartNames );
 
             clearActionParameters();
     
@@ -3150,7 +3165,7 @@ void PlayGamePage::step() {
         else if( strcmp( status, "round_ended" ) == 0 ) {
             // start of new round
             setActionName( "get_game_state" );
-            setResponsePartNames( 9, gameStatePartNames );
+            setResponsePartNames( 10, gameStatePartNames );
 
             clearActionParameters();
             mMessageState = gettingStateAtEnd;
@@ -3160,7 +3175,7 @@ void PlayGamePage::step() {
         else if( strcmp( status, "next_round_started" ) == 0 ) {
             // start of new round
             setActionName( "get_game_state" );
-            setResponsePartNames( 9, gameStatePartNames );
+            setResponsePartNames( 10, gameStatePartNames );
 
             clearActionParameters();
             mMessageState = gettingState;
@@ -3170,7 +3185,7 @@ void PlayGamePage::step() {
         else if( strcmp( status, "opponent_left" ) == 0 ) {
             // get final state
             setActionName( "get_game_state" );
-            setResponsePartNames( 9, gameStatePartNames );
+            setResponsePartNames( 10, gameStatePartNames );
 
             clearActionParameters();
             mMessageState = gettingState;

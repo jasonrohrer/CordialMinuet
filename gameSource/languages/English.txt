@@ -210,6 +210,8 @@ fold "FOLD"
 leave "LEAVE"
 leaveConfirm "LEAVE?"
 
+leavePenalty "(PAY %d)"
+
 
 gone "GONE"
 

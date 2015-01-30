@@ -11,6 +11,7 @@ Version 13     ???
 
 --Added a musicLoudness setting.
 
+--Changed protocol so that server tells client leave penalty, and client displays it to the leaver.
 
 
 

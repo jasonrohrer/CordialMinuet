@@ -654,6 +654,7 @@ their_pot_coins
 your_moves
 their_moves
 seconds_left
+leave_penalty
 OK
 
 

@@ -5983,6 +5983,13 @@ function cm_printGameState( $inHideOpponentSecretMoves = true ) {
         $their_pot_coins = 1;
         }
     
+    global $penaltyForLeaving;
+
+    $leave_penalty = $penaltyForLeaving;
+
+    if( $leave_penalty > $your_coins ) {
+        $leave_penalty = $your_coins;
+        }
     
     echo "$running\n";    
     echo "$game_square\n";
@@ -5993,6 +6000,7 @@ function cm_printGameState( $inHideOpponentSecretMoves = true ) {
     echo "$your_moves\n";
     echo "$their_moves\n";
     echo "$seconds_left\n";
+    echo "$leave_penalty\n";
     echo "OK";
     }
 
