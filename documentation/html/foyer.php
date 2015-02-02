@@ -37,10 +37,15 @@ Free is not REAL MONEY
 
 <br>
 <br>
+
+MAXIMUM card deposit is $999,999.99
+<br>
+Deposit MORE through friendly customer service
+
 <br>
 <br>
-
-
+<br>
+<br>
 
 
 
