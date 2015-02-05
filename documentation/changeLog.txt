@@ -1,4 +1,4 @@
-Version 13     ???
+Version 13     2015-February-5
 
 --Added a color blind mode with adjustable color hue shifts (so that color
   blind individuals can tweak their own color settings).
