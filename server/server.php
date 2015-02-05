@@ -10411,6 +10411,10 @@ function cm_getBacktrace() {
     
     // Renumber backtrace items.
     $trace = preg_replace( '/^#(\d+)/me', '\'#\' . ($1 - 1)', $trace );
+
+    // hide database password
+    global $databasePassword;
+    $trace = str_replace( $databasePassword, '******', $trace );
     
     return $trace;
     }

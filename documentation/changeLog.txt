@@ -22,6 +22,8 @@ Version 13     ???
 --Moved column picker starting positions out more so that they don't intersect
   with clicked-mouseover-cell column markers.
 
+--Fixed so that DB password isn't leaked in PHP stack traces (thanks Jere).
+
 
 
 
