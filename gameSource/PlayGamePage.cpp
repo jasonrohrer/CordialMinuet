@@ -3579,12 +3579,6 @@ void PlayGamePage::computePossibleScoresFast() {
             pendingChoiceThemUsed = true;
             }
 
-        if( columnsGivenUs[i] != -1 ) {
-            columnsAvail[ columnsGivenUs[i] ] = false;
-            }
-        if( columnsGivenThem[i] != -1 ) {
-            columnsAvail[ columnsGivenThem[i] ] = false;
-            }
 
         rowsGivenUs[i] = mTheirChoices[i];
         rowsGivenThem[i] = mTheirChoices[ 3 + i ];
@@ -3611,6 +3605,14 @@ void PlayGamePage::computePossibleScoresFast() {
             pendingMouseOverSquareUsed = true;
             }
         
+        
+        if( columnsGivenUs[i] != -1 ) {
+            columnsAvail[ columnsGivenUs[i] ] = false;
+            }
+        if( columnsGivenThem[i] != -1 ) {
+            columnsAvail[ columnsGivenThem[i] ] = false;
+            }
+
 
         if( rowsGivenUs[i] != -1 ) {
             rowsAvail[ rowsGivenUs[i] ] = false;
@@ -3640,6 +3642,40 @@ void PlayGamePage::computePossibleScoresFast() {
         rowsAvail,
         mGameBoard,
         mTheirPossibleScores );
+
+
+
+    int numColumnsAvailable = 0;
+    
+    for( int i=0; i<6; i++ ) {
+        if( columnsAvail[i] ) {
+            numColumnsAvailable ++;
+            }
+        }
+
+    
+    if( numColumnsAvailable == 1 &&
+        columnsGivenThem[2] == -1 ) {
+        
+        // one column left, it's going to be given to them, so
+        // just give it now, so that we can see how their information
+        // view will change by us making a given choice for US that leaves
+        // only one column left that we can give THEM
+        
+        // essentially, on turn 3, dragging the green slider alone
+        // should be enough to update the whole graph, even before
+        // the red slider is dropped in the other column
+        for( int i=0; i<6; i++ ) {
+            if( columnsAvail[i] ) {
+                columnsGivenThem[2] = i;
+                
+                // no longer available, now that we gave it to them
+                columnsAvail[i] = false;
+                break;
+                }
+            }
+        }
+    
 
 
     // if not final reveal
