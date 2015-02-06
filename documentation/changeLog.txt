@@ -1,8 +1,14 @@
-Version 14
+Version 14     2015-February-6  
 
---Fixed bug in mousing over uncolored squares that was not properly removing that column from the possibility space when computing possible opponent scores.
+--Fixed bug in mousing over uncolored squares that was not properly removing
+  that column from the possibility space when computing possible opponent
+  scores.
 
---Improved green score graph behavior when there is only one column left and it must be given to your opponent (before, the graph behaved as if your opponent didn't know their final column if you hadn't assigned it yet but had assigned the final green column, which implies the final red column by elimination).
+--Improved green score graph behavior when there is only one column left and
+  it must be given to your opponent (before, the graph behaved as if your
+  opponent didn't know their final column if you hadn't assigned it yet but had
+  assigned the final green column, which implies the final red column by
+  elimination).
 
 
 
