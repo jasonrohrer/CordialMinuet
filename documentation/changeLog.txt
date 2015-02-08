@@ -1,3 +1,11 @@
+Version 14     Live Server Fixes
+
+--Fixed DENIED error when game creator quits while waiting for an opponent and
+  somebody joins the stale game before it has been flushed (thanks Josh C).
+
+
+
+
 Version 14     2015-February-6  
 
 --Fixed bug in mousing over uncolored squares that was not properly removing

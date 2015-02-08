@@ -4951,6 +4951,7 @@ function cm_joinGame() {
             "player_2_pot_coins = player_2_pot_coins + $anteCoins, ".
             // buy-ins are done, ready for first moves to be made
             "player_1_bet_made = 1, player_2_bet_made = 1, ".
+            "last_action_time = CURRENT_TIMESTAMP, ".
             "move_deadline = ADDTIME( CURRENT_TIMESTAMP, '$moveTimeLimit' ) ".
             "WHERE game_id = '$game_id';";
         
