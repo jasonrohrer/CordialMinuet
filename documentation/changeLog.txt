@@ -1,3 +1,11 @@
+Version 15     ???
+
+--Fixed crash when mousing over not-yet-loaded game board (was incorrectly
+  trying to update score graph based on a null game board) (thanks Josh C).
+
+
+
+
 Version 14     Live Server Fixes
 
 --Fixed DENIED error when game creator quits while waiting for an opponent and

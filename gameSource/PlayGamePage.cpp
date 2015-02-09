@@ -692,7 +692,8 @@ void PlayGamePage::makeActive( char inFresh ) {
     
     mParchmentFade = 1;
     mParchmentFadingOut = false;
-
+    mRunning = false;
+    
     mMessageState = gettingState;
     
     startRequest();
