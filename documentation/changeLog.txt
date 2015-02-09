@@ -1,7 +1,7 @@
 Version 15     ???
 
 --Fixed crash when mousing over not-yet-loaded game board (was incorrectly
-  trying to update score graph based on a null game board) (thanks Josh C).
+  trying to update score graph based on a null game board) (thanks Benjamin Y).
 
 
 
