@@ -3,6 +3,11 @@ Version 14     Live Server Fixes
 --Fixed DENIED error when game creator quits while waiting for an opponent and
   somebody joins the stale game before it has been flushed (thanks Josh C).
 
+--Fixed so that a player who has been approved to go over the $500 deposit
+  limit for one card can also deposit more money using other cards (thanks
+  Cayce U).
+
+
 
 
 

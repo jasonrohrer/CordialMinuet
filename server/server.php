@@ -2558,8 +2558,25 @@ function cm_makeDeposit() {
             return;
             }
         }
-    
 
+
+    $query = "SELECT COUNT(*) FROM $tableNamePrefix"."cards ".
+        "WHERE user_id = '$user_id' AND proof_on_file = 1;";
+
+    $result = cm_queryDatabase( $query );
+
+    if( mysql_result( $result, 0, 0 ) > 0 ) {
+        // allow deposits from other cards for this user if we have proof on
+        // file for ONE card for this user
+        // Otherwise, after they're approved for one card and go over the
+        // noInfo deposit limit, they will be blocked from using any other
+        // cards.  Once proof is on file for one card, we trust them.
+        
+        $proof_on_file = 1;
+        }
+
+    
+    
     global $depositWithNoInfoLimit;
 
 
