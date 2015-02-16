@@ -1,3 +1,12 @@
+Version 15     Live Server Fixes
+
+--Fixed revealed-square leak if opponent posts their revealed square before we
+  get a chance to request the pre-reveal game state.  Also fixed bet leaks that
+  could happen through similar bad timing (thanks several forum members).
+
+
+
+
 Version 15     2015-February-9
 
 --Fixed crash when mousing over not-yet-loaded game board (was incorrectly

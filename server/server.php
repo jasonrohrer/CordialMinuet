@@ -1131,6 +1131,10 @@ function cm_setupDatabase() {
             "player_2_coins TINYINT UNSIGNED NOT NULL, ".
             "player_1_pot_coins TINYINT UNSIGNED NOT NULL, ".
             "player_2_pot_coins TINYINT UNSIGNED NOT NULL, ".
+            // coins in both pots that are common knowledge to both players
+            // (coins that have been matched by opponent to move on
+            //  to next turn)
+            "settled_pot_coins TINYINT UNSIGNED NOT NULL, ".
             "semaphore_key INT UNSIGNED NOT NULL ) ENGINE = INNODB;";
 
         $result = cm_queryDatabase( $query );
@@ -4964,8 +4968,9 @@ function cm_joinGame() {
             "SET player_2_id = '$user_id', started = 1,  ".
             "player_1_coins = player_1_coins - $anteCoins, ".
             "player_2_coins = player_2_coins - $anteCoins, ".
-            "player_1_pot_coins = player_1_pot_coins + $anteCoins, ".
-            "player_2_pot_coins = player_2_pot_coins + $anteCoins, ".
+            "player_1_pot_coins = $anteCoins, ".
+            "player_2_pot_coins = $anteCoins, ".
+            "settled_pot_coins = $anteCoins, ".
             // buy-ins are done, ready for first moves to be made
             "player_1_bet_made = 1, player_2_bet_made = 1, ".
             "last_action_time = CURRENT_TIMESTAMP, ".
@@ -5105,6 +5110,7 @@ function cm_joinGame() {
         "player_2_coins = $playerStartingCoins, ".
         "player_1_pot_coins = 0, ".
         "player_2_pot_coins = 0, ".
+        "settled_pot_coins = 0, ".
         "semaphore_key = ".
         "   ( SELECT COALESCE( MAX( semaphore_key ) + 1, $startingSemKey ) ".
         "             FROM $tableNamePrefix"."games as temp2 );";
@@ -5795,6 +5801,7 @@ function cm_printGameState( $inHideOpponentSecretMoves = true ) {
     $query = "SELECT game_id, player_1_id, player_2_id,".
         "game_square, player_1_coins, player_2_coins, ".
         "player_1_pot_coins, player_2_pot_coins, ".
+        "settled_pot_coins, ".
         "player_1_bet_made, player_2_bet_made, ".
         "player_1_moves, player_2_moves, ".
         "TIMESTAMPDIFF( SECOND, CURRENT_TIMESTAMP, move_deadline ) ".
@@ -5831,6 +5838,8 @@ function cm_printGameState( $inHideOpponentSecretMoves = true ) {
     $player_1_pot_coins = mysql_result( $result, 0, "player_1_pot_coins" );
     $player_2_pot_coins = mysql_result( $result, 0, "player_2_pot_coins" );
 
+    $settled_pot_coins = mysql_result( $result, 0, "settled_pot_coins" );
+
     $player_1_bet_made = mysql_result( $result, 0, "player_1_bet_made" );
     $player_2_bet_made = mysql_result( $result, 0, "player_2_bet_made" );
 
@@ -5861,6 +5870,10 @@ function cm_printGameState( $inHideOpponentSecretMoves = true ) {
 
     $your_moves = $player_1_moves;
     $their_moves = $player_2_moves;
+
+    $your_bet_made = $player_1_bet_made;
+    $their_bet_made = $player_2_bet_made;
+    
     
     if( $player_2_id == $user_id ) {
 
@@ -5874,36 +5887,45 @@ function cm_printGameState( $inHideOpponentSecretMoves = true ) {
 
         $your_moves = $player_2_moves;
         $their_moves = $player_1_moves;
+
+        $your_bet_made = $player_2_bet_made;
+        $their_bet_made = $player_1_bet_made;
         }
 
 
 
     if( $their_moves != "#" ) {
             
-        $moves = preg_split( "/#/", $their_moves );
+        $their_split_moves = preg_split( "/#/", $their_moves );
 
-        $numMoves = count( $moves );
+        $theirNumMoves = count( $their_split_moves );
 
+
+        $yourNumMoves = 0;
+
+        if( $your_moves != "#" ) {
+            $your_split_moves = preg_split( "/#/", $your_moves );
+
+            $yourNumMoves = count( $your_split_moves );
+            }
+        
+        
         if( $user_id == $player_1_id ) {
             
             // row 5 is our column 0
-            for( $i=0; $i<$numMoves; $i++ ) {
-                $moves[$i] = 5 - $moves[$i];
+            for( $i=0; $i<$theirNumMoves; $i++ ) {
+                $their_split_moves[$i] = 5 - $their_split_moves[$i];
                 }
             }
 
         
         $reveal = false;
 
-        if( $numMoves == 7 &&
+        if( $theirNumMoves == 7 &&
             $player_1_pot_coins == $player_2_pot_coins &&
             $player_1_bet_made && $player_2_bet_made ) {
 
-            $movesUs = preg_split( "/#/", $your_moves );
-
-            $numMovesUs = count( $movesUs );
-
-            if( $numMovesUs == 7 ) {
+            if( $yourNumMoves == 7 ) {
                 // game round done
                 $reveal = true;
                 }
@@ -5913,23 +5935,24 @@ function cm_printGameState( $inHideOpponentSecretMoves = true ) {
         if( $inHideOpponentSecretMoves && ! $reveal ) {
 
             $theirReveal = -1;
-            if( $numMoves > 6 ) {
-                $theirReveal = $moves[6];
+            if( $theirNumMoves > 6 && $yourNumMoves > 6 ) {
+                // only show their reveal if our reveal is also in
+                $theirReveal = $their_split_moves[6];
                 }
             
             // replace moves they made for themselves with ?
             $theirRevealIndex = -1;
-            $movesToScan = $numMoves;
+            $movesToScan = $theirNumMoves;
             if( $movesToScan > 6 ) {
                 $movesToScan = 6;
                 }
             for( $i=0; $i<$movesToScan; $i++ ) {
                 if( $i % 2 == 0 &&
-                    $theirReveal != $moves[$i] ) {
+                    $theirReveal != $their_split_moves[$i] ) {
 
-                    $moves[$i] = "?";
+                    $their_split_moves[$i] = "?";
                     }
-                else if( $theirReveal == $moves[$i] ) {
+                else if( $theirReveal == $their_split_moves[$i] ) {
                     $theirRevealIndex = $i;
                     }
                 }
@@ -5942,9 +5965,9 @@ function cm_printGameState( $inHideOpponentSecretMoves = true ) {
                 // anymore
 
                 // swap this into the first move position
-                $temp = $moves[0];
-                $moves[0] = $moves[$theirRevealIndex];
-                $moves[$theirRevealIndex] = $temp;
+                $temp = $their_split_moves[0];
+                $their_split_moves[0] = $their_split_moves[$theirRevealIndex];
+                $their_split_moves[$theirRevealIndex] = $temp;
 
                 // same for corresponding your_move pick
 
@@ -5959,7 +5982,7 @@ function cm_printGameState( $inHideOpponentSecretMoves = true ) {
                 }
             }
         
-        $their_moves = implode( "#", $moves );
+        $their_moves = implode( "#", $their_split_moves );
         }
 
     // never show more of their moves than what we've committed so far
@@ -5998,13 +6021,25 @@ function cm_printGameState( $inHideOpponentSecretMoves = true ) {
         
         // fix it to hide info
 
-        // default to showing only ante pots
-        $your_coins += $your_pot_coins - 1;
-        $their_coins += $their_pot_coins - 1;
+        // default to showing only settled pot
+        $your_coins += $your_pot_coins - $settled_pot_coins;
+        $their_coins += $their_pot_coins - $settled_pot_coins;
 
-        $your_pot_coins = 1;
-        $their_pot_coins = 1;
+        $your_pot_coins = $settled_pot_coins;
+        $their_pot_coins = $settled_pot_coins;
         }
+
+    if( $your_pot_coins < $their_pot_coins &&
+        ! $your_bet_made ) {
+
+        // bad timing here.
+        // we're fetching game state when their bet has already come through
+        // hide it
+        $their_coins += $their_pot_coins - $settled_pot_coins;
+
+        $their_pot_coins = $settled_pot_coins;
+        }
+    
     
     global $penaltyForLeaving;
 
@@ -6553,6 +6588,21 @@ function cm_makeBet() {
         $player_2_bet_made = 1;
         }
 
+
+    $settledPotUpdate = "";
+
+    if( $player_1_bet_made &&
+        $player_2_bet_made &&
+        $player_1_pot_coins == $player_2_pot_coins ) {
+
+        // bets have been matched
+        $settledPotUpdate =
+            ", settled_pot_coins = $player_1_pot_coins ";
+        
+        }
+    
+    
+    
     $deadlineUpdate = "";
 
     if( $player_2_bet_made && $player_2_bet_made ) {
@@ -6570,6 +6620,7 @@ function cm_makeBet() {
         "player_1_pot_coins = '$player_1_pot_coins', ".
         "player_2_pot_coins = '$player_2_pot_coins' ".
         $deadlineUpdate .
+        $settledPotUpdate .
         "WHERE player_1_id = '$user_id' OR player_2_id = '$user_id';";
 
 
@@ -6837,7 +6888,7 @@ function cm_makeRoundLoser( $inGameID, $inLoserID, $inTie = false ) {
 
     $player_1_pot_coins = 0;
     $player_2_pot_coins = 0;
-    
+    $settled_pot_coins = 0;
     
     
     global $moveTimeLimit;
@@ -6850,6 +6901,7 @@ function cm_makeRoundLoser( $inGameID, $inLoserID, $inTie = false ) {
         "player_2_bet_made = '$player_2_bet_made', ".
         "player_1_pot_coins = '$player_1_pot_coins', ".
         "player_2_pot_coins = '$player_2_pot_coins', ".
+        "settled_pot_coins = 'settled_pot_coins', ".
         "move_deadline = ADDTIME( CURRENT_TIMESTAMP, '$moveTimeLimit' ) ".
         "WHERE player_1_id = '$inLoserID' OR player_2_id = '$inLoserID';";
     
@@ -7157,6 +7209,9 @@ function cm_startNextRound() {
     
     if( $player_1_ended_round == 2 && $player_2_ended_round == 2 ) {
 
+        $settled_pot_coins = 0;
+        
+        
         if( $player_1_coins > 0 && $player_2_coins > 0 ) {
             // start a new game
 
@@ -7179,6 +7234,8 @@ function cm_startNextRound() {
             
             $player_1_pot_coins = $anteCoins;
             $player_2_pot_coins = $anteCoins;
+
+            $settled_pot_coins = $anteCoins;
             
             $player_1_bet_made = 1;
             $player_2_bet_made = 1;
@@ -7208,6 +7265,7 @@ function cm_startNextRound() {
             "player_2_bet_made = '$player_2_bet_made', ".
             "player_1_pot_coins = '$player_1_pot_coins', ".
             "player_2_pot_coins = '$player_2_pot_coins', ".
+            "settled_pot_coins = '$settled_pot_coins', ".
             "player_1_moves = '#', ".
             "player_2_moves = '#', ".
             "player_1_ended_round = '0', ".
