@@ -1,3 +1,11 @@
+Version 16     ???
+
+--Added support for temporary logins to existing accounts with account details
+  not saved locally.
+
+
+
+
 Version 15     Live Server Fixes
 
 --Fixed revealed-square leak if opponent posts their revealed square before we

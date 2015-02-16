@@ -37,6 +37,8 @@ ExistingAccountPage::ExistingAccountPage()
           mAtSignButton( mainFont, 252, 128, "@" ),
           mPasteButton( mainFont, 0, -80, translate( "paste" ), 'v', 'V' ),
           mLoginButton( mainFont, 150, -200, translate( "loginButton" ) ),
+          mLoginNoSaveButton( mainFont, 150, -280, 
+                              translate( "loginNoSaveButton" ) ),
           mCancelButton( mainFont, -150, -200, 
                          translate( "cancel" ) ) {
     
@@ -57,6 +59,7 @@ ExistingAccountPage::ExistingAccountPage()
         }
 
     setButtonStyle( &mLoginButton );
+    setButtonStyle( &mLoginNoSaveButton );
     setButtonStyle( &mCancelButton );
     setButtonStyle( &mAtSignButton );
     setButtonStyle( &mPasteButton );
@@ -66,6 +69,7 @@ ExistingAccountPage::ExistingAccountPage()
 
     
     addComponent( &mLoginButton );
+    addComponent( &mLoginNoSaveButton );
     addComponent( &mCancelButton );
     addComponent( &mAtSignButton );
     addComponent( &mPasteButton );
@@ -73,12 +77,17 @@ ExistingAccountPage::ExistingAccountPage()
     addComponent( &mKeyField );
     
     mLoginButton.addActionListener( this );
+    mLoginNoSaveButton.addActionListener( this );
+    
     mCancelButton.addActionListener( this );
 
     mAtSignButton.addActionListener( this );
     mPasteButton.addActionListener( this );
     
     mAtSignButton.setMouseOverTip( translate( "atSignTip" ) );
+
+    mLoginButton.setMouseOverTip( translate( "saveTip" ) );
+    mLoginNoSaveButton.setMouseOverTip( translate( "noSaveTip" ) );
     
     // to dodge quit message
     setTipPosition( true );
@@ -124,9 +133,12 @@ void ExistingAccountPage::step() {
 
 void ExistingAccountPage::actionPerformed( GUIComponent *inTarget ) {
     if( inTarget == &mLoginButton ) {
-        processLogin();
+        processLogin( true );
         }
-    if( inTarget == &mCancelButton ) {
+    else if( inTarget == &mLoginNoSaveButton ) {
+        processLogin( false );
+        }
+    else if( inTarget == &mCancelButton ) {
         setSignal( "done" );
         }
     else if( inTarget == &mAtSignButton ) {
@@ -167,7 +179,7 @@ void ExistingAccountPage::keyDown( unsigned char inASCII ) {
         
         if( mKeyField.isFocused() ) {
 
-            processLogin();
+            processLogin( true );
             
             return;
             }
@@ -190,7 +202,7 @@ void ExistingAccountPage::specialKeyDown( int inKeyCode ) {
 
 
 
-void ExistingAccountPage::processLogin() {
+void ExistingAccountPage::processLogin( char inStore ) {
     if( userEmail != NULL ) {
         delete [] userEmail;
         }
@@ -203,9 +215,16 @@ void ExistingAccountPage::processLogin() {
 
     if( !gamePlayingBack ) {
         
-        SettingsManager::setSetting( "email", userEmail );
-        SettingsManager::setSetting( "accountKey", accountKey );
+        if( inStore ) {
+            SettingsManager::setSetting( "email", userEmail );
+            SettingsManager::setSetting( "accountKey", accountKey );
+            }
+        else {
+            SettingsManager::setSetting( "email", "" );
+            SettingsManager::setSetting( "accountKey", "" );
+            }
         }
+    
                 
     setSignal( "done" );
     }

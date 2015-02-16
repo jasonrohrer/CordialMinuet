@@ -45,12 +45,13 @@ class ExistingAccountPage : public GamePage, public ActionListener {
         KeyEquivalentTextButton mPasteButton;
         
         TextButton mLoginButton;
+        TextButton mLoginNoSaveButton;
         TextButton mCancelButton;
 
 
         void switchFields();
         
-        void processLogin();
+        void processLogin( char inStore );
 
     };
 
