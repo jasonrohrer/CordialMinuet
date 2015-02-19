@@ -42,6 +42,10 @@ Take two ounces of human fat, one ounce of oil of nerves, one ounce of oil of la
 
 <td align=center width=500 valign=top>
 
+<iframe title="YouTube video player" width="480" height="385" src="http://www.youtube.com/embed/cYe2ePWb8SI?rel=0" frameborder="0" allowfullscreen></iframe>
+
+<br><br>
+
 <img src="amulet.png" width=500 height=270 border=0>
 
 <table border=0 cellpadding=20>
