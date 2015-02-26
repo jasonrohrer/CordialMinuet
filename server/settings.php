@@ -376,11 +376,11 @@ $penaltyForLeaving = 6;
 
 
 // 1 minute, plus grace period to cover one client retry
-$moveTimeLimit = "0 0:01:18.000";
+$moveTimeLimit = "0 0:01:22.000";
 
 // don't tell the client about the grace period when giving them
 // the deadline
-$moveLimitGraceSeconds = 18;
+$moveLimitGraceSeconds = 22;
 
 
 // games with no action for this long are auto-ended and removed
@@ -394,7 +394,7 @@ $staleGameTimeLimit = "0 0:02:00.000";
 // bails or disconnects before sending end_round
 // note that this time limit kicks in as soon as one player sends
 // a properly sequenced end_round
-$endRoundTimeLimit = "0 0:00:15.000";
+$endRoundTimeLimit = "0 0:00:27.000";
 
 
 

@@ -12,6 +12,10 @@ Version 15     Live Server Fixes
   get a chance to request the pre-reveal game state.  Also fixed bet leaks that
   could happen through similar bad timing (thanks several forum members).
 
+--Increased grace period for move timeouts, and increased timeout for
+  end_round.  The existing timeout for end_round could be crossed too easily
+  with legitimate network and server delays (thanks Daniel K).
+
 
 
 
