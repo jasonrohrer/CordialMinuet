@@ -7212,7 +7212,9 @@ function cm_startNextRound() {
         $settled_pot_coins = 0;
         
         
-        if( $player_1_coins > 0 && $player_2_coins > 0 ) {
+        if( $player_1_id != 0 && $player_2_id != 0 &&
+            $player_1_coins > 0 && $player_2_coins > 0 ) {
+
             // start a new game
 
             $game_square = cm_getNewSquare();
@@ -7243,6 +7245,8 @@ function cm_startNextRound() {
             cm_incrementStat( "round_count" );
             }
         else {
+            // other player has left
+            // OR
             // one player is out of coins
             
             $player_1_pot_coins = 0;

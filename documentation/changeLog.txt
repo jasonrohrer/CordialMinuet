@@ -16,6 +16,10 @@ Version 15     Live Server Fixes
   end_round.  The existing timeout for end_round could be crossed too easily
   with legitimate network and server delays (thanks Daniel K).
 
+--Fixed bug on server when opponent leaves immediately after they start the
+  next round but before you start the next round.  This caused strange client
+  coin movements (thanks Daniel K).
+
 
 
 
