@@ -6,6 +6,10 @@ Version 16     ???
 --REFRESH button is now hidden for 5 seconds after a refresh to prevent refresh
   spam.
 
+--Added missing webProxy setting file, and added note to readme
+  (thanks chequers).
+
+
 
 
 
