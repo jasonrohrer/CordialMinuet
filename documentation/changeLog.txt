@@ -3,6 +3,9 @@ Version 16     ???
 --Added support for temporary logins to existing accounts with account details
   not saved locally.
 
+--REFRESH button is now hidden for 5 seconds after a refresh to prevent refresh
+  spam.
+
 
 
 

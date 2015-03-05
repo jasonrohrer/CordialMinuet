@@ -510,9 +510,9 @@ void MenuPage::step() {
                     // list auto-refreshes every 5 seconds if completely empty
                     // don't want user spamming reload button in this case
 
-                    // but allow them to reload a page that has some games
-                    // listed on it
-                    mRefreshButton.setVisible( true );
+                    // if there ARE games listed, make them wait 5 seconds
+                    // before the refresh button appears
+                    mRefreshButton.setVisible( false );
                     }
                 }
             
@@ -540,6 +540,15 @@ void MenuPage::step() {
         mResponseProcessed = false;
         startRequest();
         }
+    else if( mResponseProcessed && mListedGames.size() > 0 &&
+             game_time( NULL ) - mLastResponseTime > 5 ) {
+        
+        // let them refresh manually now
+
+        // prevent refresh spam
+        mRefreshButton.setVisible( true );
+        }
+    
     }
 
 
