@@ -20,6 +20,8 @@ Version 15     Live Server Fixes
   next round but before you start the next round.  This caused strange client
   coin movements (thanks Daniel K).
 
+--Added support for 3- and 4-word random names for when we exhaust the supply
+  of 2-word random names.
 
 
 

@@ -745,14 +745,17 @@ function cm_generateRandomName() {
     $tryCount = 0;
 
     $name = "";
+
+    $numberOfWords = 2;
     
-    while( ! $foundUnique && $tryCount < 10 ) {
+    
+    while( ! $foundUnique && $numberOfWords < 5 ) {
         
     
         $query =
             "SELECT GROUP_CONCAT( temp.noun SEPARATOR ' ' ) AS random_name ".
             "FROM ( SELECT noun FROM $tableNamePrefix"."random_nouns ".
-            "       ORDER BY RAND() LIMIT 2) AS temp;";
+            "       ORDER BY RAND() LIMIT $numberOfWords ) AS temp;";
 
         $result = cm_queryDatabase( $query );
 
@@ -767,10 +770,21 @@ function cm_generateRandomName() {
         if( 0 == mysql_result( $result, 0, 0 ) ) {
             $foundUnique = true;
             }
-        
-        
-        $tryCount ++;
+        else {
+            $tryCount ++;
+
+            if( $tryCount >= 10 ) {
+                // can't find unique, try more words
+                $numberOfWords ++;
+                
+                $tryCount = 0;
+                }
+            }        
         }
+
+    // if we passed the 4-word limit without finding a unique name,
+    // give up and use the last 4-word name that we tried.
+    
     
     return $name;
     }
@@ -950,7 +964,7 @@ function cm_setupDatabase() {
             "UNIQUE KEY( account_key )," .
             "email VARCHAR(255) NOT NULL," .
             "UNIQUE KEY( email ),".
-            "random_name VARCHAR(30) NOT NULL,".
+            "random_name VARCHAR(60) NOT NULL,".
             "in_person_code VARCHAR(30) NOT NULL,".
             // 9 whole dollar digits (up to 999,999,999)
             // 4 fractional digits (0.0001 resolution)
