@@ -9,6 +9,8 @@ Version 16     ???
 --Added missing webProxy setting file, and added note to readme
   (thanks chequers).
 
+--Game flow now skips unecessary BET 0 steps if one player is out of coins.
+
 
 
 

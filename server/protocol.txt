@@ -793,6 +793,9 @@ Bets can be 0, but still must be made using make_bet.
 
 Bets cannot exceed the opponent's non-pot coin balance.
 
+If one player has a 0-coin blanance, the make_bet step must be skipped
+and any make_bet calls will be denied.
+
 wait_move is used to wait for opponent's bet.
 
 If opponent's bet matches ours, betting is over and the next move must

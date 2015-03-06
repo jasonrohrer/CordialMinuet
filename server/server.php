@@ -6106,6 +6106,7 @@ function cm_makeMove() {
     
     $query = "SELECT game_id, player_1_id, player_2_id,".
         "player_1_bet_made, player_2_bet_made, ".
+        "player_1_coins, player_2_coins, ".
         "player_1_pot_coins, player_2_pot_coins, ".
         "player_1_moves, player_2_moves, semaphore_key ".
         "FROM $tableNamePrefix"."games ".
@@ -6143,6 +6144,9 @@ function cm_makeMove() {
 
     $player_1_bet_made = mysql_result( $result, 0, "player_1_bet_made" );
     $player_2_bet_made = mysql_result( $result, 0, "player_2_bet_made" );
+
+    $player_1_coins = mysql_result( $result, 0, "player_1_coins" );
+    $player_2_coins = mysql_result( $result, 0, "player_2_coins" );
 
     $player_1_pot_coins = mysql_result( $result, 0, "player_1_pot_coins" );
     $player_2_pot_coins = mysql_result( $result, 0, "player_2_pot_coins" );
@@ -6215,7 +6219,17 @@ function cm_makeMove() {
 
     $deadlineUpdate = "";
     
-    if( strlen( $player_1_moves ) == strlen( $player_2_moves ) ) {
+    if( strlen( $player_1_moves ) == strlen( $player_2_moves )
+        &&
+        $player_1_coins > 0
+        &&
+        $player_2_coins > 0 ) {
+
+        // both players have made their moves (move lists matched)
+        // AND
+        // both player still have some coins, so betting round
+        // can happen
+        
         // get ready for next betting round
         $betsMade = 0;
         
@@ -6286,6 +6300,7 @@ function cm_makeRevealMove() {
     
     $query = "SELECT game_id, player_1_id, player_2_id,".
         "player_1_bet_made, player_2_bet_made, ".
+        "player_1_coins, player_2_coins, ".
         "player_1_pot_coins, player_2_pot_coins, ".
         "player_1_moves, player_2_moves, semaphore_key ".
         "FROM $tableNamePrefix"."games ".
@@ -6322,6 +6337,9 @@ function cm_makeRevealMove() {
 
     $player_1_bet_made = mysql_result( $result, 0, "player_1_bet_made" );
     $player_2_bet_made = mysql_result( $result, 0, "player_2_bet_made" );
+
+    $player_1_coins = mysql_result( $result, 0, "player_1_coins" );
+    $player_2_coins = mysql_result( $result, 0, "player_2_coins" );
 
     $player_1_pot_coins = mysql_result( $result, 0, "player_1_pot_coins" );
     $player_2_pot_coins = mysql_result( $result, 0, "player_2_pot_coins" );
@@ -6398,7 +6416,17 @@ function cm_makeRevealMove() {
     $betsMade = 1;
     $deadlineUpdate = "";
     
-    if( strlen( $player_1_moves ) == strlen( $player_2_moves ) ) {
+    if( strlen( $player_1_moves ) == strlen( $player_2_moves )
+        &&
+        $player_1_coins > 0
+        &&
+        $player_2_coins > 0 ) {
+
+        // both players have made their moves (move lists matched)
+        // AND
+        // both player still have some coins, so betting round
+        // can happen
+        
         // get ready for next betting round
         $betsMade = 0;
 

@@ -3045,9 +3045,15 @@ void PlayGamePage::step() {
             mLeaveConfirmButton.setVisible( false );
             }
         else if( mMessageState == gettingState 
-            ||
-            ( mMessageState == gettingStatePostBet &&
-              getNetPotCoins(0) == getNetPotCoins(1) ) ) {
+                 ||
+                 // OR matched bets
+                 ( mMessageState == gettingStatePostBet &&
+                   getNetPotCoins(0) == getNetPotCoins(1) ) 
+                 ||
+                 // OR no bets possible because one player has 0 coins
+                 ( mMessageState == gettingStatePostMove &&
+                   ( getNetPlayerCoins(0) == 0 ||
+                     getNetPlayerCoins(1) == 0 ) ) ) {
             
             int numUsedColumns = 0;
             
