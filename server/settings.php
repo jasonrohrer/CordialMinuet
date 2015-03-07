@@ -454,4 +454,21 @@ $tournamentMinPrize = "2.50";
 $tournamentPrizeRatio = 1.5;
 
 
+
+
+// amulet settings
+
+// each amulet must have a unique ID that hasn't been used for past amulets
+// the id must not be zero
+
+// Elements in an amulet are ID, end time, and URLS to icon image TGA and PNG
+
+$amulets = array(
+    1 => array( "09-Mar-2015 11:11:00 -0800",
+                "http://cordialminuet.com/amulets/1.tga",
+                "http://cordialminuet.com/amulets/1.png" ),
+    2 => array( "09-Mar-2015 11:11:00 -0800",
+                "http://cordialminuet.com/amulets/2.tga",
+                "http://cordialminuet.com/amulets/2.png" ) );
+    
 ?>

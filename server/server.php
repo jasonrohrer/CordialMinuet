@@ -1297,6 +1297,13 @@ function cm_setupDatabase() {
             "amulet_id INT NOT NULL PRIMARY KEY," .
             "holding_user_id INT NOT NULL," .
             "INDEX( holding_user_id ), ".
+            // if holding_user_id is 0, amulet has been dropped into player
+            // pool
+            // We will hand it to the Nth last player standing in a match,
+            // where N is the number of live games at the moment of drop.
+            // users_to_skip_on_drop is how many more to skip before
+            // we give the amulet to that last player standing.
+            "users_to_skip_on_drop INT NOT NULL, ".
             "acquire_time DATETIME NOT NULL," .
             "last_amulet_game_time DATETIME NOT NULL ) ENGINE = INNODB;";
 
@@ -2029,7 +2036,22 @@ function cm_getBalance() {
 
     $dollar_balance = mysql_result( $result, 0, "dollar_balance" );
 
+    $amulet_id = cm_getHeldAmulet( $user_id );
+    
+    
+    $amulet_tga_url = "#";
+    $amulet_points = 0;
+    
+    if( $amulet_id != 0 ) {
+        $amulet_tga_url = cm_getAmuletTGAURL( $amulet_id );
+        
+        $amulet_points = cm_getAmuletPoints( $amulet_id, $user_id );
+        }
+    
     echo "$dollar_balance\n";
+    //echo "$amulet_id\n";
+    //echo "$amulet_tga_url\n";
+    //echo "$amulet_points\n";
     
     echo "OK";
     }
@@ -4232,7 +4254,7 @@ function cm_getHeldAmulet( $user_id ) {
     global $tableNamePrefix;
     
     $query = "SELECT amulet_id FROM $tableNamePrefix"."amulets ".
-        "WHERE holding_user_id = $old_player_1_id;";
+        "WHERE holding_user_id = $user_id;";
 
     $result = cm_queryDatabase( $query );
 
@@ -4244,25 +4266,227 @@ function cm_getHeldAmulet( $user_id ) {
         return mysql_result( $result, 0, "amulet_id" );
         }
     }
+
+
+// returns total points, accounting for pending hold-time penalty
+function cm_getAmuletPoints( $amulet_id, $user_id ) {
+    global $tableNamePrefix;
+
+    $penalty = cm_getAmuletHoldTimePenalty( $user_id );
+
+    $query = "SELECT points FROM $tableNamePrefix"."amulet_points ".
+        "WHERE amulet_id = $amulet_id AND user_id = $user_id;";
+
+    $result = cm_queryDatabase( $query );
+
+    $numRows = mysql_numrows( $result );
+    if( $numRows == 0 ) {
+        return 0;
+        }
+    else {
+        return mysql_result( $result, 0, "points" ) - $penalty;
+        }
+    }
+
+
+
+function cm_getAmuletHoldTimePenalty( $user_id ) {
+
+    global $tableNamePrefix;
+    
+    $query = "SELECT ".
+        "TIMESTAMPDIFF( MINUTE, acquire_time, CURRENT_TIMESTAMP ) ".
+        "AS minutes_held ".
+        "FROM $tableNamePrefix"."amulets ".
+        "WHERE holding_user_id = $user_id;";
+
+    $result = cm_queryDatabase( $query );
+
+    $numRows = mysql_numrows( $result );
+    if( $numRows == 1 ) {
+        $minutes_held = mysql_result( $result, 0, "minutes_held" );
+
+        return $minutes_held;
+        }
+    else {
+        return 0;
+        }
+    }
+
 
 
 function cm_subtractPointsForAmuletHoldTime( $user_id ) {
-    // FIXME
+    global $tableNamePrefix;
+
+    $penalty = cm_getAmuletHoldTimePenalty( $user_id );
+    
+
+    if( $penalty > 0 ) {
+    
+        $query = "SELECT amulet_id ".
+            "FROM $tableNamePrefix"."amulets ".
+            "WHERE holding_user_id = $user_id;";
+        
+        $result = cm_queryDatabase( $query );
+        
+        $numRows = mysql_numrows( $result );
+        if( $numRows == 1 ) {
+            $amulet_id = mysql_result( $result, 0, "amulet_id" );
+            
+            $query = "UPDATE $tableNamePrefix"."amulet_points " .
+                "SET points = GREATEST( 0, points - $penalty ) ".
+                "WHERE amulet_id = $amulet_id AND user_id = $user_id;";
+            
+            cm_queryDatabase( $query );
+            }
+        }
+    }
+
+
+function cm_addPointsForAmuletWin( $amulet_id, $user_id ) {
+    global $tableNamePrefix;
+
+    
+    $winPoints = 200;
+
+    $query = "INSERT INTO $tableNamePrefix"."amulet_points " .
+        "SET amulet_id = $amulet_id, user_id = $user_id, ".
+        "    points = $winPoints ".
+        "ON DUPLICATE KEY ".
+        "UPDATE points = points + $winPoints;";
+
+    cm_queryDatabase( $query );
+
+    $query = "UPDATE $tableNamePrefix"."amulets " .
+        "SET last_amulet_game_time = CURRENT_TIMESTAMP ".
+        "WHERE amulet_id = $amulet_id AND holding_user_id = $user_id;";
+
+    cm_queryDatabase( $query );
+    }
+
+
+
+function cm_pickUpAmulet( $amulet_id, $user_id ) {
+    global $tableNamePrefix;
+
+    $query = "UPDATE $tableNamePrefix"."amulets " .
+        "SET holding_user_id = $user_id, ".
+        "acquire_time = CURRENT_TIMESTAMP, ".
+        "last_amulet_game_time = CURRENT_TIMESTAMP ".
+        "WHERE amulet_id = $amulet_id;";
+
+    cm_queryDatabase( $query );
+    }
+
+
+
+// table name without prefix
+// where clause without where
+function cm_countQuery( $inTableName, $inWhere ) {
     global $tableNamePrefix;
     
+    $query = "SELECT COUNT(*) FROM $tableNamePrefix"."$inTableName ".
+            "WHERE $inWhere;";
+
+    $result = cm_queryDatabase( $query );
+
+    return mysql_result( $result, 0, 0 );
+    }
+
+
+
+
+function cm_pickUpDroppedAmulet( $user_id ) {
+    // find an amulet
+
+    // note that this code uses FOR UPDATE locks on select
+    // this is okay, because table only allows one user to hold a given
+    // amulet, and in the case of conention, one will prevail
+
+    // don't want to add locks here, because this is called from
+    // endOldGames while it has a lock on the users table.
+    // this would be deadlock prone
+
+    // however, UPDATES will lock... hmm... watch out for this
+    
+    global $tableNamePrefix;
+
+    $query = "UPDATE $tableNamePrefix"."amulets " .
+        "SET users_to_skip_on_drop = users_to_skip_on_drop - 1 ".
+        "WHERE holding_user_id = 0 AND users_to_skip_on_drop > 0;";
+
+    cm_queryDatabase( $query );
+
     $query = "SELECT amulet_id FROM $tableNamePrefix"."amulets ".
-        "WHERE holding_user_id = $old_player_1_id;";
+        "WHERE holding_user_id = 0 && users_to_skip_on_drop = 0 LIMIT 1;";
 
     $result = cm_queryDatabase( $query );
 
     $numRows = mysql_numrows( $result );
-    if( $numRows == 0 ) {
-        return 0;
+    if( $numRows == 1 ) {
+        $amulet_id = mysql_result( $result, 0, "amulet_id" );
+
+        $query = "UPDATE $tableNamePrefix"."amulets ".
+            "SET holding_user_id = $user_id, ".
+            "acquire_time = CURRENT_TIMESTAMP, ".
+            "last_amulet_game_time = CURRENT_TIMESTAMP ".
+            "WHERE amulet_id = $amulet_id;";
+        cm_queryDatabase( $query );
+        
         }
-    else {
-        return mysql_result( $result, 0, "amulet_id" );
+    
+        
+    // check if a new amulet should be dropped (one that has never
+    // dropped before)
+    
+    if( cm_countQuery( "amulets", "holding_user_id = 0" )  == 0 ) {
+        
+        global $amulets;
+
+        $time = time();
+            
+        foreach( $amulets as $id => $record ) {
+
+            $endTime = strtotime( $record[0] );
+
+            if( $time < $endTime ) {
+
+                if( cm_countQuery( "amulets",
+                                   "amulet_id = $id" ) == 0 ) {
+                    // found one to add
+
+                    // how many live games are running?
+                    $liveGameCount =
+                        cm_countQuery(
+                            "games",
+                            "player_1_id != 0 AND player_2_id != 0 " );
+
+                    $users_to_skip = $liveGameCount - 1;
+                    if( $liveGameCount == 0 ) {
+                        $users_to_skip = 0;
+                        }
+                    
+
+                    // use ON DUPLICATE UPDATE here
+                    // because we're not using locks, so
+                    // some other user could slip in and do the
+                    // insert before us
+                    $query = "INSERT INTO $tableNamePrefix"."amulets " .
+                        "SET amulet_id = $id, ".
+                        "    users_to_skip_on_drop = $users_to_skip ".
+                        "ON DUPLICATE KEY UPDATE ".
+                        "    users_to_skip_on_drop = $users_to_skip; ";
+
+                    cm_queryDatabase( $query );
+
+                    break;
+                    }
+                }
+            }
         }
     }
+
+
 
 
 
@@ -4554,19 +4778,98 @@ function cm_endOldGames( $user_id, $inForceTie = false ) {
 
 
 
-            /*
-             // fixme
+            
             // figure out if an amulet should change hands
             $player_1_amulet = cm_getHeldAmulet( $old_player_1_id );
             $player_2_amulet = cm_getHeldAmulet( $old_player_2_id );
 
+            $player_1_payout_amulet = 0;
+            $player_2_payout_amulet = 0;
+
+
+            $player_1_last_standing = 0;
+            $player_2_last_standing = 0;
             
             if( $player_1_id == 0 ) {
                 // p1 first to leave
-
                 
+                if( $player_2_payout == 0 ) {
+                    $player_1_last_standing = 1;
+                    }
+                    else {
+                        $player_2_last_standing = 1;
+                        }
                 }
-            */
+            else if( $player_2_id == 0 ) {
+                // p2 first to leave
+                
+                if( $player_1_payout == 0 ) {
+                    $player_2_last_standing = 1;
+                    }
+                else {
+                    $player_1_last_standing = 1;
+                    }
+                }
+            
+            
+
+            if( $player_1_amulet != 0 || $player_2_amulet != 0 ) {
+                
+
+                if( $player_1_last_standing ) {
+                    if( $player_1_amulet != 0 ) {
+                        // p1 keeps
+                        }
+                    else {
+                        // p2 drops
+                        cm_subtractPointsForAmuletHoldTime( $old_player_2_id );
+                        
+                        cm_pickUpAmulet( $player_2_amulet, $old_player_1_id );
+
+                        $player_1_payout_amulet = $player_2_amulet;
+                        $player_1_amulet = $player_2_amulet;
+
+                        $player_2_amulet = 0;
+                        }
+                    
+                    cm_addPointsForAmuletWin( $player_1_amulet,
+                                              $old_player_1_id );
+                    }
+                else if( $player_2_last_standing ) {
+                    if( $player_2_amulet != 0 ) {
+                        // p2 keeps
+                        }
+                    else {
+                        // p1 drops
+                        cm_subtractPointsForAmuletHoldTime( $old_player_1_id );
+                        
+                        cm_pickUpAmulet( $player_1_amulet, $old_player_2_id );
+
+                        $player_2_payout_amulet = $player_1_amulet;
+                        $player_2_amulet = $player_1_amulet;
+
+                        $player_1_amulet = 0;
+                        }
+                    
+                    cm_addPointsForAmuletWin( $player_2_amulet,
+                                              $old_player_2_id );
+                    }                
+                }
+            else {
+                // neither have amulets currently
+
+                // potentially hand last standing a dropped amulet
+                // but this doesn't count as a payout from this match
+                
+                if( $player_1_last_standing ) {
+                    cm_pickUpDroppedAmulet( $old_player_1_id );
+                    }
+                else if( $player_2_last_standing ) {
+                    cm_pickUpDroppedAmulet( $old_player_2_id );
+                    }
+                }
+            
+            
             
 
 
@@ -4621,7 +4924,8 @@ function cm_endOldGames( $user_id, $inForceTie = false ) {
                 "SET dollar_balance = dollar_balance + $player_1_payout, ".
                 "total_won = total_won + $won, ".
                 "total_lost = total_lost + $lost, ".
-                "last_pay_out = $player_1_payout ".
+                "last_pay_out = $player_1_payout, ".
+                "last_pay_out_amulet = $player_1_payout_amulet ".
                 "WHERE user_id = '$old_player_1_id';";
             cm_queryDatabase( $query );
 
@@ -4651,7 +4955,8 @@ function cm_endOldGames( $user_id, $inForceTie = false ) {
                 "SET dollar_balance = dollar_balance + $player_2_payout, ".
                 "total_won = total_won + $won, ".
                 "total_lost = total_lost + $lost, ".
-                "last_pay_out = $player_2_payout ".
+                "last_pay_out = $player_2_payout, ".
+                "last_pay_out_amulet = $player_2_payout_amulet ".
                 "WHERE user_id = '$old_player_2_id';";
             cm_queryDatabase( $query );
 
@@ -5585,19 +5890,8 @@ function cm_leaveGame() {
     if( $last_pay_out_amulet != 0 ) {
         $amulet_tga_url = cm_getAmuletTGAURL( $last_pay_out_amulet );
         
-        
-        $query = "SELECT points ".
-            "FROM $tableNamePrefix"."amulet_points ".
-            "WHERE amulet_id = '$last_pay_out_amulet' AND ".
-            "user_id = '$user_id';";
 
-        $result = cm_queryDatabase( $query );
-        
-        $numRows = mysql_numrows( $result );
-
-        if( $numRows != 0 ) {
-            $points = mysql_result( $result, 0, "points" );
-            }
+        $amulet_points = cm_getAmuletPoints( $last_pay_out_amulet, $user_id );
         }
     
     cm_queryDatabase( "COMMIT;" );

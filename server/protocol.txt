@@ -129,12 +129,19 @@ server.php?action=get_balance&user_id=[id number]
                              &account_hmac=[hmac-sha1, hex-encoded]
 Returns:
 dollar_balance
+amulet_id
+amulet_tga_url
+amulet_point_count
 OK
 
 
 Where:
 
 dollar_balance is dollars in ASCII floating point
+
+amulet_id is 0 if no amulet is held
+amulet_tga_url is # if empty
+amulet_point_count is 0 if empty
 
 
 
@@ -516,6 +523,9 @@ server.php?action=leave_game
 Returns:
 buy_in_dollar_amount
 payout_dollar_amount
+acquire_amulet_id
+acquire_amulet_tga_url
+acquire_amulet_point_count
 OK
 
 
@@ -524,6 +534,10 @@ point
 
 Can both be zero when leaving a game that hasn't been joined by an opponent
 yet.
+
+acquire_amulet_id is 0 if no amulet was acquired in this game
+acquire_amulet_tga_url is # if empty
+acquire_amulet_point_count is 0 if empty
 
 
 
