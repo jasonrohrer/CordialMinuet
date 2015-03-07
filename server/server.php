@@ -698,6 +698,8 @@ else if( preg_match( "/server\.php/", $_SERVER[ "SCRIPT_NAME" ] ) ) {
         cm_doesTableExist( $tableNamePrefix."games" ) &&
         cm_doesTableExist( $tableNamePrefix."tournament_stats" ) &&
         cm_doesTableExist( $tableNamePrefix."tournament_pairings" ) &&
+        cm_doesTableExist( $tableNamePrefix."amulets" ) &&
+        cm_doesTableExist( $tableNamePrefix."amulet_points" ) &&
         cm_doesTableExist( $tableNamePrefix."server_stats" ) &&
         cm_doesTableExist( $tableNamePrefix."user_stats" );
     
@@ -983,6 +985,9 @@ function cm_setupDatabase() {
             "elo_rating INT NOT NULL,".
             "last_buy_in DECIMAL(13, 2) NOT NULL,".
             "last_pay_out DECIMAL(13, 4) NOT NULL,".
+            // amulet id that was part of the last payout
+            // 0 otherwise
+            "last_pay_out_amulet INT NOT NULL,".
             "sequence_number INT UNSIGNED NOT NULL," .
             "request_sequence_number INT UNSIGNED NOT NULL," .
             "last_action_time DATETIME NOT NULL," .
@@ -1271,6 +1276,51 @@ function cm_setupDatabase() {
             "update_time DATETIME NOT NULL," .
             "num_games_started INT NOT NULL,".
             "net_dollars DECIMAL(13, 4) NOT NULL ) ENGINE = INNODB;";
+
+        $result = cm_queryDatabase( $query );
+
+        echo "<B>$tableName</B> table created<BR>";
+        }
+    else {
+        echo "<B>$tableName</B> table already exists<BR>";
+        }
+
+
+
+
+
+    $tableName = $tableNamePrefix . "amulets";
+    if( ! cm_doesTableExist( $tableName ) ) {
+
+        $query =
+            "CREATE TABLE $tableName(" .
+            "amulet_id INT NOT NULL PRIMARY KEY," .
+            "holding_user_id INT NOT NULL," .
+            "INDEX( holding_user_id ), ".
+            "acquire_time DATETIME NOT NULL," .
+            "last_amulet_game_time DATETIME NOT NULL ) ENGINE = INNODB;";
+
+        $result = cm_queryDatabase( $query );
+
+        echo "<B>$tableName</B> table created<BR>";
+        }
+    else {
+        echo "<B>$tableName</B> table already exists<BR>";
+        }
+
+
+    // does not take into account points lost due to time held by
+    // currently-holding user
+    
+    $tableName = $tableNamePrefix . "amulet_points";
+    if( ! cm_doesTableExist( $tableName ) ) {
+
+        $query =
+            "CREATE TABLE $tableName(" .
+            "amulet_id INT NOT NULL," .
+            "user_id INT NOT NULL," .
+            "PRIMARY KEY( amulet_id, user_id ), ".
+            "points INT NOT NULL ) ENGINE = INNODB;";
 
         $result = cm_queryDatabase( $query );
 
@@ -4178,6 +4228,44 @@ function cm_addLedgerEntry( $user_id, $game_id, $dollar_delta ) {
 
 
 
+function cm_getHeldAmulet( $user_id ) {
+    global $tableNamePrefix;
+    
+    $query = "SELECT amulet_id FROM $tableNamePrefix"."amulets ".
+        "WHERE holding_user_id = $old_player_1_id;";
+
+    $result = cm_queryDatabase( $query );
+
+    $numRows = mysql_numrows( $result );
+    if( $numRows == 0 ) {
+        return 0;
+        }
+    else {
+        return mysql_result( $result, 0, "amulet_id" );
+        }
+    }
+
+
+function cm_subtractPointsForAmuletHoldTime( $user_id ) {
+    // FIXME
+    global $tableNamePrefix;
+    
+    $query = "SELECT amulet_id FROM $tableNamePrefix"."amulets ".
+        "WHERE holding_user_id = $old_player_1_id;";
+
+    $result = cm_queryDatabase( $query );
+
+    $numRows = mysql_numrows( $result );
+    if( $numRows == 0 ) {
+        return 0;
+        }
+    else {
+        return mysql_result( $result, 0, "amulet_id" );
+        }
+    }
+
+
+
 // ends any games that this user is part of
 // (to clear up conflicts before starting new games
 
@@ -4464,6 +4552,22 @@ function cm_endOldGames( $user_id, $inForceTie = false ) {
             // first player just left the game, payout both
             cm_log( "endOldGames paying out both players for game $game_id" );
 
+
+
+            /*
+             // fixme
+            // figure out if an amulet should change hands
+            $player_1_amulet = cm_getHeldAmulet( $old_player_1_id );
+            $player_2_amulet = cm_getHeldAmulet( $old_player_2_id );
+
+            
+            if( $player_1_id == 0 ) {
+                // p1 first to leave
+
+                
+                }
+            */
+            
 
 
             // update Elo ratings
@@ -5000,7 +5104,8 @@ function cm_joinGame() {
             "games_started = games_started + 1, ".
             "total_buy_in = total_buy_in + $dollar_amount, ".
             "last_buy_in = $dollar_amount, ".
-            "last_pay_out = -1 ".
+            "last_pay_out = -1, ".
+            "last_pay_out_amulet = 0 ".
             "WHERE user_id = '$player_1_id' OR user_id = '$user_id';";
         cm_queryDatabase( $query );
 
@@ -5069,7 +5174,8 @@ function cm_joinGame() {
     // the opponent joins (then we set last_buy_in for both)
     $query = "UPDATE $tableNamePrefix"."users SET ".
         "games_created = games_created + 1, last_buy_in = 0, ".
-        "last_pay_out = 0 ".
+        "last_pay_out = 0, ".
+        "last_pay_out_amulet = 0 ".
         "WHERE user_id = '$user_id';";
     
     $result = cm_queryDatabase( $query );
@@ -5417,6 +5523,26 @@ function cm_waitGameStart() {
 
 
 
+function cm_getAmuletTGAURL( $amulet_id ) {
+    global $amulets;
+    
+    return $amulets[ $amulet_id ][1];
+    }
+
+function cm_getAmuletPNGURL( $amulet_id ) {
+    global $amulets;
+    
+    return $amulets[ $amulet_id ][2];
+    }
+
+function cm_getAmuletEndTime( $amulet_id ) {
+    global $amulets;
+    
+    return $amulets[ $amulet_id ][0];
+    }
+
+
+
 
 function cm_leaveGame() {
     if( ! cm_verifyTransaction() ) {
@@ -5433,7 +5559,7 @@ function cm_leaveGame() {
 
     global $tableNamePrefix;
     
-    $query = "SELECT last_buy_in, last_pay_out ".
+    $query = "SELECT last_buy_in, last_pay_out, last_pay_out_amulet ".
         "FROM $tableNamePrefix"."users ".
         "WHERE user_id = '$user_id';";
 
@@ -5448,12 +5574,40 @@ function cm_leaveGame() {
 
     $last_buy_in = mysql_result( $result, 0, "last_buy_in" );
     $last_pay_out = mysql_result( $result, 0, "last_pay_out" );
+    $last_pay_out_amulet = mysql_result( $result, 0, "last_pay_out_amulet" );
 
     
     cm_queryDatabase( "COMMIT;" );
 
+    $amulet_tga_url = "#";
+    $amulet_points = 0;
+    
+    if( $last_pay_out_amulet != 0 ) {
+        $amulet_tga_url = cm_getAmuletTGAURL( $last_pay_out_amulet );
+        
+        
+        $query = "SELECT points ".
+            "FROM $tableNamePrefix"."amulet_points ".
+            "WHERE amulet_id = '$last_pay_out_amulet' AND ".
+            "user_id = '$user_id';";
+
+        $result = cm_queryDatabase( $query );
+        
+        $numRows = mysql_numrows( $result );
+
+        if( $numRows != 0 ) {
+            $points = mysql_result( $result, 0, "points" );
+            }
+        }
+    
+    cm_queryDatabase( "COMMIT;" );
+
+    
     echo "$last_buy_in\n";
     echo "$last_pay_out\n";
+    //echo "$last_pay_out_amulet\n";
+    //echo "$amulet_tga_url\n";
+    //echo "$amulet_points\n";
     echo "OK";
     }
 
@@ -6219,19 +6373,22 @@ function cm_makeMove() {
 
     $deadlineUpdate = "";
     
-    if( strlen( $player_1_moves ) == strlen( $player_2_moves )
-        &&
-        $player_1_coins > 0
-        &&
-        $player_2_coins > 0 ) {
-
-        // both players have made their moves (move lists matched)
-        // AND
-        // both player still have some coins, so betting round
-        // can happen
+    if( strlen( $player_1_moves ) == strlen( $player_2_moves ) ) {
         
-        // get ready for next betting round
-        $betsMade = 0;
+        if( $player_1_coins > 0 &&
+            $player_2_coins > 0 ) {
+
+            // both players have made their moves (move lists matched)
+            // AND
+            // both player still have some coins, so betting round
+            // can happen
+        
+            // get ready for next betting round
+            $betsMade = 0;
+            }
+        
+        // deadline extended for next betting round OR next move,
+        // if betting is not possible
         
         global $moveTimeLimit;
         $deadlineUpdate =
@@ -6416,19 +6573,22 @@ function cm_makeRevealMove() {
     $betsMade = 1;
     $deadlineUpdate = "";
     
-    if( strlen( $player_1_moves ) == strlen( $player_2_moves )
-        &&
-        $player_1_coins > 0
-        &&
-        $player_2_coins > 0 ) {
+    if( strlen( $player_1_moves ) == strlen( $player_2_moves ) ) {
 
-        // both players have made their moves (move lists matched)
-        // AND
-        // both player still have some coins, so betting round
-        // can happen
+        if( $player_1_coins > 0 &&
+            $player_2_coins > 0 ) {
+
+            // both players have made their moves (move lists matched)
+            // AND
+            // both player still have some coins, so betting round
+            // can happen
+            
+            // get ready for next betting round
+            $betsMade = 0;
+            }
         
-        // get ready for next betting round
-        $betsMade = 0;
+        // deadline extended for next betting round OR next move,
+        // if betting is not possible
 
         global $moveTimeLimit;
         $deadlineUpdate =
