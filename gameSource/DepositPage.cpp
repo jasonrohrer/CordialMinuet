@@ -107,6 +107,7 @@ DepositPage::DepositPage()
                      // allow only numbers
                      "0123456789" ),
           mEmailFieldCanFocus( true ),
+          mLastFocusedField( NULL ),
           mDepositButton( mainFont, 150, -200, 
                            translate( "deposit" ) ),
           mCancelButton( mainFont, -150, -200, 
@@ -442,13 +443,19 @@ void DepositPage::makeNotActive() {
 
 void DepositPage::makeFieldsActive() {
     if( mEmailFieldCanFocus ) {
+        
         mEmailField.focus();
+        mLastFocusedField = &mEmailField;
+        
         mAtSignButton.setVisible( true );
         mClearButton.setVisible( false );
         }
     else {
         mEmailField.cursorReset();
+        
         mCardNumberField.focus();
+        mLastFocusedField = &mCardNumberField;
+        
         mAtSignButton.setVisible( false );
         mClearButton.setVisible( true );
         }
@@ -540,6 +547,24 @@ void DepositPage::step() {
     else {
         obscureRecordedNumericTyping( false, '0' );
         }
+
+    
+    TextField *currentFocusedField = NULL;
+    
+    for( int i=0; i<NUM_DEPOSIT_FIELDS; i++ ) {
+        if( mFields[i]->isFocused() ) {
+            currentFocusedField = mFields[i];
+            break;
+            }
+        }
+    if( currentFocusedField != mLastFocusedField ) {
+        // focus change
+        if( mLastFocusedField != NULL ) {
+            autoPadDateField( mLastFocusedField );
+            }
+        mLastFocusedField = currentFocusedField;
+        }
+    
 
 
     ServerActionPage::step();
@@ -697,35 +722,42 @@ void DepositPage::checkIfDepositButtonVisible() {
 
 
 
+void DepositPage::autoPadDateField( TextField *inField ) {
+    // auto-pad month an year field if needed
+    if( inField == &mExpireMonthField ) {
+        // leaving month field
+        char *text = mExpireMonthField.getText();
+        
+        if( strlen( text ) == 1 ) {
+            char *newText = autoSprintf( "0%s\n", text );
+            mExpireMonthField.setText( newText );
+            delete [] newText;
+            }
+        delete [] text;
+        }
+    else if( inField == &mExpireYearField ) {
+        // leaving month field
+        char *text = mExpireYearField.getText();
+        
+        if( strlen( text ) == 2 ) {
+            char *newText = autoSprintf( "20%s\n", text );
+            mExpireYearField.setText( newText );
+            delete [] newText;
+            }
+        delete [] text;
+        }
+    }
+
+
+
+
 void DepositPage::switchFields( int inDir ) {
     for( int i=0; i<NUM_DEPOSIT_FIELDS; i++ ) {
         
         if( mFields[i]->isFocused() ) {
 
-            // auto-pad month an year field if needed
-            if( mFields[i] == &mExpireMonthField ) {
-                // leaving month field
-                char *text = mExpireMonthField.getText();
-                
-                if( strlen( text ) == 1 ) {
-                    char *newText = autoSprintf( "0%s\n", text );
-                    mExpireMonthField.setText( newText );
-                    delete [] newText;
-                    }
-                delete [] text;
-                }
-            else if( mFields[i] == &mExpireYearField ) {
-                // leaving month field
-                char *text = mExpireYearField.getText();
-                
-                if( strlen( text ) == 2 ) {
-                    char *newText = autoSprintf( "20%s\n", text );
-                    mExpireYearField.setText( newText );
-                    delete [] newText;
-                    }
-                delete [] text;
-                }
-
+            autoPadDateField( mFields[i] );
+            
             int next = i + inDir;
             
             if( next >= NUM_DEPOSIT_FIELDS ) {
@@ -744,6 +776,9 @@ void DepositPage::switchFields( int inDir ) {
                 }
                 
             mFields[next]->focus();
+
+            mLastFocusedField = mFields[next];
+
             return;
             }
         }

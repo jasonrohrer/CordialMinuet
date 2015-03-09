@@ -11,6 +11,9 @@ Version 16     ???
 
 --Game flow now skips unecessary BET 0 steps if one player is out of coins.
 
+--Fixed auto-completion of expiration date fields on deposite page when
+  mouse-clicking out of fields instead of tabbing out (thanks Patrick T).
+
 
 
 

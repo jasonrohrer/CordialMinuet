@@ -62,6 +62,8 @@ class DepositPage : public ServerActionPage, public ActionListener {
 
         char mEmailFieldCanFocus;
         
+        TextField *mLastFocusedField;
+        
 
         TextButton mDepositButton;
 
@@ -81,6 +83,11 @@ class DepositPage : public ServerActionPage, public ActionListener {
         void makeFieldsActive();
 
         void checkIfDepositButtonVisible();
+
+
+        // when leaving a date field, add 0 or 20 prefix if needed
+        // can pass any field in here.  Will ignore non-date fields
+        void autoPadDateField( TextField *inField );
         
 
         char mResponseProcessed;
