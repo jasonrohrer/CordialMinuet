@@ -394,7 +394,7 @@ $staleGameTimeLimit = "0 0:02:00.000";
 // bails or disconnects before sending end_round
 // note that this time limit kicks in as soon as one player sends
 // a properly sequenced end_round
-$endRoundTimeLimit = "0 0:00:27.000";
+$endRoundTimeLimit = "0 0:00:42.000";
 
 
 

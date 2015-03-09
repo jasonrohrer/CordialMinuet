@@ -32,6 +32,11 @@ Version 15     Live Server Fixes
 --Added support for 3- and 4-word random names for when we exhaust the supply
   of 2-word random names.
 
+--Fixed bug in end_round timer display and force-leave if opponent sends
+  end_round before we request the state showing their final bet by increasing
+  time limit for end_round (thanks Daniel K).
+
+
 
 
 Version 15     2015-February-9
