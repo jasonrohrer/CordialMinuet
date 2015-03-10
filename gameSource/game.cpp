@@ -243,6 +243,14 @@ char inPersonMode = false;
 int playerIsAdmin = 0;
 
 
+int justAcquiredAmuletID = 0;
+char *justAcquiredAmuletTGAURL = NULL;
+
+int amuletID = 0;
+int amuletPointCount;
+
+
+
 int moveWaitingSoundSprite = -1;
 int chipSoundSprites[4] = { -1, -1, -1, -1 };
 
@@ -543,10 +551,13 @@ void initFrameDrawer( int inWidth, int inHeight, int inTargetFrameRate,
     newAccountDisplayPage = new NewAccountDisplayPage();
 
     
-    const char *resultNamesC[1] = { "dollarBalance" };
+    const char *resultNamesC[4] = { "dollarBalance",
+                                    "amulet_id",
+                                    "amulet_tga_url",
+                                    "amulet_point_count" };
     
     getBalancePage = new ServerActionPage( "get_balance", 
-                                             1, resultNamesC, true );
+                                             4, resultNamesC, true );
 
     menuPage = new MenuPage();
 
@@ -655,6 +666,12 @@ void freeFrameDrawer() {
         delete [] userEmail;
         userEmail = NULL;
         }
+
+    if( justAcquiredAmuletTGAURL != NULL ) {
+        delete [] justAcquiredAmuletTGAURL;
+        justAcquiredAmuletTGAURL = NULL;
+        }
+     
 
     freeSoundSprite( moveWaitingSoundSprite );
 
@@ -1319,6 +1336,39 @@ void drawFrame( char inUpdate ) {
                 userBalance = 
                     getBalancePage->getResponseDouble( "dollarBalance" );
                 
+
+                if( amuletID == 0 ) {
+                    
+                    justAcquiredAmuletID = 
+                        getBalancePage->getResponseInt( "amulet_id" );
+                
+                    if( justAcquiredAmuletID != 0 ) {
+                        
+                        amuletID = justAcquiredAmuletID;
+
+                        if( justAcquiredAmuletTGAURL != NULL ) {
+                            delete [] justAcquiredAmuletTGAURL;
+                            }
+                        justAcquiredAmuletTGAURL =
+                            getBalancePage->getResponse( 
+                                "amulet_tga_url" );
+                    
+                        amuletPointCount = 
+                            getBalancePage->getResponseInt( 
+                                "amulet_point_count" );
+                        }
+                    }
+                else {
+                    // already know we have this amulet
+                    
+                    // get point update
+                    amuletPointCount = 
+                        getBalancePage->getResponseInt( 
+                            "amulet_point_count" );
+                    }
+                
+
+
                 currentGamePage = menuPage;
                 currentGamePage->base_makeActive( true );
                 }

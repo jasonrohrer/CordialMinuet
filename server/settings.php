@@ -460,7 +460,7 @@ $tournamentPrizeRatio = 1.5;
 
 $amuletMaxStake = "5.00";
 
-$amuletInactivityLimit = "0 0:02:00.000";
+$amuletInactivityLimit = "0 2:00:00.000";
 
 $amuletLastStandingPoints = 200;
 

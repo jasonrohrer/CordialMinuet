@@ -16,13 +16,23 @@ extern Font *numbersFontFixed;
 extern double userBalance;
 
 
+extern int justAcquiredAmuletID;
+extern char *justAcquiredAmuletTGAURL;
 
-const char *getBalancePartNames[1] = { "dollarBalance" };
+extern int amuletID;
+extern int amuletPointCount;
+
+
+
+const char *getBalancePartNames[4] = { "dollarBalance",
+                                       "amulet_id",
+                                       "amulet_tga_url",
+                                       "amulet_point_count" };
 
 
 DepositDisplayPage::DepositDisplayPage()
         : ServerActionPage( "get_balance",
-                            1, getBalancePartNames, true ),
+                            4, getBalancePartNames, true ),
           mWithdraw( false ),
           mLeftGame( false ),
           mOkayButton( mainFont, 0, -200, 
@@ -89,6 +99,38 @@ void DepositDisplayPage::setDeltaAmount( double inAmount ) {
 void DepositDisplayPage::step() {
     if( isResponseReady() ) {
         mOkayButton.setVisible( true );
+
+
+        if( amuletID == 0 ) {
+                    
+            justAcquiredAmuletID = 
+                getResponseInt( "amulet_id" );
+                
+            if( justAcquiredAmuletID != 0 ) {
+                        
+                amuletID = justAcquiredAmuletID;
+
+                if( justAcquiredAmuletTGAURL != NULL ) {
+                    delete [] justAcquiredAmuletTGAURL;
+                    }
+                justAcquiredAmuletTGAURL =
+                    getResponse( 
+                        "amulet_tga_url" );
+                
+                amuletPointCount = 
+                    getResponseInt( 
+                        "amulet_point_count" );
+                }
+            }
+        else {
+            // already know we have this amulet
+            
+            // get point update
+            amuletPointCount = 
+                getResponseInt( 
+                    "amulet_point_count" );
+            }
+
         }
     ServerActionPage::step();
     }

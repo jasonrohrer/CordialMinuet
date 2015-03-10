@@ -985,9 +985,6 @@ function cm_setupDatabase() {
             "elo_rating INT NOT NULL,".
             "last_buy_in DECIMAL(13, 2) NOT NULL,".
             "last_pay_out DECIMAL(13, 4) NOT NULL,".
-            // amulet id that was part of the last payout
-            // 0 otherwise
-            "last_pay_out_amulet INT NOT NULL,".
             "sequence_number INT UNSIGNED NOT NULL," .
             "request_sequence_number INT UNSIGNED NOT NULL," .
             "last_action_time DATETIME NOT NULL," .
@@ -2098,9 +2095,9 @@ function cm_getBalance() {
         }
     
     echo "$dollar_balance\n";
-    //echo "$amulet_id\n";
-    //echo "$amulet_tga_url\n";
-    //echo "$amulet_points\n";
+    echo "$amulet_id\n";
+    echo "$amulet_tga_url\n";
+    echo "$amulet_points\n";
     
     echo "OK";
     }
@@ -4835,9 +4832,6 @@ function cm_endOldGames( $user_id, $inForceTie = false ) {
             $player_1_amulet = cm_getHeldAmulet( $old_player_1_id );
             $player_2_amulet = cm_getHeldAmulet( $old_player_2_id );
 
-            $player_1_payout_amulet = 0;
-            $player_2_payout_amulet = 0;
-
 
             $player_1_last_standing = 0;
             $player_2_last_standing = 0;
@@ -4878,7 +4872,6 @@ function cm_endOldGames( $user_id, $inForceTie = false ) {
                         
                         cm_pickUpAmulet( $player_2_amulet, $old_player_1_id );
 
-                        $player_1_payout_amulet = $player_2_amulet;
                         $player_1_amulet = $player_2_amulet;
 
                         $player_2_amulet = 0;
@@ -4897,7 +4890,6 @@ function cm_endOldGames( $user_id, $inForceTie = false ) {
                         
                         cm_pickUpAmulet( $player_1_amulet, $old_player_2_id );
 
-                        $player_2_payout_amulet = $player_1_amulet;
                         $player_2_amulet = $player_1_amulet;
 
                         $player_1_amulet = 0;
@@ -4976,8 +4968,7 @@ function cm_endOldGames( $user_id, $inForceTie = false ) {
                 "SET dollar_balance = dollar_balance + $player_1_payout, ".
                 "total_won = total_won + $won, ".
                 "total_lost = total_lost + $lost, ".
-                "last_pay_out = $player_1_payout, ".
-                "last_pay_out_amulet = $player_1_payout_amulet ".
+                "last_pay_out = $player_1_payout ".
                 "WHERE user_id = '$old_player_1_id';";
             cm_queryDatabase( $query );
 
@@ -5007,8 +4998,7 @@ function cm_endOldGames( $user_id, $inForceTie = false ) {
                 "SET dollar_balance = dollar_balance + $player_2_payout, ".
                 "total_won = total_won + $won, ".
                 "total_lost = total_lost + $lost, ".
-                "last_pay_out = $player_2_payout, ".
-                "last_pay_out_amulet = $player_2_payout_amulet ".
+                "last_pay_out = $player_2_payout ".
                 "WHERE user_id = '$old_player_2_id';";
             cm_queryDatabase( $query );
 
@@ -5461,8 +5451,7 @@ function cm_joinGame() {
             "games_started = games_started + 1, ".
             "total_buy_in = total_buy_in + $dollar_amount, ".
             "last_buy_in = $dollar_amount, ".
-            "last_pay_out = -1, ".
-            "last_pay_out_amulet = 0 ".
+            "last_pay_out = -1 ".
             "WHERE user_id = '$player_1_id' OR user_id = '$user_id';";
         cm_queryDatabase( $query );
 
@@ -5531,8 +5520,7 @@ function cm_joinGame() {
     // the opponent joins (then we set last_buy_in for both)
     $query = "UPDATE $tableNamePrefix"."users SET ".
         "games_created = games_created + 1, last_buy_in = 0, ".
-        "last_pay_out = 0, ".
-        "last_pay_out_amulet = 0 ".
+        "last_pay_out = 0 ".
         "WHERE user_id = '$user_id';";
     
     $result = cm_queryDatabase( $query );
@@ -5916,7 +5904,7 @@ function cm_leaveGame() {
 
     global $tableNamePrefix;
     
-    $query = "SELECT last_buy_in, last_pay_out, last_pay_out_amulet ".
+    $query = "SELECT last_buy_in, last_pay_out ".
         "FROM $tableNamePrefix"."users ".
         "WHERE user_id = '$user_id';";
 
@@ -5931,29 +5919,13 @@ function cm_leaveGame() {
 
     $last_buy_in = mysql_result( $result, 0, "last_buy_in" );
     $last_pay_out = mysql_result( $result, 0, "last_pay_out" );
-    $last_pay_out_amulet = mysql_result( $result, 0, "last_pay_out_amulet" );
 
-    
-    cm_queryDatabase( "COMMIT;" );
-
-    $amulet_tga_url = "#";
-    $amulet_points = 0;
-    
-    if( $last_pay_out_amulet != 0 ) {
-        $amulet_tga_url = cm_getAmuletTGAURL( $last_pay_out_amulet );
-        
-
-        $amulet_points = cm_getAmuletPoints( $last_pay_out_amulet, $user_id );
-        }
     
     cm_queryDatabase( "COMMIT;" );
 
     
     echo "$last_buy_in\n";
     echo "$last_pay_out\n";
-    //echo "$last_pay_out_amulet\n";
-    //echo "$amulet_tga_url\n";
-    //echo "$amulet_points\n";
     echo "OK";
     }
 

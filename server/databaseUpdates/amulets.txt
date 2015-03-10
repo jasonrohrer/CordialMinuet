@@ -1,1 +1,0 @@
-ALTER TABLE minuetServer_users ADD last_pay_out_amulet int NOT NULL AFTER last_pay_out;
