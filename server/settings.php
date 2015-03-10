@@ -458,6 +458,15 @@ $tournamentPrizeRatio = 1.5;
 
 // amulet settings
 
+$amuletMaxStake = "5.00";
+
+$amuletInactivityLimit = "0 0:02:00.000";
+
+$amuletLastStandingPoints = 200;
+
+$amuletHoldPenaltyPerMinute = 1;
+
+
 // each amulet must have a unique ID that hasn't been used for past amulets
 // the id must not be zero
 

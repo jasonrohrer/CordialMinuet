@@ -1714,6 +1714,10 @@ function cm_checkForFlush() {
 
         // Execute flush operations here
 
+
+        
+        // flush stale games
+        
         $query = "SELECT player_1_id, player_2_id ".
             "FROM $tableNamePrefix"."games ".
             "WHERE last_action_time < ".
@@ -1744,6 +1748,51 @@ function cm_checkForFlush() {
 
 
 
+        
+        // look for amulet holders that have been inactive too long
+        
+        // how many live games are running?
+        $liveGameCount =
+            cm_countQuery(
+                "games",
+                "player_1_id != 0 AND player_2_id != 0 " );
+        
+        $users_to_skip = $liveGameCount - 1;
+        if( $liveGameCount == 0 ) {
+            $users_to_skip = 0;
+            }
+        
+        global $amuletInactivityLimit;
+        
+        $query = "SELECT holding_user_id ".
+            "FROM $tableNamePrefix"."amulets ".
+            "WHERE last_amulet_game_time < ".
+            "SUBTIME( CURRENT_TIMESTAMP, '$amuletInactivityLimit' ) ".
+            "AND holding_user_id != 0 ".
+            "FOR UPDATE;";
+
+        $result = cm_queryDatabase( $query );
+
+        $numRows = mysql_numrows( $result );
+    
+        for( $i=0; $i<$numRows; $i++ ) {
+            $holding_user_id =
+                mysql_result( $result, $i, "holding_user_id" );
+
+            cm_subtractPointsForAmuletHoldTime( $holding_user_id );
+            
+            $query = "UPDATE $tableNamePrefix"."amulets " .
+                "SET holding_user_id = 0, ".
+                "users_to_skip_on_drop = $users_to_skip ".
+                "WHERE holding_user_id = $holding_user_id;";
+            
+            cm_queryDatabase( $query );
+            }
+
+        cm_queryDatabase( "COMMIT;" );
+
+
+        
         
         // payout tournament prizes if tournament just ended
 
@@ -4293,6 +4342,8 @@ function cm_getAmuletPoints( $amulet_id, $user_id ) {
 function cm_getAmuletHoldTimePenalty( $user_id ) {
 
     global $tableNamePrefix;
+
+    global $amuletHoldPenaltyPerMinute;
     
     $query = "SELECT ".
         "TIMESTAMPDIFF( MINUTE, acquire_time, CURRENT_TIMESTAMP ) ".
@@ -4306,7 +4357,7 @@ function cm_getAmuletHoldTimePenalty( $user_id ) {
     if( $numRows == 1 ) {
         $minutes_held = mysql_result( $result, 0, "minutes_held" );
 
-        return $minutes_held;
+        return $amuletHoldPenaltyPerMinute * $minutes_held;
         }
     else {
         return 0;
@@ -4346,8 +4397,9 @@ function cm_subtractPointsForAmuletHoldTime( $user_id ) {
 function cm_addPointsForAmuletWin( $amulet_id, $user_id ) {
     global $tableNamePrefix;
 
+    global $amuletLastStandingPoints;
     
-    $winPoints = 200;
+    $winPoints = $amuletLastStandingPoints;
 
     $query = "INSERT INTO $tableNamePrefix"."amulet_points " .
         "SET amulet_id = $amulet_id, user_id = $user_id, ".
