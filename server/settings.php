@@ -458,7 +458,7 @@ $tournamentPrizeRatio = 1.5;
 
 // amulet settings
 
-$amuletMaxStake = "5.00";
+$amuletMaxStake = "3.00";
 
 $amuletInactivityLimit = "0 2:00:00.000";
 

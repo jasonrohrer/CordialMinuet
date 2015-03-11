@@ -2053,6 +2053,29 @@ function cm_checkInPersonCode() {
 
 
 
+// returns -1 on failure
+function cm_getPlayerBalance( $user_id ) {
+
+    global $tableNamePrefix;
+        
+    $query = "SELECT dollar_balance ".
+        "FROM $tableNamePrefix"."users ".
+        "WHERE user_id = '$user_id';";
+
+    $result = cm_queryDatabase( $query );
+    
+    $numRows = mysql_numrows( $result );
+
+    if( $numRows == 0 ) {
+        return -1;
+        }
+
+    return mysql_result( $result, 0, "dollar_balance" );
+    }
+
+
+
+
 function cm_getBalance() {
     if( ! cm_verifyTransaction() ) {
         return;
@@ -2063,25 +2086,14 @@ function cm_getBalance() {
     cm_endOldGames( $user_id );
     
     
-    global $tableNamePrefix;
-    
-    
-    // does account for this email exist already?
-    $query = "SELECT dollar_balance ".
-        "FROM $tableNamePrefix"."users ".
-        "WHERE user_id = '$user_id';";
+    $dollar_balance = cm_getPlayerBalance( $user_id );
 
-    $result = cm_queryDatabase( $query );
-    
-    $numRows = mysql_numrows( $result );
-
-    if( $numRows == 0 ) {
+    if( $dollar_balance == -1 ) {
         cm_transactionDeny();
         return;
         }
-
-    $dollar_balance = mysql_result( $result, 0, "dollar_balance" );
-
+    
+    
     $amulet_id = cm_getHeldAmulet( $user_id );
     
     
@@ -4445,7 +4457,17 @@ function cm_countQuery( $inTableName, $inWhere ) {
 
 
 
-function cm_pickUpDroppedAmulet( $user_id ) {
+function cm_pickUpDroppedAmulet( $user_id, $inAmountJustWon ) {
+    global $amuletMaxStake;
+
+    if( cm_getPlayerBalance( $user_id ) + $inAmountJustWon
+        < $amuletMaxStake ) {
+        
+        // player ineligible to pick up a dropped amulet (balance too low)
+        return;
+        }
+    
+
     // find an amulet
 
     // note that this code uses FOR UPDATE locks on select
@@ -4906,10 +4928,12 @@ function cm_endOldGames( $user_id, $inForceTie = false ) {
                 // but this doesn't count as a payout from this match
                 
                 if( $player_1_last_standing ) {
-                    cm_pickUpDroppedAmulet( $old_player_1_id );
+                    cm_pickUpDroppedAmulet( $old_player_1_id,
+                                            $player_1_payout );
                     }
                 else if( $player_2_last_standing ) {
-                    cm_pickUpDroppedAmulet( $old_player_2_id );
+                    cm_pickUpDroppedAmulet( $old_player_2_id,
+                                            $player_2_payout );
                     }
                 }
             
