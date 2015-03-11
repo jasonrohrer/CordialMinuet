@@ -4342,7 +4342,13 @@ function cm_getAmuletPoints( $amulet_id, $user_id ) {
         return 0;
         }
     else {
-        return mysql_result( $result, 0, "points" ) - $penalty;
+        $points = mysql_result( $result, 0, "points" ) - $penalty;
+
+        if( $points < 0 ) {
+            $points = 0;
+            }
+        
+        return $points;
         }
     }
 

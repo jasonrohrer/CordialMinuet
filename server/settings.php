@@ -474,7 +474,7 @@ $amuletHoldPenaltyPerMinute = 1;
 
 $amulets = array(
     1 => array( "09-Mar-2015 11:11:00 -0800",
-                "http://cordialminuet.com/amulets/1.tga",
+                "http://192.168.0.4/jcr13/testAmulet.tga",
                 "http://cordialminuet.com/amulets/1.png" ),
     2 => array( "09-Mar-2015 11:11:00 -0800",
                 "http://cordialminuet.com/amulets/2.tga",

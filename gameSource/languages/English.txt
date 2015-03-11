@@ -238,6 +238,12 @@ applyingUpdate "APPLYING UPDATE"
 
 
 
+receivingAmulet "RECEIVING AMULET"
+receivingAmuletFailed "FAILED TO FETCH AMULET"
+
+
+
+
 pauseMessage1 "[ENTER] TO RESUME"
 
 pauseMessage2 "OR TYPE SOMETHING:"

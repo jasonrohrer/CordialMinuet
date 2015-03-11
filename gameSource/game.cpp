@@ -71,6 +71,7 @@ CustomRandomSource randSource( 34957197 );
 #include "WaitGamePage.h"
 #include "PlayGamePage.h"
 #include "ExtendedMessagePage.h"
+#include "GetAmuletPage.h"
 
 
 #include "serialWebRequests.h"
@@ -78,6 +79,7 @@ CustomRandomSource randSource( 34957197 );
 
 #include "chime.h"
 
+#include "amuletCache.h"
 
 
 
@@ -109,6 +111,7 @@ WaitGamePage *waitGamePage;
 ServerActionPage *leaveGamePage;
 ServerActionPage *joinGamePage;
 PlayGamePage *playGamePage;
+GetAmuletPage *getAmuletPage;
 
 
 // position of view in world
@@ -243,6 +246,7 @@ char inPersonMode = false;
 int playerIsAdmin = 0;
 
 
+// this is non-zero only if amuletID below is one we just picked up
 int justAcquiredAmuletID = 0;
 char *justAcquiredAmuletTGAURL = NULL;
 
@@ -588,6 +592,8 @@ void initFrameDrawer( int inWidth, int inHeight, int inTargetFrameRate,
 
     playGamePage = new PlayGamePage();
 
+    getAmuletPage = new GetAmuletPage();
+
 
     currentGamePage = getServerURLPage;
 
@@ -645,6 +651,7 @@ void freeFrameDrawer() {
     delete leaveGamePage;
     delete joinGamePage;
     delete playGamePage;
+    delete getAmuletPage;
     
 
     if( shutdownMessage != NULL ) {
@@ -671,7 +678,9 @@ void freeFrameDrawer() {
         delete [] justAcquiredAmuletTGAURL;
         justAcquiredAmuletTGAURL = NULL;
         }
-     
+    
+    freeAmuletCache();
+    
 
     freeSoundSprite( moveWaitingSoundSprite );
 
@@ -960,6 +969,19 @@ void deleteCharFromUserTypedMessage() {
         if( !fileSeparatorDeleted && length > 0 ) {
             currentUserTypedMessage[ length - 1 ] = '\0';
             }
+        }
+    }
+
+
+
+
+// returns either menuPage or getAmuletPage, depending on what's needed
+static GamePage *menuOrAmuletPage() {
+    if( justAcquiredAmuletID != 0 ) {
+        return getAmuletPage;
+        }
+    else {
+        return menuPage;
         }
     }
 
@@ -1275,7 +1297,7 @@ void drawFrame( char inUpdate ) {
                     }
                 else {
                     // logged in already
-                    currentGamePage = menuPage;
+                    currentGamePage = menuOrAmuletPage();
                     currentGamePage->base_makeActive( true );
                     }
                 }
@@ -1336,40 +1358,36 @@ void drawFrame( char inUpdate ) {
                 userBalance = 
                     getBalancePage->getResponseDouble( "dollarBalance" );
                 
-
-                if( amuletID == 0 ) {
-                    
-                    justAcquiredAmuletID = 
-                        getBalancePage->getResponseInt( "amulet_id" );
                 
+                justAcquiredAmuletID = 
+                    getBalancePage->getResponseInt( "amulet_id" );
+                
+                if( amuletID != justAcquiredAmuletID ) {
+                    
+                    amuletID = justAcquiredAmuletID;
+
                     if( justAcquiredAmuletID != 0 ) {
                         
-                        amuletID = justAcquiredAmuletID;
-
                         if( justAcquiredAmuletTGAURL != NULL ) {
                             delete [] justAcquiredAmuletTGAURL;
                             }
                         justAcquiredAmuletTGAURL =
                             getBalancePage->getResponse( 
                                 "amulet_tga_url" );
-                    
-                        amuletPointCount = 
-                            getBalancePage->getResponseInt( 
-                                "amulet_point_count" );
                         }
-                    }
+                    }                
                 else {
-                    // already know we have this amulet
-                    
-                    // get point update
-                    amuletPointCount = 
-                        getBalancePage->getResponseInt( 
-                            "amulet_point_count" );
+                    // already know we have it
+                    justAcquiredAmuletID = 0;
                     }
                 
+                amuletPointCount = 
+                    getBalancePage->getResponseInt( 
+                        "amulet_point_count" );
 
 
-                currentGamePage = menuPage;
+
+                currentGamePage = menuOrAmuletPage();
                 currentGamePage->base_makeActive( true );
                 }
             }
@@ -1378,7 +1396,7 @@ void drawFrame( char inUpdate ) {
                 userBalance = 
                     depositDisplayPage->getResponseDouble( "dollarBalance" );
                 
-                currentGamePage = menuPage;
+                currentGamePage = menuOrAmuletPage();
                 currentGamePage->base_makeActive( true );
                 }
             }
@@ -1431,7 +1449,7 @@ void drawFrame( char inUpdate ) {
         else if( currentGamePage == withdrawPage ) {
             if( withdrawPage->checkSignal( "back" ) ) {
                 
-                currentGamePage = menuPage;
+                currentGamePage = menuOrAmuletPage();
                 currentGamePage->base_makeActive( true );
                 }
             else if( withdrawPage->checkSignal( "sendCheck" ) ) {
@@ -1460,7 +1478,7 @@ void drawFrame( char inUpdate ) {
         else if( currentGamePage == sendCheckPage ) {
             if( sendCheckPage->checkSignal( "back" ) ) {
                 
-                currentGamePage = menuPage;
+                currentGamePage = menuOrAmuletPage();
                 currentGamePage->base_makeActive( true );
                 }
             else if( sendCheckPage->checkSignal( "moreInfoNeeded" ) ) {
@@ -1481,7 +1499,7 @@ void drawFrame( char inUpdate ) {
         else if( currentGamePage == sendCheckGlobalPage ) {
             if( sendCheckGlobalPage->checkSignal( "back" ) ) {
                 
-                currentGamePage = menuPage;
+                currentGamePage = menuOrAmuletPage();
                 currentGamePage->base_makeActive( true );
                 }
             else if( sendCheckGlobalPage->checkSignal( "moreInfoNeeded" ) ) {
@@ -1502,7 +1520,7 @@ void drawFrame( char inUpdate ) {
         else if( currentGamePage == accountTransferPage ) {
             if( accountTransferPage->checkSignal( "back" ) ) {
                 
-                currentGamePage = menuPage;
+                currentGamePage = menuOrAmuletPage();
                 currentGamePage->base_makeActive( true );
                 }
             else if( accountTransferPage->isResponseReady() ) {
@@ -1526,7 +1544,7 @@ void drawFrame( char inUpdate ) {
                     withdrawalDisplayPage->getResponseDouble( 
                         "dollarBalance" );
                 
-                currentGamePage = menuPage;
+                currentGamePage = menuOrAmuletPage();
                 currentGamePage->base_makeActive( true );
                 }
             }
@@ -1607,6 +1625,12 @@ void drawFrame( char inUpdate ) {
         else if( currentGamePage == extendedMessagePage ) {
             if( extendedMessagePage->checkSignal( "done" ) ) {
                 currentGamePage = getBalancePage;
+                currentGamePage->base_makeActive( true );
+                }
+            }
+        else if( currentGamePage == getAmuletPage ) {
+            if( getAmuletPage->checkSignal( "done" ) ) {
+                currentGamePage = menuPage;
                 currentGamePage->base_makeActive( true );
                 }
             }

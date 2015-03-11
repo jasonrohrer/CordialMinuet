@@ -98,39 +98,37 @@ void DepositDisplayPage::setDeltaAmount( double inAmount ) {
 
 void DepositDisplayPage::step() {
     if( isResponseReady() ) {
-        mOkayButton.setVisible( true );
-
-
-        if( amuletID == 0 ) {
-                    
+        
+        if( ! mOkayButton.isVisible() ) {
+            
             justAcquiredAmuletID = 
                 getResponseInt( "amulet_id" );
-                
-            if( justAcquiredAmuletID != 0 ) {
-                        
-                amuletID = justAcquiredAmuletID;
-
-                if( justAcquiredAmuletTGAURL != NULL ) {
-                    delete [] justAcquiredAmuletTGAURL;
-                    }
-                justAcquiredAmuletTGAURL =
-                    getResponse( 
-                        "amulet_tga_url" );
-                
-                amuletPointCount = 
-                    getResponseInt( 
-                        "amulet_point_count" );
-                }
-            }
-        else {
-            // already know we have this amulet
             
-            // get point update
+            if( amuletID != justAcquiredAmuletID ) {
+                
+                amuletID = justAcquiredAmuletID;
+                
+                if( justAcquiredAmuletID != 0 ) {
+                    
+                    if( justAcquiredAmuletTGAURL != NULL ) {
+                        delete [] justAcquiredAmuletTGAURL;
+                        }
+                    justAcquiredAmuletTGAURL =
+                        getResponse( 
+                            "amulet_tga_url" );
+                    }
+                }    
+            else {
+                // already know we have it
+                justAcquiredAmuletID = 0;
+                }
+        
             amuletPointCount = 
                 getResponseInt( 
                     "amulet_point_count" );
+        
+            mOkayButton.setVisible( true );
             }
-
         }
     ServerActionPage::step();
     }

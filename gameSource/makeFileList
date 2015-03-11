@@ -50,6 +50,8 @@ PlayGamePage.cpp \
 ExtendedMessagePage.cpp \
 AutoUpdatePage.cpp \
 InPersonPage.cpp \
+amuletCache.cpp \
+GetAmuletPage.cpp \
 
 
 
