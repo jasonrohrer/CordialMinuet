@@ -165,7 +165,16 @@ gamesNotAllowed "GAMES CANNOT START NOW"
 
 buyIn "GAME STAKES:"
 
+amuletGame "AMULET GAME"
+
+amuletLimit "AMULET GAME NEEDS $%.2f BALANCE" 
+
 create "CREATE"
+
+
+amuletTip "RANDOM STAKES $%.2f OR LOWER"
+nonAmuletTip "MAKE A NON-AMULET GAME"
+
 
 
 waitingStart "WAITING FOR OPPONENT"

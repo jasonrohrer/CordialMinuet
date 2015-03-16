@@ -1,0 +1,8 @@
+ALTER TABLE minuetServer_games ADD amulet_game TINYINT UNSIGNED NOT NULL AFTER dollar_amount;
+
+ALTER TABLE minuetServer_games ADD amulet_game_wait_time DATETIME NOT NULL AFTER amulet_game;
+
+ALTER TABLE minuetServer_games ADD INDEX( amulet_game );
+ALTER TABLE minuetServer_games ADD INDEX( amulet_game_wait_time );
+
+UPDATE minuetServer_games SET amulet_game = 0;

@@ -1131,6 +1131,12 @@ function cm_setupDatabase() {
             "INDEX( player_2_id )," .
             "dollar_amount DECIMAL(11, 2) NOT NULL,".
             "INDEX( dollar_amount )," .
+            "amulet_game TINYINT UNSIGNED NOT NULL,".
+            "INDEX( amulet_game ),".
+            // wait for a random amount of time before
+            // settling on an opponent for an amulet game
+            "amulet_game_wait_time DATETIME NOT NULL,".
+            "INDEX( amulet_game_wait_time ),".
             "started TINYINT UNSIGNED NOT NULL,".
             "round_number INT UNSIGNED NOT NULL," .
             // 36-cell square, numbers from 1 to 36, separated by #
@@ -5327,6 +5333,32 @@ function cm_joinGame() {
         return;
         }
 
+    $amulet_game = cm_requestFilter( "amulet_game", "/[01]/", "0" );
+
+
+    $amulet_id = cm_getHeldAmulet( $user_id );
+
+    if( $amulet_game && $amulet_id == 0 ) {
+        cm_log( "cm_joinGame denied, asked for amulet_game when not ".
+                "holding an amulet" );
+        cm_transactionDeny();
+        return;        
+        }
+    
+    
+    
+
+    global $amuletMaxStake;
+
+    if( $amulet_game && $dollar_amount != $amuletMaxStake ) {
+        cm_log( "cm_joinGame denied, dollar_amount $dollar_amount ".
+                "does not match amuletMaxStake $amuletMaxStake for ".
+                "amulet game" );
+        cm_transactionDeny();
+        return;
+        }
+    
+    
     
     $recomputedBalance = cm_recomputeBalanceFromHistory( $user_id );
     
@@ -5438,6 +5470,7 @@ function cm_joinGame() {
         "FROM $tableNamePrefix"."games ".
         "WHERE player_1_id != 0 AND player_2_id = 0 AND started = 0 ".
         "AND dollar_amount = '$dollar_amount' ".
+        "AND amulet_game = 0 ".
         "$tournamentPairingClause ".
         "LIMIT 1 FOR UPDATE;";
 
@@ -5446,8 +5479,100 @@ function cm_joinGame() {
     
     $numRows = mysql_numrows( $result );
 
+
+    $returnJoinResult = true;
+    $needToSignalOldSem = false;
+    $oldSemKey;
     
-    if( $numRows == 1 ) {
+
+    
+    $joiningPlayerID = $user_id;
+
+    
+    if( $numRows == 1 && !$amulet_game && $dollar_amount <= $amuletMaxStake ) {
+
+        $game_id = mysql_result( $result, 0, "game_id" );
+        $player_1_id = mysql_result( $result, 0, "player_1_id" );
+        $semaphore_key = mysql_result( $result, 0, "semaphore_key" );
+        
+        // have a pair of players about to join each other
+        // this game is in amulet range
+
+        // check if an amulet player is waiting
+
+        $query = "SELECT semaphore_key, player_1_id, game_id ".
+            "FROM $tableNamePrefix"."games ".
+            "WHERE player_1_id != 0 AND player_2_id = 0 AND started = 0 ".
+            "AND amulet_game = 1 ".
+            "AND CURRENT_TIMESTAMP > amulet_game_wait_time ".
+            "LIMIT 1 FOR UPDATE;";
+
+
+        $resultAmulet = cm_queryDatabase( $query );
+
+
+        $numRowsAmulet = mysql_numrows( $resultAmulet );
+
+        if( $numRowsAmulet == 1 ) {
+            
+            // got one!
+
+            $amuletOpponent;
+            $hangingOpponent;
+            
+            // pull one of them away from the game they're about to connect
+            // leave otehr hanging
+            if( rand(0, 1 ) ) {
+
+                // pulling away player that is joining game, can just
+                // leave game creator hanging (they were already hanging)
+            
+                // just replace our selected result with the amulet game result
+
+                $joiningPlayerID = $user_id;
+                $result = $resultAmulet;
+
+                $returnJoinResult = true;
+                }
+            else {
+
+                // pulling away player that created game
+
+                // they are waiting on the other semaphore
+
+
+                $joiningPlayerID = $player_1_id;
+
+                $needToSignalOldSem = true;
+                $oldSemKey = $semaphore_key;
+
+                // again,
+                // replace our selected result with the amulet game result
+                $result = $resultAmulet;
+
+                // BUT delete the old game that they created
+                $query = "DELETE FROM $tableNamePrefix"."games ".
+                    "WHERE game_id = $game_id;";
+                cm_queryDatabase( $query );
+
+                // we'll delete the semaphore below after we signal it
+                // one last time
+            
+            
+                // let the joining player create their own game and return THAT
+                // result
+                $returnJoinResult = false;
+                }
+            }
+        }
+    
+
+
+    
+
+    // ignore existing games and ALWAYS create a new game for amulet_game
+    
+    if( $numRows == 1 && ! $amulet_game ) {
         // one exists already
 
         // join it
@@ -5460,7 +5585,9 @@ function cm_joinGame() {
         $anteCoins = cm_getAnte( 1 );
         
         $query = "UPDATE $tableNamePrefix"."games ".
-            "SET player_2_id = '$user_id', started = 1,  ".
+            "SET player_2_id = '$joiningPlayerID', ".
+            "dollar_amount = '$dollar_amount', ".
+            "started = 1,  ".
             "player_1_coins = player_1_coins - $anteCoins, ".
             "player_2_coins = player_2_coins - $anteCoins, ".
             "player_1_pot_coins = $anteCoins, ".
@@ -5482,42 +5609,52 @@ function cm_joinGame() {
             "total_buy_in = total_buy_in + $dollar_amount, ".
             "last_buy_in = $dollar_amount, ".
             "last_pay_out = -1 ".
-            "WHERE user_id = '$player_1_id' OR user_id = '$user_id';";
+            "WHERE user_id = '$player_1_id' OR user_id = '$joiningPlayerID';";
         cm_queryDatabase( $query );
 
         cm_addLedgerEntry( $player_1_id, $game_id, - $dollar_amount );
-        cm_addLedgerEntry( $user_id, $game_id, - $dollar_amount );
+        cm_addLedgerEntry( $joiningPlayerID, $game_id, - $dollar_amount );
 
 
         if( cm_isTournamentLive( $dollar_amount ) ) {
             if( cm_isUserInTournament( $player_1_id )
                 &&
-                cm_isUserInTournament( $user_id ) ) {
+                cm_isUserInTournament( $joiningPlayerID ) ) {
                 
-                cm_tournamentBuyIn( $player_1_id, $user_id );
-                cm_tournamentBuyIn( $user_id, $player_1_id );
+                cm_tournamentBuyIn( $player_1_id, $joiningPlayerID );
+                cm_tournamentBuyIn( $joiningPlayerID, $player_1_id );
                 }
             }
         
         
         $query = "UPDATE $tableNamePrefix"."users ".
             "SET games_joined = games_joined + 1 ".
-            "WHERE user_id = '$user_id';";
+            "WHERE user_id = '$joiningPlayerID';";
         cm_queryDatabase( $query );
 
         
         $response = "OK";
+
+        if( $returnJoinResult ) {
+            
+            $query = "UPDATE $tableNamePrefix"."users SET ".
+                "last_request_response = '$response', ".
+                "last_request_tag = '$request_tag' ".
+                "WHERE user_id = '$user_id';";
+            
+            cm_queryDatabase( $query );
+            }
         
-        $query = "UPDATE $tableNamePrefix"."users SET ".
-            "last_request_response = '$response', ".
-            "last_request_tag = '$request_tag' ".
-            "WHERE user_id = '$user_id';";
-
-        cm_queryDatabase( $query );
-
 
         // wake up opponent who may be waiting
         semSignal( $semaphore_key );
+
+        if( $needToSignalOldSem ) {
+            // waiting game creator was pulled in as joiner for an amulet
+            // game.  They are waiting on the old semaphore
+            semSignal( $oldSemKey );
+            semRemove( $oldSemKey );
+            }
         
     
         cm_queryDatabase( "COMMIT;" );
@@ -5528,10 +5665,16 @@ function cm_joinGame() {
         cm_incrementStat( "total_buy_in", $dollar_amount * 2 );
 
         cm_updateMaxStat( "max_game_stakes", $dollar_amount );
-        
-        echo $response;
 
-        return;
+        if( $returnJoinResult ) {
+            echo $response;
+
+            return;
+
+            // otherwise, go on below and allow joiner to create
+            // their own game (we pulled the waiting game creator
+            // out from under them)
+            }
         }
 
 
@@ -5567,6 +5710,7 @@ function cm_joinGame() {
 
     global $houseTableCoins;
 
+    global $amuletJoinDelayMaxSec;
     
     
     $playerStartingCoins = $cm_gameCoins - $houseTableCoins;
@@ -5591,6 +5735,12 @@ function cm_joinGame() {
         "player_1_id = '$user_id'," .
         "player_2_id = 0," .
         "dollar_amount = '$dollar_amount',".
+        "amulet_game = '$amulet_game',".
+        "amulet_game_wait_time = ".
+        "  TIMESTAMPADD( ".
+        "    SECOND, ".
+        "    FLOOR( RAND() * $amuletJoinDelayMaxSec ), ".
+        "    CURRENT_TIMESTAMP ),".
         "started = 0,".
         "round_number = 1,".
         "game_square = '$square',".
@@ -5858,9 +6008,9 @@ function cm_waitGameStart() {
         else {
 
 
-            $query = "SELECT player_2_id ".
+            $query = "SELECT player_1_id, player_2_id ".
                 "FROM $tableNamePrefix"."games ".
-                "WHERE player_1_id = '$user_id';";
+                "WHERE player_1_id = '$user_id' OR player_2_id = '$user_id';";
             
             $result = cm_queryDatabase( $query );
 
@@ -5874,10 +6024,11 @@ function cm_waitGameStart() {
                 return;
                 }
 
+            $player_1_id = mysql_result( $result, 0, "player_1_id" );
             $player_2_id = mysql_result( $result, 0, "player_2_id" );
 
 
-            if( $player_2_id == 0 ) {
+            if( $player_1_id == 0 || $player_2_id == 0 ) {
                 // sem signaled, but opponent still not there?
                 echo "waiting\n";
                 echo "$otherGameList\n";
@@ -5966,12 +6117,13 @@ function cm_listGames() {
         return;
         }
 
-    global $areGamesAllowed, $minGameStakes, $maxGameStakes;
+    global $areGamesAllowed, $minGameStakes, $maxGameStakes, $amuletMaxStake;
 
     if( !$areGamesAllowed ) {
         echo "0\n";
         echo "$minGameStakes\n";
         echo "$maxGameStakes\n";
+        echo "$amuletMaxStake\n";
         echo "0#0\n";
         echo "OK";
         return;
@@ -5980,6 +6132,7 @@ function cm_listGames() {
         echo "1\n";
         echo "$minGameStakes\n";
         echo "$maxGameStakes\n";
+        echo "$amuletMaxStake\n";
         }
     
 
@@ -6038,7 +6191,8 @@ function cm_listGames() {
     $query_limit = $limit + 1;
     
     $query = "SELECT dollar_amount FROM $tableNamePrefix"."games ".
-        "WHERE player_2_id = 0 AND started = 0 $ignoreClause".
+        "WHERE player_2_id = 0 AND started = 0 ".
+        "AND amulet_game = 0 $ignoreClause".
         "ORDER BY dollar_amount ASC ".
         "LIMIT $skip, $query_limit;";
 

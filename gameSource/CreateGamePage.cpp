@@ -5,6 +5,8 @@
 #include "message.h"
 #include "accountHmac.h"
 
+#include "amuletCache.h"
+
 
 #include "minorGems/game/Font.h"
 #include "minorGems/game/game.h"
@@ -28,11 +30,17 @@ extern double minGameStakes;
 extern double maxGameStakes;
 
 
+extern int amuletID;
+
+extern double amuletStake;
+
 
 CreateGamePage::CreateGamePage()
         : ServerActionPage( "join_game" ),
-          mAmountPicker( mainFont, 96, 75, 9, 2, 
+          mAmountPicker( mainFont, 96, -75, 9, 2, 
                          translate( "$" ) ),
+          mAmuletGameButton( mainFont, 0, 150, 
+                             translate( "amuletGame" ) ),
           mCreateButton( mainFont, 150, -200, 
                          translate( "create" ) ),
           mCancelButton( mainFont, -150, -200, 
@@ -40,17 +48,22 @@ CreateGamePage::CreateGamePage()
 
 
 
+    addComponent( &mAmuletGameButton );
     addComponent( &mCreateButton );
     addComponent( &mCancelButton );
     
 
+    setButtonStyle( &mAmuletGameButton );
     setButtonStyle( &mCreateButton );
     setButtonStyle( &mCancelButton );
     
 
+    mAmuletGameButton.addActionListener( this );
     mCreateButton.addActionListener( this );
     mCancelButton.addActionListener( this );
 
+
+    mAmuletGameButton.setVisible( false );
 
     addComponent( &mAmountPicker );
     }
@@ -84,10 +97,38 @@ void CreateGamePage::actionPerformed( GUIComponent *inTarget ) {
                                  dollarAmountString );
         delete [] dollarAmountString;
         
+        mAmuletGameButton.setVisible( false );
         mCreateButton.setVisible( false );
         mCancelButton.setVisible( false );
                 
         mAmountPicker.setAdjustable( false );
+        
+        startRequest();
+        }
+    else if( inTarget == &mAmuletGameButton ) {
+        setStatus( NULL, false );
+        
+
+        setupRequestParameterSecurity();
+        
+        
+        double dollarAmount = amuletStake;
+        
+        char *dollarAmountString = autoSprintf( "%.2f", dollarAmount );
+        
+        setParametersFromString( "dollar_amount", 
+                                 dollarAmountString );
+        delete [] dollarAmountString;
+        
+        setActionParameter( "amulet_game", 1 );
+
+        mAmuletGameButton.setVisible( false );
+        mCreateButton.setVisible( false );
+        mCancelButton.setVisible( false );
+                
+        mAmountPicker.setAdjustable( false );
+        
+        mAmountPicker.setVisible( false );
         
         startRequest();
         }
@@ -132,6 +173,34 @@ void CreateGamePage::makeActive( char inFresh ) {
     else {
         mAmountPicker.setPosition( 96, mAmountPicker.getPosition().y );
         }
+    
+    mAmountPicker.setVisible( true );
+
+    if( amuletID != 0 && 
+        userBalance >= amuletStake ) {
+        
+        mAmuletGameButton.setVisible( true );
+
+
+        char *amuletTip = autoSprintf( translate( "amuletTip" ),
+                                       amuletStake );
+        
+        mAmuletGameButton.setMouseOverTip( amuletTip );
+        delete [] amuletTip;
+
+        mCreateButton.setMouseOverTip( translate( "nonAmuletTip" ) );
+
+        //mAmountPicker.setPosition( 96, -75 );
+        }
+    else {
+        mAmuletGameButton.setVisible( false );
+        
+        //mAmountPicker.setPosition( 96, 75 );
+
+        mAmuletGameButton.setMouseOverTip( NULL );
+        mAmuletGameButton.setMouseOverTip( NULL );
+        }
+    
     }
 
 
@@ -146,13 +215,46 @@ void CreateGamePage::draw( doublePair inViewCenter,
                           double inViewSize ) {
     
     doublePair pos = mAmountPicker.getPosition();
-    
-    pos.y += 96;
-    
-    pos.x += 3;
 
-    setDrawColor( 1, 1, 1, 1 );
-    mainFont->drawString( translate( "buyIn" ), pos, alignRight );
+    if( mAmountPicker.isVisible() ) {
+
+        pos.y += 96;
+        
+        pos.x += 3;
+        
+        setDrawColor( 1, 1, 1, 1 );
+        mainFont->drawString( translate( "buyIn" ), pos, alignRight );
+        }
+    
+
+    if( amuletID != 0 ) {
+        pos = mAmuletGameButton.getPosition();
+        
+        pos.y += 64;
+        
+        SpriteHandle amuletSprite = getAmuletSprite( amuletID );
+        
+        if( amuletSprite != NULL ) {
+            setDrawColor( 1, 1, 1, 1 );
+            drawSprite( amuletSprite, pos );
+            }
+        
+        if( userBalance < amuletStake ) {
+            
+            char *limitString = autoSprintf( translate( "amuletLimit" ),
+                                             amuletStake );
+            
+
+            pos = mAmuletGameButton.getPosition();
+            
+            mainFont->drawString( limitString, pos, alignCenter );
+            delete [] limitString;
+            }
+
+        }
+
+    
+
     }
 
 

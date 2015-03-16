@@ -43,6 +43,8 @@ class CreateGamePage : public ServerActionPage, public ActionListener {
         NumberPicker mAmountPicker;
         
 
+        TextButton mAmuletGameButton;
+
         TextButton mCreateButton;
 
         TextButton mCancelButton;
