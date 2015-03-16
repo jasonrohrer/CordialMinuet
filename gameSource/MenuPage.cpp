@@ -4,6 +4,8 @@
 #include "message.h"
 #include "balanceFormat.h"
 
+#include "amuletCache.h"
+
 #include "minorGems/game/game.h"
 #include "minorGems/game/Font.h"
 
@@ -19,6 +21,9 @@ extern char inPersonMode;
 extern double minGameStakes;
 extern double maxGameStakes;
 
+
+extern int amuletID;
+extern int amuletPointCount;
 
 
 void MenuPage::clearListedGames() {
@@ -259,6 +264,30 @@ void MenuPage::draw( doublePair inViewCenter,
     drawMessage( balanceString, pos );
 
     delete [] balanceString;
+
+
+    if( amuletID != 0 ) {
+        pos = mDepositButton.getPosition();
+        
+        pos.y -= 64;
+        
+        SpriteHandle amuletSprite = getAmuletSprite( amuletID );
+        
+        if( amuletSprite != NULL ) {
+            setDrawColor( 1, 1, 1, 1 );
+            drawSprite( amuletSprite, pos );
+            }
+        
+        pos.x += 32;
+        
+        pos.y -= 3;
+        char *scoreString = autoSprintf( "%d", amuletPointCount );
+        
+        mainFont->drawString( scoreString, pos, alignLeft );
+        
+        delete [] scoreString;
+        }
+    
 
 
     if( mListedGames.size() > 0 ) {    
