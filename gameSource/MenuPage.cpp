@@ -570,6 +570,7 @@ void MenuPage::step() {
         startRequest();
         }
     else if( mResponseProcessed && mListedGames.size() > 0 &&
+             ! mPrevButton.isVisible() && ! mNextButton.isVisible() &&
              game_time( NULL ) - mLastResponseTime > 5 ) {
         
         // let them refresh manually now
