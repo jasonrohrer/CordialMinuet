@@ -253,6 +253,8 @@ char *justAcquiredAmuletTGAURL = NULL;
 int amuletID = 0;
 int amuletPointCount;
 
+double amuletStake = 3.00;
+
 
 
 int moveWaitingSoundSprite = -1;
