@@ -25,6 +25,9 @@ extern double maxGameStakes;
 extern int amuletID;
 extern int amuletPointCount;
 
+extern double amuletStake;
+
+
 
 void MenuPage::clearListedGames() {
     mListedGames.deleteAll();
@@ -334,7 +337,7 @@ void MenuPage::step() {
 
         int numLines = getNumResponseParts();
         
-        int numGames = numLines - 4;
+        int numGames = numLines - 5;
 
         for( int i = 0; i<numLines; i++ ) {
             
@@ -371,6 +374,14 @@ void MenuPage::step() {
                 
                 continue;
                 }
+            else if( i == 3 ) {
+                // fourth line is amulet_stakes
+                sscanf( line, "%lf", &amuletStake );
+                
+                delete [] line;
+                
+                continue;
+                }
             
 
             int numParts;
@@ -379,8 +390,8 @@ void MenuPage::step() {
 
             delete [] line;
 
-            if( numParts == 4 && i == 3 ) {
-                // fourth line MAY be tournament info
+            if( numParts == 4 && i == 4 ) {
+                // fifth line MAY be tournament info
                 
                 GameRecord r;
                     
@@ -393,7 +404,7 @@ void MenuPage::step() {
 
                 r.referenceSeconds = game_time( NULL );
 
-                int b = buttonsToUse[numGames - 1][i - 3];
+                int b = buttonsToUse[numGames - 1][i - 4];
 
 
                 TextButton *button = mGameButtons.getElementDirect( b );
@@ -460,7 +471,7 @@ void MenuPage::step() {
                     }
                 
                     
-                int b = buttonsToUse[numGames - 1][i - 3];
+                int b = buttonsToUse[numGames - 1][i - 4];
                     
                 TextButton *button = mGameButtons.getElementDirect( b );
                     
