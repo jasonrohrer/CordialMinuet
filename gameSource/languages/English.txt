@@ -176,6 +176,9 @@ amuletTip "RANDOM STAKES $%.2f OR LOWER"
 nonAmuletTip "MAKE A NON-AMULET GAME"
 
 
+amuletDropped "AMULET DROPPED"
+
+
 
 waitingStart "WAITING FOR OPPONENT"
 
