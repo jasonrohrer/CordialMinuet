@@ -4585,6 +4585,7 @@ function cm_endOldGames( $user_id, $inForceTie = false ) {
     $query = "SELECT game_id, semaphore_key, player_1_id, player_2_id, ".
         "game_square, ".
         "round_number, ".
+        "amulet_game, ".
         "dollar_amount, player_1_coins, player_2_coins, ".
         "player_1_pot_coins, player_2_pot_coins, ".
         "player_1_moves, player_2_moves, ".
@@ -4606,6 +4607,8 @@ function cm_endOldGames( $user_id, $inForceTie = false ) {
         $semaphore_key = mysql_result( $result, $i, "semaphore_key" );
         $player_1_id = mysql_result( $result, $i, "player_1_id" );
         $player_2_id = mysql_result( $result, $i, "player_2_id" );
+        
+        $amulet_game = mysql_result( $result, $i, "amulet_game" );
 
         $round_number = mysql_result( $result, $i, "round_number" );
 
@@ -4893,9 +4896,10 @@ function cm_endOldGames( $user_id, $inForceTie = false ) {
             
             
 
-            if( $player_1_amulet != 0 || $player_2_amulet != 0 ) {
+            if( $amulet_game &&
+                ( $player_1_amulet != 0 || $player_2_amulet != 0 ) ) {
                 
-
+                
                 if( $player_1_last_standing ) {
                     if( $player_1_amulet != 0 ) {
                         // p1 keeps
@@ -4933,17 +4937,18 @@ function cm_endOldGames( $user_id, $inForceTie = false ) {
                                               $old_player_2_id );
                     }                
                 }
-            else {
-                // neither have amulets currently
+            else if( ! $amulet_game ) {
+                // not an amulet game
 
                 // potentially hand last standing a dropped amulet
+                // (if they don't have one already)
                 // but this doesn't count as a payout from this match
                 
-                if( $player_1_last_standing ) {
+                if( $player_1_last_standing && $player_1_amulet == 0 ) {
                     cm_pickUpDroppedAmulet( $old_player_1_id,
                                             $player_1_payout );
                     }
-                else if( $player_2_last_standing ) {
+                else if( $player_2_last_standing && $player_2_amulet == 0 ) {
                     cm_pickUpDroppedAmulet( $old_player_2_id,
                                             $player_2_payout );
                     }
@@ -5494,74 +5499,94 @@ function cm_joinGame() {
         $game_id = mysql_result( $result, 0, "game_id" );
         $player_1_id = mysql_result( $result, 0, "player_1_id" );
         $semaphore_key = mysql_result( $result, 0, "semaphore_key" );
+
+        if( cm_getHeldAmulet( $user_id ) == 0 ||
+            cm_getHeldAmulet( $player_1_id ) == 0 ) {
         
-        // have a pair of players about to join each other
-        // this game is in amulet range
-
-        // check if an amulet player is waiting
-
-        $query = "SELECT semaphore_key, player_1_id, game_id ".
-            "FROM $tableNamePrefix"."games ".
-            "WHERE player_1_id != 0 AND player_2_id = 0 AND started = 0 ".
-            "AND amulet_game = 1 ".
-            "AND CURRENT_TIMESTAMP > amulet_game_wait_time ".
-            "LIMIT 1 FOR UPDATE;";
-
-
-        $resultAmulet = cm_queryDatabase( $query );
-
-
-        $numRowsAmulet = mysql_numrows( $resultAmulet );
-
-        if( $numRowsAmulet == 1 ) {
+        
+            // have a pair of players about to join each other
+            // this game is in amulet range
             
-            // got one!
-
-            $amuletOpponent;
-            $hangingOpponent;
-            
-            // pull one of them away from the game they're about to connect
-            // leave otehr hanging
-            if( rand(0, 1 ) ) {
-
-                // pulling away player that is joining game, can just
-                // leave game creator hanging (they were already hanging)
-            
-                // just replace our selected result with the amulet game result
-
-                $joiningPlayerID = $user_id;
-                $result = $resultAmulet;
-
-                $returnJoinResult = true;
-                }
-            else {
-
-                // pulling away player that created game
-
-                // they are waiting on the other semaphore
-
-
-                $joiningPlayerID = $player_1_id;
-
-                $needToSignalOldSem = true;
-                $oldSemKey = $semaphore_key;
-
-                // again,
-                // replace our selected result with the amulet game result
-                $result = $resultAmulet;
-
-                // BUT delete the old game that they created
-                $query = "DELETE FROM $tableNamePrefix"."games ".
-                    "WHERE game_id = $game_id;";
-                cm_queryDatabase( $query );
-
-                // we'll delete the semaphore below after we signal it
-                // one last time
+            // AND at least one is not an amulet holder already
             
             
-                // let the joining player create their own game and return THAT
-                // result
-                $returnJoinResult = false;
+            // check if an amulet player is waiting
+
+            $query = "SELECT semaphore_key, player_1_id, game_id ".
+                "FROM $tableNamePrefix"."games ".
+                "WHERE player_1_id != 0 AND player_2_id = 0 AND started = 0 ".
+                "AND amulet_game = 1 ".
+                "AND CURRENT_TIMESTAMP > amulet_game_wait_time ".
+                "LIMIT 1 FOR UPDATE;";
+
+
+            $resultAmulet = cm_queryDatabase( $query );
+
+
+            $numRowsAmulet = mysql_numrows( $resultAmulet );
+
+            if( $numRowsAmulet == 1 ) {
+            
+                // got one!
+
+                $pullAway;
+
+                if( cm_getHeldAmulet( $user_id ) != 0 ) {
+                    $pullAway = 0;
+                    }
+                else if( cm_getHeldAmulet( $player_1_id ) != 0 ) {
+                    $pullAway = 1;
+                    }
+                else {
+                    // neither hold amulet, pick random
+                    $pullAway = rand( 0, 1 );
+                    }
+                
+            
+                // pull one of them away from the game they're about to connect
+                // leave other hanging
+                if( $pullAway ) {
+
+                    // pulling away player that is joining game, can just
+                    // leave game creator hanging (they were already hanging)
+            
+                    // just replace our selected result with the amulet game
+                    // result
+
+                    $joiningPlayerID = $user_id;
+                    $result = $resultAmulet;
+
+                    $returnJoinResult = true;
+                    }
+                else {
+
+                    // pulling away player that created game
+
+                    // they are waiting on the other semaphore
+
+
+                    $joiningPlayerID = $player_1_id;
+
+                    $needToSignalOldSem = true;
+                    $oldSemKey = $semaphore_key;
+
+                    // again,
+                    // replace our selected result with the amulet game result
+                    $result = $resultAmulet;
+
+                    // BUT delete the old game that they created
+                    $query = "DELETE FROM $tableNamePrefix"."games ".
+                        "WHERE game_id = $game_id;";
+                    cm_queryDatabase( $query );
+
+                    // we'll delete the semaphore below after we signal it
+                    // one last time
+            
+            
+                    // let the joining player create their own game
+                    // and return THAT result
+                    $returnJoinResult = false;
+                    }
                 }
             }
         }
