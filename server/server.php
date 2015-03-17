@@ -5528,6 +5528,22 @@ function cm_joinGame() {
             if( $numRowsAmulet == 1 ) {
             
                 // got one!
+                
+
+                // count this game start toward pushing back amult-inactivity
+                $amulet_holder_id = mysql_result( $resultAmulet,
+                                                  0, "player_1_id" );
+                $amulet_holder_held_amulet =
+                    cm_getHeldAmulet( $amulet_holder_id );
+                
+                $query = "UPDATE $tableNamePrefix"."amulets " .
+                    "SET last_amulet_game_time = CURRENT_TIMESTAMP ".
+                    "WHERE amulet_id = $amulet_holder_held_amulet AND ".
+                    "holding_user_id = $amulet_holder_id;";
+
+                cm_queryDatabase( $query );
+                
+                
 
                 $pullAway;
 
