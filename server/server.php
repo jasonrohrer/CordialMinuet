@@ -649,6 +649,9 @@ else if( $action == "tournament_report" ) {
 else if( $action == "tournament_prizes" ) {
     cm_tournamentPrizes();
     }
+else if( $action == "amulet_report" ) {
+    cm_amuletReport();
+    }
 else if( $action == "users_graph" ) {
     cm_usersGraph();
     }
@@ -1794,6 +1797,43 @@ function cm_checkForFlush() {
 
         cm_queryDatabase( "COMMIT;" );
 
+
+
+        // look for any held amulets that are now over (contest ended)
+        global $amulets;
+        
+        $query = "SELECT holding_user_id, amulet_id ".
+            "FROM $tableNamePrefix"."amulets ".
+            "WHERE holding_user_id != 0 ".
+            "FOR UPDATE;";
+
+        $result = cm_queryDatabase( $query );
+
+        $numRows = mysql_numrows( $result );
+    
+        for( $i=0; $i<$numRows; $i++ ) {
+            $holding_user_id =
+                mysql_result( $result, $i, "holding_user_id" );
+            $amulet_id =
+                mysql_result( $result, $i, "amulet_id" );
+
+            if( time() >= strtotime( $amulets[$amulet_id][0] ) ) {
+            
+                cm_subtractPointsForAmuletHoldTime( $holding_user_id );
+            
+                $query = "UPDATE $tableNamePrefix"."amulets " .
+                    "SET holding_user_id = 0, ".
+                    "users_to_skip_on_drop = $users_to_skip ".
+                    "WHERE holding_user_id = $holding_user_id;";
+            
+                cm_queryDatabase( $query );
+                }
+            }
+
+        cm_queryDatabase( "COMMIT;" );
+
+
+        
 
         
         
@@ -4327,7 +4367,18 @@ function cm_getHeldAmulet( $user_id ) {
         return 0;
         }
     else {
-        return mysql_result( $result, 0, "amulet_id" );
+        $amulet_id = mysql_result( $result, 0, "amulet_id" );
+
+        global $amulets;
+        
+        $endTime = strtotime( $amulets[$amulet_id][0] );
+
+        if( time() < $endTime ) {
+            return $amulet_id;
+            }
+        else {
+            return 0;
+            }
         }
     }
 
@@ -5346,7 +5397,8 @@ function cm_joinGame() {
     if( $amulet_game && $amulet_id == 0 ) {
         cm_log( "cm_joinGame denied, asked for amulet_game when not ".
                 "holding an amulet" );
-        cm_transactionDeny();
+
+        echo "AMULET_DROPPED";
         return;        
         }
     
@@ -10284,6 +10336,137 @@ function cm_tournamentPrizes() {
 
     eval( $leaderFooter );
     }
+
+
+
+
+
+function cm_amuletReport() {
+    $amulet_id = cm_requestFilter( "amulet_id",
+                                   "/[0-9]+/i", "0" );
+
+
+    global $tableNamePrefix, $leaderboardLimit, $leaderHeader, $leaderFooter;
+
+    global $amulets;
+    
+    
+    eval( $leaderHeader );
+
+    if( ! array_key_exists( $amulet_id, $amulets ) ) {
+
+        echo "<br><br><br><center>Amulet $amulet_id not found.".
+            "<br><br></center>";
+
+        eval( $leaderFooter );
+        return;
+        }
+    
+        
+        
+    $time = time();
+
+    $endTime = strtotime( $amulets[$amulet_id][0] );
+
+    $currently_holding_user_id = 0;
+
+    $currently_holding_penalty = 0;
+    
+    
+    if( $time > $endTime ) {
+        echo "<center>This amulet contest is over.<br><br></center>";
+        }
+    else {
+        // live
+        $timeString = cm_formatDuration( $endTime - $time );
+
+        echo "<center>This amulet contest will ".
+            "end in $timeString.<br><br></center>";
+
+        $query = "SELECT holding_user_id, random_name ".
+            "FROM $tableNamePrefix"."amulets as a ".
+            "LEFT JOIN $tableNamePrefix"."users as users ".
+            "     ON a.holding_user_id = users.user_id ".
+            "WHERE amulet_id = $amulet_id AND holding_user_id != 0;";
+        
+
+        $result = cm_queryDatabase( $query );
+
+        $numRows = mysql_numrows( $result );
+        
+        if( $numRows == 1 ) {
+            $random_name = mysql_result( $result, 0, "random_name" );
+
+
+            $currently_holding_user_id =
+                mysql_result( $result, 0, "holding_user_id" );
+
+            $currently_holding_penalty =
+                cm_getAmuletHoldTimePenalty( $currently_holding_user_id );
+
+            echo "<center>Currently held ".
+                "by <b>$random_name</b>.<br><br></center>";
+            }
+        }
+
+    
+    
+    
+    $query = "SELECT users.user_id, random_name, points ".
+        "FROM $tableNamePrefix"."amulet_points as points ".
+        "LEFT JOIN $tableNamePrefix"."users as users ".
+        "     ON points.user_id = users.user_id ".
+        "WHERE amulet_id = $amulet_id ".
+        "ORDER BY points DESC;";
+    $result = cm_queryDatabase( $query );
+
+    $numRows = mysql_numrows( $result );
+
+
+
+    
+    echo "<center><table border=0 cellspacing=10>";
+
+    echo "<tr><td align=right></td>".
+        "<td></td>".
+        "<td valign=bottom align=right>Points</td>".
+        "</tr>";
+
+    echo "<tr><td colspan=8><hr></td></tr>";
+
+        
+        
+    for( $i=0; $i<$numRows; $i++ ) {
+        $random_name = mysql_result( $result, $i, "random_name" );
+        $points = mysql_result( $result, $i, "points" );
+
+        $user_id = mysql_result( $result, $i, "user_id" );
+
+        if( $currently_holding_user_id == $user_id ) {
+            $points -= $currently_holding_penalty;
+
+            if( $points < 0 ) {
+                $points = 0;
+                }
+            }
+        
+        if( $points > 0 ) {
+            // skip showing 0-point entries
+            // usually, these won't exist, because row is only added
+            // when user scores a win.  But if a user racks up hold-time
+            // penalty points, they might go back to 0 after having
+            // a row in the table.  Keep it consistent by never showing
+            // 0s in the leaderboard.
+            
+            echo "<tr><td>$random_name</td><td></td>".
+                "<td align=right>$points</td><td></td></tr>";
+            }
+        }
+    echo "</table></center>";
+
+    eval( $leaderFooter );
+    }
+
 
 
 

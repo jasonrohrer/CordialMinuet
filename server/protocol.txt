@@ -491,6 +491,10 @@ Instead, player will be paired with a randomly-selected opponent below
 the maximum amulet stake.
 
 
+AMULET_DROPPED returned when requesting an amulet game when player no longer 
+holds the amulet.
+
+
 
 
 === Call:

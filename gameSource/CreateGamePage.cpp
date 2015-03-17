@@ -46,7 +46,10 @@ CreateGamePage::CreateGamePage()
           mCancelButton( mainFont, -150, -200, 
                          translate( "cancel" ) ) {
 
+    addServerErrorString( "AMULET_DROPPED", "amuletDropped" );
 
+    addServerErrorStringSignal( "AMULET_DROPPED", "amuletDropped" );
+    
 
     addComponent( &mAmuletGameButton );
     addComponent( &mCreateButton );
@@ -269,13 +272,20 @@ void CreateGamePage::step() {
         setSignal( "created" );
         }
     else if( ! isActionInProgress() ) {
-        checkIfCreateButtonVisible();
 
+        if( checkSignal( "amuletDropped" ) ) {
+            amuletID = 0;
+            }
+            
+        checkIfCreateButtonVisible();
+        
         makeFieldsActive();
+        
+        mAmountPicker.setVisible( true );
         
         mCancelButton.setVisible( true );
         }
-
+    
     }
 
 
