@@ -97,6 +97,8 @@ void CreateGamePage::actionPerformed( GUIComponent *inTarget ) {
                                  dollarAmountString );
         delete [] dollarAmountString;
         
+        setActionParameter( "amulet_game", 0 );
+
         mAmuletGameButton.setVisible( false );
         mCreateButton.setVisible( false );
         mCancelButton.setVisible( false );
