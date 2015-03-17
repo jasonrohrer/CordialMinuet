@@ -10362,7 +10362,12 @@ function cm_amuletReport() {
         return;
         }
     
-        
+    // show icon
+    $pngURL = $amulets[$amulet_id][2];
+
+
+    echo "<center><img border=0 src=\"$pngURL\"></center><br>";
+    
         
     $time = time();
 

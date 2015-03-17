@@ -478,7 +478,7 @@ $amuletJoinDelayMaxSec = 20;
 $amulets = array(
     1 => array( "09-Mar-2015 11:11:00 -0800",
                 "http://192.168.0.4/jcr13/testAmulet.tga",
-                "http://cordialminuet.com/amulets/1.png" ),
+                "http://192.168.0.4/jcr13/testAmulet.png" ),
     2 => array( "09-Mar-2015 11:11:00 -0800",
                 "http://192.168.0.4/jcr13/testAmulet.tga",
                 "http://cordialminuet.com/amulets/2.png" ) );
