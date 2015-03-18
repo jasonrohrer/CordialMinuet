@@ -10429,46 +10429,48 @@ function cm_amuletReport() {
 
 
 
-    
-    echo "<center><table border=0 cellspacing=10>";
+    if( $numRows > 0 ) {
+        
+        echo "<center><table border=0 cellspacing=10>";
 
-    echo "<tr><td align=right></td>".
-        "<td></td>".
-        "<td valign=bottom align=right>Points</td>".
-        "</tr>";
+        echo "<tr><td align=right></td>".
+            "<td></td>".
+            "<td valign=bottom align=right>Points</td>".
+            "</tr>";
 
-    echo "<tr><td colspan=8><hr></td></tr>";
+        echo "<tr><td colspan=8><hr></td></tr>";
 
         
         
-    for( $i=0; $i<$numRows; $i++ ) {
-        $random_name = mysql_result( $result, $i, "random_name" );
-        $points = mysql_result( $result, $i, "points" );
+        for( $i=0; $i<$numRows; $i++ ) {
+            $random_name = mysql_result( $result, $i, "random_name" );
+            $points = mysql_result( $result, $i, "points" );
 
-        $user_id = mysql_result( $result, $i, "user_id" );
+            $user_id = mysql_result( $result, $i, "user_id" );
 
-        if( $currently_holding_user_id == $user_id ) {
-            $points -= $currently_holding_penalty;
+            if( $currently_holding_user_id == $user_id ) {
+                $points -= $currently_holding_penalty;
 
-            if( $points < 0 ) {
-                $points = 0;
+                if( $points < 0 ) {
+                    $points = 0;
+                    }
+                }
+        
+            if( $points > 0 ) {
+                // skip showing 0-point entries
+                // usually, these won't exist, because row is only added
+                // when user scores a win.  But if a user racks up hold-time
+                // penalty points, they might go back to 0 after having
+                // a row in the table.  Keep it consistent by never showing
+                // 0s in the leaderboard.
+            
+                echo "<tr><td>$random_name</td><td></td>".
+                    "<td align=right>$points</td><td></td></tr>";
                 }
             }
-        
-        if( $points > 0 ) {
-            // skip showing 0-point entries
-            // usually, these won't exist, because row is only added
-            // when user scores a win.  But if a user racks up hold-time
-            // penalty points, they might go back to 0 after having
-            // a row in the table.  Keep it consistent by never showing
-            // 0s in the leaderboard.
-            
-            echo "<tr><td>$random_name</td><td></td>".
-                "<td align=right>$points</td><td></td></tr>";
-            }
+        echo "</table></center>";
         }
-    echo "</table></center>";
-
+    
     eval( $leaderFooter );
     }
 
