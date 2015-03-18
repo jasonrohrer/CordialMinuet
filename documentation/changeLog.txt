@@ -16,6 +16,8 @@ Version 16     2015-March-18
 
 --Server and client support for amulet-passing contests.
 
+--Added a reload button to user pages in web admin view.
+
 
 
 

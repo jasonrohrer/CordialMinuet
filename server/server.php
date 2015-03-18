@@ -9414,7 +9414,8 @@ function cm_showDetailInternal() {
     $user_id = cm_getUserID();
     
     echo "[<a href=\"server.php?action=show_data" .
-        "\">Main</a>]<br><br><br>";
+        "\">Main</a>] [<a href=server.php?action=show_detail".
+	"&user_id=$user_id>Reload</a>]<br><br><br>";
      
     global $tableNamePrefix;
 
