@@ -466,7 +466,7 @@ $amuletLastStandingPoints = 200;
 
 $amuletHoldPenaltyPerMinute = 1;
 
-$amuletJoinDelayMaxSec = 20;
+$amuletJoinDelayMaxSec = 30;
 
 
 
@@ -476,11 +476,23 @@ $amuletJoinDelayMaxSec = 20;
 // Elements in an amulet are ID, end time, and URLS to icon image TGA and PNG
 
 $amulets = array(
-    1 => array( "09-Mar-2015 11:11:00 -0800",
-                "http://192.168.0.4/jcr13/testAmulet.tga",
-                "http://192.168.0.4/jcr13/testAmulet.png" ),
-    2 => array( "09-Mar-2015 11:11:00 -0800",
-                "http://192.168.0.4/jcr13/testAmulet.tga",
-                "http://cordialminuet.com/amulets/2.png" ) );
+    1 => array( "22-Mar-2015 20:00:00 -0800",
+                "http://cordialminuet.com/testAmulets/alef.tga",
+                "http://cordialminuet.com/testAmulets/alef.png" ),
+    2 => array( "22-Mar-2015 20:00:00 -0800",
+                "http://cordialminuet.com/testAmulets/bet.tga",
+                "http://cordialminuet.com/testAmulets/bet.png" ),
+    3 => array( "22-Mar-2015 20:00:00 -0800",
+                "http://cordialminuet.com/testAmulets/dalet.tga",
+                "http://cordialminuet.com/testAmulets/dalet.png" ),
+    4 => array( "22-Mar-2015 20:00:00 -0800",
+                "http://cordialminuet.com/testAmulets/gimel.tga",
+                "http://cordialminuet.com/testAmulets/gimel.png" ),
+    5 => array( "22-Mar-2015 20:00:00 -0800",
+                "http://cordialminuet.com/testAmulets/he.tga",
+                "http://cordialminuet.com/testAmulets/he.png" ),
+    6 => array( "22-Mar-2015 20:00:00 -0800",
+                "http://cordialminuet.com/testAmulets/vav.tga",
+                "http://cordialminuet.com/testAmulets/vav.png" ) );
     
 ?>
