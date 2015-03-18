@@ -281,7 +281,7 @@ void MenuPage::draw( doublePair inViewCenter,
             drawSprite( amuletSprite, pos );
             }
         
-        pos.x += 32;
+        pos.x += 42;
         
         pos.y -= 3;
         char *scoreString = autoSprintf( "%d", amuletPointCount );
