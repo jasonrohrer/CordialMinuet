@@ -1,4 +1,4 @@
-Version 16     ???
+Version 16     2015-March-18
 
 --Added support for temporary logins to existing accounts with account details
   not saved locally.
@@ -14,6 +14,7 @@ Version 16     ???
 --Fixed auto-completion of expiration date fields on deposite page when
   mouse-clicking out of fields instead of tabbing out (thanks Patrick T).
 
+--Server and client support for amulet-passing contests.
 
 
 
