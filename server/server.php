@@ -10407,8 +10407,6 @@ function cm_amuletReport() {
     $endTime = strtotime( $amulets[$amulet_id][0] );
 
     $currently_holding_user_id = 0;
-
-    $currently_holding_penalty = 0;
     
     
     if( $time > $endTime ) {
@@ -10439,11 +10437,14 @@ function cm_amuletReport() {
             $currently_holding_user_id =
                 mysql_result( $result, 0, "holding_user_id" );
 
-            $currently_holding_penalty =
-                cm_getAmuletHoldTimePenalty( $currently_holding_user_id );
+            $currently_holding_points =
+                cm_getAmuletPoints( $amulet_id,
+                                    $currently_holding_user_id );
 
             echo "<center>Currently held ".
-                "by <b>$random_name</b>.<br><br></center>";
+                "by <b>$random_name</b> with ".
+                "<b>$currently_holding_points</b> ".
+                "points.<br><br></center>";
             }
         }
 
@@ -10482,11 +10483,8 @@ function cm_amuletReport() {
             $user_id = mysql_result( $result, $i, "user_id" );
 
             if( $currently_holding_user_id == $user_id ) {
-                $points -= $currently_holding_penalty;
-
-                if( $points < 0 ) {
-                    $points = 0;
-                    }
+                // leave them out of list
+                continue;
                 }
         
             if( $points > 0 ) {
@@ -10496,7 +10494,9 @@ function cm_amuletReport() {
                 // penalty points, they might go back to 0 after having
                 // a row in the table.  Keep it consistent by never showing
                 // 0s in the leaderboard.
-            
+
+                
+                
                 echo "<tr><td>$random_name</td><td></td>".
                     "<td align=right>$points</td><td></td></tr>";
                 }
