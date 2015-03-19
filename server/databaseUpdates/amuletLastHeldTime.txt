@@ -1,0 +1,3 @@
+
+
+ALTER TABLE minuetServer_amulet_points ADD last_score_time DATETIME NOT NULL AFTER points;

@@ -1333,7 +1333,8 @@ function cm_setupDatabase() {
             "amulet_id INT NOT NULL," .
             "user_id INT NOT NULL," .
             "PRIMARY KEY( amulet_id, user_id ), ".
-            "points INT NOT NULL ) ENGINE = INNODB;";
+            "points INT NOT NULL, ".
+            "last_score_time DATETIME NOT NULL ) ENGINE = INNODB;";
 
         $result = cm_queryDatabase( $query );
 
@@ -4475,9 +4476,10 @@ function cm_addPointsForAmuletWin( $amulet_id, $user_id ) {
 
     $query = "INSERT INTO $tableNamePrefix"."amulet_points " .
         "SET amulet_id = $amulet_id, user_id = $user_id, ".
-        "    points = $winPoints ".
+        "    points = $winPoints, last_score_time = CURRENT_TIMESTAMP ".
         "ON DUPLICATE KEY ".
-        "UPDATE points = points + $winPoints;";
+        "UPDATE points = points + $winPoints, ".
+        "       last_score_time = CURRENT_TIMESTAMP;";
 
     cm_queryDatabase( $query );
 
@@ -4566,7 +4568,8 @@ function cm_pickUpDroppedAmulet( $user_id, $inAmountJustWon ) {
             "last_amulet_game_time = CURRENT_TIMESTAMP ".
             "WHERE amulet_id = $amulet_id;";
         cm_queryDatabase( $query );
-        
+
+        cm_addPointsForAmuletWin( $amulet_id, $user_id );
         }
     
         

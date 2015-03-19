@@ -12,6 +12,9 @@ Version 16     Live Server Fixes
 --Fixed to go back into transaction after pulling a player out of a joined game
   and into an amulet game.
 
+--Player picking up a free-floating amulet now scores 200 points on it.
+
+--Added tracking of last time each player scored points on each amulet.
 
 
 
