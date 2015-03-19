@@ -1,3 +1,9 @@
+Version 17     ???
+
+--Fixed failure to fetch amulet image and potential crash caused by this failure (thanks ..)
+
+
+
 Version 16     2015-March-18
 
 --Added support for temporary logins to existing accounts with account details

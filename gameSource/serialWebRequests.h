@@ -23,6 +23,8 @@ int stepWebRequestSerial( int inHandle );
 
 char *getWebResultSerial( int inHandle );
 
+unsigned char *getWebResultSerial( int inHandle, int *outSize );
+
 
 
 // 0 if running as normal

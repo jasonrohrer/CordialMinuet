@@ -196,7 +196,8 @@ void GetAmuletPage::step() {
             case 1: {
                 int size;
                 
-                unsigned char *result = getWebResult( mWebRequest, &size );
+                unsigned char *result = 
+                    getWebResultSerial( mWebRequest, &size );
                 
                 printf( "Result size = %d\n", size );
                 

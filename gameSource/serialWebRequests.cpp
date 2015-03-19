@@ -437,6 +437,24 @@ char *getWebResultSerial( int inHandle ) {
 
 
 
+unsigned char *getWebResultSerial( int inHandle, int *outSize ) {
+    int numRecords = serialRecords.size();
+
+    for( int i=0; i<numRecords; i++ ) {
+        
+        SerialWebRecord *r = serialRecords.getElement( i );
+        
+        if( r->handle == inHandle && r->activeHandle != -1 ) {
+            return getWebResult( r->activeHandle, outSize );
+            }
+        }
+    
+    return NULL;
+    }
+
+
+
+
 
 int getWebRequestRetryStatus( int inHandle ) {
     int numRecords = serialRecords.size();
