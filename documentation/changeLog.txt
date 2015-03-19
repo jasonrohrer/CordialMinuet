@@ -16,6 +16,12 @@ Version 16     Live Server Fixes
 
 --Added tracking of last time each player scored points on each amulet.
 
+--Fixed to prevent currently-holding amulet player from being in wrong ordered
+  spot on leaderboard.
+
+--Removed pending amulet games from OTHER GAMES list on waiting screen
+  (thanks ..)
+
 
 
 

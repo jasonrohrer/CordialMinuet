@@ -6034,6 +6034,7 @@ function cm_getOtherGameList( $user_id ) {
         // blocked from playing
         "AND dollar_amount != $dollar_amount ".
         "AND started = 0 ".
+        "AND amulet_game = 0 ".
         "ORDER BY ABS( dollar_amount - $dollar_amount ) ASC LIMIT 3;";
 
     $result = cm_queryDatabase( $query );
