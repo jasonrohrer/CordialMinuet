@@ -4,6 +4,18 @@ Version 17     ???
 
 
 
+
+Version 16     Live Server Fixes
+
+--Added retry-based work-around for deadlock in keepGameAlive.
+
+--Fixed to go back into transaction after pulling a player out of a joined game
+  and into an amulet game.
+
+
+
+
+
 Version 16     2015-March-18
 
 --Added support for temporary logins to existing accounts with account details

@@ -5768,6 +5768,11 @@ function cm_joinGame() {
             // their own game (we pulled the waiting game creator
             // out from under them)
             }
+        else {
+            // new transaction
+            cm_queryDatabase( "SET AUTOCOMMIT=0" );
+            }
+        
         }
 
 
@@ -5941,8 +5946,32 @@ function cm_keepGameAlive( $user_id ) {
         " AND last_action_time < ".
         "     SUBTIME( CURRENT_TIMESTAMP, '$moveTimeLimit' ) FOR UPDATE;";
 
-    $result = cm_queryDatabase( $query );
+    
+    // watch for deadlock here and retry
+    $result = cm_queryDatabase( $query, 0 );
 
+    $tryCount = 0;
+    
+    while( $result == FALSE && $tryCount < 10 ) {
+        cm_log( "Deadlocked on query $query  retry $tryCount" );
+        
+        // sleep before retrying
+        sleep( 1 );
+        $result = cm_queryDatabase( $query, 0 );
+        
+        $tryCount ++;
+        }
+    
+    if( $result == FALSE ) {
+        $errorNumber = mysql_errno();
+        cm_fatalError( "Database query deadlocked after $tryCount retruies:".
+                       "<BR>$inQueryString<BR><BR>" .
+                       mysql_error() .
+                       "<br>(error number $errorNumber)<br>" );
+        return;
+        }
+
+    
     $numRows = mysql_numrows( $result );
 
     if( $numRows > 0 ) {
