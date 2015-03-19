@@ -1,7 +1,10 @@
 Version 17     ???
 
---Fixed failure to fetch amulet image and potential crash caused by this failure (thanks ..)
+--Fixed failure to fetch amulet image and potential crash caused by this 
+  failure (thanks ..)
 
+--Fixed to clear NON-AMULET tool tip from CREATE button after dropping an
+  amulet (thanks ..)
 
 
 

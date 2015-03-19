@@ -203,7 +203,7 @@ void CreateGamePage::makeActive( char inFresh ) {
         //mAmountPicker.setPosition( 96, 75 );
 
         mAmuletGameButton.setMouseOverTip( NULL );
-        mAmuletGameButton.setMouseOverTip( NULL );
+        mCreateButton.setMouseOverTip( NULL );
         }
     
     }
