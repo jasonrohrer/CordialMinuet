@@ -558,6 +558,9 @@ else if( $action == "list_games" ) {
 else if( $action == "enter_tournament" ) {
     cm_enterTournament();
     }
+else if( $action == "drop_amulet" ) {
+    cm_dropAmulet();
+    }
 else if( $action == "get_game_state" ) {
     cm_getGameState();
     }
@@ -6566,6 +6569,64 @@ function cm_enterTournament() {
 
     echo $response;
     }
+
+
+
+
+function cm_dropAmulet() {
+    if( ! cm_verifyTransaction() ) {
+        return;
+        }
+
+    $user_id = cm_getUserID();
+
+    cm_queryDatabase( "SET AUTOCOMMIT=0" );
+
+    global $tableNamePrefix;
+
+    // how many live games are running?
+    $liveGameCount =
+        cm_countQuery(
+            "games",
+            "player_1_id != 0 AND player_2_id != 0 " );
+    
+    $users_to_skip = $liveGameCount - 1;
+    if( $liveGameCount == 0 ) {
+        $users_to_skip = 0;
+        }
+    
+
+    // first, lock the amulet row
+    // this prevents an intervening flush from subtracting penalty twice
+    $query = "SELECT holding_user_id ".
+            "FROM $tableNamePrefix"."amulets ".
+            "WHERE holding_user_id = $user_id ".
+            "FOR UPDATE;";
+
+    $result = cm_queryDatabase( $query );
+
+
+    $numRows = mysql_numrows( $result );
+
+    if( $numRows == 1 ) {
+
+        cm_subtractPointsForAmuletHoldTime( $user_id );
+            
+        $query = "UPDATE $tableNamePrefix"."amulets " .
+            "SET holding_user_id = 0, ".
+            "users_to_skip_on_drop = $users_to_skip ".
+            "WHERE holding_user_id = $user_id;";
+            
+        cm_queryDatabase( $query );
+        }
+
+    cm_queryDatabase( "COMMIT;" );
+    cm_queryDatabase( "SET AUTOCOMMIT=0" );
+    
+
+    echo "OK";
+    }
+
 
 
 

@@ -44,7 +44,11 @@ CreateGamePage::CreateGamePage()
           mCreateButton( mainFont, 150, -200, 
                          translate( "create" ) ),
           mCancelButton( mainFont, -150, -200, 
-                         translate( "cancel" ) ) {
+                         translate( "cancel" ) ),
+          mDropAmuletButton( mainFont, -180, 230, 
+                             translate( "dropAmulet" ) ),
+          mDropAmuletConfirmButton( mainFont, 181, 230, 
+                                    translate( "dropAmuletConfirm" ) ) {
 
     addServerErrorString( "AMULET_DROPPED", "amuletDropped" );
 
@@ -52,21 +56,32 @@ CreateGamePage::CreateGamePage()
     
 
     addComponent( &mAmuletGameButton );
+    addComponent( &mDropAmuletButton );
+    addComponent( &mDropAmuletConfirmButton );
+
     addComponent( &mCreateButton );
     addComponent( &mCancelButton );
     
 
     setButtonStyle( &mAmuletGameButton );
+    setButtonStyle( &mDropAmuletButton );
+    setButtonStyle( &mDropAmuletConfirmButton );
+
     setButtonStyle( &mCreateButton );
     setButtonStyle( &mCancelButton );
     
 
     mAmuletGameButton.addActionListener( this );
+    mDropAmuletButton.addActionListener( this );
+    mDropAmuletConfirmButton.addActionListener( this );
+
     mCreateButton.addActionListener( this );
     mCancelButton.addActionListener( this );
 
 
     mAmuletGameButton.setVisible( false );
+    mDropAmuletButton.setVisible( false );
+    mDropAmuletConfirmButton.setVisible( false );
 
     addComponent( &mAmountPicker );
     }
@@ -103,6 +118,9 @@ void CreateGamePage::actionPerformed( GUIComponent *inTarget ) {
         setActionParameter( "amulet_game", 0 );
 
         mAmuletGameButton.setVisible( false );
+        mDropAmuletButton.setVisible( false );
+        mDropAmuletConfirmButton.setVisible( false );
+        
         mCreateButton.setVisible( false );
         mCancelButton.setVisible( false );
                 
@@ -128,6 +146,9 @@ void CreateGamePage::actionPerformed( GUIComponent *inTarget ) {
         setActionParameter( "amulet_game", 1 );
 
         mAmuletGameButton.setVisible( false );
+        mDropAmuletButton.setVisible( false );
+        mDropAmuletConfirmButton.setVisible( false );
+
         mCreateButton.setVisible( false );
         mCancelButton.setVisible( false );
                 
@@ -136,6 +157,14 @@ void CreateGamePage::actionPerformed( GUIComponent *inTarget ) {
         mAmountPicker.setVisible( false );
         
         startRequest();
+        }
+    else if( inTarget == &mDropAmuletButton ) {
+        mDropAmuletButton.setVisible( false );
+        mDropAmuletConfirmButton.setVisible( true );
+        }
+    else if( inTarget == &mDropAmuletConfirmButton ) {
+        mDropAmuletConfirmButton.setVisible( false );
+        setSignal( "dropAmulet" );
         }
     else if( inTarget == &mCancelButton ) {
         setSignal( "back" );
@@ -185,6 +214,8 @@ void CreateGamePage::makeActive( char inFresh ) {
         userBalance >= amuletStake ) {
         
         mAmuletGameButton.setVisible( true );
+        mDropAmuletButton.setVisible( true );
+        mDropAmuletConfirmButton.setVisible( false );
 
 
         char *amuletTip = autoSprintf( translate( "amuletTip" ),
@@ -199,7 +230,9 @@ void CreateGamePage::makeActive( char inFresh ) {
         }
     else {
         mAmuletGameButton.setVisible( false );
-        
+        mDropAmuletButton.setVisible( false );
+        mDropAmuletConfirmButton.setVisible( false );
+
         //mAmountPicker.setPosition( 96, 75 );
 
         mAmuletGameButton.setMouseOverTip( NULL );
@@ -235,7 +268,7 @@ void CreateGamePage::draw( doublePair inViewCenter,
     if( amuletID != 0 ) {
         pos = mAmuletGameButton.getPosition();
         
-        pos.y += 64;
+        pos.y = mDropAmuletButton.getPosition().y;
         
         SpriteHandle amuletSprite = getAmuletSprite( amuletID );
         

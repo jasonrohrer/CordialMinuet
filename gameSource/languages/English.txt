@@ -167,6 +167,9 @@ buyIn "GAME STAKES:"
 
 amuletGame "AMULET GAME"
 
+dropAmulet "DROP AMULET"
+dropAmuletConfirm "DROP AMULET?"
+
 amuletLimit "AMULET GAME NEEDS $%.2f BALANCE" 
 
 create "CREATE"

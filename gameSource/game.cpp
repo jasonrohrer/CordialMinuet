@@ -96,6 +96,7 @@ ServerActionPage *getDepositFeesPage;
 DepositPage *depositPage;
 NewAccountDisplayPage *newAccountDisplayPage;
 ServerActionPage *getBalancePage;
+ServerActionPage *dropAmuletPage;
 MenuPage *menuPage;
 DepositDisplayPage *depositDisplayPage;
 ExistingAccountPage *existingAccountPage;
@@ -569,6 +570,9 @@ void initFrameDrawer( int inWidth, int inHeight, int inTargetFrameRate,
     getBalancePage = new ServerActionPage( "get_balance", 
                                              6, resultNamesC, true );
 
+    dropAmuletPage = new ServerActionPage( "drop_amulet" );
+    
+
     menuPage = new MenuPage();
 
     depositDisplayPage = new DepositDisplayPage();
@@ -642,6 +646,7 @@ void freeFrameDrawer() {
     delete depositPage;
     delete newAccountDisplayPage;
     delete getBalancePage;
+    delete dropAmuletPage;
     delete menuPage;
     delete depositDisplayPage;
     delete existingAccountPage;
@@ -1577,6 +1582,11 @@ void drawFrame( char inUpdate ) {
                 currentGamePage = waitGamePage;
                 currentGamePage->base_makeActive( true );
                 }
+            else if( createGamePage->checkSignal( "dropAmulet" ) ) {
+                
+                currentGamePage = dropAmuletPage;
+                currentGamePage->base_makeActive( true );
+                }
             }
         else if( currentGamePage == waitGamePage ) {
             if( waitGamePage->checkSignal( "back" ) ) {
@@ -1616,6 +1626,12 @@ void drawFrame( char inUpdate ) {
                     currentGamePage = getBalancePage;
                     currentGamePage->base_makeActive( true );
                     }
+                }
+            }
+        else if( currentGamePage == dropAmuletPage ) {
+            if( dropAmuletPage->isResponseReady() ) {
+                currentGamePage = getBalancePage;
+                currentGamePage->base_makeActive( true );
                 }
             }
         else if( currentGamePage == enterTournamentPage ) {

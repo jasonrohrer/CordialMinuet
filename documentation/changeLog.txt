@@ -9,6 +9,9 @@ Version 17     ???
 --Added held time and penalty rate to protocol so that client can display a
   realtime update of held-amulet score decay.
 
+--Added a DROP AMULET button.
+
+
 
 
 

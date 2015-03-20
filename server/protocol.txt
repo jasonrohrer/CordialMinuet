@@ -652,6 +652,23 @@ The same request_tag should be repeated across retries.
 
 
 
+=== Call:
+server.php?action=drop_amulet
+          &user_id=[id number]
+          &sequence_number=[number]
+          &account_hmac=[hmac-sha1, hex-encoded]  
+
+Returns:
+OK
+
+
+Drops the amulet that this player holds.
+
+
+
+
+
+
 
 NOTE:
 Most of the mid-game calls below can return GAME_ENDED if the game is 
