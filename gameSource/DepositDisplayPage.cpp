@@ -21,18 +21,22 @@ extern char *justAcquiredAmuletTGAURL;
 
 extern int amuletID;
 extern int amuletPointCount;
+extern int amuletHoldPenaltyPerMinute;
+extern int amuletBaseTime;
 
 
 
-const char *getBalancePartNames[4] = { "dollarBalance",
+const char *getBalancePartNames[6] = { "dollarBalance",
                                        "amulet_id",
                                        "amulet_tga_url",
-                                       "amulet_point_count" };
+                                       "amulet_point_count",
+                                       "amulet_seconds_held",
+                                       "amulet_hold_penalty_per_minute" };
 
 
 DepositDisplayPage::DepositDisplayPage()
         : ServerActionPage( "get_balance",
-                            4, getBalancePartNames, true ),
+                            6, getBalancePartNames, true ),
           mWithdraw( false ),
           mLeftGame( false ),
           mOkayButton( mainFont, 0, -200, 
@@ -126,7 +130,21 @@ void DepositDisplayPage::step() {
             amuletPointCount = 
                 getResponseInt( 
                     "amulet_point_count" );
-        
+
+            amuletHoldPenaltyPerMinute =
+                getResponseInt( 
+                    "amulet_hold_penalty_per_minute" );
+            
+            int secondsHeld =
+                getResponseInt( 
+                    "amulet_seconds_held" );
+            
+            int partialMinute = secondsHeld % 60;
+            
+            
+            amuletBaseTime = game_time( NULL ) - partialMinute;
+            
+            
             mOkayButton.setVisible( true );
             }
         }
