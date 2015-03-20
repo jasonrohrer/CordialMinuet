@@ -132,6 +132,8 @@ dollar_balance
 amulet_id
 amulet_tga_url
 amulet_point_count
+amulet_seconds_held
+amulet_hold_penalty_per_minute
 OK
 
 
@@ -142,7 +144,9 @@ dollar_balance is dollars in ASCII floating point
 amulet_id is 0 if no amulet is held
 amulet_tga_url is # if empty
 amulet_point_count is 0 if empty
-
+amulet_seconds_held is 0 if empty
+amulet_hold_penalty_per_minute is number of points lost per minute, but 
+   amulet_point_count already has penalty-so-far subtracted
 
 
 

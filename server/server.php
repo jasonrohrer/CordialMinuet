@@ -2146,18 +2146,40 @@ function cm_getBalance() {
     
     $amulet_tga_url = "#";
     $amulet_points = 0;
+    global $amuletHoldPenaltyPerMinute;
+
+    $amulet_seconds_held = 0;
     
     if( $amulet_id != 0 ) {
         $amulet_tga_url = cm_getAmuletTGAURL( $amulet_id );
         
         $amulet_points = cm_getAmuletPoints( $amulet_id, $user_id );
+        
+
+        global $tableNamePrefix;
+        
+        $query = "SELECT ".
+            "TIMESTAMPDIFF( SECOND, acquire_time, CURRENT_TIMESTAMP ) ".
+            "AS amulet_seconds_held ".
+            "FROM $tableNamePrefix"."amulets ".
+            "WHERE holding_user_id = $user_id;";
+        
+        $result = cm_queryDatabase( $query );
+
+        $numRows = mysql_numrows( $result );
+        if( $numRows == 1 ) {
+            $amulet_seconds_held =
+                mysql_result( $result, 0, "amulet_seconds_held" );
+            }
         }
+    
     
     echo "$dollar_balance\n";
     echo "$amulet_id\n";
     echo "$amulet_tga_url\n";
     echo "$amulet_points\n";
-    
+    echo "$amulet_seconds_held\n";
+    echo "$amuletHoldPenaltyPerMinute\n";
     echo "OK";
     }
 

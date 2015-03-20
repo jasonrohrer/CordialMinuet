@@ -252,6 +252,8 @@ char *justAcquiredAmuletTGAURL = NULL;
 
 int amuletID = 0;
 int amuletPointCount;
+int amuletBaseTime;
+int amuletHoldPenaltyPerMinute;
 
 double amuletStake = 3.00;
 
@@ -557,13 +559,15 @@ void initFrameDrawer( int inWidth, int inHeight, int inTargetFrameRate,
     newAccountDisplayPage = new NewAccountDisplayPage();
 
     
-    const char *resultNamesC[4] = { "dollarBalance",
+    const char *resultNamesC[6] = { "dollarBalance",
                                     "amulet_id",
                                     "amulet_tga_url",
-                                    "amulet_point_count" };
+                                    "amulet_point_count",
+                                    "amulet_seconds_held",
+                                    "amulet_hold_penalty_per_minute" };
     
     getBalancePage = new ServerActionPage( "get_balance", 
-                                             4, resultNamesC, true );
+                                             6, resultNamesC, true );
 
     menuPage = new MenuPage();
 
@@ -1386,8 +1390,20 @@ void drawFrame( char inUpdate ) {
                 amuletPointCount = 
                     getBalancePage->getResponseInt( 
                         "amulet_point_count" );
+                
+                amuletHoldPenaltyPerMinute =
+                    getBalancePage->getResponseInt( 
+                        "amulet_hold_penalty_per_minute" );
 
+                int secondsHeld =
+                    getBalancePage->getResponseInt( 
+                        "amulet_seconds_held" );
+                
+                int partialMinute = secondsHeld % 60;
+                
 
+                amuletBaseTime = game_time( NULL ) - partialMinute;
+                
 
                 currentGamePage = menuOrAmuletPage();
                 currentGamePage->base_makeActive( true );

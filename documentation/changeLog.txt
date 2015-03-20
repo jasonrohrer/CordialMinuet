@@ -6,6 +6,11 @@ Version 17     ???
 --Fixed to clear NON-AMULET tool tip from CREATE button after dropping an
   amulet (thanks ..)
 
+--Added held time and penalty rate to protocol so that client can display a
+  realtime update of held-amulet score decay.
+
+
+
 
 
 Version 16     Live Server Fixes

@@ -24,6 +24,8 @@ extern double maxGameStakes;
 
 extern int amuletID;
 extern int amuletPointCount;
+extern int amuletBaseTime;
+extern int amuletHoldPenaltyPerMinute;
 
 extern double amuletStake;
 
@@ -284,7 +286,17 @@ void MenuPage::draw( doublePair inViewCenter,
         pos.x += 42;
         
         pos.y -= 3;
-        char *scoreString = autoSprintf( "%d", amuletPointCount );
+
+        int currentPointCount = amuletPointCount;
+        
+        int secondsPassed = game_time( NULL ) - amuletBaseTime;
+        
+        int minutesPassed = secondsPassed / 60;
+        
+        currentPointCount -= amuletHoldPenaltyPerMinute * minutesPassed;
+
+        
+        char *scoreString = autoSprintf( "%d", currentPointCount );
         
         mainFont->drawString( scoreString, pos, alignLeft );
         
