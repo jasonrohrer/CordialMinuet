@@ -1,4 +1,4 @@
-Version 17     ???
+Version 17     2015-March-20
 
 --Fixed failure to fetch amulet image and potential crash caused by this 
   failure (thanks ..)
