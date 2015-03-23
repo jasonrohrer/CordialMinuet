@@ -1,3 +1,11 @@
+Version 19     ???
+
+--Added minutes-left display for amulet holder on leaderboard.
+
+
+
+
+
 Version 18     2015-March-20
 
 --Fixed a game-breaking bug in game results display screen (thanks claspa).

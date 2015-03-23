@@ -10525,10 +10525,38 @@ function cm_amuletReport() {
                 cm_getAmuletPoints( $amulet_id,
                                     $currently_holding_user_id );
 
+            global $amuletInactivityLimit;
+        
+            $query = "SELECT ".
+                "TIMESTAMPDIFF( minute, ".
+                "               CURRENT_TIMESTAMP, ".
+                "               ADDTIME( last_amulet_game_time, ".
+                "                        '$amuletInactivityLimit' ) ) ".
+                "      as minutes_left ".
+                "FROM $tableNamePrefix"."amulets ".
+                "WHERE holding_user_id = '$currently_holding_user_id';";
+
+
+            $result = cm_queryDatabase( $query );
+
+            $minutesLeftPhrase = "";
+
+
+            $numRows = mysql_numrows( $result );
+        
+            if( $numRows == 1 ) {
+                $minutes_left =
+                    mysql_result( $result, 0, "minutes_left" );
+
+                $minutesLeftPhrase =
+                    " ($minutes_left minutes left)";
+                }
+            
+            
             echo "<center>Currently held ".
                 "by <b>$random_name</b> with ".
                 "<b>$currently_holding_points</b> ".
-                "points.<br><br></center>";
+                "points$minutesLeftPhrase.<br><br></center>";
             }
         }
 
