@@ -1762,20 +1762,15 @@ function cm_checkForFlush() {
         // look for amulet holders that have been inactive too long
         
         // how many live games are running?
-        $liveGameCount =
+        $liveNonAmuletGameCount =
             cm_countQuery(
                 "games",
-                "player_1_id != 0 AND player_2_id != 0 " );
+                "player_1_id != 0 AND player_2_id != 0 ".
+                "AND amulet_game = 0" );
         
-        $users_to_skip = $liveGameCount - 1;
-        if( $liveGameCount == 0 ) {
-            $users_to_skip = 0;
-            }
+        $users_to_skip = $liveNonAmuletGameCount;
         if( $users_to_skip > 10 ) {
             $users_to_skip = 10;
-            }
-        if( $users_to_skip < 2 ) {
-            $users_to_skip = 2;
             }
         
         
@@ -4563,6 +4558,32 @@ function cm_pickUpDroppedAmulet( $user_id, $inAmountJustWon ) {
         // player ineligible to pick up a dropped amulet (balance too low)
         return;
         }
+
+    $waitingAmuletGameCount =
+        cm_countQuery( "games",
+                       "player_1_id != 0 AND player_2_id = 0 AND started = 0 ".
+                       "AND amulet_game = 1" );
+
+    if( $waitingAmuletGameCount > 0 ) {
+        // there are already unmatched amulet games out there
+        // don't put another amulet into the mix.
+        return;
+        }
+
+    
+    $heldAmulets =
+        cm_countQuery( "amulets", "holding_user_id != 0" );
+
+    
+    // number of users in last two minutes
+    $activeUsers = cm_countUsersTime( '0 0:02:00' );
+
+    if( $activeUsers < 2 * $heldAmulets + 3 ) {
+        // not enough active users to warrant handing out another amulet
+        // (not enough pairs of players)
+        return;
+        }
+    
     
 
     // find an amulet
@@ -4625,23 +4646,18 @@ function cm_pickUpDroppedAmulet( $user_id, $inAmountJustWon ) {
                     // found one to add
 
                     // how many live games are running?
-                    $liveGameCount =
+                    $liveNonAmuletGameCount =
                         cm_countQuery(
                             "games",
-                            "player_1_id != 0 AND player_2_id != 0 " );
+                            "player_1_id != 0 AND player_2_id != 0 ".
+                            "AND amulet_game = 0 " );
 
-                    $users_to_skip = $liveGameCount - 1;
-                    if( $liveGameCount == 0 ) {
-                        $users_to_skip = 0;
-                        }
+                    $users_to_skip = $liveNonAmuletGameCount;
                     
                     if( $users_to_skip > 10 ) {
                         $users_to_skip = 10;
                         }
-                    if( $users_to_skip < 2 ) {
-                        $users_to_skip = 2;
-                        }
-                    
+                                        
 
                     // use ON DUPLICATE UPDATE here
                     // because we're not using locks, so
@@ -6599,22 +6615,17 @@ function cm_dropAmulet() {
     global $tableNamePrefix;
 
     // how many live games are running?
-    $liveGameCount =
+    $liveNonAmuletGameCount =
         cm_countQuery(
             "games",
-            "player_1_id != 0 AND player_2_id != 0 " );
+            "player_1_id != 0 AND player_2_id != 0 ".
+            "AND amulet_game = 0" );
     
-    $users_to_skip = $liveGameCount - 1;
-    if( $liveGameCount == 0 ) {
-        $users_to_skip = 0;
-        }
+    $users_to_skip = $liveNonAmuletGameCount;
     if( $users_to_skip > 10 ) {
         $users_to_skip = 10;
         }
-    if( $users_to_skip < 2 ) {
-        $users_to_skip = 2;
-        }
-
+    
 
     // first, lock the amulet row
     // this prevents an intervening flush from subtracting penalty twice

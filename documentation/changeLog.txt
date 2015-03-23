@@ -7,7 +7,13 @@ Version 19     ???
 --Fixed decrement of users_to_skip_on_drop to only decrement one amulet at a
   time instead of all in parallel.
 
---Bounded users_to_skip when handing out dropped amulets between 2 and 10.
+--Bounded users_to_skip when handing out dropped amulets at 10 max, and changed
+  it to count only non-amulet games when setting users_to_skip.
+
+--Floating amulets never handed out if there are unpaired amulet games waiting
+  or if the number of active players is less than 2 * N + 3, where N is the
+  number of held amulets.
+
 
 
 
