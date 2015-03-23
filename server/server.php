@@ -4574,7 +4574,7 @@ function cm_pickUpDroppedAmulet( $user_id, $inAmountJustWon ) {
 
     $query = "UPDATE $tableNamePrefix"."amulets " .
         "SET users_to_skip_on_drop = users_to_skip_on_drop - 1 ".
-        "WHERE holding_user_id = 0 AND users_to_skip_on_drop > 0;";
+        "WHERE holding_user_id = 0 AND users_to_skip_on_drop > 0 LIMIT 1;";
 
     cm_queryDatabase( $query );
 

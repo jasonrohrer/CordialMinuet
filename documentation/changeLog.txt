@@ -4,6 +4,9 @@ Version 19     ???
 
 --Mirrored tick-down amulet score display on WAITING FOR OPPONENT page.
 
+--Fixed decrement of users_to_skip_on_drop to only decrement one amulet at a
+  time instead of all in parallel.
+
 
 
 
