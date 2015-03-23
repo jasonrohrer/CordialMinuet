@@ -8,7 +8,7 @@
 
 // server will tell clients to upgrade to this version
 global $cm_version;
-$cm_version = "18";
+$cm_version = "19";
 
 
 // leave an older version here IF older clients can also connect safely
@@ -16,7 +16,7 @@ $cm_version = "18";
 //  too).
 // NOTE that if old clients are incompatible, both numbers should be updated.
 global $cm_accountHmacVersion;
-$cm_accountHmacVersion = "18";
+$cm_accountHmacVersion = "19";
 
 
 
