@@ -258,6 +258,9 @@ int amuletHoldPenaltyPerMinute;
 
 double amuletStake = 3.00;
 
+char waitingAmuletGame = false;
+
+
 
 
 int moveWaitingSoundSprite = -1;

@@ -34,6 +34,10 @@ extern int amuletID;
 
 extern double amuletStake;
 
+extern char waitingAmuletGame;
+
+
+
 
 CreateGamePage::CreateGamePage()
         : ServerActionPage( "join_game" ),
@@ -103,6 +107,7 @@ void CreateGamePage::actionPerformed( GUIComponent *inTarget ) {
     if( inTarget == &mCreateButton ) {
         setStatus( NULL, false );
         
+        waitingAmuletGame = false;
 
         setupRequestParameterSecurity();
         
@@ -130,7 +135,8 @@ void CreateGamePage::actionPerformed( GUIComponent *inTarget ) {
         }
     else if( inTarget == &mAmuletGameButton ) {
         setStatus( NULL, false );
-        
+
+        waitingAmuletGame = true;
 
         setupRequestParameterSecurity();
         
@@ -265,7 +271,8 @@ void CreateGamePage::draw( doublePair inViewCenter,
         }
     
 
-    if( amuletID != 0 ) {
+    if( amuletID != 0 &&
+        ( waitingAmuletGame || mCreateButton.isVisible() ) ) {
         pos = mAmuletGameButton.getPosition();
         
         pos.y = mDropAmuletButton.getPosition().y;

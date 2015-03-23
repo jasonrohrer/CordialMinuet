@@ -9,6 +9,8 @@
 
 #include "balanceFormat.h"
 
+#include "amuletCache.h"
+
 
 #include "minorGems/game/Font.h"
 #include "minorGems/game/game.h"
@@ -32,6 +34,7 @@ extern int serverSequenceNumber;
 extern double userBalance;
 extern double transferCost;
 
+extern char waitingAmuletGame;
 
 
 
@@ -119,6 +122,16 @@ void WaitGamePage::draw( doublePair inViewCenter,
         delete [] listString;
         }
     
+
+    
+    
+    if( waitingAmuletGame ) {
+        pos.x = 0;
+        pos.y = 230;
+        
+        drawAmuletDisplay( pos );
+        }
+
     }
 
 

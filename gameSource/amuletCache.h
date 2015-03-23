@@ -12,3 +12,8 @@ void cacheAmuletSprite( int inID, SpriteHandle inSprite );
 
 
 void freeAmuletCache();
+
+
+
+
+void drawAmuletDisplay( doublePair inPos );

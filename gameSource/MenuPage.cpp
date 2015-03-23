@@ -276,31 +276,7 @@ void MenuPage::draw( doublePair inViewCenter,
         
         pos.y -= 64;
         
-        SpriteHandle amuletSprite = getAmuletSprite( amuletID );
-        
-        if( amuletSprite != NULL ) {
-            setDrawColor( 1, 1, 1, 1 );
-            drawSprite( amuletSprite, pos );
-            }
-        
-        pos.x += 42;
-        
-        pos.y -= 3;
-
-        int currentPointCount = amuletPointCount;
-        
-        int secondsPassed = game_time( NULL ) - amuletBaseTime;
-        
-        int minutesPassed = secondsPassed / 60;
-        
-        currentPointCount -= amuletHoldPenaltyPerMinute * minutesPassed;
-
-        
-        char *scoreString = autoSprintf( "%d", currentPointCount );
-        
-        mainFont->drawString( scoreString, pos, alignLeft );
-        
-        delete [] scoreString;
+        drawAmuletDisplay( pos );
         }
     
 
