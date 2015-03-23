@@ -7,6 +7,8 @@ Version 19     ???
 --Fixed decrement of users_to_skip_on_drop to only decrement one amulet at a
   time instead of all in parallel.
 
+--Bounded users_to_skip when handing out dropped amulets between 2 and 10.
+
 
 
 

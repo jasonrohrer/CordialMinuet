@@ -1771,6 +1771,13 @@ function cm_checkForFlush() {
         if( $liveGameCount == 0 ) {
             $users_to_skip = 0;
             }
+        if( $users_to_skip > 10 ) {
+            $users_to_skip = 10;
+            }
+        if( $users_to_skip < 2 ) {
+            $users_to_skip = 2;
+            }
+        
         
         global $amuletInactivityLimit;
         
@@ -4628,6 +4635,13 @@ function cm_pickUpDroppedAmulet( $user_id, $inAmountJustWon ) {
                         $users_to_skip = 0;
                         }
                     
+                    if( $users_to_skip > 10 ) {
+                        $users_to_skip = 10;
+                        }
+                    if( $users_to_skip < 2 ) {
+                        $users_to_skip = 2;
+                        }
+                    
 
                     // use ON DUPLICATE UPDATE here
                     // because we're not using locks, so
@@ -6594,7 +6608,13 @@ function cm_dropAmulet() {
     if( $liveGameCount == 0 ) {
         $users_to_skip = 0;
         }
-    
+    if( $users_to_skip > 10 ) {
+        $users_to_skip = 10;
+        }
+    if( $users_to_skip < 2 ) {
+        $users_to_skip = 2;
+        }
+
 
     // first, lock the amulet row
     // this prevents an intervening flush from subtracting penalty twice
