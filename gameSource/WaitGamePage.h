@@ -26,7 +26,9 @@ class WaitGamePage : public ServerActionPage, public ActionListener {
         
         virtual void draw( doublePair inViewCenter, 
                            double inViewSize );
-        
+
+        virtual void makeActive( char inFresh );
+
         virtual void step();
 
         
@@ -40,6 +42,10 @@ class WaitGamePage : public ServerActionPage, public ActionListener {
     protected:
 
         TextButton mCancelButton;                
+        TextButton mOKButton;                
         
         SimpleVector<double> mOtherGames;
+
+        char mResponseProcessed;
+        
     };

@@ -38,22 +38,31 @@ extern char waitingAmuletGame;
 
 
 
-const char *waitGamePartNames[2] = { "status", "otherGameList" };
+const char *waitGamePartNames[3] = { "status", "dollar_amount",
+                                     "otherGameList" };
 
 WaitGamePage::WaitGamePage()
-        : ServerActionPage( "wait_game_start", 2, waitGamePartNames ),
+        : ServerActionPage( "wait_game_start", 3, waitGamePartNames ),
           mCancelButton( mainFont, 0, -200, 
-                         translate( "cancel" ) ) {
+                         translate( "cancel" ) ),
+          mOKButton( mainFont, 0, -100, 
+                     translate( "okay" ) ),
+          mResponseProcessed( false ) {
 
 
 
     addComponent( &mCancelButton );
+    addComponent( &mOKButton );
     
 
     setButtonStyle( &mCancelButton );
+    setButtonStyle( &mOKButton );
     
 
     mCancelButton.addActionListener( this );
+    mOKButton.addActionListener( this );
+    
+    mOKButton.setVisible( false );
     }
 
 
@@ -76,6 +85,11 @@ void WaitGamePage::actionPerformed( GUIComponent *inTarget ) {
         mOtherGames.deleteAll();
         setSignal( "back" );
         }
+    else if( inTarget == &mOKButton ) {
+        mOKButton.setVisible( false );
+        mCancelButton.setVisible( true );
+        setSignal( "started" );
+        }
     }
 
 
@@ -88,40 +102,43 @@ void WaitGamePage::draw( doublePair inViewCenter,
                           double inViewSize ) {
     
     doublePair pos = { 0, 0 };
-    
-    drawMessage( "waitingStart", pos );
 
-    if( mOtherGames.size() > 0 ) {
+    if( !mOKButton.isVisible() ) {
         
-        pos.y -= 72;
+        drawMessage( "waitingStart", pos );
+
+        if( mOtherGames.size() > 0 ) {
         
-        drawMessage( "otherGames", pos );
+            pos.y -= 72;
+        
+            drawMessage( "otherGames", pos );
         
                     
-        pos.y -= 48;
+            pos.y -= 48;
 
         
-        char **amountStrings = new char*[ mOtherGames.size() ];
+            char **amountStrings = new char*[ mOtherGames.size() ];
 
-        for( int i=0; i<mOtherGames.size(); i++ ) {
-            amountStrings[i] = 
-                formatDollarStringLimited( mOtherGames.getElementDirect( i ),
-                                           false );
+            for( int i=0; i<mOtherGames.size(); i++ ) {
+                amountStrings[i] = 
+                    formatDollarStringLimited( 
+                        mOtherGames.getElementDirect( i ), false );
+                }
+        
+
+            char *listString = join( amountStrings, 
+                                     mOtherGames.size(), "   " );
+
+            for( int i=0; i<mOtherGames.size(); i++ ) {
+                delete [] amountStrings[i];
+                }
+            delete [] amountStrings;
+        
+
+            drawMessage( listString, pos );
+            delete [] listString;
             }
-        
-
-        char *listString = join( amountStrings, mOtherGames.size(), "   " );
-
-        for( int i=0; i<mOtherGames.size(); i++ ) {
-            delete [] amountStrings[i];
-            }
-        delete [] amountStrings;
-        
-
-        drawMessage( listString, pos );
-        delete [] listString;
         }
-    
 
     
     
@@ -131,7 +148,50 @@ void WaitGamePage::draw( doublePair inViewCenter,
         
         drawAmuletDisplay( pos );
         }
+    
+    if( mOKButton.isVisible() ) {
+        char *dollarAmount = getResponse( "dollar_amount" );
 
+        double value;
+            
+        int numRead = sscanf( dollarAmount, "%lf", &value );
+
+        delete [] dollarAmount;
+        
+        
+        char * formattedAmount;
+        
+        if( numRead == 1 ) {
+            
+            formattedAmount = formatDollarStringLimited( value, false );
+            }
+        else {
+            formattedAmount = stringDuplicate( translate( "unknownStakes" ) );
+            }
+        
+            
+        doublePair pos = { 0, 100 };
+        
+        drawMessage( translate( "amuletGameStakesStarted" ), pos );
+        pos.y = 50;
+        
+        drawMessage( formattedAmount, pos );
+        
+        delete [] formattedAmount;
+        }
+    
+    }
+
+
+
+void WaitGamePage::makeActive( char inFresh ) {
+    ServerActionPage::makeActive( inFresh );
+    
+    if( !inFresh ) {
+        return;
+        }
+    
+    mResponseProcessed = false;
     }
 
 
@@ -139,7 +199,7 @@ void WaitGamePage::draw( doublePair inViewCenter,
 void WaitGamePage::step() {
     ServerActionPage::step();
 
-    if( isResponseReady() ) {
+    if( isResponseReady() && !mResponseProcessed ) {
         
         char *otherGameList = getResponse( "otherGameList" );
         
@@ -162,16 +222,26 @@ void WaitGamePage::step() {
             }
         delete [] parts;
         
-
+        
+        mResponseProcessed = true;
 
         char *status = getResponse( "status" );
 
         if( strcmp( status, "started" ) == 0) {
-            setSignal( "started" );
+            
+            if( waitingAmuletGame ) {
+                mCancelButton.setVisible( false );
+                mOKButton.setVisible( true );
+                }
+            else {
+                // jump right into game
+                setSignal( "started" );
+                }
             }
         else if( strcmp( status, "waiting" ) == 0 ) {
             // keep waiting
             startRequest();
+            mResponseProcessed = false;
             }
         
         delete [] status;

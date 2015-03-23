@@ -6140,7 +6140,7 @@ function cm_waitGameStart() {
     
     cm_queryDatabase( "SET AUTOCOMMIT=0" );
     
-    $query = "SELECT semaphore_key, started ".
+    $query = "SELECT semaphore_key, started, dollar_amount ".
         "FROM $tableNamePrefix"."games ".
         "WHERE player_1_id = '$user_id' OR player_2_id = '$user_id' ".
         "FOR UPDATE;";
@@ -6160,9 +6160,11 @@ function cm_waitGameStart() {
 
     $semaphore_key = mysql_result( $result, 0, "semaphore_key" );
     $started = mysql_result( $result, 0, "started" );
+    $dollar_amount = mysql_result( $result, 0, "dollar_amount" );
     
     if( $started != 0 ) {
         echo "started\n";
+        echo "$dollar_amount\n";
         echo "$otherGameList\n";
         echo "OK";
         return;
@@ -6182,6 +6184,7 @@ function cm_waitGameStart() {
         
         if( $result == -2 ) {
             echo "waiting\n";
+            echo "$dollar_amount\n";
             echo "$otherGameList\n";
             echo "OK";
             return;
@@ -6189,7 +6192,7 @@ function cm_waitGameStart() {
         else {
 
 
-            $query = "SELECT player_1_id, player_2_id ".
+            $query = "SELECT dollar_amount, player_1_id, player_2_id ".
                 "FROM $tableNamePrefix"."games ".
                 "WHERE player_1_id = '$user_id' OR player_2_id = '$user_id';";
             
@@ -6207,11 +6210,13 @@ function cm_waitGameStart() {
 
             $player_1_id = mysql_result( $result, 0, "player_1_id" );
             $player_2_id = mysql_result( $result, 0, "player_2_id" );
+            $dollar_amount = mysql_result( $result, 0, "dollar_amount" );
 
 
             if( $player_1_id == 0 || $player_2_id == 0 ) {
                 // sem signaled, but opponent still not there?
                 echo "waiting\n";
+                echo "$dollar_amount\n";
                 echo "$otherGameList\n";
                 echo "OK";
                 return;
@@ -6219,6 +6224,7 @@ function cm_waitGameStart() {
             else {
                 // opponent present
                 echo "started\n";
+                echo "$dollar_amount\n";
                 echo "$otherGameList\n";
                 echo "OK";
                 return;

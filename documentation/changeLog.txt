@@ -14,6 +14,10 @@ Version 19     ???
   or if the number of active players is less than 2 * N + 3, where N is the
   number of held amulets.
 
+--Added display of randomly-matched amulet stakes to amulet holder before the
+  start of an amulet game.
+
+
 
 
 
