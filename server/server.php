@@ -5918,6 +5918,7 @@ function cm_joinGame() {
         "started = 0,".
         "round_number = 1,".
         "game_square = '$square',".
+        "player_1_got_start = 0, player_2_got_start = 0, ".
         "player_1_moves = '#',".
         "player_2_moves = '#',".
         "player_1_bet_made = 0,".
