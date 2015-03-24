@@ -1148,6 +1148,11 @@ function cm_setupDatabase() {
             // 36-cell square, numbers from 1 to 36, separated by #
             // character
             "game_square CHAR(125) NOT NULL,".
+            // flag set when each player requests the very first game
+            // state.  This indicates that both are aware that the game
+            // has started, so leave penalties can be assessed
+            "player_1_got_start TINYINT NOT NULL,".
+            "player_2_got_start TINYINT NOT NULL,".
             "player_1_moves CHAR(13) NOT NULL,".
             "player_2_moves CHAR(13) NOT NULL,".
             "player_1_bet_made TINYINT UNSIGNED NOT NULL,".
@@ -4695,7 +4700,9 @@ function cm_endOldGames( $user_id, $inForceTie = false ) {
         "game_square, ".
         "round_number, ".
         "amulet_game, ".
-        "dollar_amount, player_1_coins, player_2_coins, ".
+        "dollar_amount, ".
+        "player_1_got_start, player_2_got_start, ".
+        "player_1_coins, player_2_coins, ".
         "player_1_pot_coins, player_2_pot_coins, ".
         "player_1_moves, player_2_moves, ".
         "player_1_bet_made, player_2_bet_made, ".
@@ -4732,6 +4739,11 @@ function cm_endOldGames( $user_id, $inForceTie = false ) {
         
         $dollar_amount = mysql_result( $result, $i, "dollar_amount" );
         
+        $player_1_got_start =
+            mysql_result( $result, $i, "player_1_got_start" );
+        $player_2_got_start =
+            mysql_result( $result, $i, "player_2_got_start" );
+
         $player_1_coins = mysql_result( $result, $i, "player_1_coins" );
         $player_2_coins = mysql_result( $result, $i, "player_2_coins" );
 
@@ -4851,8 +4863,11 @@ function cm_endOldGames( $user_id, $inForceTie = false ) {
                 }
             }
         // else player leaving in middle
-        else if( $inForceTie || ! $areGamesAllowed ) {
-            // game force-ended by admin, or tie forced, return pots to players
+        else if( $inForceTie || ! $areGamesAllowed ||
+                 !( $player_1_got_start && $player_2_got_start ) ) {
+            // game force-ended by admin, or tie forced,
+            // OR both haven't gotten game start yet
+            // return pots to players
             $player_1_coins += $player_1_pot_coins;
             $player_2_coins += $player_2_pot_coins;
 
@@ -4862,6 +4877,9 @@ function cm_endOldGames( $user_id, $inForceTie = false ) {
             else {
                 $player_2_id = 0;
                 }
+
+            // no penalty in this case
+            $leaverPenalty = 0;
             }
         else if( $player_1_id == $user_id ) {
             $player_1_id = 0;
@@ -6715,7 +6733,9 @@ function cm_printGameState( $inHideOpponentSecretMoves = true ) {
 
     
     $query = "SELECT game_id, player_1_id, player_2_id,".
-        "game_square, player_1_coins, player_2_coins, ".
+        "game_square, ".
+        "player_1_got_start, player_2_got_start,".
+        "player_1_coins, player_2_coins, ".
         "player_1_pot_coins, player_2_pot_coins, ".
         "settled_pot_coins, ".
         "player_1_bet_made, player_2_bet_made, ".
@@ -6748,6 +6768,9 @@ function cm_printGameState( $inHideOpponentSecretMoves = true ) {
     $player_2_id = mysql_result( $result, 0, "player_2_id" );
     $game_square = mysql_result( $result, 0, "game_square" );
 
+    $player_1_got_start = mysql_result( $result, 0, "player_1_got_start" );
+    $player_2_got_start = mysql_result( $result, 0, "player_2_got_start" );
+
     $player_1_coins = mysql_result( $result, 0, "player_1_coins" );
     $player_2_coins = mysql_result( $result, 0, "player_2_coins" );
 
@@ -6769,6 +6792,23 @@ function cm_printGameState( $inHideOpponentSecretMoves = true ) {
     // than what is actually enforced
     global $moveLimitGraceSeconds;
     $seconds_left -= $moveLimitGraceSeconds;
+
+
+
+    
+    // flag game to show that we got the start state
+    if( $player_1_id == $user_id && !$player_1_got_start ) {
+        $query = "UPDATE $tableNamePrefix"."games ".
+            "SET player_1_got_start = 1 WHERE player_1_id = '$user_id';";
+        cm_queryDatabase( $query );
+        }
+    else  if( $player_2_id == $user_id && !$player_2_got_start ) {
+        
+        $query = "UPDATE $tableNamePrefix"."games ".
+            "SET player_2_got_start = 1 WHERE player_2_id = '$user_id';";
+        cm_queryDatabase( $query );
+        }
+    
     
 
     global $areGamesAllowed;

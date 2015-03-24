@@ -17,6 +17,8 @@ Version 19     ???
 --Added display of randomly-matched amulet stakes to amulet holder before the
   start of an amulet game.
 
+--Fixed so that hitting CANCEL button on WAITING screen never results in a
+  leave penalty, regardless of network delays (thanks Josh C). 
 
 
 
