@@ -29,6 +29,8 @@ extern int amuletHoldPenaltyPerMinute;
 
 extern double amuletStake;
 
+extern char waitingAmuletGame;
+
 
 
 void MenuPage::clearListedGames() {
@@ -228,6 +230,8 @@ void MenuPage::actionPerformed( GUIComponent *inTarget ) {
                 if( r->dollarAmount <= userBalance ) {
                     
                     mJoinedGame = *r;
+                    
+                    waitingAmuletGame = false;
                     
                     setSignal( "join" );
                     }
