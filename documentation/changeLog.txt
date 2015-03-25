@@ -4,6 +4,7 @@ Version 19     Live Server Fixes
 
 --Added an amulet_summary page that lists all live amulets.
 
+--Fixed bug in amulet_summary where holding user is listed twice if they lead.
 
 
 

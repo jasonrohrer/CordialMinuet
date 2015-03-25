@@ -10743,15 +10743,16 @@ function cm_amuletSummary() {
             $held_by = "no one";
             $holding_points =  0;            
             $holding_points_string = "";
+            $holding_user_id = 0;
             
             if( $numRows == 1 ) {
                 $held_by = mysql_result( $result, 0, "random_name" );
 
-                $user_id = mysql_result( $result, 0, "user_id" );
+                $holding_user_id = mysql_result( $result, 0, "user_id" );
 
                 $holding_points =
                     cm_getAmuletPoints( $amulet_id,
-                                        $user_id );
+                                        $holding_user_id );
 
                 $holding_points_string =
                     " with <b>$holding_points</b> points";
@@ -10766,6 +10767,7 @@ function cm_amuletSummary() {
                 "LEFT JOIN $tableNamePrefix"."users as users ".
                 "     ON points.user_id = users.user_id ".
                 "WHERE amulet_id = $amulet_id ".
+                "AND points.user_id != $holding_user_id ".
                 "ORDER BY points DESC LIMIT 1;";
 
             $result = cm_queryDatabase( $query );
