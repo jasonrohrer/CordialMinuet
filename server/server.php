@@ -655,6 +655,9 @@ else if( $action == "tournament_prizes" ) {
 else if( $action == "amulet_report" ) {
     cm_amuletReport();
     }
+else if( $action == "amulet_summary" ) {
+    cm_amuletSummary();
+    }
 else if( $action == "users_graph" ) {
     cm_usersGraph();
     }
@@ -1815,7 +1818,6 @@ function cm_checkForFlush() {
         
         $query = "SELECT holding_user_id, amulet_id ".
             "FROM $tableNamePrefix"."amulets ".
-            "WHERE holding_user_id != 0 ".
             "FOR UPDATE;";
 
         $result = cm_queryDatabase( $query );
@@ -1829,13 +1831,13 @@ function cm_checkForFlush() {
                 mysql_result( $result, $i, "amulet_id" );
 
             if( time() >= strtotime( $amulets[$amulet_id][0] ) ) {
-            
-                cm_subtractPointsForAmuletHoldTime( $holding_user_id );
-            
-                $query = "UPDATE $tableNamePrefix"."amulets " .
-                    "SET holding_user_id = 0, ".
-                    "users_to_skip_on_drop = $users_to_skip ".
-                    "WHERE holding_user_id = $holding_user_id;";
+
+                if( $holding_user_id != 0 ) {    
+                    cm_subtractPointsForAmuletHoldTime( $holding_user_id );
+                    }
+                
+                $query = "DELETE FROM $tableNamePrefix"."amulets " .
+                    "WHERE amulet_id = $amulet_id;";
             
                 cm_queryDatabase( $query );
                 }
@@ -10692,6 +10694,96 @@ function cm_amuletReport() {
                 }
             }
         echo "</table></center>";
+        }
+    
+    eval( $leaderFooter );
+    }
+
+
+
+
+function cm_amuletSummary() {
+    
+
+    global $tableNamePrefix, $leaderHeader, $leaderFooter;
+
+    global $amulets;
+    
+    
+    eval( $leaderHeader );
+
+
+    $time = time();
+    
+    foreach( $amulets as $amulet_id => $parameters ) {
+
+        
+        
+    
+
+        $endTime = strtotime( $parameters[0] );
+        
+        if( $time <= $endTime ) {
+            // live
+
+            $pngURL = $parameters[2];
+            echo "<center><img border=0 src=\"$pngURL\"></center>";
+            
+            $query = "SELECT user_id, random_name ".
+                "FROM $tableNamePrefix"."amulets as a ".
+                "LEFT JOIN $tableNamePrefix"."users as users ".
+                "     ON a.holding_user_id = users.user_id ".
+                "WHERE amulet_id = $amulet_id AND holding_user_id != 0;";
+            
+
+            $result = cm_queryDatabase( $query );
+
+            $numRows = mysql_numrows( $result );
+
+            $held_by = "no one";
+            $holding_points =  0;            
+            $holding_points_string = "";
+            
+            if( $numRows == 1 ) {
+                $held_by = mysql_result( $result, 0, "random_name" );
+
+                $user_id = mysql_result( $result, 0, "user_id" );
+
+                $holding_points =
+                    cm_getAmuletPoints( $amulet_id,
+                                        $user_id );
+
+                $holding_points_string =
+                    " with <b>$holding_points</b> points";
+                }
+
+            
+            echo "<center>Currently held ".
+                "by <b>$held_by</b>$holding_points_string.<br><br></center>";
+
+            $query = "SELECT random_name, points ".
+                "FROM $tableNamePrefix"."amulet_points as points ".
+                "LEFT JOIN $tableNamePrefix"."users as users ".
+                "     ON points.user_id = users.user_id ".
+                "WHERE amulet_id = $amulet_id ".
+                "ORDER BY points DESC LIMIT 1;";
+
+            $result = cm_queryDatabase( $query );
+
+            $numRows = mysql_numrows( $result );
+            
+            if( $numRows == 1 ) {
+                $random_name = mysql_result( $result, 0, "random_name" );
+                $points = mysql_result( $result, 0, "points" );
+
+                if( $points > $holding_points ) {
+                    echo "<center><b>$random_name</b> ".
+                        "leads with <b>$points</b> points.</center>";
+                    }
+                }                
+            
+            echo "<br><br><br><br>";
+            }
         }
     
     eval( $leaderFooter );

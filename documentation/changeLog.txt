@@ -1,3 +1,12 @@
+Version 19     Live Server Fixes
+
+--Fixed bug that prevented next batch of amulets from being handed out.
+
+--Added an amulet_summary page that lists all live amulets.
+
+
+
+
 Version 19     2015-March-25
 
 --Added minutes-left display for amulet holder on leaderboard.
