@@ -493,7 +493,7 @@ $amulets = array(
                 "http://cordialminuet.com/testAmulets/he.png" ),
     6 => array( "22-Mar-2015 20:00:00 -0800",
                 "http://cordialminuet.com/testAmulets/vav.tga",
-                "http://cordialminuet.com/testAmulets/vav.png" )
+                "http://cordialminuet.com/testAmulets/vav.png" ),
     7 => array( "26-Mar-2015 20:00:00 -0800",
                 "http://cordialminuet.com/testAmulets/zayin.tga",
                 "http://cordialminuet.com/testAmulets/zayin.png" ),
@@ -503,6 +503,6 @@ $amulets = array(
     9 => array( "26-Mar-2015 20:00:00 -0800",
                 "http://cordialminuet.com/testAmulets/tet.tga",
                 "http://cordialminuet.com/testAmulets/tet.png" )
-);
+    );
     
 ?>
