@@ -23,6 +23,9 @@ extern Font *numbersFontFixed;
 extern double frameRateFactor;
 
 
+extern char waitingAmuletGame;
+
+
 
 const char *gameStatePartNames[10] = { "running", "boardLayout", 
                                       "ourCoins", "theirCoins", 
@@ -700,7 +703,11 @@ void PlayGamePage::makeActive( char inFresh ) {
     
     mWaitingStartTime = game_time( NULL );
 
-    playChime();
+    // if this is an amulet game that's starting, we
+    // already played the chime when the amulet stake was ready
+    if( !waitingAmuletGame ) {
+        playChime();
+        }
     }
 
 

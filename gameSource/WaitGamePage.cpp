@@ -11,6 +11,8 @@
 
 #include "amuletCache.h"
 
+#include "chime.h"
+
 
 #include "minorGems/game/Font.h"
 #include "minorGems/game/game.h"
@@ -232,6 +234,8 @@ void WaitGamePage::step() {
             if( waitingAmuletGame ) {
                 mCancelButton.setVisible( false );
                 mOKButton.setVisible( true );
+                // wake player up
+                playChime();
                 }
             else {
                 // jump right into game
