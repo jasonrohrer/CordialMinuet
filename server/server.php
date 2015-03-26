@@ -997,6 +997,7 @@ function cm_setupDatabase() {
             "sequence_number INT UNSIGNED NOT NULL," .
             "request_sequence_number INT UNSIGNED NOT NULL," .
             "last_action_time DATETIME NOT NULL," .
+            "INDEX( last_action_time ),".
             "last_request_tag CHAR(40) NOT NULL,".
             "last_request_response TEXT NOT NULL,".
             "admin_level TINYINT UNSIGNED NOT NULL,".
@@ -6327,8 +6328,13 @@ function cm_listGames() {
 
     global $areGamesAllowed, $minGameStakes, $maxGameStakes, $amuletMaxStake;
 
+    // active users in last 2 minutes
+    $active_user_count = cm_countUsersTime( '0 0:02:00' );
+    
+    
     if( !$areGamesAllowed ) {
         echo "0\n";
+        echo "$active_user_count\n";
         echo "$minGameStakes\n";
         echo "$maxGameStakes\n";
         echo "$amuletMaxStake\n";
@@ -6338,6 +6344,7 @@ function cm_listGames() {
         }
     else {
         echo "1\n";
+        echo "$active_user_count\n";
         echo "$minGameStakes\n";
         echo "$maxGameStakes\n";
         echo "$amuletMaxStake\n";

@@ -1,0 +1,1 @@
+ALTER TABLE minuetServer_users ADD INDEX( last_action_time );

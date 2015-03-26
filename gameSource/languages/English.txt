@@ -19,6 +19,9 @@ newAccount "NEW ACCOUNT"
 existingAccount "EXISTING ACCOUNT"
 
 
+players "%s PLAYERS"
+player "%s PLAYER"
+
 deposit  "DEPOSIT"
 withdraw "WITHDRAW"
 cancel "CANCEL"

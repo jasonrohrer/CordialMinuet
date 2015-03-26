@@ -64,7 +64,9 @@ class MenuPage : public ServerActionPage, public ActionListener {
         // 1 if allowed
         // 0 if not allowed        
         int mAreGamesAllowed;
-
+        
+        int mActivePlayerCount;
+        
         int mLimit;
         int mSkip;
 

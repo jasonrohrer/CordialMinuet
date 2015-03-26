@@ -1,3 +1,14 @@
+Version 21     ???
+
+--Added display of active player count in client.
+
+--Moved client amulet display over to make room for large player balances that
+  could move down to next line.
+
+
+
+
+
 Version 20     Live Server Fixes
 
 --Added retry-based work-around for a bug in PHP/MySQL that triggers an

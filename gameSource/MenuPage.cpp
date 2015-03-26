@@ -59,6 +59,7 @@ MenuPage::MenuPage()
           mRefreshButton( mainFont, -200, -188, 
                           translate( "refresh" ) ),
           mAreGamesAllowed( 2 ),
+          mActivePlayerCount( -1 ),
           mLimit( 9 ),
           mSkip( 0 ),
           mResponseProcessed( false ) {
@@ -279,11 +280,42 @@ void MenuPage::draw( doublePair inViewCenter,
         pos = mDepositButton.getPosition();
         
         pos.y -= 64;
+        pos.x -= 113;
         
         drawAmuletDisplay( pos );
         }
     
 
+
+    if( mActivePlayerCount > 0 && mResponseProcessed ) {
+        
+        pos = mNewGameButton.getPosition();
+        
+        pos.y += 64;
+        if( mNextButton.isVisible() && mActivePlayerCount > 999 ) {    
+            // move over slightly so that large values don't touch MORE button
+            pos.x -= 5;
+            }
+        
+    
+        char *activePlayerString = 
+            formatDollarStringLimited( mActivePlayerCount, false, false );
+    
+        const char *key = "players";
+        if( mActivePlayerCount == 1 ) {
+            key = "player";
+            }
+
+        char *activePlayerDisplay = autoSprintf( translate( key ),
+                                                 activePlayerString );
+        delete [] activePlayerString;
+    
+    
+        mainFont->drawString( activePlayerDisplay, pos, alignCenter );
+    
+        delete [] activePlayerDisplay;
+        }
+    
 
     if( mListedGames.size() > 0 ) {    
         pos.x = 0;
@@ -329,7 +361,7 @@ void MenuPage::step() {
 
         int numLines = getNumResponseParts();
         
-        int numGames = numLines - 5;
+        int numGames = numLines - 6;
 
         for( int i = 0; i<numLines; i++ ) {
             
@@ -352,22 +384,30 @@ void MenuPage::step() {
                 }
             else if( i == 1 ) {
                 // second line is min_allowed_stakes
-                sscanf( line, "%lf", &minGameStakes );
+                sscanf( line, "%d", &mActivePlayerCount );
                 
                 delete [] line;
                 
                 continue;
                 }
             else if( i == 2 ) {
-                // third line is max_allowed_stakes
-                sscanf( line, "%lf", &maxGameStakes );
+                // third line is min_allowed_stakes
+                sscanf( line, "%lf", &minGameStakes );
                 
                 delete [] line;
                 
                 continue;
                 }
             else if( i == 3 ) {
-                // fourth line is amulet_stakes
+                // fourth line is max_allowed_stakes
+                sscanf( line, "%lf", &maxGameStakes );
+                
+                delete [] line;
+                
+                continue;
+                }
+            else if( i == 4 ) {
+                // fifth line is amulet_stakes
                 sscanf( line, "%lf", &amuletStake );
                 
                 delete [] line;
@@ -382,8 +422,8 @@ void MenuPage::step() {
 
             delete [] line;
 
-            if( numParts == 4 && i == 4 ) {
-                // fifth line MAY be tournament info
+            if( numParts == 4 && i == 5 ) {
+                // sixth line MAY be tournament info
                 
                 GameRecord r;
                     
@@ -396,7 +436,7 @@ void MenuPage::step() {
 
                 r.referenceSeconds = game_time( NULL );
 
-                int b = buttonsToUse[numGames - 1][i - 4];
+                int b = buttonsToUse[numGames - 1][i - 5];
 
 
                 TextButton *button = mGameButtons.getElementDirect( b );
@@ -463,7 +503,7 @@ void MenuPage::step() {
                     }
                 
                     
-                int b = buttonsToUse[numGames - 1][i - 4];
+                int b = buttonsToUse[numGames - 1][i - 5];
                     
                 TextButton *button = mGameButtons.getElementDirect( b );
                     

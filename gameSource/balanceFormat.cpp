@@ -109,10 +109,16 @@ char *formatBalance( double inBalance,
 
 
 char *formatDollarStringLimited( double inDollarAmount,
-                                 char inSpaceBeforeUnit ) {
+                                 char inSpaceBeforeUnit,
+                                 char inDollarSign ) {
     if( inDollarAmount < 1000 ) {
         
-        return formatBalance( inDollarAmount );
+        if( inDollarSign ) {    
+            return formatBalance( inDollarAmount );
+            }
+        else {
+            return autoSprintf( "%d", int( inDollarAmount ) );
+            }
         }
     else {
         // too big to display on button
@@ -139,22 +145,34 @@ char *formatDollarStringLimited( double inDollarAmount,
         const char *formatString;
         
         if( inSpaceBeforeUnit ) {
-            formatString = "$%.0f %c";
+            formatString = "%s%.0f %c";
             }
         else {
-            formatString = "$%.0f%c";
+            formatString = "%s%.0f%c";
             }
         
 
         if( trimmedAmount < 10 ) {
-            formatString = "$%.1f %c";
+            if( inSpaceBeforeUnit ) {
+                formatString = "%s%.1f %c";
+                }
+            else {
+                formatString = "%s%.1f%c";
+                }
+            
             trimmedAmount = floor( 10 * trimmedAmount ) / 10;
             }
         else {
             trimmedAmount = floor( trimmedAmount );
             }
         
+        const char *dollarSign = "";
+        if( inDollarSign ) {
+            dollarSign = "$";
+            }
+
         char *trimmedString = autoSprintf( formatString,
+                                           dollarSign,
                                            trimmedAmount,
                                            sizeChar );
         

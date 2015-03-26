@@ -566,6 +566,7 @@ server.php?action=list_games
 
 Returns:
 are_games_allowed
+active_user_count
 min_allowed_stakes
 max_allowed_stakes
 amulet_stakes
