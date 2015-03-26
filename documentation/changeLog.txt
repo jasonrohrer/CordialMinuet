@@ -1,3 +1,11 @@
+Version 20     Live Server Fixes
+
+--Added retry-based work-around for a bug in PHP/MySQL that triggers an
+  occasional 'Unable to save result set' warning and query failure.
+
+
+
+
 Version 20     2015-March-25
 
 --Added a chime for amulet-holder on the display-stake screen when an amulet

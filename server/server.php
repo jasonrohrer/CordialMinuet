@@ -11433,11 +11433,13 @@ function cm_closeDatabase() {
  * @param $inQueryString the SQL query string.
  * @param $inDeadlockFatal 1 to treat a deadlock as a fatal error (default)
  *        or 0 to return an error code on deadlock.
- *
+ * @param $inRetryOnFailure is used internally to control one-retry behavior.
+ *        Should always be left at 1 when called externally.
  * @return a result handle that can be passed to other mysql functions or
  *        FALSE on deadlock (if deadlock is not a fatal error).
  */
-function cm_queryDatabase( $inQueryString, $inDeadlockFatal=1 ) {
+function cm_queryDatabase( $inQueryString, $inDeadlockFatal=1,
+                           $inRetryOnFailure=1 ) {
     global $cm_mysqlLink;
 
     if( gettype( $cm_mysqlLink ) != "resource" ) {
@@ -11578,9 +11580,35 @@ function cm_queryDatabase( $inQueryString, $inDeadlockFatal=1 ) {
         else {
             // some other error (we're still connected, so we can
             // add log messages to database
-            cm_fatalError( "Database query failed:<BR>$inQueryString<BR><BR>" .
-                           mysql_error() .
-                           "<br>(error number $errorNumber)<br>" );
+
+            if( $inRetryOnFailure ) {
+                $logMessage =
+                    "Database query failed:\n$inQueryString\n" .
+                    "MySQL error = ". mysql_error() .
+                    "\n(error number $errorNumber)\n".
+                    "Retrying one more time.\n" . cm_getBacktrace();
+                
+                cm_log( $logMessage );
+
+                global $adminEmail;
+                
+                cm_mail( $adminEmail, "Cordial Minuet query retry",
+                         $logMessage );
+                
+                cm_queryDatabase( $inQueryString, $inDeadlockFatal,
+                                  // don't retry again if we fail again
+                                  0 );
+                }
+            else {
+                // we're already on a retry
+                // this is a hard failure state
+                
+                cm_fatalError(
+                    "Database query failed, even after retry:\n".
+                    "$inQueryString\n" .
+                    "MySQL error = ".mysql_error() .
+                    "\n(error number $errorNumber)" );
+                }
             }
         }
     
@@ -11794,11 +11822,14 @@ function cm_noticeAndWarningHandler( $errno, $errstr, $errfile, $errline ) {
         "$errorName:  $errstr in $errfile on line $errline\n" .
         cm_getBacktrace();
 
+    
+    // avoid spitting error message to client
+    // some of our code works-around certain failures
+    
+    // echo( $logMessage . "\n" );
 
-    echo( $logMessage . "\n" );
-
-    // treat notices as reportable failures, because they cause protocol
-    // failures for client
+    // still, treat notices as reportable failures, because they usually
+    // cause protocol failures for client
     global $emailAdminOnFatalError, $adminEmail;
 
 
