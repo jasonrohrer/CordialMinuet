@@ -519,8 +519,8 @@ $vsOneCodeName = "test1";
 // the user id against which you can score points
 $vsOneUserID = 1;
 
-$vsOneStartTime = "01-Apr-2015 10:00:00 -0800";
-$vsOneEndTime = "05-Apr-2015 12:11:00 -0800";
+$vsOneStartTime = "03-Apr-2015 09:00:00 -0800";
+$vsOneEndTime = "03-Apr-2015 12:00:00 -0800";
 
 // how many places pay prizes
 $vsOneNumPrizes = 3;
