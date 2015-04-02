@@ -652,6 +652,9 @@ else if( $action == "tournament_report" ) {
 else if( $action == "tournament_prizes" ) {
     cm_tournamentPrizes();
     }
+else if( $action == "vs_one_report" ) {
+    cm_vsOneReport();
+    }
 else if( $action == "amulet_report" ) {
     cm_amuletReport();
     }
@@ -10601,6 +10604,104 @@ function cm_tournamentPrizes() {
         
         echo "<tr><td align=right>$rowNum.</td><td></td>".
             "<td align=right>$prize</td></tr>";
+        }
+    echo "</table></center>";
+
+    eval( $leaderFooter );
+    }
+
+
+
+
+
+
+
+function cm_vsOneReport() {
+    $code_name = cm_requestFilter( "vs_one_code_name",
+                                   "/[A-Z0-9_]+/i", "" );
+
+
+    global $tableNamePrefix, $leaderboardLimit, $leaderHeader, $leaderFooter;
+
+    eval( $leaderHeader );
+
+
+    global $vsOneStartTime, $vsOneEndTime, $vsOneCodeName;
+    
+    $time = time();
+
+    $startTime = strtotime( $vsOneStartTime );
+    $endTime = strtotime( $vsOneEndTime );
+
+
+    if( $code_name == $vsOneCodeName ) {
+        
+        if( $time > $endTime ) {
+            echo "<center>This contest is over.<br><br></center>";
+            }
+        else if( $time < $startTime ) {
+
+            $timeString = cm_formatDuration( $startTime - $time );
+
+            echo "<br><br><br><center>This contest will ".
+                "start in $timeString.<br><br></center>";
+            return;
+            }
+        else {
+            // live
+            $timeString = cm_formatDuration( $endTime - $time );
+
+            echo "<center>This contest is live and will ".
+                "end in $timeString.<br><br></center>";
+            }
+        }
+
+    
+    
+    $query = "SELECT coins_won, random_name ".
+        "FROM $tableNamePrefix"."vs_one_scores as scores ".
+        "LEFT JOIN $tableNamePrefix"."users as users ".
+        "     ON scores.user_id = users.user_id ".
+        "WHERE vs_one_code_name = '$code_name' ".
+        // break ties by making older user_id win the tie
+        "ORDER BY coins_won DESC, scores.user_id ASC;";
+    $result = cm_queryDatabase( $query );
+
+    $numRows = mysql_numrows( $result );
+
+
+    
+    echo "<center><table border=0 cellspacing=10>";
+
+    echo "<tr><td align=right></td>".
+            "<td></td><td></td><td></td>".
+            "<td valign=bottom align=right>Coins Won/Lost</td></tr>";
+
+    echo "<tr><td colspan=6><hr></td></tr>";        
+        
+
+    global $vsOneNumPrizes;
+    
+    for( $i=0; $i<$numRows; $i++ ) {
+        $random_name = mysql_result( $result, $i, "random_name" );
+        $coins_won = mysql_result( $result, $i,
+                                            "coins_won" );
+
+        if( $i != 0 ) {
+            echo "<tr><td colspan=5><hr></td></tr>";
+            }
+
+        $rowNum = $i + 1;
+
+        $star = "";
+        if( $coins_won > 0 && $i < $vsOneNumPrizes ) {
+            // negative scores never get prizes, even if there are prizes left
+            $star = "*";
+            }
+        
+        echo "<tr><td align=right>$rowNum.</td>".
+            "<td>$star</td><td>$random_name</td><td></td>".
+            "<td align=right>$coins_won</td></tr>";
         }
     echo "</table></center>";
 

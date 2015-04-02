@@ -5,6 +5,9 @@ Version 21     ???
 --Moved client amulet display over to make room for large player balances that
   could move down to next line.
 
+--Added support on server for vs-creator launch contest (collusion-proof
+  replacement for amulet contest suggested originally by Jere as a joke).
+
 
 
 
