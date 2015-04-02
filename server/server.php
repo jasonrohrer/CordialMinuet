@@ -709,6 +709,7 @@ else if( preg_match( "/server\.php/", $_SERVER[ "SCRIPT_NAME" ] ) ) {
         cm_doesTableExist( $tableNamePrefix."tournament_pairings" ) &&
         cm_doesTableExist( $tableNamePrefix."amulets" ) &&
         cm_doesTableExist( $tableNamePrefix."amulet_points" ) &&
+        cm_doesTableExist( $tableNamePrefix."vs_one_scores" ) &&
         cm_doesTableExist( $tableNamePrefix."server_stats" ) &&
         cm_doesTableExist( $tableNamePrefix."user_stats" );
     
@@ -1356,7 +1357,26 @@ function cm_setupDatabase() {
         echo "<B>$tableName</B> table already exists<BR>";
         }
 
-    
+
+
+    $tableName = $tableNamePrefix . "vs_one_scores";
+    if( ! cm_doesTableExist( $tableName ) ) {
+
+        $query =
+            "CREATE TABLE $tableName(" .
+            "user_id INT NOT NULL," .
+            "vs_one_code_name VARCHAR(255) NOT NULL," .
+            "PRIMARY KEY( user_id, vs_one_code_name )," .
+            // can be negative
+            "coins_won INT NOT NULL,".
+            "INDEX( coins_won ) ) ENGINE = INNODB;";
+        $result = cm_queryDatabase( $query );
+
+        echo "<B>$tableName</B> table created<BR>";
+        }
+    else {
+        echo "<B>$tableName</B> table already exists<BR>";
+        }
 
     
     $tableName = $tableNamePrefix . "server_stats";
@@ -4993,6 +5013,52 @@ function cm_endOldGames( $user_id, $inForceTie = false ) {
             cm_log( "endOldGames paying out both players for game $game_id" );
 
 
+
+            global $vsOneLive, $vsOneUserID;
+
+            if( $vsOneLive &&
+                ( $old_player_1_id == $vsOneUserID ||
+                  $old_player_2_id == $vsOneUserID ) ) {
+                
+                // this game was against the one
+
+                // but is the vsOne contest running?
+                global $vsOneStartTime, $vsOneEndTime;
+                $time = time();
+
+                $startTime = strtotime( $vsOneStartTime );
+                $endTime = strtotime( $vsOneEndTime );
+                
+            
+                if( $time >= $startTime && $time <= $endTime ) {
+                    // in middle of contest 
+
+                    $otherPlayerID = $old_player_1_id;
+                    $otherPlayerCoins = $player_1_coins;
+                    
+                    if( $otherPlayerID == $vsOneUserID ) {
+                        $otherPlayerID = $old_player_2_id;
+                        $otherPlayerCoins = $player_2_coins;
+                        }
+                    
+                    $deltaCoins = $otherPlayerCoins - $cm_gameCoins;
+
+
+                    global $vsOneCodeName;
+                    
+                    $query =
+                        "INSERT INTO $tableNamePrefix"."vs_one_scores ".
+                        "SET user_id = '$otherPlayerID', ".
+                        "    vs_one_code_name = '$vsOneCodeName', ".
+                        "    coins_won = $deltaCoins ".
+                        "ON DUPLICATE KEY UPDATE ".
+                        "    coins_won = coins_won + $deltaCoins;";
+                    
+                    cm_queryDatabase( $query );
+                    }
+                }
+            
+            
 
             
             // figure out if an amulet should change hands

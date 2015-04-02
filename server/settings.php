@@ -504,5 +504,26 @@ $amulets = array(
                 "http://cordialminuet.com/testAmulets/tet.tga",
                 "http://cordialminuet.com/testAmulets/tet.png" )
     );
-    
+
+
+
+// For a contest where chips won/lost vs a single account determines
+// winners
+
+$vsOneLive = 1;
+
+// unique name so that other contests can be run later without clearing
+// the database
+$vsOneCodeName = "test1";
+
+// the user id against which you can score points
+$vsOneUserID = 1;
+
+$vsOneStartTime = "01-Apr-2015 10:00:00 -0800";
+$vsOneEndTime = "05-Apr-2015 12:11:00 -0800";
+
+// how many places pay prizes
+$vsOneNumPrizes = 3;
+
+
 ?>
