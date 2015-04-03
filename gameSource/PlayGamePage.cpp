@@ -321,6 +321,7 @@ PlayGamePage::PlayGamePage()
           mMoveDeadlineFade( 0 ),
           mMoveDeadlineFadeDelta( 1 ),
           mCommitButton( mainFont, -128, 288, translate( "commit" ) ),
+          mCommitButtonJustPressed( false ),
           mBetButton( mainFont, 0, -288, translate( "bet" ) ),
           mFoldButton( mainFont, 120, -288, translate( "fold" ) ),
           mLeaveButton( mainFont, 128, 288, translate( "leave" ) ),
@@ -631,6 +632,8 @@ void PlayGamePage::makeActive( char inFresh ) {
     mPickerThem.draw = false;
 
     mCommitButton.setVisible( false );
+    mCommitButtonJustPressed = false;
+    
     // clear flashing
     setButtonStyle( &mCommitButton );
 
@@ -886,6 +889,8 @@ void PlayGamePage::actionPerformed( GUIComponent *inTarget ) {
         
 
         mCommitButton.setVisible( false );
+        mCommitButtonJustPressed = true;
+        
         // clear flashing
         setButtonStyle( &mCommitButton );
     
@@ -1934,6 +1939,11 @@ int PlayGamePage::slidePicker( ColumnPicker *inPicker ) {
 
 
 void PlayGamePage::step() {
+
+    // clear flag for next time
+    // this only needs to be set during a single mouse up event
+    mCommitButtonJustPressed = false;            
+            
 
     if( mMoveDeadline != 0 ) {
         int secondsLeft = (int)( mMoveDeadline - game_time( NULL ) );
@@ -4587,14 +4597,16 @@ void PlayGamePage::pointerUp( float inX, float inY ) {
 
         if( mPickerUs.draggedInYet && mPickerThem.draggedInYet ) {
             
-            // commit allowed now
-            mCommitButton.setVisible( true );
-            mCommitFlashPreSteps = 0;
-            mCommitFlashProgress = 1.0;
-            mCommitFlashDirection = -1;
-
-            mLeaveButton.setVisible( false );
-            mLeaveConfirmButton.setVisible( false );
+            if( ! mCommitButtonJustPressed ) {
+                // commit allowed now
+                mCommitButton.setVisible( true );
+                mCommitFlashPreSteps = 0;
+                mCommitFlashProgress = 1.0;
+                mCommitFlashDirection = -1;
+                
+                mLeaveButton.setVisible( false );
+                mLeaveConfirmButton.setVisible( false );
+                }
             }
         }
     

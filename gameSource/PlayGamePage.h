@@ -233,6 +233,11 @@ class PlayGamePage : public ServerActionPage, public ActionListener {
 
 
         TextButton mCommitButton;
+
+        // watch for pressing commit button while still dragging a slider
+        // (dropping a slider makes commit button become visible again)
+        char mCommitButtonJustPressed;
+
         TextButton mBetButton;
         TextButton mFoldButton;
         TextButton mLeaveButton;
