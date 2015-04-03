@@ -1759,7 +1759,7 @@ void PlayGamePage::draw( doublePair inViewCenter,
         
         if( mParchmentFade > 0 ) {
             setDrawColor( 0, 0, 0, mParchmentFade );
-            drawSquare( parchPos, 217 );
+            drawSquare( parchPos, 219 );
             }
 
         // draw held picker on top

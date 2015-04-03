@@ -3,6 +3,10 @@ Version 22     ??
 --Fixed bug in lingering commit button when dragging a slider and releasing it
   in a way that presses the commit button (thanks Benjamin Y).
 
+--Part of parchment was peeking out under black overlay square during board
+  fade-out.  Made overlay square slightly larger to fix this.
+
+
 
 
 
