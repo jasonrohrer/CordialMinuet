@@ -6,6 +6,10 @@ Version 22     ??
 --Part of parchment was peeking out under black overlay square during board
   fade-out.  Made overlay square slightly larger to fix this.
 
+--Fixed so that player count on menu screen doesn't flicker on auto-reload when
+  there are no active games.
+
+
 
 
 

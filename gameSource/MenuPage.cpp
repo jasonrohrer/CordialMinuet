@@ -60,6 +60,7 @@ MenuPage::MenuPage()
                           translate( "refresh" ) ),
           mAreGamesAllowed( 2 ),
           mActivePlayerCount( -1 ),
+          mHidePlayerCount( true ),
           mLimit( 9 ),
           mSkip( 0 ),
           mResponseProcessed( false ) {
@@ -216,6 +217,8 @@ void MenuPage::actionPerformed( GUIComponent *inTarget ) {
         setActionParameter( "skip", mSkip );
         
         mRefreshButton.setVisible( false );
+        
+        mHidePlayerCount = true;
 
         clearListedGames();
         
@@ -287,7 +290,7 @@ void MenuPage::draw( doublePair inViewCenter,
     
 
 
-    if( mActivePlayerCount > 0 && mResponseProcessed ) {
+    if( mActivePlayerCount > 0 && ! mHidePlayerCount ) {
         
         pos = mNewGameButton.getPosition();
         
@@ -385,7 +388,8 @@ void MenuPage::step() {
             else if( i == 1 ) {
                 // second line is min_allowed_stakes
                 sscanf( line, "%d", &mActivePlayerCount );
-                
+                mHidePlayerCount = false;
+
                 delete [] line;
                 
                 continue;
