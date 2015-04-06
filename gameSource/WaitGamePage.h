@@ -48,4 +48,5 @@ class WaitGamePage : public ServerActionPage, public ActionListener {
 
         char mResponseProcessed;
         
+        int mActivePlayerCount;
     };

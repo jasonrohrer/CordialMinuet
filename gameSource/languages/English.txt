@@ -22,6 +22,10 @@ existingAccount "EXISTING ACCOUNT"
 players "%s PLAYERS"
 player "%s PLAYER"
 
+playersLong "%s ACTIVE PLAYERS"
+playerLong "%s ACTIVE PLAYER"
+
+
 deposit  "DEPOSIT"
 withdraw "WITHDRAW"
 cancel "CANCEL"

@@ -511,12 +511,14 @@ Returns:
 started
 dollar_amount
 1.00#5.55#9.00
+active_user_count
 OK
 
 or
 waiting
 dollar_amount
 1.00#5.55#9.00
+active_user_count
 OK
 
 This call is for game creators who are waiting for an opponent to join

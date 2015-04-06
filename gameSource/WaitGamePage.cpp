@@ -40,16 +40,17 @@ extern char waitingAmuletGame;
 
 
 
-const char *waitGamePartNames[3] = { "status", "dollar_amount",
-                                     "otherGameList" };
+const char *waitGamePartNames[4] = { "status", "dollar_amount",
+                                     "otherGameList", "activeUserCount" };
 
 WaitGamePage::WaitGamePage()
-        : ServerActionPage( "wait_game_start", 3, waitGamePartNames ),
+        : ServerActionPage( "wait_game_start", 4, waitGamePartNames ),
           mCancelButton( mainFont, 0, -200, 
                          translate( "cancel" ) ),
           mOKButton( mainFont, 0, -100, 
                      translate( "okay" ) ),
-          mResponseProcessed( false ) {
+          mResponseProcessed( false ),
+          mActivePlayerCount( -1 ) {
 
 
 
@@ -140,6 +141,29 @@ void WaitGamePage::draw( doublePair inViewCenter,
             drawMessage( listString, pos );
             delete [] listString;
             }
+
+        if( mActivePlayerCount > 0 ) {
+            char *activePlayerString = 
+                formatDollarStringLimited( mActivePlayerCount, false, false );
+    
+            const char *key = "playersLong";
+            if( mActivePlayerCount == 1 ) {
+                key = "playerLong";
+                }
+
+            char *activePlayerDisplay = autoSprintf( translate( key ),
+                                                     activePlayerString );
+            delete [] activePlayerString;
+    
+            pos.x = 0;
+            pos.y = 144;
+            
+            mainFont->drawString( activePlayerDisplay, pos, alignCenter );
+            
+            delete [] activePlayerDisplay;
+            }
+        
+
         }
 
     
@@ -203,6 +227,8 @@ void WaitGamePage::step() {
 
     if( isResponseReady() && !mResponseProcessed ) {
         
+        mActivePlayerCount = getResponseInt( "activeUserCount" );
+
         char *otherGameList = getResponse( "otherGameList" );
         
         int numParts;

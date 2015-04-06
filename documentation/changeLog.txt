@@ -9,6 +9,8 @@ Version 22     ??
 --Fixed so that player count on menu screen doesn't flicker on auto-reload when
   there are no active games.
 
+--Added active player count to WAITING FOR OPPONENT screen (protocol change).
+
 
 
 

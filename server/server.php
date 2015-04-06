@@ -8,7 +8,7 @@
 
 // server will tell clients to upgrade to this version
 global $cm_version;
-$cm_version = "21";
+$cm_version = "22";
 
 
 // leave an older version here IF older clients can also connect safely
@@ -16,7 +16,7 @@ $cm_version = "21";
 //  too).
 // NOTE that if old clients are incompatible, both numbers should be updated.
 global $cm_accountHmacVersion;
-$cm_accountHmacVersion = "21";
+$cm_accountHmacVersion = "22";
 
 
 
@@ -6242,7 +6242,7 @@ function cm_waitGameStart() {
     
     
     $otherGameList = cm_getOtherGameList( $user_id );
-    
+    $active_user_count = cm_countUsersTime( '0 0:02:00' );
     
     cm_queryDatabase( "SET AUTOCOMMIT=0" );
     
@@ -6272,6 +6272,7 @@ function cm_waitGameStart() {
         echo "started\n";
         echo "$dollar_amount\n";
         echo "$otherGameList\n";
+        echo "$active_user_count\n";
         echo "OK";
         return;
         }
@@ -6286,12 +6287,14 @@ function cm_waitGameStart() {
 
         
         $otherGameList = cm_getOtherGameList( $user_id );
+        $active_user_count = cm_countUsersTime( '0 0:02:00' );
 
         
         if( $result == -2 ) {
             echo "waiting\n";
             echo "$dollar_amount\n";
             echo "$otherGameList\n";
+            echo "$active_user_count\n";
             echo "OK";
             return;
             }
@@ -6324,6 +6327,7 @@ function cm_waitGameStart() {
                 echo "waiting\n";
                 echo "$dollar_amount\n";
                 echo "$otherGameList\n";
+                echo "$active_user_count\n";
                 echo "OK";
                 return;
                 }
@@ -6332,6 +6336,7 @@ function cm_waitGameStart() {
                 echo "started\n";
                 echo "$dollar_amount\n";
                 echo "$otherGameList\n";
+                echo "$active_user_count\n";
                 echo "OK";
                 return;
                 }
