@@ -713,6 +713,7 @@ else if( preg_match( "/server\.php/", $_SERVER[ "SCRIPT_NAME" ] ) ) {
         cm_doesTableExist( $tableNamePrefix."amulets" ) &&
         cm_doesTableExist( $tableNamePrefix."amulet_points" ) &&
         cm_doesTableExist( $tableNamePrefix."vs_one_scores" ) &&
+        cm_doesTableExist( $tableNamePrefix."vs_one_cache" ) &&
         cm_doesTableExist( $tableNamePrefix."server_stats" ) &&
         cm_doesTableExist( $tableNamePrefix."user_stats" );
     
@@ -1017,13 +1018,9 @@ function cm_setupDatabase() {
 
 
 
-        $tableName = $tableNamePrefix . "leaderboard_cache";
+    $tableName = $tableNamePrefix . "leaderboard_cache";
     if( ! cm_doesTableExist( $tableName ) ) {
 
-        // this table contains general info about each user
-        //
-        // sequence number used and incremented with each client request
-        // to prevent replay attacks
         $query =
             "CREATE TABLE $tableName(" .
             "column_name VARCHAR(25) NOT NULL,".
@@ -1381,6 +1378,24 @@ function cm_setupDatabase() {
         echo "<B>$tableName</B> table already exists<BR>";
         }
 
+    $tableName = $tableNamePrefix . "vs_one_cache";
+    if( ! cm_doesTableExist( $tableName ) ) {
+
+        $query =
+            "CREATE TABLE $tableName(" .
+            "vs_one_code_name VARCHAR(255) NOT NULL PRIMARY KEY,".
+            "update_time DATETIME NOT NULL," .
+            "html_text MEDIUMTEXT NOT NULL ) ENGINE = INNODB;";
+
+        $result = cm_queryDatabase( $query );
+
+        echo "<B>$tableName</B> table created<BR>";
+        }
+    else {
+        echo "<B>$tableName</B> table already exists<BR>";
+        }
+
+    
     
     $tableName = $tableNamePrefix . "server_stats";
 
@@ -10617,11 +10632,13 @@ function cm_tournamentPrizes() {
 
 
 function cm_vsOneReport() {
+    
+    global $tableNamePrefix, $leaderboardUpdateInterval,
+        $leaderHeader, $leaderFooter;
+
     $code_name = cm_requestFilter( "vs_one_code_name",
                                    "/[A-Z0-9_]+/i", "" );
 
-
-    global $tableNamePrefix, $leaderboardLimit, $leaderHeader, $leaderFooter;
 
     eval( $leaderHeader );
 
@@ -10656,6 +10673,105 @@ function cm_vsOneReport() {
             }
         }
 
+
+
+    
+    cm_queryDatabase( "SET AUTOCOMMIT = 0;" );
+    
+    $query = "SELECT html_text, ".
+        "  update_time, ".
+        "  update_time < ".
+        "   SUBTIME( CURRENT_TIMESTAMP, '$leaderboardUpdateInterval' ) ".
+        "  AS stale, ".
+        "TIMESTAMPDIFF( SECOND, update_time, CURRENT_TIMESTAMP ) ".
+        "  AS seconds_old ".
+        "FROM $tableNamePrefix"."vs_one_cache ".
+        "WHERE vs_one_code_name = '$code_name' ".
+        "FOR UPDATE;";
+
+    $result = cm_queryDatabase( $query );
+
+    $numRows = mysql_numrows( $result );
+
+    $stale = 1;
+
+    $html_text = '';
+    if( $numRows > 0 ) {
+
+        $stale = mysql_result( $result, 0, "stale" );
+
+        if( !$stale ) {
+
+            $html_text = mysql_result( $result, 0, "html_text" );
+            }
+        }
+
+
+    if( $stale ) {
+        ob_start();
+
+        cm_vsOneReportGenerate();
+
+        $html_text = ob_get_contents();
+
+        ob_end_clean();
+        }
+    
+    
+
+
+    $ageString = "";
+    
+    if( $stale ) {
+        $ageString = "0 seconds";
+        }
+    else {
+
+        $seconds_old = mysql_result( $result, 0, "seconds_old");
+
+        $ageString = cm_formatDuration( $seconds_old );
+        }
+
+
+    
+    echo "<center>Updated $ageString ago.</center><br>";
+        
+    echo $html_text;
+    
+    eval( $leaderFooter );
+
+    
+    if( $stale ) {
+        
+
+        $query = "INSERT INTO $tableNamePrefix"."vs_one_cache ".
+            "SET vs_one_code_name = '$code_name', ".
+            "  update_time = CURRENT_TIMESTAMP,".
+            "  html_text = '$html_text'".
+            "ON DUPLICATE KEY UPDATE ".
+            "  update_time = CURRENT_TIMESTAMP, ".
+            "  html_text = '$html_text';";
+
+        cm_queryDatabase( $query );
+        }
+
+    cm_queryDatabase( "COMMIT;" );
+    cm_queryDatabase( "SET AUTOCOMMIT = 1;" );
+
+    }
+
+
+
+function cm_vsOneReportGenerate() {
+    $code_name = cm_requestFilter( "vs_one_code_name",
+                                   "/[A-Z0-9_]+/i", "" );
+
+
+    global $tableNamePrefix, $leaderboardLimit, $leaderHeader, $leaderFooter;
+
+
+
+    
     
     
     $query = "SELECT coins_won, random_name ".
@@ -10704,8 +10820,6 @@ function cm_vsOneReport() {
             "<td align=right>$coins_won</td></tr>";
         }
     echo "</table></center>";
-
-    eval( $leaderFooter );
     }
 
 

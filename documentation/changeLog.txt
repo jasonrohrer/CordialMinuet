@@ -9,6 +9,15 @@ Version 22     ??
 
 
 
+Version 21     Live Server Fixes
+
+--Added 5-minute cache for vs-creator contest leaderboard (so that you can't
+  watch for immediate changes in leaderboard to know when creator has recently
+  left a game).
+
+
+
+
 
 Version 21     2015-April-2
 
