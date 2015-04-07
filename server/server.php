@@ -5032,13 +5032,17 @@ function cm_endOldGames( $user_id, $inForceTie = false ) {
 
 
 
-            global $vsOneLive, $vsOneUserID;
+            global $vsOneLive, $vsOneUserIDs;
 
+
+            $p1Special = in_array( $old_player_1_id, $vsOneUserIDs );
+            $p2Special = in_array( $old_player_2_id, $vsOneUserIDs );
+            
+            
             if( $vsOneLive &&
-                ( $old_player_1_id == $vsOneUserID ||
-                  $old_player_2_id == $vsOneUserID ) ) {
+                ( $p1Special || $p2Special ) ) {
                 
-                // this game was against the one
+                // this game was against one of the special players
 
                 // but is the vsOne contest running?
                 global $vsOneStartTime, $vsOneEndTime;
@@ -5051,28 +5055,38 @@ function cm_endOldGames( $user_id, $inForceTie = false ) {
                 if( $time >= $startTime && $time <= $endTime ) {
                     // in middle of contest 
 
-                    $otherPlayerID = $old_player_1_id;
-                    $otherPlayerCoins = $player_1_coins;
-                    
-                    if( $otherPlayerID == $vsOneUserID ) {
-                        $otherPlayerID = $old_player_2_id;
-                        $otherPlayerCoins = $player_2_coins;
-                        }
-                    
-                    $deltaCoins = $otherPlayerCoins - $cm_gameCoins;
-
 
                     global $vsOneCodeName;
+
                     
-                    $query =
-                        "INSERT INTO $tableNamePrefix"."vs_one_scores ".
-                        "SET user_id = '$otherPlayerID', ".
-                        "    vs_one_code_name = '$vsOneCodeName', ".
-                        "    coins_won = $deltaCoins ".
-                        "ON DUPLICATE KEY UPDATE ".
-                        "    coins_won = coins_won + $deltaCoins;";
+                    if( $p1Special ) {
+                        $deltaCoins = $player_2_coins - $cm_gameCoins;
+                        
+                        $query =
+                            "INSERT INTO $tableNamePrefix"."vs_one_scores ".
+                            "SET user_id = '$old_player_2_id', ".
+                            "    vs_one_code_name = '$vsOneCodeName', ".
+                            "    coins_won = $deltaCoins ".
+                            "ON DUPLICATE KEY UPDATE ".
+                            "    coins_won = coins_won + $deltaCoins;";
+                        
+                        cm_queryDatabase( $query );
+                        }
                     
-                    cm_queryDatabase( $query );
+                    if( $p2Special ) {
+                        $deltaCoins = $player_1_coins - $cm_gameCoins;
+                        
+                        $query =
+                            "INSERT INTO $tableNamePrefix"."vs_one_scores ".
+                            "SET user_id = '$old_player_1_id', ".
+                            "    vs_one_code_name = '$vsOneCodeName', ".
+                            "    coins_won = $deltaCoins ".
+                            "ON DUPLICATE KEY UPDATE ".
+                            "    coins_won = coins_won + $deltaCoins;";
+                        
+                        cm_queryDatabase( $query );
+                        }
+                    
                     }
                 }
             

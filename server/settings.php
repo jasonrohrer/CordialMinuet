@@ -516,8 +516,8 @@ $vsOneLive = 1;
 // the database
 $vsOneCodeName = "test1";
 
-// the user id against which you can score points
-$vsOneUserID = 1;
+// the user IDs against which you can score points
+$vsOneUserIDs = array( 1, 42 );
 
 $vsOneStartTime = "03-Apr-2015 09:00:00 -0800";
 $vsOneEndTime = "03-Apr-2015 12:00:00 -0800";

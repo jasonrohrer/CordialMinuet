@@ -11,6 +11,9 @@ Version 22     ??
 
 --Added active player count to WAITING FOR OPPONENT screen (protocol change).
 
+--Added support for a list of chosen opponents in launch contest instead of
+  just one.
+
 
 
 
