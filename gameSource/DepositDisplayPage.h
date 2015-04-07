@@ -23,6 +23,11 @@ class DepositDisplayPage : public ServerActionPage, public ActionListener {
         // for extra info on left game page
         void setBuyIn( double inBuyIn );
 
+        // for case where vsOne contest is running and we just won/lost 
+        // coins that count
+        void setVsOneCoins( int inCoins );
+        
+
         virtual void actionPerformed( GUIComponent *inTarget );
 
         virtual void makeActive( char inFresh );
@@ -46,5 +51,8 @@ class DepositDisplayPage : public ServerActionPage, public ActionListener {
         double mDeltaAmount;
 
         double mBuyIn;
+        
+        int mVsOneCoins;
 
+        SpriteHandle mAmuletIconSprite;
     };

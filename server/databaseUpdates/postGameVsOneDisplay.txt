@@ -1,0 +1,3 @@
+ALTER TABLE minuetServer_users ADD last_vs_one_coins INT NOT NULL AFTER last_pay_out;
+
+UPDATE minuetServer_users SET last_vs_one_coins = 0;

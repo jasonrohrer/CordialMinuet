@@ -546,6 +546,7 @@ server.php?action=leave_game
 Returns:
 buy_in_dollar_amount
 payout_dollar_amount
+payout_vs_one_points
 OK
 
 
@@ -555,6 +556,8 @@ point
 Can both be zero when leaving a game that hasn't been joined by an opponent
 yet.
 
+payout_vs_one_points is number of points received (or lost if negative) in
+vs_one contest (0 if game didn't count for points).
 
 
 

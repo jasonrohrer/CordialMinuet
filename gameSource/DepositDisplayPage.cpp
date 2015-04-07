@@ -42,7 +42,8 @@ DepositDisplayPage::DepositDisplayPage()
           mOkayButton( mainFont, 0, -200, 
                        translate( "OK" ) ),
           mOldBalance( 0 ),
-          mDeltaAmount( 0 ) {
+          mDeltaAmount( 0 ),
+          mAmuletIconSprite( loadSprite( "amuletIcon.tga", true ) ) {
 
     addComponent( &mOkayButton );
     setButtonStyle( &mOkayButton );
@@ -52,6 +53,7 @@ DepositDisplayPage::DepositDisplayPage()
 
         
 DepositDisplayPage::~DepositDisplayPage() {
+    freeSprite( mAmuletIconSprite );
     }
 
 
@@ -69,6 +71,12 @@ void DepositDisplayPage::setLeftGame( char inLeftGame ) {
 
 void DepositDisplayPage::setBuyIn( double inBuyIn ) {
     mBuyIn = inBuyIn;
+    }
+
+
+
+void DepositDisplayPage::setVsOneCoins( int inCoins ) {
+    mVsOneCoins = inCoins;
     }
 
 
@@ -309,4 +317,32 @@ void DepositDisplayPage::draw( doublePair inViewCenter,
     
         delete [] valueString;
         }
+
+
+    if( mVsOneCoins != 0 ) {
+        pos = mOkayButton.getPosition();
+        
+        pos.x -= 232;
+        
+        drawSprite( mAmuletIconSprite, pos );
+
+
+        pos.x += 42;
+        pos.y -= 3;
+
+        char *vsOneCoinString;
+
+        if( mVsOneCoins > 0 ) {
+            vsOneCoinString = autoSprintf( "+%d", mVsOneCoins );
+            }
+        else {
+            vsOneCoinString = autoSprintf( "%d", mVsOneCoins );
+            }
+        
+        mainFont->drawString( vsOneCoinString, pos, alignLeft );
+        
+        delete [] vsOneCoinString;
+        }
+    
+            
     }

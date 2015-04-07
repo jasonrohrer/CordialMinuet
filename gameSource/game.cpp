@@ -594,11 +594,12 @@ void initFrameDrawer( int inWidth, int inHeight, int inTargetFrameRate,
     enterTournamentPage = new EnterTournamentPage();
     waitGamePage = new WaitGamePage();
         
-    const char *resultNamesE[2] = { "buy_in_dollar_amount", 
-                                    "payout_dollar_amount" };
+    const char *resultNamesE[3] = { "buy_in_dollar_amount", 
+                                    "payout_dollar_amount",
+                                    "payout_vs_one_coins" };
 
     leaveGamePage = new ServerActionPage( "leave_game",
-                                          2, resultNamesE, true );
+                                          3, resultNamesE, true );
 
     joinGamePage = new ServerActionPage( "join_game" );
 
@@ -1610,6 +1611,9 @@ void drawFrame( char inUpdate ) {
                 double payout = leaveGamePage->getResponseDouble( 
                         "payout_dollar_amount" );
 
+                int vsOneCoins = leaveGamePage->getResponseInt( 
+                    "payout_vs_one_coins" );
+
                 if( buyIn != 0 ) {
                     // buy-in happened
 
@@ -1617,6 +1621,11 @@ void drawFrame( char inUpdate ) {
                     depositDisplayPage->setDeltaAmount( payout );
                     depositDisplayPage->setLeftGame( true );
                     depositDisplayPage->setBuyIn( buyIn );
+                    depositDisplayPage->setVsOneCoins( vsOneCoins );
+
+                    if( vsOneCoins != 0 ) {
+                        playChime();
+                        }
 
                     currentGamePage = depositDisplayPage;
                     currentGamePage->base_makeActive( true );

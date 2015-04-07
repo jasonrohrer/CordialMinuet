@@ -14,6 +14,10 @@ Version 22     ??
 --Added support for a list of chosen opponents in launch contest instead of
   just one.
 
+--Added display of contest points won/lost on post-game results screen
+  (protocol change).
+
+
 
 
 

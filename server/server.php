@@ -999,6 +999,7 @@ function cm_setupDatabase() {
             "elo_rating INT NOT NULL,".
             "last_buy_in DECIMAL(13, 2) NOT NULL,".
             "last_pay_out DECIMAL(13, 4) NOT NULL,".
+            "last_vs_one_points INT NOT NULL,".
             "sequence_number INT UNSIGNED NOT NULL," .
             "request_sequence_number INT UNSIGNED NOT NULL," .
             "last_action_time DATETIME NOT NULL," .
@@ -5037,6 +5038,9 @@ function cm_endOldGames( $user_id, $inForceTie = false ) {
 
             $p1Special = in_array( $old_player_1_id, $vsOneUserIDs );
             $p2Special = in_array( $old_player_2_id, $vsOneUserIDs );
+
+            $p1VsOneCoinDelta = 0;
+            $p2VsOneCoinDelta = 0;
             
             
             if( $vsOneLive &&
@@ -5071,6 +5075,8 @@ function cm_endOldGames( $user_id, $inForceTie = false ) {
                             "    coins_won = coins_won + $deltaCoins;";
                         
                         cm_queryDatabase( $query );
+
+                        $p2VsOneCoinDelta = $deltaCoins;
                         }
                     
                     if( $p2Special ) {
@@ -5085,6 +5091,8 @@ function cm_endOldGames( $user_id, $inForceTie = false ) {
                             "    coins_won = coins_won + $deltaCoins;";
                         
                         cm_queryDatabase( $query );
+
+                        $p1VsOneCoinDelta = $deltaCoins;
                         }
                     
                     }
@@ -5237,7 +5245,8 @@ function cm_endOldGames( $user_id, $inForceTie = false ) {
                 "SET dollar_balance = dollar_balance + $player_1_payout, ".
                 "total_won = total_won + $won, ".
                 "total_lost = total_lost + $lost, ".
-                "last_pay_out = $player_1_payout ".
+                "last_pay_out = $player_1_payout, ".
+                "last_vs_one_coins = $p1VsOneCoinDelta ".
                 "WHERE user_id = '$old_player_1_id';";
             cm_queryDatabase( $query );
 
@@ -5267,7 +5276,8 @@ function cm_endOldGames( $user_id, $inForceTie = false ) {
                 "SET dollar_balance = dollar_balance + $player_2_payout, ".
                 "total_won = total_won + $won, ".
                 "total_lost = total_lost + $lost, ".
-                "last_pay_out = $player_2_payout ".
+                "last_pay_out = $player_2_payout, ".
+                "last_vs_one_coins = $p2VsOneCoinDelta ".
                 "WHERE user_id = '$old_player_2_id';";
             cm_queryDatabase( $query );
 
@@ -5878,7 +5888,8 @@ function cm_joinGame() {
             "games_started = games_started + 1, ".
             "total_buy_in = total_buy_in + $dollar_amount, ".
             "last_buy_in = $dollar_amount, ".
-            "last_pay_out = -1 ".
+            "last_pay_out = -1, ".
+            "last_vs_one_coins = 0 ".
             "WHERE user_id = '$player_1_id' OR user_id = '$joiningPlayerID';";
         cm_queryDatabase( $query );
 
@@ -5968,7 +5979,7 @@ function cm_joinGame() {
     // the opponent joins (then we set last_buy_in for both)
     $query = "UPDATE $tableNamePrefix"."users SET ".
         "games_created = games_created + 1, last_buy_in = 0, ".
-        "last_pay_out = 0 ".
+        "last_pay_out = 0, last_vs_one_coins = 0 ".
         "WHERE user_id = '$user_id';";
     
     $result = cm_queryDatabase( $query );
@@ -6397,7 +6408,7 @@ function cm_leaveGame() {
 
     global $tableNamePrefix;
     
-    $query = "SELECT last_buy_in, last_pay_out ".
+    $query = "SELECT last_buy_in, last_pay_out, last_vs_one_coins ".
         "FROM $tableNamePrefix"."users ".
         "WHERE user_id = '$user_id';";
 
@@ -6412,6 +6423,7 @@ function cm_leaveGame() {
 
     $last_buy_in = mysql_result( $result, 0, "last_buy_in" );
     $last_pay_out = mysql_result( $result, 0, "last_pay_out" );
+    $last_vs_one_coins = mysql_result( $result, 0, "last_vs_one_coins" );
 
     
     cm_queryDatabase( "COMMIT;" );
@@ -6419,6 +6431,7 @@ function cm_leaveGame() {
     
     echo "$last_buy_in\n";
     echo "$last_pay_out\n";
+    echo "$last_vs_one_coins\n";
     echo "OK";
     }
 
