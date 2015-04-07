@@ -1,4 +1,4 @@
-Version 22     ??
+Version 22     2015-April-7
 
 --Fixed bug in lingering commit button when dragging a slider and releasing it
   in a way that presses the commit button (thanks Benjamin Y).
