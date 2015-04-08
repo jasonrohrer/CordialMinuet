@@ -622,6 +622,9 @@ else if( $action == "in_person_withdrawal" ) {
 else if( $action == "recompute_elo" ) {
     cm_recomputeElo();
     }
+else if( $action == "award_cabal_points" ) {
+    cm_awardCabalPoints();
+    }
 else if( $action == "logout" ) {
     cm_logout();
     }
@@ -4725,6 +4728,30 @@ function cm_pickUpDroppedAmulet( $user_id, $inAmountJustWon ) {
         }
     }
 
+
+
+
+function cm_isVsOneRunning() {
+    global $vsOneLive;
+
+    if( $vsOneLive ) {
+                
+        // this game was against one of the special players
+
+        // but is the vsOne contest running?
+        global $vsOneStartTime, $vsOneEndTime;
+        $time = time();
+
+        $startTime = strtotime( $vsOneStartTime );
+        $endTime = strtotime( $vsOneEndTime );
+        
+        
+        if( $time >= $startTime && $time <= $endTime ) {
+            return true;
+            }
+        }
+    return false;
+    }
 
 
 
@@ -9472,6 +9499,24 @@ function cm_showData() {
 <?php
 
 
+    if( cm_isVsOneRunning() ) {
+?>
+        <td>
+        Award Cabal Contest Points:<br>
+            <FORM ACTION="server.php" METHOD="post">
+    <INPUT TYPE="hidden" NAME="action" VALUE="award_cabal_points">
+            Points:
+    <INPUT TYPE="text" MAXLENGTH=10 SIZE=10 NAME="points" VALUE="50"><br>
+             Confirm:
+    <INPUT TYPE="checkbox" NAME="confirm" VALUE=1><br>
+    <INPUT TYPE="Submit" VALUE="Give Points">
+    </FORM>
+        </td>
+<?php
+        
+        }
+    
+
     echo "</tr></table></center>\n";
 
     
@@ -11651,6 +11696,57 @@ function cm_recomputeElo() {
     cm_queryDatabase( "SET AUTOCOMMIT=1;" );
 
     echo "Done<br>";
+    }
+
+
+
+
+
+function cm_awardCabalPoints() {
+    cm_checkPassword( "award_cabal_points" );
+
+    echo "[<a href=\"server.php?action=show_data" .
+         "\">Main</a>]<br><br><br>";
+
+    $points = cm_requestFilter( "points", "/[0-9]+/" );
+    $confirm = cm_requestFilter( "confirm", "/[1]/", "0" );
+
+    if( $points <= 0 ) {
+        echo "Points must be positive.";
+        return;
+        }
+
+    if( $confirm == 0 ) {
+        echo "Must check confirmation box.";
+        return;
+        }
+
+    if( ! cm_isVsOneRunning() ) {
+        echo "Contest not running.";
+        return;
+        }
+
+    global $vsOneUserIDs, $vsOneCodeName, $tableNamePrefix;
+    
+    foreach( $vsOneUserIDs as $id ) {
+        $random_name = cm_getUserData( $id, "random_name" );
+        $email = cm_getUserData( $id, "email" );
+
+        echo "Awarding $points points to ".
+            "<b>$random_name</b> ($id:  $email)... ";
+
+        $query =
+            "INSERT INTO $tableNamePrefix"."vs_one_scores ".
+            "SET user_id = '$id', ".
+            "    vs_one_code_name = '$vsOneCodeName', ".
+            "    coins_won = $points ".
+            "ON DUPLICATE KEY UPDATE ".
+            "    coins_won = coins_won + $points;";
+                        
+        cm_queryDatabase( $query );
+        echo "done.<br>";
+        }
+    
     }
 
 
