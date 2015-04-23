@@ -631,6 +631,9 @@ void PlayGamePage::makeActive( char inFresh ) {
     mPickerUs.draw = false;
     mPickerThem.draw = false;
 
+    mPickerUs.hardScoreUpdate = true;
+    mPickerThem.hardScoreUpdate = true;
+
     mCommitButton.setVisible( false );
     mCommitButtonJustPressed = false;
     

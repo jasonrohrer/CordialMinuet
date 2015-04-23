@@ -1,3 +1,13 @@
+Version 23     ???
+
+--Fixed reading parameters from header of playback file.
+
+--Fixed crash on next game when letting go of a slider just as the move timeout
+  happens (thanks Jonathan HP).
+
+
+
+
 Version 22     Live Server Fixes
 
 --Support in admin interface for awarding cabal member compensation points.
