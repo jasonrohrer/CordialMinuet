@@ -16,6 +16,9 @@ Version 22     Live Server Fixes
 --Fixed so that cabal contest scores can never go below 0 to remove the benefit
   of starting over with a fresh account after losing points.
 
+--Added support for a series of cabal contests spaced out over time and run
+  automatically.
+
 
 
 

@@ -512,18 +512,34 @@ $amulets = array(
 
 $vsOneLive = 1;
 
-// unique name so that other contests can be run later without clearing
+// Each contest has a unique code name
+// so that other contests can be run later without clearing
 // the database
-$vsOneCodeName = "test1";
+
 
 // the user IDs against which you can score points
 $vsOneUserIDs = array( 1, 42 );
 
-$vsOneStartTime = "03-Apr-2015 09:00:00 -0800";
-$vsOneEndTime = "03-Apr-2015 12:00:00 -0800";
+$vsOneStartTimes = array( "test1" => "03-Apr-2015 09:00:00 -0700",
+                          "test2" => "09-Apr-2015 09:00:00 -0700",
+                          "test3" => "28-Apr-2015 09:00:00 -0700",
+                          "test4" => "28-Apr-2015 12:54:00 -0700" );
+
+$vsOneEndTimes = array( "test1" => "03-Apr-2015 12:00:00 -0700",
+                        "test2" => "09-Apr-2015 12:00:00 -0700",
+                        "test3" => "28-Apr-2015 12:52:00 -0700",
+                        "test4" => "28-Apr-2015 15:00:00 -0700" );
 
 // how many places pay prizes
-$vsOneNumPrizes = 3;
+$vsOneNumPrizes = array( "test1" => 3,
+                         "test2" => 3,
+                         "test3" => 4,
+                         "test4" => 4 );
 
+$vsOnePrizeImages =
+    array( "test1" => "http://cordialminuet.com/testAmulets/bet.png",
+           "test2" => "http://cordialminuet.com/testAmulets/dalet.png",
+           "test3" => "http://cordialminuet.com/testAmulets/gimel.png",
+           "test4" => "http://cordialminuet.com/testAmulets/he.png" );
 
 ?>

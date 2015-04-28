@@ -4731,26 +4731,27 @@ function cm_pickUpDroppedAmulet( $user_id, $inAmountJustWon ) {
 
 
 
+// returns code name of running contest, or "" if not running
 function cm_isVsOneRunning() {
     global $vsOneLive;
 
     if( $vsOneLive ) {
-                
-        // this game was against one of the special players
 
-        // but is the vsOne contest running?
-        global $vsOneStartTime, $vsOneEndTime;
-        $time = time();
+        global $vsOneStartTimes, $vsOneEndTimes;
+        foreach( $vsOneStartTimes as $codeName => $startTimeString ) {
+                    
+            $time = time();
 
-        $startTime = strtotime( $vsOneStartTime );
-        $endTime = strtotime( $vsOneEndTime );
-        
-        
-        if( $time >= $startTime && $time <= $endTime ) {
-            return true;
+            $startTime = strtotime( $startTimeString );
+            $endTime = strtotime( $vsOneEndTimes[ $codeName ] );
+            
+            
+            if( $time >= $startTime && $time < $endTime ) {
+                return $codeName;
+                }
             }
         }
-    return false;
+    return "";
     }
 
 
@@ -5076,19 +5077,11 @@ function cm_endOldGames( $user_id, $inForceTie = false ) {
                 // this game was against one of the special players
 
                 // but is the vsOne contest running?
-                global $vsOneStartTime, $vsOneEndTime;
-                $time = time();
 
-                $startTime = strtotime( $vsOneStartTime );
-                $endTime = strtotime( $vsOneEndTime );
-                
+                $codeName = cm_isVsOneRunning();
             
-                if( $time >= $startTime && $time <= $endTime ) {
-                    // in middle of contest 
-
-
-                    global $vsOneCodeName;
-
+                if( $codeName != "" ) {
+                    // in middle of contest                    
                     
                     if( $p1Special ) {
                         $deltaCoins = $player_2_coins - $cm_gameCoins;
@@ -5096,7 +5089,7 @@ function cm_endOldGames( $user_id, $inForceTie = false ) {
                         $query =
                             "INSERT INTO $tableNamePrefix"."vs_one_scores ".
                             "SET user_id = '$old_player_2_id', ".
-                            "    vs_one_code_name = '$vsOneCodeName', ".
+                            "    vs_one_code_name = '$codeName', ".
                             "    coins_won = GREATEST( $deltaCoins, 0 ) ".
                             "ON DUPLICATE KEY UPDATE ".
                             "    coins_won = ".
@@ -5113,7 +5106,7 @@ function cm_endOldGames( $user_id, $inForceTie = false ) {
                         $query =
                             "INSERT INTO $tableNamePrefix"."vs_one_scores ".
                             "SET user_id = '$old_player_1_id', ".
-                            "    vs_one_code_name = '$vsOneCodeName', ".
+                            "    vs_one_code_name = '$codeName', ".
                             "    coins_won = GREATEST( $deltaCoins, 0 ) ".
                             "ON DUPLICATE KEY UPDATE ".
                             "    coins_won = ".
@@ -9501,7 +9494,7 @@ function cm_showData() {
 <?php
 
 
-    if( cm_isVsOneRunning() ) {
+    if( cm_isVsOneRunning() != "" ) {
 ?>
         <td>
         Award Cabal Contest Points:<br>
@@ -10722,36 +10715,51 @@ function cm_vsOneReport() {
     eval( $leaderHeader );
 
 
-    global $vsOneStartTime, $vsOneEndTime, $vsOneCodeName;
-    
-    $time = time();
-
-    $startTime = strtotime( $vsOneStartTime );
-    $endTime = strtotime( $vsOneEndTime );
+    global $vsOneStartTimes, $vsOneEndTimes;
 
 
-    if( $code_name == $vsOneCodeName ) {
-        
-        if( $time > $endTime ) {
-            echo "<center>This contest is over.<br><br></center>";
-            }
-        else if( $time < $startTime ) {
+    if( ! array_key_exists( $code_name, $vsOneStartTimes ) ) {
+        echo "<center>Unknown contest code:  ".
+            "<b>$code_name</b><br><br></center>";
+        eval( $leaderFooter );
 
-            $timeString = cm_formatDuration( $startTime - $time );
-
-            echo "<br><br><br><center>This contest will ".
-                "start in $timeString.<br><br></center>";
-            return;
-            }
-        else {
-            // live
-            $timeString = cm_formatDuration( $endTime - $time );
-
-            echo "<center>This contest is live and will ".
-                "end in $timeString.<br><br></center>";
-            }
+        return;
         }
 
+
+    global $vsOnePrizeImages;
+    
+    $imageURL = $vsOnePrizeImages[$code_name];
+
+
+    echo "<center><img border=0 src=\"$imageURL\"></center><br>";
+    
+        
+    $time = time();
+
+    $startTime = strtotime( $vsOneStartTimes[ $code_name ] );
+    $endTime = strtotime( $vsOneEndTimes[ $code_name ] );
+
+
+    if( $time >= $endTime ) {
+        echo "<center>This contest is over.<br><br></center>";
+        }
+    else if( $time < $startTime ) {
+        
+        $timeString = cm_formatDuration( $startTime - $time );
+        
+        echo "<br><br><br><center>This contest will ".
+            "start in $timeString.<br><br></center>";
+        return;
+        }
+    else {
+        // live
+        $timeString = cm_formatDuration( $endTime - $time );
+        
+        echo "<center>This contest is live and will ".
+            "end in $timeString.<br><br></center>";
+        }
+        
 
 
     
@@ -10877,6 +10885,8 @@ function cm_vsOneReportGenerate() {
 
     global $vsOneNumPrizes;
     
+    $numPrizes = $vsOneNumPrizes[ $code_name ];
+    
     for( $i=0; $i<$numRows; $i++ ) {
         $random_name = mysql_result( $result, $i, "random_name" );
         $coins_won = mysql_result( $result, $i,
@@ -10889,7 +10899,7 @@ function cm_vsOneReportGenerate() {
         $rowNum = $i + 1;
 
         $star = "";
-        if( $coins_won > 0 && $i < $vsOneNumPrizes ) {
+        if( $coins_won > 0 && $i < $numPrizes ) {
             // negative scores never get prizes, even if there are prizes left
             $star = "*";
             }
@@ -11723,24 +11733,26 @@ function cm_awardCabalPoints() {
         return;
         }
 
-    if( ! cm_isVsOneRunning() ) {
+    $codeName = cm_isVsOneRunning();
+    
+    if( $codeName == "" ) {
         echo "Contest not running.";
         return;
         }
 
-    global $vsOneUserIDs, $vsOneCodeName, $tableNamePrefix;
+    global $vsOneUserIDs, $tableNamePrefix;
     
     foreach( $vsOneUserIDs as $id ) {
         $random_name = cm_getUserData( $id, "random_name" );
         $email = cm_getUserData( $id, "email" );
 
-        echo "Awarding $points points to ".
+        echo "Awarding $points points (contest $codeName) to ".
             "<b>$random_name</b> ($id:  $email)... ";
 
         $query =
             "INSERT INTO $tableNamePrefix"."vs_one_scores ".
             "SET user_id = '$id', ".
-            "    vs_one_code_name = '$vsOneCodeName', ".
+            "    vs_one_code_name = '$codeName', ".
             "    coins_won = $points ".
             "ON DUPLICATE KEY UPDATE ".
             "    coins_won = coins_won + $points;";
