@@ -5097,9 +5097,10 @@ function cm_endOldGames( $user_id, $inForceTie = false ) {
                             "INSERT INTO $tableNamePrefix"."vs_one_scores ".
                             "SET user_id = '$old_player_2_id', ".
                             "    vs_one_code_name = '$vsOneCodeName', ".
-                            "    coins_won = $deltaCoins ".
+                            "    coins_won = GREATEST( $deltaCoins, 0 ) ".
                             "ON DUPLICATE KEY UPDATE ".
-                            "    coins_won = coins_won + $deltaCoins;";
+                            "    coins_won = ".
+                            "    GREATEST( coins_won + $deltaCoins, 0 );";
                         
                         cm_queryDatabase( $query );
 
@@ -5113,9 +5114,10 @@ function cm_endOldGames( $user_id, $inForceTie = false ) {
                             "INSERT INTO $tableNamePrefix"."vs_one_scores ".
                             "SET user_id = '$old_player_1_id', ".
                             "    vs_one_code_name = '$vsOneCodeName', ".
-                            "    coins_won = $deltaCoins ".
+                            "    coins_won = GREATEST( $deltaCoins, 0 ) ".
                             "ON DUPLICATE KEY UPDATE ".
-                            "    coins_won = coins_won + $deltaCoins;";
+                            "    coins_won = ".
+                            "    GREATEST( coins_won + $deltaCoins, 0 );";
                         
                         cm_queryDatabase( $query );
 

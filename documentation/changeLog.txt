@@ -8,9 +8,13 @@ Version 23     ???
 
 
 
+
 Version 22     Live Server Fixes
 
 --Support in admin interface for awarding cabal member compensation points.
+
+--Fixed so that cabal contest scores can never go below 0 to remove the benefit
+  of starting over with a fresh account after losing points.
 
 
 
