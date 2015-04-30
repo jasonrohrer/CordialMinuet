@@ -74,7 +74,7 @@ If you're thinking about pulling a CLEVER TRICK and winning more than one amulet
 <br>
 But will YOU try?  Close your eyes for TEN SECONDS before answering:  YES, YOU WILL.<br>
 <br>
-AND THERE'S MORE:  Each amulet-winner will also win <font color=lightgreen>$MONEY$</font>, as will the SECOND-, THIRD-, and FOURTH-place players each day.  (Second place is $20, third place $10, fourth place $10).<br>
+AND THERE'S MORE:  Each amulet winner will also win <font color=lightgreen>$MONEY$</font>, as will the SECOND-, THIRD-, and FOURTH-place players each day.  (Second place is $20, third place $10, fourth place $10).<br>
 <br>
 Each contest runs from MIDNIGHT to MIDNIGHT PDT (GMT -0700) on the APPOINTED DAY.
 <br>
@@ -92,14 +92,67 @@ DOUBLE BONUS:  Each amulet comes with a UNIQUE and PARTIAL SECRET on the back.
 
 <?php
 
-generateAmuletRow( 1, "WEDNESDAY MAY 6, 2015 (PDT)", "0.xx",
+generateAmuletRow( 1, "WEDNESDAY MAY 6, 2015 (PDT)", "0.65",
                    "PURE COPPER", 50,
-                   "01oceanRam.jpg", "test1" );
-
+                   "01oceanRam.jpg", "oceanRam" );
 
 generateAmuletRow( 2, "THURSDAY MAY 7, 2015 (PDT)",
-                   "0.xx", "PURE COPPER", 50,
-                   "02clayStream.jpg", "test1" );
+                   "0.59", "PURE COPPER", 50,
+                   "02clayStream.jpg", "clayStream" );
+
+
+
+generateAmuletRow( 3, "FRIDAY MAY 8, 2015 (PDT)",
+                   "0.50", "99.9% PURE SILVER", 100,
+                   "06sameFaces.jpg", "sameFaces" );
+
+generateAmuletRow( 4, "SATURDAY MAY 9, 2015 (PDT)",
+                   "0.53", "99.9% PURE SILVER", 100,
+                   "07twoClaws.jpg", "twoClaws" );
+
+
+generateAmuletRow( 5, "SUNDAY MAY 10, 2015 (PDT)",
+                   "0.58", "99.93% PURE GOLD", 200,
+                   "10justBalance.jpg", "justBalance" );
+
+
+
+
+
+
+generateAmuletRow( 6, "MONDAY MAY 11, 2015 (PDT)",
+                   "0.53", "PURE COPPER", 50,
+                   "03twistingFish.jpg", "twistingFish" );
+
+generateAmuletRow( 7, "TUESDAY MAY 12, 2015 (PDT)",
+                   "0.50", "PURE COPPER", 50,
+                   "04curledHorns.jpg", "curledHorns" );
+
+generateAmuletRow( 8, "WEDNESDAY MAY 13, 2015 (PDT)",
+                   "0.57", "PURE COPPER", 50,
+                   "05bullCalf.jpg", "bullCalf" );
+
+
+
+generateAmuletRow( 9, "THURSDAY MAY 14, 2015 (PDT)",
+                   "0.53", "99.9% PURE SILVER", 100,
+                   "08toughPelt.jpg", "toughPelt" );
+
+generateAmuletRow( 10, "FRIDAY MAY 15, 2015 (PDT)",
+                   "0.56", "99.9% PURE SILVER", 100,
+                   "09wheatFurrow.jpg", "wheatFurrow" );
+
+
+
+generateAmuletRow( 11, "SATUDAY MAY 16, 2015 (PDT)",
+                   "0.65", "99.93% PURE GOLD", 200,
+                   "11burningSting.jpg", "burningSting" );
+
+generateAmuletRow( 12, "SUNDAY MAY 17, 2015 (PDT)",
+                   "0.66", "99.93% PURE GOLD", 200,
+                   "12horseMan.jpg", "horseMan" );
+
+
 
 ?>
 
@@ -109,11 +162,30 @@ generateAmuletRow( 2, "THURSDAY MAY 7, 2015 (PDT)",
 </table>
 </center>
 
+<br>
+<br>
+
+Who MADE THE AMULETS?  Who MADE THE GAME?
 
 
 
 </td></tr>
 </table>
+
+
+<br>
+<br>
+
+<img src="amulets/wax.jpg">
+
+<br>
+<br>
+<img src="amulets/castUncut.jpg">
+
+<br>
+<br>
+<img src="amulets/polished.jpg">
+
 
 </center>
 
