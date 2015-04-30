@@ -75,7 +75,7 @@ If you're thinking about pulling a CLEVER TRICK and winning more than one amulet
 <br>
 But will YOU try?  Close your eyes for TEN SECONDS before answering:  YES, YOU WILL.<br>
 <br>
-AND THERE'S MORE:  Each amulet winner will also win <font color=lightgreen>$MONEY$</font>, as will the SECOND-, THIRD-, and FOURTH-place players each day.  (Second place is $20, third place $10, fourth place $10).<br>
+AND THERE'S MORE:  Each amulet winner will also win <font color=lightgreen>$MONEY$</font>, as will the SECOND-, THIRD-, and FOURTH-place players each day.  (Second place $20, third place $10, fourth place $10).<br>
 <br>
 Each contest runs from MIDNIGHT to MIDNIGHT PDT (GMT -0700) on the APPOINTED DAY.
 <br>
