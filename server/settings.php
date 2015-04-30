@@ -522,24 +522,69 @@ $vsOneUserIDs = array( 1, 42 );
 
 $vsOneStartTimes = array( "test1" => "03-Apr-2015 09:00:00 -0700",
                           "test2" => "09-Apr-2015 09:00:00 -0700",
-                          "test3" => "28-Apr-2015 09:00:00 -0700",
-                          "test4" => "28-Apr-2015 12:54:00 -0700" );
+
+                          "oceanRam" => "06-May-2015 00:00:00 -0700",
+                          "clayStream" => "07-May-2015 00:00:00 -0700",
+                          "sameFaces" => "08-May-2015 00:00:00 -0700",
+                          "twoClaws" => "09-May-2015 00:00:00 -0700",
+                          "justBalance" => "10-May-2015 00:00:00 -0700",
+                          "twistingFish" => "11-May-2015 00:00:00 -0700",
+                          "curledHorns" => "12-May-2015 00:00:00 -0700",
+                          "bullCalf" => "13-May-2015 00:00:00 -0700",
+                          "toughPelt" => "14-May-2015 00:00:00 -0700",
+                          "wheatFurrow" => "15-May-2015 00:00:00 -0700",
+                          "burningSting" => "16-May-2015 00:00:00 -0700",
+                          "horseMan" => "17-May-2015 00:00:00 -0700" );
 
 $vsOneEndTimes = array( "test1" => "03-Apr-2015 12:00:00 -0700",
                         "test2" => "09-Apr-2015 12:00:00 -0700",
-                        "test3" => "28-Apr-2015 12:52:00 -0700",
-                        "test4" => "28-Apr-2015 15:00:00 -0700" );
+
+                        "oceanRam" => "06-May-2015 23:59:59 -0700",
+                        "clayStream" => "07-May-2015 23:59:59 -0700",
+                        "sameFaces" => "08-May-2015 23:59:59 -0700",
+                        "twoClaws" => "09-May-2015 23:59:59 -0700",
+                        "justBalance" => "10-May-2015 23:59:59 -0700",
+                        "twistingFish" => "11-May-2015 23:59:59 -0700",
+                        "curledHorns" => "12-May-2015 23:59:59 -0700",
+                        "bullCalf" => "13-May-2015 23:59:59 -0700",
+                        "toughPelt" => "14-May-2015 23:59:59 -0700",
+                        "wheatFurrow" => "15-May-2015 23:59:59 -0700",
+                        "burningSting" => "16-May-2015 23:59:59 -0700",
+                        "horseMan" => "17-May-2015 23:59:59 -0700" );
 
 // how many places pay prizes
 $vsOneNumPrizes = array( "test1" => 3,
                          "test2" => 3,
-                         "test3" => 4,
-                         "test4" => 4 );
+
+                         "oceanRam" => 4,
+                         "clayStream" => 4,
+                         "sameFaces" => 4,
+                         "twoClaws" => 4,
+                         "justBalance" => 4,
+                         "twistingFish" => 4,
+                         "curledHorns" => 4,
+                         "bullCalf" => 4,
+                         "toughPelt" => 4,
+                         "wheatFurrow" => 4,
+                         "burningSting" => 4,
+                         "horseMan" => 4 );
 
 $vsOnePrizeImages =
-    array( "test1" => "http://cordialminuet.com/testAmulets/bet.png",
-           "test2" => "http://cordialminuet.com/testAmulets/dalet.png",
-           "test3" => "http://cordialminuet.com/testAmulets/gimel.png",
-           "test4" => "http://cordialminuet.com/testAmulets/he.png" );
+    array(
+      "test1" => "http://cordialminuet.com/testAmulets/bet.png",
+      "test2" => "http://cordialminuet.com/testAmulets/dalet.png",
+
+      "oceanRam" => "http://cordialminuet.com/amulets/01oceanRam.jpg",
+      "clayStream" => "http://cordialminuet.com/amulets/02clayStream.jpg",
+      "sameFaces" => "http://cordialminuet.com/amulets/06sameFaces.jpg",
+      "twoClaws" => "http://cordialminuet.com/amulets/07twoClaws.jpg",
+      "justBalance" => "http://cordialminuet.com/amulets/10justBalance.jpg",
+      "twistingFish" => "http://cordialminuet.com/amulets/03twistingFish.jpg",
+      "curledHorns" => "http://cordialminuet.com/amulets/04curledHorns.jpg",
+      "bullCalf" => "http://cordialminuet.com/amulets/05bullCalf.jpg",
+      "toughPelt" => "http://cordialminuet.com/amulets/08toughPelt.jpg",
+      "wheatFurrow" => "http://cordialminuet.com/amulets/09wheatFurrow.jpg",
+      "burningSting" => "http://cordialminuet.com/amulets/11burningSting.jpg",
+      "horseMan" => "http://cordialminuet.com/amulets/12horseMan.jpg" );
 
 ?>
