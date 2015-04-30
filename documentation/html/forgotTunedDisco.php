@@ -27,6 +27,7 @@ function generateAmuletRow( $inNumber, $inDate, $inWeight, $inMetal, $inMoney,
 of <?php echo $inMetal;?><br>
 
 <br>
+PLUS<br>                              
 <?php echo $inMoney;?> US DOLLARS<br>
 <br>
 <br>
