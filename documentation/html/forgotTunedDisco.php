@@ -58,7 +58,15 @@ A two-player ONLINE STRATEGY GAME played for REAL MONEY by <a href="http://hcsof
 <font size=6>ORDER of the GOLDEN AMULET</FONT><br>
 <br>
 
-<table width=500><tr><td ALIGN=JUSTIFY>
+<table cellspacing=20><tr>
+
+<td VALIGN=TOP ALIGN=CENTER>
+<br>
+<br>
+<img src=amulets/10justBalance.jpg>
+</td>
+
+<td width=500 ALIGN=JUSTIFY VALIGN=TOP>
 A secret CABAL has been chosen.  Have YOU been chosen?  Only YOU know.  If you don't know, don't panic, because it's NOT OVER YET.<br>
 <br>
 Yes, you read that correctly.  YOU STILL HAVE A CHANCE.  The ancient dreams of THE INTERNET have mostly been SQUANDERED by fools and charlatans, but there is one dream left alive.  <font color=yellow>GOLD</font>.  Yes, if you're still reading this paragraph, you're smarter than you think, and more importantly, you've come to the RIGHT PLACE.<br>
@@ -170,7 +178,17 @@ Who MADE THE AMULETS?  Who MADE THE GAME?
 
 
 
-</td></tr>
+</td>
+
+
+<td VALIGN=TOP ALIGN=CENTER>
+<br>
+<br>
+<img src=amulets/12horseMan.jpg>
+</td>
+
+
+</tr>
 </table>
 
 
