@@ -9,6 +9,10 @@ A two-player ONLINE STRATEGY GAME played for REAL MONEY by <a href="http://hcsof
 <br>
 <br>
 
+<center><font size=5>** students contagion **<br><a href=forgotTunedDisco.php>WIN REAL GOLD</a><br>**  astounding contest **</font></center>
+<br>
+<br>
+
 DOWNLOAD the game:<br>
 <br>
 [<a href="http://cordialminuet.com/coastcaravan/CordialMinuet_v12_Windows.exe">WINDOWS</a>]

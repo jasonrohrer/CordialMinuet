@@ -46,6 +46,8 @@ Take two ounces of human fat, one ounce of oil of nerves, one ounce of oil of la
 
 <br><br>
 
+<center><font size=5><a href=foyer.php>DOOR is OPEN</a></font></center>
+
 <img src="amulet.png" width=500 height=270 border=0>
 
 <table border=0 cellpadding=20>
@@ -53,6 +55,8 @@ Take two ounces of human fat, one ounce of oil of nerves, one ounce of oil of la
 <td align=justify>
 
 Have you ever wanted all of the POWER with none of the RESPONSIBILITY?  Did you know that you can make HAIL STOP by simply saying the RIGHT WORDS?  Would you like to SUMMON ASTAROTH to your bedchamber using nothing more than INEXPENSIVE ITEMS found in your kitchen pantry?  Have you often dreamed of exercising MENTAL SKILL on your HOME COMPUTER to win REAL MONEY?  These and many other astounding things are possible, and it's EASIER THAN YOU THINK.<br>
+<br>
+<center><font size=5><a href=foyer.php>DOOR is OPEN</a></font></center>
 <br>
 Many people, in fact most people, are still waiting for the HARPOON OF TIME to spear the WHALE OF TRUTH.  The fact that you are READING THESE WORDS means you may suspect that this strike is NEVER GOING TO HAPPEN.  Unlike the UNWASHED MASSES, you might have always felt like SOMETHING WAS GOING ON.  Is it possible to wake up each morning, look in the mirror, and announce with conviction that TODAY IS THE DAY, and most importantly, BE RIGHT?  There is only ONE WAY to find out.<br>
 <br>
@@ -68,6 +72,9 @@ How many of the FOLLOWING ITEMS apply to YOU?
 </ol>
 
 If you answered YES to all, any, or even none of these, YOU may be one of the FEW and NOT EVEN KNOW IT.
+<br>
+<br>
+<center><font size=5><a href=foyer.php>DOOR is OPEN</a></font></center>
 </td>
 </tr>
 </table>
