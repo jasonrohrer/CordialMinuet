@@ -9,7 +9,7 @@ A two-player ONLINE STRATEGY GAME played for REAL MONEY by <a href="http://hcsof
 <br>
 <br>
 
-<center><font size=5>** students contagion **<br><a href=forgotTunedDisco.php>WIN REAL GOLD</a><br>**  astounding contest **</font></center>
+<center><font size=5>** students contagion **<br><a href=forgotTunedDisco.php>WIN REAL GOLD</a><br>**  -----nd--g  contest **</font></center>
 <br>
 <br>
 
