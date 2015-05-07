@@ -5082,15 +5082,26 @@ function cm_endOldGames( $user_id, $inForceTie = false ) {
             
                 if( $codeName != "" ) {
                     // in middle of contest                    
+
+                    global $vsOneCabalBonus;
                     
                     if( $p1Special ) {
                         $deltaCoins = $player_2_coins - $cm_gameCoins;
+
+                        // bonus only given if row doesn't exist
+                        // yet for special p2
+                        $bonus = 0;
+
+                        if( $p2Special ) {
+                            $bonus = $vsOneCabalBonus;
+                            }
                         
                         $query =
                             "INSERT INTO $tableNamePrefix"."vs_one_scores ".
                             "SET user_id = '$old_player_2_id', ".
                             "    vs_one_code_name = '$codeName', ".
-                            "    coins_won = GREATEST( $deltaCoins, 0 ) ".
+                            "    coins_won = ".
+                            "      GREATEST( $deltaCoins + $bonus, 0 ) ".
                             "ON DUPLICATE KEY UPDATE ".
                             "    coins_won = ".
                             "    GREATEST( coins_won + $deltaCoins, 0 );";
@@ -5102,12 +5113,21 @@ function cm_endOldGames( $user_id, $inForceTie = false ) {
                     
                     if( $p2Special ) {
                         $deltaCoins = $player_1_coins - $cm_gameCoins;
+
+                        // bonus only given if row doesn't exist
+                        // yet for special p1
+                        $bonus = 0;
+
+                        if( $p1Special ) {
+                            $bonus = $vsOneCabalBonus;
+                            }
                         
                         $query =
                             "INSERT INTO $tableNamePrefix"."vs_one_scores ".
                             "SET user_id = '$old_player_1_id', ".
                             "    vs_one_code_name = '$codeName', ".
-                            "    coins_won = GREATEST( $deltaCoins, 0 ) ".
+                            "    coins_won = ".
+                            "      GREATEST( $deltaCoins + $bonus, 0 ) ".
                             "ON DUPLICATE KEY UPDATE ".
                             "    coins_won = ".
                             "    GREATEST( coins_won + $deltaCoins, 0 );";
@@ -9497,6 +9517,7 @@ function cm_showData() {
     if( cm_isVsOneRunning() != "" ) {
 ?>
         <td>
+        DEPRECATED<br>
         Award Cabal Contest Points:<br>
             <FORM ACTION="server.php" METHOD="post">
     <INPUT TYPE="hidden" NAME="action" VALUE="award_cabal_points">
@@ -11748,7 +11769,7 @@ function cm_awardCabalPoints() {
 
         echo "Awarding $points points (contest $codeName) to ".
             "<b>$random_name</b> ($id:  $email)... ";
-
+        /*
         $query =
             "INSERT INTO $tableNamePrefix"."vs_one_scores ".
             "SET user_id = '$id', ".
@@ -11756,8 +11777,28 @@ function cm_awardCabalPoints() {
             "    coins_won = $points ".
             "ON DUPLICATE KEY UPDATE ".
             "    coins_won = coins_won + $points;";
-                        
+        */
+        
+        // bonus points are automated now (given the first time
+        // a cabal member scores)
+        //
+        // do update-existing only here to handle cross-over to new,
+        // automated method (for those cabal members that have already
+        // scored today and did not get bonus points).
+        $query =
+            "UPDATE $tableNamePrefix"."vs_one_scores ".
+            "SET coins_won = coins_won + $points ".
+            "WHERE user_id = '$id' AND ".
+            "      vs_one_code_name = '$codeName';";
+
         cm_queryDatabase( $query );
+
+        $numUpdated = cm_getMySQLRowsMatchedByUpdate();
+
+        if( $numUpdated == 0 ) {
+            echo "(NO EXISTING ROW) ... ";
+            }
+            
         echo "done.<br>";
         }
     

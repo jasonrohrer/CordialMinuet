@@ -520,6 +520,10 @@ $vsOneLive = 1;
 // the user IDs against which you can score points
 $vsOneUserIDs = array( 1, 42 );
 
+// bonus points to award to the IDs above for their participation
+// awarded the first time they have a score
+$vsOneCabalBonus = 20;
+
 $vsOneStartTimes = array( "test1" => "03-Apr-2015 09:00:00 -0700",
                           "test2" => "09-Apr-2015 09:00:00 -0700",
 
