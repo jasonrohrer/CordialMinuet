@@ -1326,6 +1326,9 @@ void drawFrame( char inUpdate ) {
                 
                 depositDisplayPage->setLeftGame( false );
 
+                // never show these post-deposit
+                depositDisplayPage->setVsOneCoins( 0 );
+
                 currentGamePage = depositDisplayPage;
                 currentGamePage->base_makeActive( true );
                 }
