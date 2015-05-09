@@ -2,6 +2,10 @@ Version 23     Live Server Fixes
 
 --Cabal compensation points now awarded automatically.
 
+--Added mega-skips to log paging.
+
+--Added better handing of unsupported currencies when sending checks.
+
 
 
 

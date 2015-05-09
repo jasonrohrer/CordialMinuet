@@ -1621,6 +1621,9 @@ function cm_showLog() {
 
     $prevSkip = $skip - $entriesPerPage;
 
+    $nextSuperSkip = $skip + 10*$entriesPerPage;
+    $nextMegaSkip = $skip + 100*$entriesPerPage;
+    
     if( $skip > 0 && $prevSkip < 0 ) {
         $prevSkip = 0;
         }
@@ -1634,6 +1637,16 @@ function cm_showLog() {
         echo "[<a href=\"server.php?action=show_log" .
             "&skip=$nextSkip\">".
             "Next Page</a>]";
+        }
+    if( $nextSuperSkip < $totalEntries ) {
+        echo "[<a href=\"server.php?action=show_log" .
+            "&skip=$nextSuperSkip\">".
+            "Skip 10 pages</a>]";
+        }
+    if( $nextMegaSkip < $totalEntries ) {
+        echo "[<a href=\"server.php?action=show_log" .
+            "&skip=$nextMegaSkip\">".
+            "Skip 100 pages</a>]";
         }
     
         
@@ -3979,7 +3992,9 @@ function cm_sendCheck() {
         ||
         strstr( $outputString, "ConfigError" ) != FALSE
         ||
-        strstr( $outputString, "UnsupportedCountry" ) != FALSE ) {
+        strstr( $outputString, "UnsupportedCountry" ) != FALSE
+        ||
+        strstr( $outputString, "UnsupportedCurrency" ) != FALSE ){
 
         echo "CHECK_FAILED";
         
@@ -3999,6 +4014,17 @@ function cm_sendCheck() {
 
             cm_informAdmin( $message,
                             "Cordial Minuet Chexx country unsupported" );
+            }
+        else if( strstr( $outputString, "UnsupportedCurrency" ) != FALSE ) {
+            $countryFullName = $allowedCountries[ $country ];
+
+            $message = "Currency $currency unsupported ".
+                "by Chexx for $email";
+
+            cm_log( $message );
+
+            cm_informAdmin( $message,
+                            "Cordial Minuet Chexx currency unsupported" );
             }
         
         return;
