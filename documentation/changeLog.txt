@@ -4,7 +4,10 @@ Version 23     Live Server Fixes
 
 --Added mega-skips to log paging.
 
---Added better handing of unsupported currencies when sending checks.
+--Added better handling of unsupported currencies when sending checks.
+
+--Now emails admin whenever a check goes out (and also when check request 
+  fails).
 
 
 

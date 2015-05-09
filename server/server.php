@@ -3977,7 +3977,7 @@ function cm_sendCheck() {
         // process result
         $outputString = implode( "\n", $output );
     
-        cm_log( "Response from Chexx response:\n$outputString" );
+        // cm_log( "Response from Chexx response:\n$outputString" );
         }
         
 
@@ -4026,6 +4026,16 @@ function cm_sendCheck() {
             cm_informAdmin( $message,
                             "Cordial Minuet Chexx currency unsupported" );
             }
+        else {
+            // uknown reason
+            $message = "CHECK_FAILED for $email, ".
+                "Chexx Raven error:\n$outputString";
+            
+            cm_log( $message );
+        
+            cm_informAdmin( $message,
+                            "Cordial Minuet Chexx call failed" );
+            }
         
         return;
         }
@@ -4039,12 +4049,25 @@ function cm_sendCheck() {
         cm_queryDatabase( "COMMIT;" );
         cm_queryDatabase( "SET AUTOCOMMIT=1" );
         
-        cm_log( "CHECK_FAILED for $email, ".
-                "Chexx Raven error:\n$outputString" );
+        $message = "CHECK_FAILED for $email, ".
+            "Chexx Raven error:\n$outputString";
+
+        cm_log( $message );
+        
+        cm_informAdmin( $message,
+                        "Cordial Minuet Chexx call failed" );
+
         return;
         }
         
     // a valid response
+
+    // email admin about all outgoing checks
+
+    cm_informAdmin( "Sending $currency check for $check_amount_string ".
+                    "USD value ($fee_string fee) ".
+                    "to $email in country $country",
+                    "Cordial Minuet Chexx check sent" );
     
 
     // extract tracking number
