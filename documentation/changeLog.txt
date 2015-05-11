@@ -19,6 +19,9 @@ Version 23     Live Server Fixes
 
 --Fixed player pot listings in endOldGames logging.
 
+--Fixed DENIED when folding after opponent left (thanks Christian E).
+
+
 
 
 

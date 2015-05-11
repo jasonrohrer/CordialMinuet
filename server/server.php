@@ -7930,6 +7930,17 @@ function cm_foldBet() {
 
     $semaphore_key = mysql_result( $result, 0, "semaphore_key" );
 
+
+    if( $player_1_pot_coins == 0 && $player_2_pot_coins == 0
+        &&
+        ( $player_1_id == 0 || $player_2_id == 0 ) ) {
+
+        // other player left, OK this fold but do nothing with it
+        echo "OK";
+        return;
+        }
+    
+    
     if( $player_1_pot_coins == $player_2_pot_coins
         ||
         ( $user_id == $player_1_id &&
