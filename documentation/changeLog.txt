@@ -17,6 +17,8 @@ Version 23     Live Server Fixes
 --Now emails admin whenever a check goes out (and also when check request 
   fails).
 
+--Fixed player pot listings in endOldGames logging.
+
 
 
 
