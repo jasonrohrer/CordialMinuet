@@ -6,6 +6,11 @@ Version 24     ????
 --Changed to clear payment information from client after each payment or when
   user backs out of deposit screen (thanks Chris H).
 
+--Support for list of languages in language.txt where the top language is the
+  main one, and subsequent languages augment the translation by providing
+  strings only for missing keys.  Thus, English can serve as a backup language
+  for an incomplete translation (thanks Jimmy G).
+
 
 
 
