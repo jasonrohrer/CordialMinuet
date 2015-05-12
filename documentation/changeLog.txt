@@ -21,6 +21,8 @@ Version 23     Live Server Fixes
 
 --Fixed DENIED when folding after opponent left (thanks Christian E).
 
+--Added Message-Id and Date headers to outgoing emails to prevent
+  spam flagging.
 
 
 

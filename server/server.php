@@ -12822,16 +12822,20 @@ function cm_mail( $inEmail,
                   $inSubject,
                   $inBody ) {
     
-    global $useSMTP, $siteEmailAddress;
+    global $useSMTP, $siteEmailAddress, $siteEmailDomain;
 
     if( $useSMTP ) {
         require_once "Mail.php";
 
         global $smtpHost, $smtpPort, $smtpUsername, $smtpPassword;
 
+        $messageID = "<" . uniqid() . "@$siteEmailDomain>";
+        
         $headers = array( 'From' => $siteEmailAddress,
                           'To' => $inEmail,
-                          'Subject' => $inSubject );
+                          'Subject' => $inSubject,
+                          'Date' => date( "r" ),
+                          'Message-Id' => $messageID );
         
         $smtp = Mail::factory( 'smtp',
                                array ( 'host' => $smtpHost,

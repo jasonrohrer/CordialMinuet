@@ -246,6 +246,7 @@ $mysqlConnectionCountThreshold = 50;
 // mail settings
 
 $siteEmailAddress = "Jason Rohrer <jcr13@cornell.edu>";
+$siteEmailDomain = "cornell.edu";
 
 // if off, then raw sendmail is used instead 
 $useSMTP = 0;
