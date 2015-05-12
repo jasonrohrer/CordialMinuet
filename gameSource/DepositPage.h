@@ -96,4 +96,7 @@ class DepositPage : public ServerActionPage, public ActionListener {
         void recomputeFee();
         
         double mFee;
+
+        void clearPaymentData();
+        
     };

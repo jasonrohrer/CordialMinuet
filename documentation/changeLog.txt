@@ -3,6 +3,10 @@ Version 24     ????
 --Fixed so that Cabal points symbol not displayed with bad point value when
   depositing into exiting account.
 
+--Changed to clear payment information from client after each payment or when
+  user backs out of deposit screen (thanks Chris H).
+
+
 
 
 

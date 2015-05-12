@@ -350,6 +350,9 @@ void DepositPage::actionPerformed( GUIComponent *inTarget ) {
         startRequest();
         }
     else if( inTarget == &mCancelButton ) {
+        // always clear payment data when we leave this screen
+        clearPaymentData();
+
         setSignal( "back" );
         }
     else if( inTarget == &mClearButton ) {
@@ -653,9 +656,21 @@ void DepositPage::step() {
             setSignal( "existingAccount" );
             }
         
+        // always clear payment data post-deposit
+        clearPaymentData();
+
         mResponseProcessed = true;
         }
     
+    }
+
+
+
+void DepositPage::clearPaymentData() {
+    mCardNumberField.setText( "" );
+    mExpireMonthField.setText( "" );
+    mExpireYearField.setText( "" );
+    mCVCField.setText( "" );
     }
 
 
