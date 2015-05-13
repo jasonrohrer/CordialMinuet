@@ -11,6 +11,9 @@ Version 24     ????
   strings only for missing keys.  Thus, English can serve as a backup language
   for an incomplete translation (thanks Jimmy G).
 
+--Fixed picker weird behavior when multiple mouse buttons are pressed and
+  released (in some cases, this could cause a picker to settle off a column,
+  triggering a crash on commit) (thanks John C).
 
 
 

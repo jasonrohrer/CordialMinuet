@@ -4530,6 +4530,18 @@ void PlayGamePage::pointerMove( float inX, float inY ) {
 
 void PlayGamePage::pointerDown( float inX, float inY ) {
     
+    if( mPickerUs.held || mPickerThem.held ) {
+        // picker already held when this button pressed
+        // this could be an extra press of a second or third mouse button,
+        // and might occur outside the picker's boundaries, causing 
+        // the picker to be dropped
+        
+        // also, this can allow two pickers to be dragged together strangely
+        
+        // ignore it
+        return;
+        }
+
     ColumnPicker *dominantPicker = &mPickerUs;
     ColumnPicker *nonDominantPicker = &mPickerThem;
     
