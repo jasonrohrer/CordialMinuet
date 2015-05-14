@@ -592,6 +592,9 @@ else if( $action == "check_for_flush" ) {
 else if( $action == "make_account" ) {
     cm_makeAccount();
     }
+else if( $action == "make_batch_accounts" ) {
+    cm_makeBatchAccounts();
+    }
 else if( $action == "show_data" ) {
     cm_showData();
     }
@@ -9519,6 +9522,136 @@ function cm_makeAccount() {
 
 
 
+function cm_makeBatchAccounts() {
+    cm_checkPassword( "make_batch_accounts" );
+
+    global $tableNamePrefix;
+
+    $email_prefix =
+        cm_requestFilter( "email_prefix",
+                          "/[A-Z0-9._%+-]+/i", "" );
+
+
+    echo "[<a href=\"server.php?action=show_data" .
+        "\">Main</a>]<br><br><br>";
+
+    
+    if( $email_prefix == "" ) {
+        echo "Bad email prefix";
+        return;
+        }
+
+
+    $num_accounts = cm_requestFilter( "num_accounts", "/[0-9]+/", "0" );
+    $index_skip = cm_requestFilter( "index_skip", "/[0-9]+/", "0" );
+    $confirm = cm_requestFilter( "confirm", "/[1]/", "0" );
+
+    if( $num_accounts <= 0 ) {
+        echo "Num accounts must be positive.";
+        return;
+        }
+
+    if( $confirm == 0 ) {
+        echo "Must check confirmation box.";
+        return;
+        }
+
+    $dollar_amount = cm_requestFilter(
+        "dollar_amount", "/[0-9]+[.][0-9][0-9]/i", "0.00" );
+
+
+    echo "Making $num_accounts accounts with ".
+        "email prefix <b>$email_prefix</b>:<br><br>";
+
+
+    $numMade = 0;
+    $failureList = array();
+    
+    for( $i=0; $i<$num_accounts; $i++ ) {
+
+        $index = $i + $index_skip;
+        
+        $email = $email_prefix ."_$index@cordialminuet.com";
+        
+    
+        $salt = 0;
+        $account_key = cm_generateAccountKey( $email, $salt );
+
+        $random_name = cm_generateRandomName();
+
+        global $eloStartingRating;
+
+        $num_deposits = 0;
+
+        if( $dollar_amount > 0 ) {
+            $num_deposits = 1;
+            }
+        
+        // user_id auto-assigned (auto-increment)
+        $query = "INSERT INTO $tableNamePrefix". "users SET ".
+            "account_key = '$account_key', ".
+            "email = '$email', ".
+            "random_name = '$random_name', ".
+            "dollar_balance = $dollar_amount, ".
+            "num_deposits = $num_deposits, ".
+            "total_deposits = $dollar_amount, ".
+            "num_withdrawals = 0, ".
+            "total_withdrawals = 0, ".
+            "total_won = 0, ".
+            "total_lost = 0, ".
+            "elo_rating = $eloStartingRating, ".
+            "sequence_number = 0, ".
+            "request_sequence_number = 0, ".
+            "last_action_time = CURRENT_TIMESTAMP, ".
+            "last_request_tag = '', ".
+            "last_request_response = '', ".
+            "admin_level = 0, ".
+            "blocked = 0;";
+
+        // handle insert error ourselves
+        $result = mysql_query( $query );
+
+        if( $result ) {
+            $user_id = mysql_insert_id();
+
+            if( $num_deposits == 1 ) {
+                
+                $query = "INSERT INTO $tableNamePrefix"."deposits ".
+                    "SET user_id = '$user_id', ".
+                    "deposit_time = CURRENT_TIMESTAMP, ".
+                    "dollar_amount = '$dollar_amount', ".
+                    "fee = '0', processing_id = 'in_person'; ";
+                
+                cm_queryDatabase( $query );
+                }
+            
+            cm_incrementStat( "unique_users" );
+
+            echo "Email: $email    Key: $account_key<br>";
+
+            $numMade++;
+            }
+        else {
+            $failureList[] = "Email: $email    ".
+                "Key: $account_key    RandomName: $random_name";
+            }
+        }
+
+    echo "<br><br>Successfully made $numMade accounts.<br><br>";
+
+    if( $numMade != $num_accounts ) {
+        echo "Failed to make:<br><br>";
+
+        foreach( $failureList as $row ) {
+            echo "$row<br>";
+            }
+        }
+
+    echo "<br><br>Done.";
+    }
+
+
+
 function cm_showData() {
 
     global $tableNamePrefix, $remoteIP;
@@ -9577,6 +9710,25 @@ function cm_showData() {
     <INPUT TYPE="Submit" VALUE="Add">
     </FORM>
         </td>
+
+        <td>
+        Make account batch:<br>
+            <FORM ACTION="server.php" METHOD="post">
+    <INPUT TYPE="hidden" NAME="action" VALUE="make_batch_accounts">
+                 Number of Accounts:
+    <INPUT TYPE="text" MAXLENGTH=10 SIZE=4 NAME="num_accounts" VALUE="0"><br>
+                 Email Prefix:
+    <INPUT TYPE="text" MAXLENGTH=40 SIZE=10 NAME="email_prefix">_N@cordialminuet.com<br>
+                 Index skip:
+    <INPUT TYPE="text" MAXLENGTH=10 SIZE=4 NAME="index_skip" VALUE="0"><br>
+             Initial deposit:  
+    $<INPUT TYPE="text" MAXLENGTH=10 SIZE=10 NAME="dollar_amount" VALUE="0.00"><br>
+             Confirm:
+    <INPUT TYPE="checkbox" NAME="confirm" VALUE=1><br>
+    <INPUT TYPE="Submit" VALUE="Create Batch">
+    </FORM>
+        </td>
+             
 <?php
 
 
@@ -9643,7 +9795,8 @@ function cm_showRecentUserEmails() {
     $query = "SELECT COUNT(*), GROUP_CONCAT( email separator ', ') ".
         "FROM $tableNamePrefix"."users ".
         "WHERE last_action_time > ".
-        "      DATE_SUB( CURRENT_TIMESTAMP, INTERVAL $day_limit DAY );";
+        "      DATE_SUB( CURRENT_TIMESTAMP, INTERVAL $day_limit DAY ) ".
+        "      AND email NOT LIKE '%@cordialminuet.com';";
         
     $result = cm_queryDatabase( $query );
 
@@ -9651,7 +9804,9 @@ function cm_showRecentUserEmails() {
     $emailList = mysql_result( $result, 0, 1 );
 
 
-    echo "$count users played the game in the past $day_limit days:<br><br>";
+    echo "$count users played the game ".
+        "(ignoring @cordialminuet.com test accounts) in ".
+        "the past $day_limit days:<br><br>";
 
     echo "$emailList";
 

@@ -40,6 +40,8 @@ Version 23     Live Server Fixes
   rises above zero (to prevent bonus from being swallowed by an initial loss)
   (thanks Pascal H).
 
+--Added support for generating batches of temp accounts with initial deposits.
+
 
 
 
