@@ -5138,7 +5138,8 @@ function cm_endOldGames( $user_id, $inForceTie = false ) {
                         $deltaCoins = $player_2_coins - $cm_gameCoins;
 
                         // bonus only given if row doesn't exist
-                        // yet for special p2
+                        // yet for special p2 OR if p2 has a 0 in the row
+                        // (bonus re-given whenver p2's score is 0 again)
                         $bonus = 0;
 
                         if( $p2Special ) {
@@ -5153,7 +5154,9 @@ function cm_endOldGames( $user_id, $inForceTie = false ) {
                             "      GREATEST( $deltaCoins + $bonus, 0 ) ".
                             "ON DUPLICATE KEY UPDATE ".
                             "    coins_won = ".
-                            "    GREATEST( coins_won + $deltaCoins, 0 );";
+                            "    GREATEST( coins_won + $deltaCoins + ".
+                            "                  if( coins_won, 0, $bonus ), ".
+                            "              0 );";
                         
                         cm_queryDatabase( $query );
 
@@ -5164,7 +5167,8 @@ function cm_endOldGames( $user_id, $inForceTie = false ) {
                         $deltaCoins = $player_1_coins - $cm_gameCoins;
 
                         // bonus only given if row doesn't exist
-                        // yet for special p1
+                        // yet for special p1 OR if p1 has a 0 in the row
+                        // (bonus re-given whenver p1's score is 0 again)
                         $bonus = 0;
 
                         if( $p1Special ) {
@@ -5179,7 +5183,9 @@ function cm_endOldGames( $user_id, $inForceTie = false ) {
                             "      GREATEST( $deltaCoins + $bonus, 0 ) ".
                             "ON DUPLICATE KEY UPDATE ".
                             "    coins_won = ".
-                            "    GREATEST( coins_won + $deltaCoins, 0 );";
+                            "    GREATEST( coins_won + $deltaCoins + ".
+                            "                  if( coins_won, 0, $bonus ), ".
+                            "              0 );";
                         
                         cm_queryDatabase( $query );
 

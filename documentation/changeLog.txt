@@ -36,6 +36,10 @@ Version 23     Live Server Fixes
 --Added Message-Id and Date headers to outgoing emails to prevent
   spam flagging.
 
+--Fixed so that Cabal compensation points given whenever Cabal member's score
+  rises above zero (to prevent bonus from being swallowed by an initial loss)
+  (thanks Pascal H).
+
 
 
 
