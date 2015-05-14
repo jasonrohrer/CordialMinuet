@@ -9514,8 +9514,6 @@ function cm_makeAccount() {
         "blocked = 0;";
             
     $result = cm_queryDatabase( $query );
-
-    cm_incrementStat( "unique_users" );
     
     cm_showData();
     }
@@ -9557,11 +9555,11 @@ function cm_makeBatchAccounts() {
         }
 
     $dollar_amount = cm_requestFilter(
-        "dollar_amount", "/[0-9]+[.][0-9][0-9]/i", "0.00" );
+        "dollar_amount", "/^[0-9]*([.][0-9][0-9])?/i", "0.00" );
 
 
-    echo "Making $num_accounts accounts with ".
-        "email prefix <b>$email_prefix</b>:<br><br>";
+    echo "Making $num_accounts accounts with \$$dollar_amount each ".
+        "and email prefix <b>$email_prefix</b>:<br><br><pre>\n\n";
 
 
     $numMade = 0;
@@ -9624,10 +9622,11 @@ function cm_makeBatchAccounts() {
                 
                 cm_queryDatabase( $query );
                 }
-            
-            cm_incrementStat( "unique_users" );
 
-            echo "Email: $email    Key: $account_key<br>";
+            $key_chunks = str_split( $account_key, 5 );
+            
+            $keyToPrint = implode( "-", $key_chunks );
+            echo "Email: $email    Key: $keyToPrint\n";
 
             $numMade++;
             }
@@ -9637,7 +9636,7 @@ function cm_makeBatchAccounts() {
             }
         }
 
-    echo "<br><br>Successfully made $numMade accounts.<br><br>";
+    echo "\n\n</pre><br><br>Successfully made $numMade accounts.<br><br>";
 
     if( $numMade != $num_accounts ) {
         echo "Failed to make:<br><br>";
