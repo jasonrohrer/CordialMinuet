@@ -667,17 +667,17 @@ else if( $action == "leaders_month_profit_ratio" ) {
 else if( $action == "leaders_year_profit_ratio" ) {
     cm_leadersYearProfitRatio();
     }
-else if( $action == "leaders_day_games_played" ) {
-    cm_leadersDayGamesPlayed();
+else if( $action == "leaders_day_games" ) {
+    cm_leadersDayGames();
     }
-else if( $action == "leaders_week_games_played" ) {
-    cm_leadersWeekGamesPlayed();
+else if( $action == "leaders_week_games" ) {
+    cm_leadersWeekGames();
     }
-else if( $action == "leaders_month_games_played" ) {
-    cm_leadersMonthGamesPlayed();
+else if( $action == "leaders_month_games" ) {
+    cm_leadersMonthGames();
     }
-else if( $action == "leaders_year_games_played" ) {
-    cm_leadersYearGamesPlayed();
+else if( $action == "leaders_year_games" ) {
+    cm_leadersYearGames();
     }
 else if( $action == "leaders_win_loss_ratio" ) {
     cm_leadersWinLossRatio();
@@ -10470,10 +10470,10 @@ function cm_leaders( $order_column_name, $inIsDollars = false,
         "  AND dollar_delta < 0 ".
         "  AND entry_time > ".
         "      DATE_SUB( CURRENT_TIMESTAMP, INTERVAL $inDayWindow DAY ) )".
-        " AS days_games_played, ".
+        " AS days_games_started, ".
         
-        "( SELECT days_buy_in + days_profit + 20 / days_games_played ) / ".
-        "    ( SELECT days_buy_in + 20 / days_games_played ) ".
+        "( SELECT days_buy_in + days_profit + 20 / days_games_started ) / ".
+        "    ( SELECT days_buy_in + 20 / days_games_started ) ".
         " AS days_profit_ratio ".
         
         "FROM $tableNamePrefix"."users AS users".
@@ -10599,20 +10599,20 @@ function cm_leadersYearProfitRatio() {
     }
 
 
-function cm_leadersDayGamesPlayed() {
-    cm_leadersCached( "days_games_played", false, "", false, 1 );
+function cm_leadersDayGames() {
+    cm_leadersCached( "days_games_started", false, "", false, 1 );
     }
 
-function cm_leadersWeekGamesPlayed() {
-    cm_leadersCached( "days_games_played", false, "", false, 7 );
+function cm_leadersWeekGames() {
+    cm_leadersCached( "days_games_started", false, "", false, 7 );
     }
 
-function cm_leadersMonthGamesPlayed() {
-    cm_leadersCached( "days_games_played", false, "", false, 30 );
+function cm_leadersMonthGames() {
+    cm_leadersCached( "days_games_started", false, "", false, 30 );
     }
 
-function cm_leadersYearGamesPlayed() {
-    cm_leadersCached( "days_games_played", false, "", false, 365 );
+function cm_leadersYearGames() {
+    cm_leadersCached( "days_games_started", false, "", false, 365 );
     }
 
 
