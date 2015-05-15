@@ -640,8 +640,44 @@ else if( $action == "leaders_dollar" ) {
 else if( $action == "leaders_profit" ) {
     cm_leadersProfit();
     }
+else if( $action == "leaders_day_profit" ) {
+    cm_leadersDayProfit();
+    }
+else if( $action == "leaders_week_profit" ) {
+    cm_leadersWeekProfit();
+    }
+else if( $action == "leaders_month_profit" ) {
+    cm_leadersMonthProfit();
+    }
+else if( $action == "leaders_year_profit" ) {
+    cm_leadersYearProfit();
+    }
 else if( $action == "leaders_profit_ratio" ) {
     cm_leadersProfitRatio();
+    }
+else if( $action == "leaders_day_profit_ratio" ) {
+    cm_leadersDayProfitRatio();
+    }
+else if( $action == "leaders_week_profit_ratio" ) {
+    cm_leadersWeekProfitRatio();
+    }
+else if( $action == "leaders_month_profit_ratio" ) {
+    cm_leadersMonthProfitRatio();
+    }
+else if( $action == "leaders_year_profit_ratio" ) {
+    cm_leadersYearProfitRatio();
+    }
+else if( $action == "leaders_day_games_played" ) {
+    cm_leadersDayGamesPlayed();
+    }
+else if( $action == "leaders_week_games_played" ) {
+    cm_leadersWeekGamesPlayed();
+    }
+else if( $action == "leaders_month_games_played" ) {
+    cm_leadersMonthGamesPlayed();
+    }
+else if( $action == "leaders_year_games_played" ) {
+    cm_leadersYearGamesPlayed();
     }
 else if( $action == "leaders_win_loss_ratio" ) {
     cm_leadersWinLossRatio();
@@ -1204,6 +1240,7 @@ function cm_setupDatabase() {
             // this ledger entry is only record of game outcome
             "game_id BIGINT UNSIGNED NOT NULL," .
             "entry_time DATETIME NOT NULL," .
+            "INDEX( entry_time )," .
             // 9 whole dollar digits (up to 999,999,999)
             // 4 fractional digits (0.0001 resolution)
             // can be positive or negative
@@ -10251,13 +10288,16 @@ function cm_getLeadersSkip() {
 // to 255 for indexing)
 // $inColumnName must not exceed 25 characters.
 function cm_leadersCached( $order_column_name, $inIsDollars = false,
-                           $inWhereClause = "", $inUnlimited = false ) {
+                           $inWhereClause = "", $inUnlimited = false,
+                           $inDayWindow = 0 ) {
     global $tableNamePrefix, $leaderboardUpdateInterval,
         $leaderHeader, $leaderFooter;
 
     $skip = cm_getLeadersSkip();
 
     cm_queryDatabase( "SET AUTOCOMMIT = 0;" );
+
+    // pack new $inDayWindow parameter into column_name in cache
     
     $query = "SELECT html_text, ".
         "  update_time, ".
@@ -10267,7 +10307,7 @@ function cm_leadersCached( $order_column_name, $inIsDollars = false,
         "TIMESTAMPDIFF( SECOND, update_time, CURRENT_TIMESTAMP ) ".
         "  AS seconds_old ".
         "FROM $tableNamePrefix"."leaderboard_cache ".
-        "WHERE column_name = '$order_column_name' AND ".
+        "WHERE column_name = '$order_column_name$inDayWindow' AND ".
         "  where_clause = '$inWhereClause' AND skip_number = $skip ".
         "FOR UPDATE;";
 
@@ -10293,7 +10333,7 @@ function cm_leadersCached( $order_column_name, $inIsDollars = false,
         ob_start();
 
         cm_leaders( $order_column_name, $inIsDollars,
-                    $inWhereClause, $inUnlimited );
+                    $inWhereClause, $inUnlimited, $inDayWindow );
 
         $html_text = ob_get_contents();
 
@@ -10328,10 +10368,11 @@ function cm_leadersCached( $order_column_name, $inIsDollars = false,
 
     
     if( $stale ) {
-        
+
+        // pack new $inDayWindow parameter into column_name in cache
 
         $query = "INSERT INTO $tableNamePrefix"."leaderboard_cache ".
-            "SET column_name = '$order_column_name', ".
+            "SET column_name = '$order_column_name$inDayWindow', ".
             "  where_clause = '$inWhereClause', skip_number = $skip, ".
             "  update_time = CURRENT_TIMESTAMP,".
             "  html_text = '$html_text'".
@@ -10352,7 +10393,9 @@ function cm_leadersCached( $order_column_name, $inIsDollars = false,
 
 // does not included header or footer
 function cm_leaders( $order_column_name, $inIsDollars = false,
-                     $inWhereClause = "", $inUnlimited = false ) {
+                     $inWhereClause = "", $inUnlimited = false,
+                     // number of days for windowed profit query
+                     $inDayWindow = 0 ) {
 
     global $tableNamePrefix, $leaderboardLimit;
 
@@ -10404,8 +10447,36 @@ function cm_leaders( $order_column_name, $inIsDollars = false,
         "( total_lost + (SELECT Q) ) ".
         " AS win_loss, ".
         "elo_rating, ".
-        "games_started ".
-        "FROM $tableNamePrefix"."users ".
+        "games_started, ".
+
+        "( SELECT SUM( dollar_delta ) ".
+        "  FROM $tableNamePrefix"."game_ledger AS ledger ".
+        "  WHERE users.user_id = ledger.user_id ".
+        "  AND entry_time > ".
+        "      DATE_SUB( CURRENT_TIMESTAMP, INTERVAL $inDayWindow DAY ) )".
+        " AS days_profit, ".
+
+        "( SELECT - SUM( dollar_delta ) ".
+        "  FROM $tableNamePrefix"."game_ledger AS ledger ".
+        "  WHERE users.user_id = ledger.user_id ".
+        "  AND dollar_delta < 0 ".
+        "  AND entry_time > ".
+        "      DATE_SUB( CURRENT_TIMESTAMP, INTERVAL $inDayWindow DAY ) )".
+        " AS days_buy_in, ".
+
+        "( SELECT COUNT(*) ".
+        "  FROM $tableNamePrefix"."game_ledger AS ledger ".
+        "  WHERE users.user_id = ledger.user_id ".
+        "  AND dollar_delta < 0 ".
+        "  AND entry_time > ".
+        "      DATE_SUB( CURRENT_TIMESTAMP, INTERVAL $inDayWindow DAY ) )".
+        " AS days_games_played, ".
+        
+        "( SELECT days_buy_in + days_profit + 20 / days_games_played ) / ".
+        "    ( SELECT days_buy_in + 20 / days_games_played ) ".
+        " AS days_profit_ratio ".
+        
+        "FROM $tableNamePrefix"."users AS users".
         "$inWhereClause ".
         "ORDER BY $order_column_name DESC ".
         "$limitClause;";
@@ -10491,6 +10562,57 @@ function cm_leadersDollar() {
 
 function cm_leadersProfit() {
     cm_leadersCached( "profit", true );
+    }
+
+
+function cm_leadersDayProfit() {
+    cm_leadersCached( "days_profit", true, "", false, 1 );
+    }
+
+function cm_leadersWeekProfit() {
+    cm_leadersCached( "days_profit", true, "", false, 7 );
+    }
+
+function cm_leadersMonthProfit() {
+    cm_leadersCached( "days_profit", true, "", false, 30 );
+    }
+
+function cm_leadersYearProfit() {
+    cm_leadersCached( "days_profit", true, "", false, 365 );
+    }
+
+
+function cm_leadersDayProfitRatio() {
+    cm_leadersCached( "days_profit_ratio", false, "", false, 1 );
+    }
+
+function cm_leadersWeekProfitRatio() {
+    cm_leadersCached( "days_profit_ratio", false, "", false, 7 );
+    }
+
+function cm_leadersMonthProfitRatio() {
+    cm_leadersCached( "days_profit_ratio", false, "", false, 30 );
+    }
+
+function cm_leadersYearProfitRatio() {
+    cm_leadersCached( "days_profit_ratio", false, "", false, 365 );
+    }
+
+
+function cm_leadersDayGamesPlayed() {
+    cm_leadersCached( "days_games_played", false, "", false, 1 );
+    }
+
+function cm_leadersWeekGamesPlayed() {
+    cm_leadersCached( "days_games_played", false, "", false, 7 );
+    }
+
+function cm_leadersMonthGamesPlayed() {
+    cm_leadersCached( "days_games_played", false, "", false, 30 );
+    }
+
+function cm_leadersYearGamesPlayed() {
+    cm_leadersCached( "days_games_played", false, "", false, 365 );
     }
 
 

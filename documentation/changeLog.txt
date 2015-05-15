@@ -42,6 +42,8 @@ Version 23     Live Server Fixes
 
 --Added support for generating batches of temp accounts with initial deposits.
 
+--Added daily, weekly, monthly, and yearly profit and game count leaderboards.
+
 
 
 

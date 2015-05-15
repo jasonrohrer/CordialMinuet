@@ -1,0 +1,1 @@
+ALTER TABLE minuetServer_game_ledger ADD INDEX( entry_time );
