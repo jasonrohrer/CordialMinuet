@@ -1,4 +1,4 @@
-int versionNumber = 23;
+int versionNumber = 24;
 
 // retain an older version number here if server is compatible
 // with older client versions.

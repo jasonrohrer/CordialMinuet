@@ -1,4 +1,4 @@
-Version 24     ????
+Version 24     2015-May-15
 
 --Fixed so that Cabal points symbol not displayed with bad point value when
   depositing into exiting account.
@@ -14,6 +14,7 @@ Version 24     ????
 --Fixed picker weird behavior when multiple mouse buttons are pressed and
   released (in some cases, this could cause a picker to settle off a column,
   triggering a crash on commit) (thanks John C).
+
 
 
 
