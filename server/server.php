@@ -10476,7 +10476,7 @@ function cm_leaders( $order_column_name, $inIsDollars = false,
         "    ( SELECT days_buy_in + 20 / days_games_started ) ".
         " AS days_profit_ratio ".
         
-        "FROM $tableNamePrefix"."users AS users".
+        "FROM $tableNamePrefix"."users AS users ".
         "$inWhereClause ".
         "ORDER BY $order_column_name DESC ".
         "$limitClause;";
