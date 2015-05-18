@@ -20,6 +20,7 @@ typedef struct GameRecord {
         
 
         char isTournament;
+        char isExp;
         double tournamentStakes;
         int tournamentSecondsLeft;
         unsigned int referenceSeconds;

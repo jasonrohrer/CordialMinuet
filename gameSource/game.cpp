@@ -1470,6 +1470,13 @@ void drawFrame( char inUpdate ) {
                     joinGamePage->setParametersFromString( "dollar_amount",
                                                            dollarString );
                     delete [] dollarString;
+
+                    if( r.isExp ) {
+                        joinGamePage->setActionParameter( "game_type", 1 );
+                        }
+                    else {
+                        joinGamePage->setActionParameter( "game_type", 0 );
+                        }
                     
                     currentGamePage = joinGamePage;
                     currentGamePage->base_makeActive( true );

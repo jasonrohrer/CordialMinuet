@@ -494,6 +494,7 @@ void MenuPage::step() {
                 GameRecord r;
                     
                 r.isTournament = false;
+                r.isExp = false;
                 
                 char isTournamentMatch = false;
                 char isExpMatch = false;
@@ -508,6 +509,7 @@ void MenuPage::step() {
                     parts[0][0] =='E' ) {
 
                     isExpMatch = true;
+                    r.isExp = true;
                     sscanf( parts[0], "E%lf", &( r.dollarAmount ) );
                     }
                 else {
