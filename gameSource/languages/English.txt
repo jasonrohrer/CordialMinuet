@@ -180,6 +180,7 @@ dropAmuletConfirm "DROP AMULET?"
 amuletLimit "AMULET GAME NEEDS $%.2f BALANCE" 
 
 create "CREATE"
+createExp "CREATE EXPERIMENTAL"
 
 
 amuletTip "RANDOM STAKES $%.2f OR LOWER"
@@ -210,6 +211,8 @@ refresh "REFRESH"
 joinButtonTip "JOIN FOR %s"
 enterTournamentButtonTip "JOIN TOURNAMENT FOR %s"
 tournamentMatchButtonTip "TOURNAMENT MATCH FOR %s"
+
+expMatchButtonTip "EXPERIMENTAL MATCH FOR %s"
 
 cannotJoinButtonTip "CANNOT AFFORD %s"
 

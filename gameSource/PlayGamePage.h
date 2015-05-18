@@ -191,6 +191,8 @@ class PlayGamePage : public ServerActionPage, public ActionListener {
 
         int *mGameBoard;
         
+        int mGameType;
+
         // ours first
         int mPlayerCoins[2];
         int mPotCoins[2];
@@ -326,6 +328,7 @@ class PlayGamePage : public ServerActionPage, public ActionListener {
         SpriteHandle mInkGridSprite;
         
         SpriteHandle mInkNumberSprites[36];
+        SpriteHandle mInkNumberSuitedSprites[36];
 
         SpriteHandle mInkHebrewSprites[12];
 

@@ -1,0 +1,3 @@
+ALTER TABLE minuetServer_games ADD game_type TINYINT UNSIGNED NOT NULL AFTER creation_time;
+
+UPDATE minuetServer_games SET game_type = 0;

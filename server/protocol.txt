@@ -461,6 +461,7 @@ server.php?action=join_game
           &dollar_amount=[dollar amount as 2-decimal float]
           &dollar_amount_hmac=[hmac-sha1, hex-encoded]
           &amulet_game=[0 or 1]
+          &game_type=[0, 1, 2, etc.]
           &user_id=[id number]
           &sequence_number=[number]
           &account_hmac=[hmac-sha1, hex-encoded]  
@@ -627,6 +628,11 @@ T0.50
 This marks tournament stakes for a live tournament the users has entered.
 
 
+dollar_amounts in the list can be prefixed with a E like this:
+T0.50
+
+This marks the game as operating in experimental mode.
+
 
 
 
@@ -706,6 +712,7 @@ server.php?action=get_game_state
 Returns:
 running
 board_layout
+game_type
 your_coins
 their_coins
 your_pot_coins

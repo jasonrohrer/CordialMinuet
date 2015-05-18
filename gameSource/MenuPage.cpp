@@ -496,11 +496,19 @@ void MenuPage::step() {
                 r.isTournament = false;
                 
                 char isTournamentMatch = false;
+                char isExpMatch = false;
+                
                 if( strlen( parts[0] ) > 1 &&
                     parts[0][0] =='T' ) {
 
                     isTournamentMatch = true;
                     sscanf( parts[0], "T%lf", &( r.dollarAmount ) );
+                    }
+                else if( strlen( parts[0] ) > 1 &&
+                    parts[0][0] =='E' ) {
+
+                    isExpMatch = true;
+                    sscanf( parts[0], "E%lf", &( r.dollarAmount ) );
                     }
                 else {
                     sscanf( parts[0], "%lf", &( r.dollarAmount ) );
@@ -532,6 +540,13 @@ void MenuPage::step() {
                         button->setHoverColor( 1, 1, 0.5, 1 );
                         button->setNoHoverColor( 1, 1, 0.5, 1 );
                         button->setDragOverColor( 1, 1, 0.5, 1 );
+                        }
+                    if( isExpMatch ) {
+                        tipKey = "expMatchButtonTip";
+
+                        button->setHoverColor( 0.5, 1, 1, 1 );
+                        button->setNoHoverColor( 0.5, 1, 1, 1 );
+                        button->setDragOverColor( 0.5, 1, 1, 1 );
                         }
                     else {                        
                         button->setHoverColor( 1, 1, 1, 1 );

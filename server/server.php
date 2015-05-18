@@ -8,7 +8,7 @@
 
 // server will tell clients to upgrade to this version
 global $cm_version;
-$cm_version = "24";
+$cm_version = "25";
 
 
 // leave an older version here IF older clients can also connect safely
@@ -16,7 +16,7 @@ $cm_version = "24";
 //  too).
 // NOTE that if old clients are incompatible, both numbers should be updated.
 global $cm_accountHmacVersion;
-$cm_accountHmacVersion = "22";
+$cm_accountHmacVersion = "25";
 
 
 
@@ -1178,6 +1178,7 @@ function cm_setupDatabase() {
             "CREATE TABLE $tableName(" .
             "game_id BIGINT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT," .
             "creation_time DATETIME NOT NULL,".
+            "game_type TINYINT NOT NULL,".
             "last_action_time DATETIME NOT NULL,".
             "player_1_id INT UNSIGNED NOT NULL," .
             "INDEX( player_1_id )," .
@@ -4857,6 +4858,7 @@ function cm_endOldGames( $user_id, $inForceTie = false ) {
     
     $query = "SELECT game_id, semaphore_key, player_1_id, player_2_id, ".
         "game_square, ".
+        "game_type, ".
         "round_number, ".
         "amulet_game, ".
         "dollar_amount, ".
@@ -4891,6 +4893,7 @@ function cm_endOldGames( $user_id, $inForceTie = false ) {
                 "p2=$player_2_id, stack = \n" . cm_getBacktrace() );
         
         $game_square = mysql_result( $result, $i, "game_square" );
+        $game_type = mysql_result( $result, $i, "game_type" );
 
         $old_player_1_id = $player_1_id;
         $old_player_2_id = $player_2_id;
@@ -4984,7 +4987,7 @@ function cm_endOldGames( $user_id, $inForceTie = false ) {
 
             // player leaving at the end of a round
 
-            $loserID = cm_computeLoser( $game_square,
+            $loserID = cm_computeLoser( $game_square, $game_type,
                                     $player_1_id, $player_2_id,
                                     $player_1_moves, $player_2_moves );
             $tie = false;
@@ -5725,7 +5728,15 @@ function cm_joinGame() {
         echo "AMULET_DROPPED";
         return;        
         }
+
     
+    $game_type = cm_requestFilter( "game_type", "/[0-9]+/", "0" );
+
+    if( $game_type != 0 && $game_type != 1 ) {
+        cm_log( "cm_joinGame denied, forbidden game_type $game_type" );
+        cm_transactionDeny();
+        return;
+        }
     
     
 
@@ -5852,6 +5863,7 @@ function cm_joinGame() {
         "WHERE player_1_id != 0 AND player_2_id = 0 AND started = 0 ".
         "AND dollar_amount = '$dollar_amount' ".
         "AND amulet_game = 0 ".
+        "AND game_type = $game_type ".
         "$tournamentPairingClause ".
         "LIMIT 1 FOR UPDATE;";
 
@@ -6154,6 +6166,7 @@ function cm_joinGame() {
         "             FROM $tableNamePrefix"."game_ledger ) ".
         "          ),".
         "creation_time = CURRENT_TIMESTAMP, ".
+        "game_type = $game_type, ".
         "last_action_time = CURRENT_TIMESTAMP, ".
         "player_1_id = '$user_id'," .
         "player_2_id = 0," .
@@ -6658,7 +6671,7 @@ function cm_listGames() {
     // of additional pages beyond limit  
     $query_limit = $limit + 1;
     
-    $query = "SELECT dollar_amount FROM $tableNamePrefix"."games ".
+    $query = "SELECT dollar_amount, game_type FROM $tableNamePrefix"."games ".
         "WHERE player_2_id = 0 AND started = 0 ".
         "AND amulet_game = 0 $ignoreClause".
         "ORDER BY dollar_amount ASC ".
@@ -6679,7 +6692,8 @@ function cm_listGames() {
         // wrap around
         $skip = 0;
 
-        $query = "SELECT dollar_amount FROM $tableNamePrefix"."games ".
+        $query = "SELECT dollar_amount, game_type ".
+            "FROM $tableNamePrefix"."games ".
             "WHERE player_2_id = 0 AND started = 0 $ignoreClause".
             "ORDER BY dollar_amount ASC ".
             "LIMIT $skip, $query_limit;";
@@ -6720,6 +6734,12 @@ function cm_listGames() {
     for( $i=0; $i < $numRows && $i < $limit; $i++ ) {
         $dollar_amount = mysql_result( $result, $i, "dollar_amount" );
 
+        $gameType = mysql_result( $result, $i, "game_type" );
+
+        if( $gameType == 1 ) {
+            echo "E";
+            }
+        
         echo "$dollar_amount\n";
         }
 
@@ -6997,6 +7017,7 @@ function cm_printGameState( $inHideOpponentSecretMoves = true ) {
     
     $query = "SELECT game_id, player_1_id, player_2_id,".
         "game_square, ".
+        "game_type, ". 
         "player_1_got_start, player_2_got_start,".
         "player_1_coins, player_2_coins, ".
         "player_1_pot_coins, player_2_pot_coins, ".
@@ -7030,6 +7051,7 @@ function cm_printGameState( $inHideOpponentSecretMoves = true ) {
     $player_1_id = mysql_result( $result, 0, "player_1_id" );
     $player_2_id = mysql_result( $result, 0, "player_2_id" );
     $game_square = mysql_result( $result, 0, "game_square" );
+    $game_type = mysql_result( $result, 0, "game_type" );
 
     $player_1_got_start = mysql_result( $result, 0, "player_1_got_start" );
     $player_2_got_start = mysql_result( $result, 0, "player_2_got_start" );
@@ -7270,6 +7292,7 @@ function cm_printGameState( $inHideOpponentSecretMoves = true ) {
     
     echo "$running\n";    
     echo "$game_square\n";
+    echo "$game_type\n";
     echo "$your_coins\n";
     echo "$their_coins\n";
     echo "$your_pot_coins\n";
@@ -8174,9 +8197,102 @@ function cm_makeRoundLoser( $inGameID, $inLoserID, $inTie = false ) {
     }
 
 
+function cm_getCellValue( $inCell ) {
+    return ceil( $inCell / 4 );
+    }
+
+function cm_getCellSuit( $inCell ) {
+    return $inCell % 4;
+    }
+
+
+function cm_allEqual( $inArray ) {
+    return ( count( array_unique( $inArray ) ) === 1 );
+    }
+
+// cells scored in range 1..36
+// these are converted to suited cells from 1..9
+// then assigned a score based on hand ranking
+function cm_computeSuitedScore( $inScoredCellList ) {
+
+    $score = 0;
+
+    $values = array_map( "cm_getCellValue", $inScoredCellList );
+    $suits = array_map( "cm_getCellSuit", $inScoredCellList );
+
+
+    sort( $values );
+    
+
+    $flush = false;
+    
+    if( cm_allEqual( $suits ) ) {
+        $flush = true;
+        }
+
+    $straight = false;
+
+    if( $values[0] + 1 == $values[1] &&
+        $values[1] + 1 == $values[2] ) {
+        $straight = true;
+        }
+
+    // regular straight:  score in [10001 .. 10009]
+    if( $straight && ! $flush ) {
+        // highest straight wins
+        return 10000 + $values[0];
+        }
+
+    // regular flush:  score in [20321 .. 20987]
+    if( $flush && ! $straight ) {
+        return 20000 +
+            // highest card wins on two flushes
+            // with next card breaking a tie
+            100 * $values[2] +
+            10 * $values[1] +
+            $values[0];
+        }
+
+    // set (3-of-kind): score in [30001 .. 30009]
+    if( cm_allEqual( $values ) ) {
+        // three of a kind
+        return 30000 + $values[0];
+        }
+
+    // Straigh flush:  score in [40001 .. 40009]
+    if( $flush && $straight ) {
+        // highest straight flush wins
+        return 40000 + $values[0];
+        }
+    
+    // now detect a pair
+    // score in [1002 .. 9008]
+    if( $values[0] == $values[1]
+        ||
+        $values[1] == $values[2] ) {
+
+        $pairValue = $values[1];
+        $otherValue;
+
+        if( $values[0] != $pairValue ) {
+            $otherValue = $values[0];
+            }
+        else {
+            $otherValue = $values[2];
+            }
+
+        return 1000 * $pairValue + $otherValue;
+        }
+
+    // high cards and kickers
+    // score in [421 .. 986]
+    return 100 * $values[2] + 10 * $values[1] + $values[0];
+    }
+
+
 
 // returns losing user_id or -1 on tie
-function cm_computeLoser( $game_square, $player_1_id, $player_2_id,
+function cm_computeLoser( $game_square, $game_type, $player_1_id, $player_2_id,
                           $player_1_moves, $player_2_moves ) {
 
     $game_cells = preg_split( "/#/", $game_square );
@@ -8188,6 +8304,9 @@ function cm_computeLoser( $game_square, $player_1_id, $player_2_id,
     $p1Score = 0;
     $p2Score = 0;
 
+    $p1CellList = array();
+    $p2CellList = array();
+        
     for( $i=0; $i<3; $i++ ) {
         $p1SelfChoice = $player_1_move_list[ $i * 2 ];
         $p1OtherChoice = $player_1_move_list[ $i * 2 + 1 ];
@@ -8195,10 +8314,22 @@ function cm_computeLoser( $game_square, $player_1_id, $player_2_id,
         $p2SelfChoice = 5 - $player_2_move_list[ $i * 2 ];
         $p2OtherChoice = 5 - $player_2_move_list[ $i * 2 + 1 ];
         
-        $p1Score += $game_cells[ $p2OtherChoice * 6 + $p1SelfChoice ];
-        $p2Score += $game_cells[ $p2SelfChoice * 6 + $p1OtherChoice ];
-        
+        $p1CellList[] = $game_cells[ $p2OtherChoice * 6 + $p1SelfChoice ];
+        $p2CellList[] = $game_cells[ $p2SelfChoice * 6 + $p1OtherChoice ];
         }
+
+
+    if( $game_type == 0 ) {
+        $p1Score = array_sum( $p1CellList );
+        $p2Score = array_sum( $p2CellList );
+        }
+    else if( $game_type == 1 ) {
+        $p1Score = cm_computeSuitedScore( $p1CellList );
+        $p2Score = cm_computeSuitedScore( $p2CellList );
+        }
+
+    cm_log( "Score:  p1 = $p1Score, p2 = $p2Score" );
+    
     
         
     if( $p1Score < $p2Score ) {
@@ -8237,6 +8368,7 @@ function cm_endRound() {
     
     $query = "SELECT game_id, player_1_id, player_2_id,".
         "game_square, ".
+        "game_type, ".
         "player_1_bet_made, player_2_bet_made, ".
         "player_1_moves, player_2_moves, ".
         "player_1_ended_round, player_2_ended_round, ".
@@ -8270,6 +8402,7 @@ function cm_endRound() {
     $player_2_id = mysql_result( $result, 0, "player_2_id" );
 
     $game_square = mysql_result( $result, 0, "game_square" );
+    $game_type = mysql_result( $result, 0, "game_type" );
     
     $player_1_pot_coins = mysql_result( $result, 0, "player_1_pot_coins" );
     $player_2_pot_coins = mysql_result( $result, 0, "player_2_pot_coins" );
@@ -8321,7 +8454,7 @@ function cm_endRound() {
     if( $player_1_id != 0 && $player_2_id != 0 &&
         $player_1_ended_round == 1 && $player_2_ended_round == 1 ) {
 
-        $loserID = cm_computeLoser( $game_square,
+        $loserID = cm_computeLoser( $game_square, $game_type,
                                     $player_1_id, $player_2_id,
                                     $player_1_moves, $player_2_moves );
         $tie = false;

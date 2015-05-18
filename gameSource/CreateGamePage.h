@@ -46,6 +46,7 @@ class CreateGamePage : public ServerActionPage, public ActionListener {
         TextButton mAmuletGameButton;
 
         TextButton mCreateButton;
+        TextButton mCreateExpButton;
 
         TextButton mCancelButton;
 

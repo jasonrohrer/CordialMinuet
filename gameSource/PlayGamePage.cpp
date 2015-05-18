@@ -27,7 +27,9 @@ extern char waitingAmuletGame;
 
 
 
-const char *gameStatePartNames[10] = { "running", "boardLayout", 
+const int numGameStateParts = 11;
+const char *gameStatePartNames[11] = { "running", "boardLayout",
+                                      "gameType", 
                                       "ourCoins", "theirCoins", 
                                       "ourPotCoins", "theirPotCoins",
                                       "ourMoves", "theirMoves",
@@ -313,8 +315,10 @@ static void readCharacterGrid( const char *inTGAFileName,
 
 
 PlayGamePage::PlayGamePage()
-        : ServerActionPage( "get_game_state", 10, gameStatePartNames ),
+        : ServerActionPage( "get_game_state", numGameStateParts, 
+                            gameStatePartNames ),
           mGameBoard( NULL ),
+          mGameType( 0 ),
           mCoinSprite( loadWhiteSprite( "coin.tga" ) ),
           mCoinTenSprite( loadWhiteSprite( "coinTen.tga" ) ),
           mMoveDeadline( 0 ),
@@ -407,6 +411,7 @@ PlayGamePage::PlayGamePage()
     
     
     readCharacterGrid( "inkNumbers.tga", 6, 6, mInkNumberSprites );
+    readCharacterGrid( "inkNumbersSuited.tga", 6, 6, mInkNumberSuitedSprites );
 
     readCharacterGrid( "inkHebrew.tga", 2, 6, mInkHebrewSprites );
 
@@ -581,6 +586,7 @@ PlayGamePage::~PlayGamePage() {
 
     for( int i=0; i<36; i++ ) {
         freeSprite( mInkNumberSprites[i] );
+        freeSprite( mInkNumberSuitedSprites[i] );
         }
 
     for( int i=0; i<12; i++ ) {
@@ -683,7 +689,7 @@ void PlayGamePage::makeActive( char inFresh ) {
         }
 
     setActionName( "get_game_state" );
-    setResponsePartNames( 10, gameStatePartNames );
+    setResponsePartNames( numGameStateParts, gameStatePartNames );
 
     clearActionParameters();
     
@@ -1274,6 +1280,7 @@ void PlayGamePage::draw( doublePair inViewCenter,
         
         // draw score pips
         
+        if( mGameType == 0 )
         for( int i=0; i<MAX_SCORE_RANGE; i++ ) {
             char empty = true;
             
@@ -1336,6 +1343,7 @@ void PlayGamePage::draw( doublePair inViewCenter,
                 }
             }
         
+        if( mGameType == 0 )
         if( mScorePipToLabel != -1 &&
             ( mScorePipLabelFade > 0 ||
               mScorePipLabelFadeDelta > 0 ) ) {
@@ -1376,11 +1384,13 @@ void PlayGamePage::draw( doublePair inViewCenter,
         doublePair pos = { 319, -300 };
         char *scoreString = autoSprintf( "%d", ourScore );
         
+        if( mGameType == 0 )
         mainFont->drawString( scoreString, pos, alignRight );
         
         delete [] scoreString;
 
 
+        if( mGameType == 0 )
         if( finalReveal ) {
             int theirScore = 0;
             for( int i=0; i<3; i++ ) {
@@ -1568,8 +1578,15 @@ void PlayGamePage::draw( doublePair inViewCenter,
             doublePair numberPos;
             numberPos.x = mColumnPositions[ i % 6 ].x;
             numberPos.y = mRowPositions[ i / 6 ].y;
-
-            drawSprite( mInkNumberSprites[ mGameBoard[i] -  1 ], numberPos );  
+            
+            if( mGameType == 1 ) {
+                drawSprite( mInkNumberSuitedSprites[ mGameBoard[i] -  1 ], 
+                            numberPos );
+                }
+            else {
+                drawSprite( mInkNumberSprites[ mGameBoard[i] -  1 ], 
+                            numberPos );
+                }
             }
 
         for( int i=0; i<6; i++ ) {
@@ -2340,7 +2357,7 @@ void PlayGamePage::step() {
         
         // get end game state
         setActionName( "get_game_state" );
-        setResponsePartNames( 10, gameStatePartNames );
+        setResponsePartNames( numGameStateParts, gameStatePartNames );
         
         clearActionParameters();
         mMessageState = gettingStateAtEnd;
@@ -2797,6 +2814,9 @@ void PlayGamePage::step() {
             mChimePlayed = false;
             }
 
+
+        mGameType = getResponseInt( "gameType" );
+        
         char *gameBoardString = getResponse( "boardLayout" );
         
         int numParts;
@@ -3208,7 +3228,7 @@ void PlayGamePage::step() {
             
             // get the new game state
             setActionName( "get_game_state" );
-            setResponsePartNames( 10, gameStatePartNames );
+            setResponsePartNames( numGameStateParts, gameStatePartNames );
 
             clearActionParameters();
     
@@ -3230,7 +3250,7 @@ void PlayGamePage::step() {
         else if( strcmp( status, "round_ended" ) == 0 ) {
             // start of new round
             setActionName( "get_game_state" );
-            setResponsePartNames( 10, gameStatePartNames );
+            setResponsePartNames( numGameStateParts, gameStatePartNames );
 
             clearActionParameters();
             mMessageState = gettingStateAtEnd;
@@ -3240,7 +3260,7 @@ void PlayGamePage::step() {
         else if( strcmp( status, "next_round_started" ) == 0 ) {
             // start of new round
             setActionName( "get_game_state" );
-            setResponsePartNames( 10, gameStatePartNames );
+            setResponsePartNames( numGameStateParts, gameStatePartNames );
 
             clearActionParameters();
             mMessageState = gettingState;
@@ -3250,7 +3270,7 @@ void PlayGamePage::step() {
         else if( strcmp( status, "opponent_left" ) == 0 ) {
             // get final state
             setActionName( "get_game_state" );
-            setResponsePartNames( 10, gameStatePartNames );
+            setResponsePartNames( numGameStateParts, gameStatePartNames );
 
             clearActionParameters();
             mMessageState = gettingState;

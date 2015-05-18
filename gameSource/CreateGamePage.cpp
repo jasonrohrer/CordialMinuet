@@ -47,6 +47,8 @@ CreateGamePage::CreateGamePage()
                              translate( "amuletGame" ) ),
           mCreateButton( mainFont, 150, -200, 
                          translate( "create" ) ),
+          mCreateExpButton( mainFont, 0, 150, 
+                            translate( "createExp" ) ),
           mCancelButton( mainFont, -150, -200, 
                          translate( "cancel" ) ),
           mDropAmuletButton( mainFont, -180, 230, 
@@ -64,6 +66,7 @@ CreateGamePage::CreateGamePage()
     addComponent( &mDropAmuletConfirmButton );
 
     addComponent( &mCreateButton );
+    addComponent( &mCreateExpButton );
     addComponent( &mCancelButton );
     
 
@@ -72,6 +75,7 @@ CreateGamePage::CreateGamePage()
     setButtonStyle( &mDropAmuletConfirmButton );
 
     setButtonStyle( &mCreateButton );
+    setButtonStyle( &mCreateExpButton );
     setButtonStyle( &mCancelButton );
     
 
@@ -80,6 +84,7 @@ CreateGamePage::CreateGamePage()
     mDropAmuletConfirmButton.addActionListener( this );
 
     mCreateButton.addActionListener( this );
+    mCreateExpButton.addActionListener( this );
     mCancelButton.addActionListener( this );
 
 
@@ -104,7 +109,7 @@ void CreateGamePage::clearAmountPicker() {
     
 
 void CreateGamePage::actionPerformed( GUIComponent *inTarget ) {
-    if( inTarget == &mCreateButton ) {
+    if( inTarget == &mCreateButton || inTarget == &mCreateExpButton ) {
         setStatus( NULL, false );
         
         waitingAmuletGame = false;
@@ -122,11 +127,20 @@ void CreateGamePage::actionPerformed( GUIComponent *inTarget ) {
         
         setActionParameter( "amulet_game", 0 );
 
+        if( inTarget == &mCreateExpButton ) {
+            setActionParameter( "game_type", 1 );
+            }
+        else {
+            setActionParameter( "game_type", 0 );
+            }
+        
+            
         mAmuletGameButton.setVisible( false );
         mDropAmuletButton.setVisible( false );
         mDropAmuletConfirmButton.setVisible( false );
         
         mCreateButton.setVisible( false );
+        mCreateExpButton.setVisible( false );
         mCancelButton.setVisible( false );
                 
         mAmountPicker.setAdjustable( false );
@@ -156,6 +170,7 @@ void CreateGamePage::actionPerformed( GUIComponent *inTarget ) {
         mDropAmuletConfirmButton.setVisible( false );
 
         mCreateButton.setVisible( false );
+        mCreateExpButton.setVisible( false );
         mCancelButton.setVisible( false );
                 
         mAmountPicker.setAdjustable( false );
@@ -338,6 +353,7 @@ void CreateGamePage::checkIfCreateButtonVisible() {
 
 
     mCreateButton.setVisible( visible );
+    mCreateExpButton.setVisible( visible );
     }
 
     
