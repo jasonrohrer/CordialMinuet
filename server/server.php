@@ -1470,6 +1470,7 @@ function cm_setupDatabase() {
             
             
             "game_count INT UNSIGNED NOT NULL DEFAULT 0,".
+            "exp_game_count INT UNSIGNED NOT NULL DEFAULT 0,".
             "total_buy_in DECIMAL(13, 2) NOT NULL DEFAULT 0, ".
             
             "max_game_stakes DECIMAL(13, 2) NOT NULL DEFAULT 0.00, ".
@@ -6091,6 +6092,11 @@ function cm_joinGame() {
         cm_queryDatabase( "SET AUTOCOMMIT=1" );
 
         cm_incrementStat( "game_count" );
+
+        if( $game_type == 1 ) {
+            cm_incrementStat( "exp_game_count" );
+            }
+        
         cm_incrementStat( "round_count" );
         cm_incrementStat( "total_buy_in", $dollar_amount * 2 );
 
