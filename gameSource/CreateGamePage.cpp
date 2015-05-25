@@ -93,6 +93,9 @@ CreateGamePage::CreateGamePage()
     mDropAmuletConfirmButton.setVisible( false );
 
     addComponent( &mAmountPicker );
+
+    // disable Exp games
+    mCreateExpButton.setVisible( false );
     }
 
 
@@ -353,7 +356,9 @@ void CreateGamePage::checkIfCreateButtonVisible() {
 
 
     mCreateButton.setVisible( visible );
-    mCreateExpButton.setVisible( visible );
+
+    // disable Exp mode
+    mCreateExpButton.setVisible( false );
     }
 
     

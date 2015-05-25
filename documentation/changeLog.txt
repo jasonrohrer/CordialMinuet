@@ -1,3 +1,10 @@
+Version 26     2015-May-25
+
+--Disabled experimental suited game mode.
+
+
+
+
 Version 25     Live Server Fixes
 
 --Stat that counts how many experimental-mode games are played.

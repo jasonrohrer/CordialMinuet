@@ -8,7 +8,7 @@
 
 // server will tell clients to upgrade to this version
 global $cm_version;
-$cm_version = "25";
+$cm_version = "26";
 
 
 // leave an older version here IF older clients can also connect safely
@@ -5738,7 +5738,9 @@ function cm_joinGame() {
         cm_transactionDeny();
         return;
         }
-    
+
+    // force non-experimental game mode
+    $game_type = 0;
     
 
     global $amuletMaxStake;
