@@ -1,3 +1,10 @@
+Version 26     Live Server Fixes
+
+--Improved profit ratio and won/lost leaderboard formula to be less biased
+  toward high stakes players who have not played enough games (thanks ..).
+
+
+
 Version 26     2015-May-25
 
 --Disabled experimental suited game mode.

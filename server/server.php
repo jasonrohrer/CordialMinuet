@@ -10572,9 +10572,12 @@ function cm_leaders( $order_column_name, $inIsDollars = false,
         "if( last_pay_out = -1, last_buy_in, 0 ) AS h, ".
         // g is -1 if player is still in the game
         "if( last_buy_in != 0 AND last_pay_out = -1, -1, 0 ) as g, ".
-        // Q factor depends on number of games started
-        //     (which we disguise with g)
-        "20 / ( games_started + (SELECT g) ) as Q, ".
+        // Q factor is their average buy-in
+        // we can use this to smooth the profit_ratio and win_loss toward 1 of
+        // players who haven't played enough games
+        // Because it's based on buy-in, it is not biased toward high
+        // or low stakes players.
+        "total_buy_in / ( games_started + (SELECT g) ) as Q, ".
         
         "dollar_balance + (SELECT h) AS dollar_balance, ".
         "(dollar_balance + (SELECT h) + total_withdrawals) - total_deposits ".
@@ -10612,9 +10615,12 @@ function cm_leaders( $order_column_name, $inIsDollars = false,
         "  AND entry_time > ".
         "      DATE_SUB( CURRENT_TIMESTAMP, INTERVAL $inDayWindow DAY ) )".
         " AS days_games_started, ".
-        
-        "( SELECT days_buy_in + days_profit + 20 / days_games_started ) / ".
-        "    ( SELECT days_buy_in + 20 / days_games_started ) ".
+
+        // replicate Q factor inline here for days
+        "( SELECT days_buy_in + days_profit +  ".
+        "         days_buy_in / (days_games_started ) ) / ".
+        "    ( SELECT days_buy_in + ".
+        "         days_buy_in / (days_games_started ) ) ".
         " AS days_profit_ratio ".
         
         "FROM $tableNamePrefix"."users AS users ".
