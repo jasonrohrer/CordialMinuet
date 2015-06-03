@@ -3,6 +3,10 @@ Version 26     Live Server Fixes
 --Improved profit ratio and won/lost leaderboard formula to be less biased
   toward high stakes players who have not played enough games (thanks ..).
 
+--Added a minProfit setting for tournaments to limit players with low
+  tournament profits (like 0) from getting prizes.
+
+
 
 
 Version 26     2015-May-25

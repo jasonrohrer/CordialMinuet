@@ -11016,7 +11016,8 @@ function cm_PminFormula( $P, $r, $m ) {
 function cm_tournamentGetPrizes( $inNumPlayers, $inPlayerScores ) {
 
     global $tournamentPrizePoolFraction, $tournamentMinPrize,
-        $tournamentEntryFee, $tournamentPrizeRatio;
+        $tournamentEntryFee, $tournamentPrizeRatio,
+        $tournamentMinProfitForPrize;
 
     $prizePool = $inNumPlayers * $tournamentEntryFee *
         $tournamentPrizePoolFraction;
@@ -11025,9 +11026,15 @@ function cm_tournamentGetPrizes( $inNumPlayers, $inPlayerScores ) {
     // number of players that will get a non-zero prize
     $m = 1;
     $r = $tournamentPrizeRatio;
-    
+
+    // stop as soon as solving the geometric seriese results in a
+    // minimum prize that's too low
+    // OR
+    // when we cross into the set of players that don't have profits high
+    // high enough for a prize
     while( $m <= $inNumPlayers &&
-           cm_PminFormula( $prizePool, $r, $m ) >= $tournamentMinPrize ) {
+           cm_PminFormula( $prizePool, $r, $m ) >= $tournamentMinPrize &&
+           $inPlayerScores[ $m-1 ] >= $tournamentMinProfitForPrize ) {
         $m++;
         }
 

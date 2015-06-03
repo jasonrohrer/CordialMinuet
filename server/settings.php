@@ -452,7 +452,10 @@ $tournamentPrizePoolFraction = "0.90";
 // minimum prize to give out
 $tournamentMinPrize = "2.50";
 
-$tournamentPrizeRatio = 1.5;
+$tournamentPrizeRatio = 2;
+
+// how big does a player's tournament profit have to be to receive a prize?
+$tournamentMinProfitForPrize = 0.001;
 
 
 
