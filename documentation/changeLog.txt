@@ -6,6 +6,13 @@ Version 26     Live Server Fixes
 --Added a minProfit setting for tournaments to limit players with low
   tournament profits (like 0) from getting prizes.
 
+--Fixed bug in update of past tournament date stamps triggered by current
+  tournament match buy-in.
+
+--Fixed bug in links to tournament reports in admin interface.
+
+--Added automatic daily tournaments.
+
 
 
 

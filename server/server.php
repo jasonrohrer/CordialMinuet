@@ -476,6 +476,13 @@ if( isset( $_SERVER[ "REMOTE_ADDR" ] ) ) {
 //cm_patchOldWithdrawals();
 
 
+
+// replace hard-coded global tournament settings with
+// an auto-scheduled tournament if one is running
+cm_checkForAutoTournament();
+
+
+
 global $shutdownMode;
 
 
@@ -690,6 +697,9 @@ else if( $action == "leaders_elo_provisional" ) {
     }
 else if( $action == "tournament_report" ) {
     cm_tournamentReport();
+    }
+else if( $action == "list_past_tournaments" ) {
+    cm_listPastTournaments();
     }
 else if( $action == "tournament_prizes" ) {
     cm_tournamentPrizes();
@@ -5508,10 +5518,13 @@ function cm_getNewSquare() {
 // if so, schedules the next auto tournament
 function cm_checkForAutoTournament() {
     global $tournamentLive, $tournamentCodeName, $tournamentEntryFee,
-        $tournamentStake, $tournamentPairProfitLimit,
+        $tournamentStake, $tournamentPairProfitLimit, $tournamentMinPrize,
+        $tournamentPrizePoolFraction, $tournamentPrizeRatio,
+        $tournamentMinProfitForPrize,
         $tournamentStartTime, $tournamentEndTime;
 
 
+    $time = time();
     
     $startTime = strtotime( $tournamentStartTime );
     $endTime = strtotime( $tournamentEndTime );
@@ -5528,8 +5541,69 @@ function cm_checkForAutoTournament() {
         return;
         }
 
-    // FIXME
+    global $autoTournamentStartTime, $autoTournamentSpacingMinutes,
+        $autoTournamentLengthMinutes;
     
+    $autoTime = strtotime( $autoTournamentStartTime );
+
+    if( $time < $autoTime ) {
+        return;
+        }
+
+    $minutesSinceStart = ( $time - $autoTime ) / 60;
+
+    $tournamentNumber =
+        floor( $minutesSinceStart / $autoTournamentSpacingMinutes );
+
+
+    // watch for request that passes in a different code name
+    // 
+    $code_name = cm_requestFilter( "tournament_code_name",
+                                   "/[A-Z0-9_]+/i", "" );
+
+    if( $code_name != "" ) {
+        // override the tournament number with the number from this
+        // code name
+        sscanf( $code_name, "auto_%d", $tournamentNumber );
+        }
+    
+    $tournamentMinutesIn = $minutesSinceStart % $autoTournamentSpacingMinutes;
+
+    
+    $startTime = $autoTime +
+        $tournamentNumber * $autoTournamentSpacingMinutes * 60;
+
+    $endTime = $startTime + $autoTournamentLengthMinutes * 60;
+
+
+    global $autoTournamentNumInRotation;
+    
+    $rotNumber = $tournamentNumber % $autoTournamentNumInRotation;
+
+    $tournamentCodeName = "auto_$tournamentNumber";
+
+
+    global $autoTournamentEntryFees, $autoTournamentStakes,
+        $autoTournamentPairProfitLimits, $autoTournamentPrizePoolFractions,
+        $autoTournamentMinPrizes, $autoTournamentPrizeRatios,
+        $autoTournamentMinProfitForPrizes;
+    
+    $tournamentEntryFee = $autoTournamentEntryFees[ $rotNumber ];
+    $tournamentStake = $autoTournamentStakes[ $rotNumber ];
+    $tournamentPairProfitLimit = $autoTournamentPairProfitLimits[ $rotNumber ];
+    
+    $tournamentPrizePoolFraction =
+        $autoTournamentPrizePoolFractions[$rotNumber];
+    
+    $tournamentMinPrize = $autoTournamentMinPrizes[ $rotNumber ];
+    
+    $tournamentPrizeRatio = $autoTournamentPrizeRatios[ $rotNumber ];
+    $tournamentMinProfitForPrize =
+        $autoTournamentMinProfitForPrizes[ $rotNumber ];
+
+
+    $tournamentStartTime = date( DATE_RFC2822, $startTime );
+    $tournamentEndTime = date( DATE_RFC2822, $endTime );
     }
 
 
@@ -5565,7 +5639,8 @@ function cm_tournamentBuyIn( $user_id, $inOpponentID ) {
     // this stat on leaderboard to figure out who you're playing against)
     $query = "UPDATE $tableNamePrefix"."tournament_stats ".
         "SET update_time = CURRENT_TIMESTAMP ".
-        "WHERE user_id = $user_id;";
+        "WHERE user_id = $user_id AND ".
+        "      tournament_code_name = '$tournamentCodeName';";
 
     cm_queryDatabase( $query );
 
@@ -10071,7 +10146,8 @@ function cm_showStats() {
             }
 
         global $fullServerURL;
-        $link = "$fullServerURL?action=tournament_report&code_name=$code_name";
+        $link = "$fullServerURL?action=tournament_report".
+            "&tournament_code_name=$code_name";
         
         
         echo "<tr><td>$update_time</td>".
@@ -11027,6 +11103,77 @@ function cm_tournamentReport() {
     }
 
 
+
+function cm_listPastTournaments() {
+    global $tableNamePrefix, $leaderboardLimit, $leaderHeader, $leaderFooter;
+
+    eval( $leaderHeader );
+
+    
+    $query = "SELECT COUNT(*) as num_players, ".
+        "MAX(update_time) as last_update, ".
+        "tournament_code_name, MAX( entry_fee ) as fee, ".
+        "SUM( prize ) as net_prizes ".
+        "FROM $tableNamePrefix"."tournament_stats ".
+        "GROUP BY tournament_code_name ORDER BY last_update DESC;";
+    $result = cm_queryDatabase( $query );
+
+    $numRows = mysql_numrows( $result );
+
+
+    echo "<center><table border=0 cellspacing=10>";
+
+    echo "<tr>".
+            "<td></td><td></td><td></td><td></td>".
+            "<td valign=bottom align=right>Entry<br>Fee</td><td></td>".
+            "<td valign=bottom align=right>Player<br>Count</td><td></td>".
+            "<td valign=bottom align=right>Prize<br>Pool</td></tr>";
+
+    echo "<tr><td colspan=10><hr></td></tr>";
+
+    for( $i=0; $i<$numRows; $i++ ) {
+        
+        $update_time = mysql_result( $result, $i, "last_update" );
+        $code_name = mysql_result( $result, $i, "tournament_code_name" );
+        
+        $fee = mysql_result( $result, $i, "fee" );
+        $net_prizes = mysql_result( $result, $i, "net_prizes" );
+        $num_players = mysql_result( $result, $i, "num_players" );
+
+
+        $fee = cm_formatBalanceForDisplay( $fee );
+        if( $net_prizes == 0 ) {
+            $net_prizes = "";
+            }
+        else {
+            $net_prizes = $fee = cm_formatBalanceForDisplay( $net_prizes );
+            }
+            
+        
+        
+        global $fullServerURL;
+        $link = "$fullServerURL?action=tournament_report&tournament_code_name=$code_name";
+        
+
+        if( $i != 0 ) {
+            echo "<tr><td colspan=10><hr></td></tr>";
+            }
+        
+        echo "<tr><td>$update_time</td><td></td>".
+            "<td><a href=$link>$code_name</code></td><td></td>".
+            "<td align=right>$fee</td><td></td>".
+            "<td align=right>$num_players</td><td></td>".
+            "<td align=right>$net_prizes</td></tr>";
+        }
+
+    echo "</table>";
+    }
+
+
+
+
+
+
 // solves geometric series for (a) where r=$r and m=$m
 // where the sum of the prizes is $P
 // (a) is the minimum prize (the first term in the geometric series
@@ -11206,7 +11353,8 @@ function cm_tournamentPrizes() {
     </FORM></center><br>
 <?php
                  
-    global $tournamentEntryFee, $tournamentPrizePoolFraction;
+    global $tournamentEntryFee, $tournamentPrizePoolFraction,
+           $tournamentMinProfitForPrize;
     
     $entryFeeString = cm_formatBalanceForDisplay( $tournamentEntryFee );
 
@@ -11226,6 +11374,9 @@ function cm_tournamentPrizes() {
 
     echo "<tr><td align=right>Total prize pool</td><td>=</td>".
         "<td align=right>$prizePool</td></tr>";
+
+    echo "<tr><td align=right>Min profit for prize</td><td>=</td>".
+        "<td align=right>$tournamentMinProfitForPrize</td></tr>";
 
     echo "</table></center><br>";
     

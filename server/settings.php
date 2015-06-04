@@ -459,6 +459,39 @@ $tournamentMinProfitForPrize = 0.001;
 
 
 
+// for automatically scheduled tournaments
+$autoTournamentLengthMinutes = 120;
+$autoTournamentSpacingMinutes = 180;
+
+$autoTournamentStartTime = "04-June-2015 12:00:00 -0700";
+
+// rotating settings for tournaments
+$autoTournamentNumInRotation = 7;
+
+$autoTournamentEntryFees =
+array( "1.00", "5.00", "10.00", "20.00", "50.00", "100.00", "200.00" );
+
+$autoTournamentStakes =
+array( "0.05", "0.25", "0.50", "1.00", "2.50", "5.00", "10.00" );
+
+$autoTournamentPairProfitLimits =
+array( "0.10", "0.50", "1.00", "2.00", "5.00", "10.00", "20.00" );
+
+$autoTournamentPrizePoolFractions =
+array( "0.9", "0.9", "0.9", "0.9", "0.9", "0.9", "0.9" );
+
+$autoTournamentMinPrizes =
+array( "0.50", "2.50", "5.00", "10.00", "25.00", "50.00", "100.00" );
+
+$autoTournamentPrizeRatios =
+array( "2.00", "2.00", "2.00", "2.00", "2.00", "2.00", "2.00" );
+
+$autoTournamentMinProfitForPrizes =
+array( "0.01", "0.05", "0.10", "0.20", "0.50", "1.00", "2.00" );
+
+
+
+
 
 // amulet settings
 
