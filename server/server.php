@@ -11153,7 +11153,7 @@ function cm_listPastTournaments() {
             $net_prizes = "";
             }
         else {
-            $net_prizes = cm_formatBalanceForDisplay( $net_prizes );
+            $net_prizes = cm_formatBalanceForDisplay( $net_prizes, true );
             }
             
         
