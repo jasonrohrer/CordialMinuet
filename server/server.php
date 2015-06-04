@@ -5504,6 +5504,37 @@ function cm_getNewSquare() {
 
 
 
+// checks if there's no manual tournament running right now
+// if so, schedules the next auto tournament
+function cm_checkForAutoTournament() {
+    global $tournamentLive, $tournamentCodeName, $tournamentEntryFee,
+        $tournamentStake, $tournamentPairProfitLimit,
+        $tournamentStartTime, $tournamentEndTime;
+
+
+    
+    $startTime = strtotime( $tournamentStartTime );
+    $endTime = strtotime( $tournamentEndTime );
+
+
+    if( $tournamentLive &&
+        $time >= $startTime && $time <= $endTime ) {
+        // manual one running, don't schedule it
+        return;
+        }
+
+    if( !$tournamentLive ) {
+        // tournaments disabled
+        return;
+        }
+
+    // FIXME
+    
+    }
+
+
+
+
 function cm_addUserToTournament( $user_id ) {
     global $tableNamePrefix, $tournamentEntryFee,
         $tournamentCodeName, $tournamentStake;    
@@ -11019,8 +11050,15 @@ function cm_tournamentGetPrizes( $inNumPlayers, $inPlayerScores ) {
         $tournamentEntryFee, $tournamentPrizeRatio,
         $tournamentMinProfitForPrize;
 
+    $fraction = $tournamentPrizePoolFraction;
+    
+    if( $inNumPlayers < 2 ) {
+        $fraction = 1;
+        }
+    
+    
     $prizePool = $inNumPlayers * $tournamentEntryFee *
-        $tournamentPrizePoolFraction;
+        $fraction;
 
     
     // number of players that will get a non-zero prize
@@ -11172,8 +11210,13 @@ function cm_tournamentPrizes() {
     
     $entryFeeString = cm_formatBalanceForDisplay( $tournamentEntryFee );
 
+    $fraction = $tournamentPrizePoolFraction;
+    if( $num_players == 1 ) {
+        $fraction = 1;
+        }
+    
     $prizePool =
-        $tournamentEntryFee * $num_players * $tournamentPrizePoolFraction;
+        $tournamentEntryFee * $num_players * $fraction;
     $prizePool = cm_formatBalanceForDisplay( $prizePool );
 
     echo "<center><table border=0 cellpadding=10>";
