@@ -13,6 +13,8 @@ Version 26     Live Server Fixes
 
 --Added automatic daily tournaments.
 
+--tournament_report and prize preview with no code name now shows current
+  tournament.
 
 
 

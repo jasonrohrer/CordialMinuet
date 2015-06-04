@@ -10957,13 +10957,20 @@ function cm_tournamentReport() {
     $code_name = cm_requestFilter( "tournament_code_name",
                                    "/[A-Z0-9_]+/i", "" );
 
+    global $tournamentCodeName;
+    
+    if( $code_name == "" ) {
+        // default to current
+        $code_name = $tournamentCodeName;
+        }
+    
 
     global $tableNamePrefix, $leaderboardLimit, $leaderHeader, $leaderFooter;
 
     eval( $leaderHeader );
 
 
-    global $tournamentStartTime, $tournamentEndTime, $tournamentCodeName;
+    global $tournamentStartTime, $tournamentEndTime;
     
     $time = time();
 
@@ -11152,7 +11159,8 @@ function cm_listPastTournaments() {
         
         
         global $fullServerURL;
-        $link = "$fullServerURL?action=tournament_report&tournament_code_name=$code_name";
+        $link = "$fullServerURL?action=tournament_report".
+            "&tournament_code_name=$code_name";
         
 
         if( $i != 0 ) {
@@ -11318,12 +11326,17 @@ function cm_tournamentPrizes() {
     $code_name = cm_requestFilter( "tournament_code_name",
                                    "/[A-Z0-9_]+/i", "" );
 
+    global $tournamentCodeName;
+    
+    if( $code_name == "" ) {
+        // default to current
+        $code_name = $tournamentCodeName;
+        }
+    
     global $tableNamePrefix, $leaderboardLimit, $leaderHeader, $leaderFooter;
 
     eval( $leaderHeader );
     
-    global $tournamentCodeName;
-
     if( $code_name != $tournamentCodeName ) {
 
         echo "<br><br><br><center>This tournament is not active.".
@@ -11331,7 +11344,7 @@ function cm_tournamentPrizes() {
         return;
         }
 
-    $num_players = cm_requestFilter( "num_players", "/[0-9]+/i", "1" );
+    $num_players = cm_requestFilter( "num_players", "/[0-9]+/i", "5" );
 
     $dummyScores = array();
 
