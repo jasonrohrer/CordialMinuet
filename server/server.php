@@ -11045,8 +11045,8 @@ function cm_tournamentReport() {
     echo "<tr><td align=right></td>".
             "<td></td><td></td>".
             "<td valign=bottom align=right>Profit</td><td></td>".
-            "<td valign=bottom>Games<br>Played</td><td></td>".
-            "<td valign=bottom>$prizeTitle</td></tr>";
+            "<td valign=bottom align=right>Games<br>Played</td><td></td>".
+            "<td valign=bottom align=right>$prizeTitle</td></tr>";
 
     echo "<tr><td colspan=8><hr></td></tr>";
 
