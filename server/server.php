@@ -11204,7 +11204,7 @@ function cm_listFutureTournaments() {
 
     eval( $leaderHeader );
 
-    global $tournamentStartTime, $tournanmentEndTime,
+    global $tournamentStartTime, $tournamentEndTime,
         $tournamentEntryFee, $tournamentCodeName;
 
 
