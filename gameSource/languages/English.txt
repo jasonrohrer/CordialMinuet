@@ -216,6 +216,8 @@ expMatchButtonTip "EXPERIMENTAL MATCH FOR %s"
 
 cannotJoinButtonTip "CANNOT AFFORD %s"
 
+cannotJoinTournamentButtonTip "CANNOT AFFORD TOURNAMENT"
+
 
 entryFee "ENTRY FEE:"
 tournamentStakes "PER GAME STAKES:"

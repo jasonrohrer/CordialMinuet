@@ -452,7 +452,11 @@ void MenuPage::step() {
                 const char *tipKey = "enterTournamentButtonTip";
                 
                 if( r.dollarAmount > userBalance ) {
-                    tipKey = "cannotJoinButtonTip";
+                    // this format string DOES NOT have a %s in it
+                    // for the dollar amount (no room on screen)
+                    // but that's okay, because autoSprintf will 
+                    // just ignore the excess argument below
+                    tipKey = "cannotJoinTournamentButtonTip";
                     
                     button->setHoverColor( 1, 1, 1, 0.5 );
                     button->setNoHoverColor( 1, 1, 1, 0.5 );
