@@ -701,6 +701,9 @@ else if( $action == "tournament_report" ) {
 else if( $action == "list_past_tournaments" ) {
     cm_listPastTournaments();
     }
+else if( $action == "list_future_tournaments" ) {
+    cm_listFutureTournaments();
+    }
 else if( $action == "tournament_prizes" ) {
     cm_tournamentPrizes();
     }
@@ -5516,7 +5519,7 @@ function cm_getNewSquare() {
 
 // checks if there's no manual tournament running right now
 // if so, schedules the next auto tournament
-function cm_checkForAutoTournament() {
+function cm_checkForAutoTournament( $inCodeNameOverride = "" ) {
     global $tournamentLive, $tournamentCodeName, $tournamentEntryFee,
         $tournamentStake, $tournamentPairProfitLimit, $tournamentMinPrize,
         $tournamentPrizePoolFraction, $tournamentPrizeRatio,
@@ -5530,7 +5533,11 @@ function cm_checkForAutoTournament() {
     $endTime = strtotime( $tournamentEndTime );
 
 
-    if( $tournamentLive &&
+    if( ( $inCodeNameOverride == "" ||
+          $tournamentCodeName == $inCodeNameOverride )
+        &&
+        $tournamentLive
+        &&
         $time >= $startTime && $time <= $endTime ) {
         // manual one running, don't schedule it
         return;
@@ -5561,10 +5568,19 @@ function cm_checkForAutoTournament() {
     $code_name = cm_requestFilter( "tournament_code_name",
                                    "/[A-Z0-9_]+/i", "" );
 
+    global $autoTournamentNamePrefix;
+    
+    
+    if( $inCodeNameOverride != "" ) {
+        $code_name = $inCodeNameOverride;
+        }
+
+
     if( $code_name != "" ) {
         // override the tournament number with the number from this
         // code name
-        sscanf( $code_name, "auto_%d", $tournamentNumber );
+        sscanf( $code_name,
+                $autoTournamentNamePrefix . "_%d", $tournamentNumber );
         }
     
     $tournamentMinutesIn = $minutesSinceStart % $autoTournamentSpacingMinutes;
@@ -5580,8 +5596,10 @@ function cm_checkForAutoTournament() {
     
     $rotNumber = $tournamentNumber % $autoTournamentNumInRotation;
 
-    $tournamentCodeName = "auto_$tournamentNumber";
+    
+    $tournamentCodeName = $autoTournamentNamePrefix ."_$tournamentNumber";
 
+    //echo "Code name = 
 
     global $autoTournamentEntryFees, $autoTournamentStakes,
         $autoTournamentPairProfitLimits, $autoTournamentPrizePoolFractions,
@@ -11172,6 +11190,97 @@ function cm_listPastTournaments() {
             "<td align=right>$fee</td><td></td>".
             "<td align=right>$num_players</td><td></td>".
             "<td align=right>$net_prizes</td></tr>";
+        }
+
+    echo "</table>";
+    }
+
+
+
+
+
+function cm_listFutureTournaments() {
+    global $tableNamePrefix, $leaderHeader, $leaderFooter;
+
+    eval( $leaderHeader );
+
+    global $tournamentStartTime, $tournamentEntryFee, $tournamentCodeName;
+
+
+    $firstName = $tournamentCodeName;
+
+    $firstNumber;
+
+    global $autoTournamentNamePrefix;
+    
+    sscanf( $firstName,
+            $autoTournamentNamePrefix ."_%d", $firstNumber );
+    
+    echo "<center><table border=0 cellspacing=10>";
+
+    echo "<tr>".
+            "<td valign=bottom>Start</td><td></td>".
+            "<td valign=bottom align=right>Entry<br>Fee</td><td></td>".
+            "<td valign=bottom align=right></td><td></td>".
+        "<td valign=bottom align=right></td></tr>";
+
+    echo "<tr><td colspan=8><hr></td></tr>";
+
+    
+    for( $i=0; $i<16; $i++ ) {
+
+        $currentNumber = $firstNumber + $i;
+
+        
+        
+        $currentName = $autoTournamentNamePrefix ."_$currentNumber";
+        
+        cm_checkForAutoTournament( $currentName );
+
+    
+
+        $time = time();
+    
+        $startTime = strtotime( $tournamentStartTime );
+
+        $startsInSec = $startTime - $time;
+        
+        $startsIn = cm_formatDuration( $startsInSec );
+
+        if( $startsInSec <= 0 ) {
+            $startsIn = "Running Now";
+            }
+        
+
+        $fee = cm_formatBalanceForDisplay( $tournamentEntryFee );
+        if( $net_prizes == 0 ) {
+            $net_prizes = "";
+            }
+        else {
+            $net_prizes = cm_formatBalanceForDisplay( $net_prizes, true );
+            }
+            
+        
+        
+        global $fullServerURL;
+        $leaderLink = "<a href=$fullServerURL?action=tournament_report".
+            "&tournament_code_name=$tournamentCodeName>Leaderboard</a>";
+
+        $prizesLink = "<a href=$fullServerURL?action=tournament_prizes".
+            "&tournament_code_name=$tournamentCodeName>Prizes</a>";
+
+        if( $startsInSec > 0 ) {
+            $leaderLink = "";
+            }
+        
+
+        if( $i != 0 ) {
+            echo "<tr><td colspan=8><hr></td></tr>";
+            }
+        
+        echo "<tr><td>$startsIn</td><td></td>".
+            "<td align=right>$fee</td><td></td>".
+            "<td>$leaderLink</td><td></td><td>$prizesLink</td></tr>";
         }
 
     echo "</table>";

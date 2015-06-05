@@ -26,6 +26,8 @@ Version 26     Live Server Fixes
 --Fixed so that everyone gets their entry fee back if no one has high enough
   profit to receive a prize.
 
+--Added list of upcoming tournaments.
+
 
 
 

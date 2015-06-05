@@ -465,6 +465,8 @@ $autoTournamentSpacingMinutes = 180;
 
 $autoTournamentStartTime = "04-June-2015 12:00:00 -0700";
 
+$autoTournamentNamePrefix = "auto";
+
 // rotating settings for tournaments
 $autoTournamentNumInRotation = 7;
 
