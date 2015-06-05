@@ -84,6 +84,19 @@ A two-player ONLINE STRATEGY GAME played for REAL MONEY by <a href="http://hcsof
 </td>
 
 <td width=500 ALIGN=JUSTIFY VALIGN=TOP>
+
+<center>
+<table border=0 cellpadding=2><tr><td bgcolor="#FF0000">
+<table border=0 cellpadding=10<tr><td bgcolor="#000000">
+<center>
+The contest is over now.  Results are <a href="http://cordialminuet.com/incrementensemble/forums/viewtopic.php?id=240">posted here</a>.
+</center>
+</td></tr></table>
+</td></tr></table>
+</center>
+
+<br> <br>     
+    
 A secret CABAL has been chosen.  Have YOU been chosen?  Only YOU know.  If you do not know, do not panic, because it is NOT OVER YET.<br>
 <br>
 Yes, you read that correctly.  YOU STILL HAVE A CHANCE.  The ancient dreams of THE INTERNET have mostly been SQUANDERED by fools and charlatans, but there is one dream left alive.  <font color=yellow>GOLD</font>.  Yes, if you are still reading this paragraph, you are SMARTER THAN YOU THINK, and more importantly, you have come to the RIGHT PLACE.<br>
