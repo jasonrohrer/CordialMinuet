@@ -11204,7 +11204,8 @@ function cm_listFutureTournaments() {
 
     eval( $leaderHeader );
 
-    global $tournamentStartTime, $tournamentEntryFee, $tournamentCodeName;
+    global $tournamentStartTime, $tournanmentEndTime,
+        $tournamentEntryFee, $tournamentCodeName;
 
 
     $firstName = $tournamentCodeName;
@@ -11219,7 +11220,7 @@ function cm_listFutureTournaments() {
     echo "<center><table border=0 cellspacing=10>";
 
     echo "<tr>".
-            "<td valign=bottom>Start</td><td></td>".
+            "<td valign=bottom>Starts In</td><td></td>".
             "<td valign=bottom align=right>Entry<br>Fee</td><td></td>".
             "<td valign=bottom align=right></td><td></td>".
         "<td valign=bottom align=right></td></tr>";
@@ -11248,7 +11249,16 @@ function cm_listFutureTournaments() {
         $startsIn = cm_formatDuration( $startsInSec );
 
         if( $startsInSec <= 0 ) {
-            $startsIn = "Running Now";
+
+            $endTime = strtotime( $tournamentEndTime );
+
+            if( $time < $endTime ) {
+                $startsIn = "Running Now";
+                }
+            else {
+                // over completely
+                $startsIn = "Ended";
+                }
             }
         
 
