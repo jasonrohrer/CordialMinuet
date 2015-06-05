@@ -11263,12 +11263,6 @@ function cm_listFutureTournaments() {
         
 
         $fee = cm_formatBalanceForDisplay( $tournamentEntryFee );
-        if( $net_prizes == 0 ) {
-            $net_prizes = "";
-            }
-        else {
-            $net_prizes = cm_formatBalanceForDisplay( $net_prizes, true );
-            }
             
         
         
