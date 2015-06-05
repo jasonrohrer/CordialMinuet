@@ -11233,6 +11233,15 @@ function cm_tournamentGetPrizes( $inNumPlayers, $inPlayerScores ) {
 
     $m--;
 
+    if( $m == 0 ) {
+        // no one got high enough score for prizes
+        
+        // given everyone entry fee back as prize
+        $m = $inNumPlayers;
+        $prizePool = $inNumPlayers * $tournamentEntryFee;
+        }
+    
+
     $minPrize = 0;
     if( $m > 0 ) {
         $minPrize = cm_PminFormula( $prizePool, $r, $m );
@@ -11348,8 +11357,12 @@ function cm_tournamentPrizes() {
 
     $dummyScores = array();
 
+    global $tournamentMinProfitForPrize;
+
+    // create dummy scores evenly spaced out and all above min    
     for( $i=0; $i<$num_players; $i++ ) {
-        $dummyScores[$i] = $num_players - $i;
+        $dummyScores[$i] =
+            ( $num_players - $i ) + $tournamentMinProfitForPrize;
         }
     
     

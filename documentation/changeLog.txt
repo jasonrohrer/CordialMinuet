@@ -23,6 +23,10 @@ Version 26     Live Server Fixes
 --tournament_report and prize preview with no code name now shows current
   tournament.
 
+--Fixed so that everyone gets their entry fee back if no one has high enough
+  profit to receive a prize.
+
+
 
 
 Version 26     2015-May-25
