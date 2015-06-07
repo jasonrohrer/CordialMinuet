@@ -450,6 +450,12 @@ cm_connectToDatabase( $trackDatabaseStats );
 
 
 
+// replace hard-coded global tournament settings with
+// an auto-scheduled tournament if one is running
+cm_checkForAutoTournament();
+
+
+
 global $flushDuringClientCalls;
 
 if( $flushDuringClientCalls &&
@@ -477,9 +483,6 @@ if( isset( $_SERVER[ "REMOTE_ADDR" ] ) ) {
 
 
 
-// replace hard-coded global tournament settings with
-// an auto-scheduled tournament if one is running
-cm_checkForAutoTournament();
 
 
 
@@ -5538,8 +5541,10 @@ function cm_checkForAutoTournament( $inCodeNameOverride = "" ) {
         &&
         $tournamentLive
         &&
-        $time >= $startTime && $time <= $endTime ) {
-        // manual one running, don't schedule it
+        $time >= $startTime && $time <= $endTime + 15 * 60 ) {
+        // manual one running, or ened <15 minutes ago (leave room for flush
+        // to issue payouts before we override fees with an auto-tournament),
+        // don't schedule it
         return;
         }
 
@@ -11207,12 +11212,19 @@ function cm_listFutureTournaments() {
     global $tournamentStartTime, $tournamentEndTime,
         $tournamentEntryFee, $tournamentCodeName;
 
+    global $autoTournamentNamePrefix;
 
+    if( strstr( $tournamentCodeName, $autoTournamentNamePrefix ) === FALSE ) {
+        echo "<center>A manually-scheduled tournament is running.<br><br>".
+            "The list of future automatic tournaments will be available<br>".
+            "again when the manually-scheduled tournament is over.";
+        return;
+        }
+        
     $firstName = $tournamentCodeName;
 
     $firstNumber;
 
-    global $autoTournamentNamePrefix;
     
     sscanf( $firstName,
             $autoTournamentNamePrefix ."_%d", $firstNumber );
@@ -11350,8 +11362,8 @@ function cm_tournamentGetPrizes( $inNumPlayers, $inPlayerScores ) {
         // no one got high enough score for prizes
         
         // given everyone entry fee back as prize
-        $m = $inNumPlayers;
-        $prizePool = $inNumPlayers * $tournamentEntryFee;
+
+        return array_fill( 0, $inNumPlayers, $tournamentEntryFee );
         }
     
 

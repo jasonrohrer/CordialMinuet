@@ -28,6 +28,11 @@ Version 26     Live Server Fixes
 
 --Added list of upcoming tournaments.
 
+--Fixed prize payouts when no one receives a prize.
+
+--Fixed payouts and future tournament list when a manually-scheduled
+  tournament interrupts the auto-tournaments.  
+
 
 
 
