@@ -11363,7 +11363,12 @@ function cm_tournamentGetPrizes( $inNumPlayers, $inPlayerScores ) {
         
         // given everyone entry fee back as prize
 
-        return array_fill( 0, $inNumPlayers, $tournamentEntryFee );
+        if( $inNumPlayers == 0 ) {
+            return array();
+            }
+        else {
+            return array_fill( 0, $inNumPlayers, $tournamentEntryFee );
+            }
         }
     
 
