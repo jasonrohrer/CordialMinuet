@@ -895,7 +895,8 @@ void PlayGamePage::actionPerformed( GUIComponent *inTarget ) {
 
         mPickerUs.draw = false;
         mPickerThem.draw = false;
-        
+        mPickerUs.held = false;
+        mPickerThem.held = false;
 
         mCommitButton.setVisible( false );
         mCommitButtonJustPressed = true;

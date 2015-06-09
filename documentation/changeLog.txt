@@ -3,6 +3,11 @@ Version 27     ???
 --Fixed CANNOT JOIN message for tournaments when you can't afford it
   (thanks ..).
 
+--Fixed crash when hitting ENTER to commit while still dragging a slider with
+  the mouse (releasing the mouse made the COMMIT button reappear) 
+  (thanks Anna G).
+
+
 
 
 Version 26     Live Server Fixes
