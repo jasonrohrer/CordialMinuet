@@ -374,6 +374,10 @@ $anteIncrease = 1;
 // number of coins paid by leaver to remaining player
 $penaltyForLeaving = 6;
 
+// penalty increase per round
+$penaltyForLeavingIncrease = 0.5;
+
+
 
 
 // 1 minute, plus grace period to cover one client retry

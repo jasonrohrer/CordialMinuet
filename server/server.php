@@ -4988,9 +4988,7 @@ function cm_endOldGames( $user_id, $inForceTie = false ) {
         if( $player_1_id != 0 &&
             $player_2_id != 0 ) {
 
-            global $penaltyForLeaving;
-            
-            $leaverPenalty = $penaltyForLeaving;
+            $leaverPenalty = cm_getLeavePenalty( $round_number );
             }
         
         
@@ -7154,7 +7152,8 @@ function cm_printGameState( $inHideOpponentSecretMoves = true ) {
     
     $query = "SELECT game_id, player_1_id, player_2_id,".
         "game_square, ".
-        "game_type, ". 
+        "game_type, ".
+        "round_number, ".
         "player_1_got_start, player_2_got_start,".
         "player_1_coins, player_2_coins, ".
         "player_1_pot_coins, player_2_pot_coins, ".
@@ -7190,6 +7189,8 @@ function cm_printGameState( $inHideOpponentSecretMoves = true ) {
     $game_square = mysql_result( $result, 0, "game_square" );
     $game_type = mysql_result( $result, 0, "game_type" );
 
+    $round_number = mysql_result( $result, 0, "round_number" );
+    
     $player_1_got_start = mysql_result( $result, 0, "player_1_got_start" );
     $player_2_got_start = mysql_result( $result, 0, "player_2_got_start" );
 
@@ -7419,9 +7420,7 @@ function cm_printGameState( $inHideOpponentSecretMoves = true ) {
         }
     
     
-    global $penaltyForLeaving;
-
-    $leave_penalty = $penaltyForLeaving;
+    $leave_penalty = cm_getLeavePenalty( $round_number );
 
     if( $leave_penalty > $your_coins ) {
         $leave_penalty = $your_coins;
@@ -8074,6 +8073,15 @@ function cm_getAnte( $round_number ) {
     global $anteCoins, $anteIncrease;
 
     return $anteCoins + floor( $anteIncrease * ( $round_number - 1 ) );
+    }
+
+
+
+function cm_getLeavePenalty( $round_number ) {
+    global $penaltyForLeaving, $penaltyForLeavingIncrease;
+
+    return $penaltyForLeaving +
+        floor( $penaltyForLeavingIncrease * ( $round_number - 1 ) );
     }
 
 

@@ -38,6 +38,9 @@ Version 26     Live Server Fixes
 --Fixed payouts and future tournament list when a manually-scheduled
   tournament interrupts the auto-tournaments.  
 
+--Added a rising penalty for leaving as ante rises.
+
+
 
 
 
