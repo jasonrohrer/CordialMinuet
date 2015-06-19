@@ -10,6 +10,8 @@ Version 27     ???
 --Improved tool tip on tournament button to make it clear that you can read the
   information before paying the entry fee (thanks Matt K).
 
+--Turned on optimizations for server native code.
+
 
 
 
