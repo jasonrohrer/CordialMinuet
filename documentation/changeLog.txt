@@ -1,4 +1,4 @@
-Version 27     ???
+Version 27     2015-June-19
 
 --Fixed CANNOT JOIN message for tournaments when you can't afford it
   (thanks ..).
@@ -11,6 +11,7 @@ Version 27     ???
   information before paying the entry fee (thanks Matt K).
 
 --Turned on optimizations for server native code.
+
 
 
 
