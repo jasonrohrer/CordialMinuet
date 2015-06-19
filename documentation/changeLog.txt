@@ -7,6 +7,9 @@ Version 27     ???
   the mouse (releasing the mouse made the COMMIT button reappear) 
   (thanks Anna G).
 
+--Improved tool tip on tournament button to make it clear that you can read the
+  information before paying the entry fee (thanks Matt K).
+
 
 
 

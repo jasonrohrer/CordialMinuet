@@ -209,7 +209,7 @@ refresh "REFRESH"
 
 
 joinButtonTip "JOIN FOR %s"
-enterTournamentButtonTip "JOIN TOURNAMENT FOR %s"
+enterTournamentButtonTip "CLICK FOR TOURNAMENT INFO"
 tournamentMatchButtonTip "TOURNAMENT MATCH FOR %s"
 
 expMatchButtonTip "EXPERIMENTAL MATCH FOR %s"
