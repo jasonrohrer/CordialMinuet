@@ -10109,6 +10109,8 @@ function cm_makeCoupons() {
 
 
 function cm_redeemCouponFailEnd() {
+    global $footer;
+    
     cm_queryDatabase( "COMMIT;" );
     cm_queryDatabase( "SET AUTOCOMMIT = 1;" );
     eval( $footer );
