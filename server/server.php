@@ -605,6 +605,12 @@ else if( $action == "make_account" ) {
 else if( $action == "make_batch_accounts" ) {
     cm_makeBatchAccounts();
     }
+else if( $action == "make_coupons" ) {
+    cm_makeCoupons();
+    }
+else if( $action == "redeem_coupon" ) {
+    cm_redeemCoupon();
+    }
 else if( $action == "show_data" ) {
     cm_showData();
     }
@@ -773,7 +779,8 @@ else if( preg_match( "/server\.php/", $_SERVER[ "SCRIPT_NAME" ] ) ) {
         cm_doesTableExist( $tableNamePrefix."vs_one_scores" ) &&
         cm_doesTableExist( $tableNamePrefix."vs_one_cache" ) &&
         cm_doesTableExist( $tableNamePrefix."server_stats" ) &&
-        cm_doesTableExist( $tableNamePrefix."user_stats" );
+        cm_doesTableExist( $tableNamePrefix."user_stats" ) &&
+        cm_doesTableExist( $tableNamePrefix."coupons" );
     
         
     if( $allExist  ) {
@@ -1531,6 +1538,35 @@ function cm_setupDatabase() {
             "users_last_five_minutes INT UNSIGNED NOT NULL," .
             "users_last_hour INT UNSIGNED NOT NULL," .
             "users_last_day INT UNSIGNED NOT NULL );";
+        
+
+        $result = cm_queryDatabase( $query );
+
+
+        echo "<B>$tableName</B> table created<BR>";       
+        }
+    else {
+        echo "<B>$tableName</B> table already exists<BR>";
+        }
+
+
+    
+    // coupons for free money
+    $tableName = $tableNamePrefix . "coupons";
+
+    if( ! cm_doesTableExist( $tableName ) ) {
+
+        // doesn't need to be innodb, because rows never change
+        $query =
+            "CREATE TABLE $tableName(" .
+            "coupon_code VARCHAR(255) NOT NULL PRIMARY KEY," .
+            "coupon_tag VARCHAR(255) NOT NULL,".
+            "creation_time DATETIME NOT NULL," .
+            "expire_time DATETIME NOT NULL,".
+            "dollar_amount DECIMAL(13, 2) NOT NULL, ".
+            // 0 if not redeemed yet
+            "redeemed_by_user_id INT UNSIGNED NOT NULL,".
+            "redeemed_time DATETIME NOT NULL ) ENGINE = INNODB;";
         
 
         $result = cm_queryDatabase( $query );
@@ -3311,15 +3347,21 @@ function cm_makeDeposit() {
 
 
 // no hyphens
-function cm_generateAccountKey( $inEmail, $inSalt ) {
+function cm_generateAccountKey( $inEmail, $inSalt, $inLength = -1 ) {
 
     global $serverSecretKey, $accountKeyLength;
+
+    if( $inLength == -1 ) {
+        // default
+        $inLength = $accountKeyLength;
+        }
+    
     
     $account_key = "";
 
     // repeat hashing new rand values, mixed with our secret
     // for security, until we have generated enough digits.
-    while( strlen( $account_key ) < $accountKeyLength ) {
+    while( strlen( $account_key ) < $inLength ) {
         
         $randVal = rand();
         
@@ -3331,7 +3373,7 @@ function cm_generateAccountKey( $inEmail, $inSalt ) {
         
         $hash_base32 = cm_readableBase32Encode( $hash_bin );
         
-        $digitsLeft = $accountKeyLength - strlen( $account_key );
+        $digitsLeft = $inLength - strlen( $account_key );
         
         $account_key = $account_key . substr( $hash_base32, 0, $digitsLeft );
         }
@@ -9966,6 +10008,316 @@ function cm_makeBatchAccounts() {
 
 
 
+
+
+function cm_makeCoupons() {
+    cm_checkPassword( "make_coupons" );
+
+    global $tableNamePrefix;
+
+    $coupon_tag =
+        cm_requestFilter( "coupon_tag",
+                          "/[A-Z0-9_]+/i", "" );
+
+
+    echo "[<a href=\"server.php?action=show_data" .
+        "\">Main</a>]<br><br><br>";
+
+    
+    if( $coupon_tag == "" ) {
+        echo "Bad coupon tag";
+        return;
+        }
+
+
+    $num_coupons = cm_requestFilter( "num_coupons", "/[0-9]+/", "0" );
+    $expire_days = cm_requestFilter( "expire_days", "/[0-9-]+/", "-1" );
+    $confirm = cm_requestFilter( "confirm", "/[1]/", "0" );
+
+    if( $num_coupons <= 0 ) {
+        echo "Num coupons must be positive.";
+        return;
+        }
+
+    if( $confirm == 0 ) {
+        echo "Must check confirmation box.";
+        return;
+        }
+
+    $dollar_amount = cm_requestFilter(
+        "dollar_amount", "/^[0-9]*([.][0-9][0-9])?/i", "0.00" );
+
+
+    echo "Making $num_coupons coupons with \$$dollar_amount each ".
+        "and tag <b>$coupon_tag</b>:<br><br><pre>\n\n";
+
+
+    $numMade = 0;
+    $failureList = array();
+
+    $salt = 341347;
+    
+    for( $i=0; $i<$num_coupons; $i++ ) {
+
+        
+        $coupon_code = cm_generateAccountKey( $coupon_tag, $i + $salt,
+                                              15 );
+        
+        // user_id auto-assigned (auto-increment)
+        $query = "INSERT INTO $tableNamePrefix". "coupons SET ".
+            "coupon_code = '$coupon_code', ".
+            "coupon_tag = '$coupon_tag', ".
+            "creation_time = CURRENT_TIMESTAMP, ".
+            // will be earlier than creation time if never expires
+            "expire_time = ".
+            "  DATE_ADD( CURRENT_TIMESTAMP, INTERVAL $expire_days DAY ), ".
+            "dollar_amount = '$dollar_amount', ".
+            "redeemed_by_user_id = 0, ".
+            "redeemed_time = CURRENT_TIMESTAMP;";
+        
+        // handle insert error ourselves
+        $result = mysql_query( $query );
+
+        if( $result ) {
+
+            $key_chunks = str_split( $coupon_code, 5 );
+            
+            $keyToPrint = implode( "-", $key_chunks );
+            echo "$keyToPrint\n";
+
+            $numMade++;
+            }
+        else {
+            $failureList[] = "Code: $coupon_code";
+            }
+        }
+
+    echo "\n\n</pre><br><br>Successfully made $numMade coupons.<br><br>";
+
+    if( $numMade != $num_coupons ) {
+        echo "Failed to make:<br><br>";
+
+        foreach( $failureList as $row ) {
+            echo "$row<br>";
+            }
+        }
+
+    echo "<br><br>Done.";
+    }
+
+
+
+
+function cm_redeemCouponFailEnd() {
+    cm_queryDatabase( "COMMIT;" );
+    cm_queryDatabase( "SET AUTOCOMMIT = 1;" );
+    eval( $footer );
+    }
+
+
+function cm_redeemCoupon() {
+    global $header, $footer;
+    
+    eval( $header );
+    
+    $email = cm_requestFilter( "email", "/[A-Z0-9._%+-]+@[A-Z0-9.-]+/i", "" );
+    $email_confirm = cm_requestFilter( "email_confirm",
+                                       "/[A-Z0-9._%+-]+@[A-Z0-9.-]+/i", "" );
+
+    if( $email == "" ) {
+        echo "Email address not valid.";
+        cm_redeemCouponFailEnd();
+        return;
+        }
+
+    if( $email != $email_confirm ) {
+        echo "Email confirmation does not match.";
+        cm_redeemCouponFailEnd();
+        return;
+        }
+    
+
+    $coupon_code = cm_requestFilter( "coupon_code",
+                                     "/[2-9A-HJ-NP-Z-]+/i", "" );
+
+    if( $coupon_code == "" ) {
+        echo "Coupon code not valid.";
+        cm_redeemCouponFailEnd();
+        return;
+        }
+
+    $code_split = preg_split( "/-/", $coupon_code );
+
+    $coupon_code = implode( $code_split, "" );
+    
+    
+    global $tableNamePrefix;
+
+    cm_queryDatabase( "SET AUTOCOMMIT = 0;" );
+    
+    $query = "SELECT coupon_tag, dollar_amount, ".
+        "(redeemed_by_user_id = 0) as not_used,".
+        "(expire_time > CURRENT_TIMESTAMP OR expire_time < creation_time ) ".
+        "  as not_expired ".
+        "FROM $tableNamePrefix"."coupons ".
+        "WHERE coupon_code = '$coupon_code' FOR UPDATE;";
+
+    $result = cm_queryDatabase( $query );
+
+    $numRows = mysql_numrows( $result );
+
+    if( $numRows == 0 ) {
+        echo "Coupon code not found.";
+        cm_redeemCouponFailEnd();
+        return;
+        }
+
+    $coupon_tag = mysql_result( $result, 0, "coupon_tag" );
+    $dollar_amount = mysql_result( $result, 0, "dollar_amount" );
+    $not_used = mysql_result( $result, 0, "not_used" );
+    $not_expired = mysql_result( $result, 0, "not_expired" );
+
+    if( ! $not_used ) {
+        echo "Coupon code already redeemed.";
+        cm_redeemCouponFailEnd();
+        return;
+        }
+    if( ! $not_expired ) {
+        echo "Coupon code expired.";
+        cm_redeemCouponFailEnd();
+        return;
+        }
+
+    
+    
+
+
+    // valid!
+
+    // check if user exists with this email
+
+    //    $query = "SELECT user_id
+
+    $salt = 0;
+    $account_key = cm_generateAccountKey( $email, $salt );
+
+    $random_name = cm_generateRandomName();
+
+    global $eloStartingRating;
+    
+    // user_id auto-assigned (auto-increment)
+    $query = "INSERT INTO $tableNamePrefix". "users SET ".
+        "account_key = '$account_key', ".
+        "email = '$email', ".
+        "random_name = '$random_name', ".
+        "dollar_balance = '$dollar_amount', ".
+        "num_deposits = 1, ".
+        "total_deposits = '$dollar_amount', ".
+        "num_withdrawals = 0, ".
+        "total_withdrawals = 0, ".
+        "total_won = 0, ".
+        "total_lost = 0, ".
+        "elo_rating = $eloStartingRating, ".
+        "sequence_number = 0, ".
+        "request_sequence_number = 0, ".
+        "last_action_time = CURRENT_TIMESTAMP, ".
+        "last_request_tag = '', ".
+        "last_request_response = '', ".
+        "admin_level = 0, ".
+        "blocked = 0;";
+
+
+    // handle INSERT error ourselves  (incase account with this email exists
+    $result = mysql_query( $query );
+
+    $user_id = 0;
+    
+    if( $result ) {
+        $user_id = mysql_insert_id();
+        }
+    else {
+        // already exists
+        $query = "SELECT user_id FROM $tableNamePrefix"."users ".
+            "WHERE email='$email' FOR UPDATE;";
+        $result = cm_queryDatabase( $query );
+
+        if( mysql_numrows( $result ) == 0 ) {
+            echo "Failed to add funds to existing account.";
+            cm_redeemCouponFailEnd();
+            return;
+            }
+        $user_id = mysql_result( $result, 0, "user_id" );
+
+        $query = "UPDATE $tableNamePrefix". "users SET ".
+            "dollar_balance = dollar_balance + '$dollar_amount', ".
+            "num_deposits = num_deposits + 1, ".
+            "total_deposits = total_deposits + '$dollar_amount' ".
+            "WHERE user_id = $user_id;";
+        cm_queryDatabase( $query );
+        }
+    
+    $query = "INSERT INTO $tableNamePrefix"."deposits ".
+        "SET user_id = '$user_id', ".
+        "deposit_time = CURRENT_TIMESTAMP, ".
+        "dollar_amount = '$dollar_amount', ".
+        "fee = '0', processing_id = 'coupon_".$coupon_tag."_$coupon_code'; ";
+    
+    cm_queryDatabase( $query );
+
+
+    $query = "UPDATE $tableNamePrefix"."coupons ".
+        "SET redeemed_by_user_id = $user_id, ".
+        "redeemed_time = CURRENT_TIMESTAMP ".
+        "WHERE coupon_code = '$coupon_code';";
+
+    cm_queryDatabase( $query );
+    
+
+
+    cm_queryDatabase( "COMMIT;" );
+    cm_queryDatabase( "SET AUTOCOMMIT = 1;" );
+
+    $netString = cm_formatBalanceForDisplay( $dollar_amount );
+
+    global $upgradeURL;
+    
+
+    $message =
+        "You redeemed a coupon for $netString ".
+        "into your CORDIAL MINUET account.\n\n".
+        "You can download the game here:\n".
+        "$upgradeURL\n\n".
+        "Here are your account details:\n\n".
+        "Email:  $email\n".
+        "Account Key:  $account_key\n\n".
+        "Alias:  $random_name\n\n".
+        "Please save these for future reference.  These account details ".
+        "are saved locally by your game client after you log in the ".
+        "first time, but you may need to enter ".
+        "them again if you are playing the game from a different computer ".
+        "or fresh install in the future.\n\n\n".
+        "Enjoy the game!\n".
+        "Jason\n\n";
+            
+    
+    cm_mail( $email, "Cordial Minuet Coupon Account Information",
+             $message );
+    
+
+    echo "Your coupon has been redeemed.<br><br>";
+
+    echo "Account details have been emailed to you at <b>$email</b><br><br>";
+
+    echo "You will need these details to log into the game and ".
+        "access your funds.<br><br>Please check your spam folder.";
+    
+    
+    eval( $footer );
+    }
+
+
+
+
 function cm_showData() {
 
     global $tableNamePrefix, $remoteIP;
@@ -10042,6 +10394,23 @@ function cm_showData() {
     <INPUT TYPE="Submit" VALUE="Create Batch">
     </FORM>
         </td>
+        <td>
+        Make Coupons:<br>
+            <FORM ACTION="server.php" METHOD="post">
+    <INPUT TYPE="hidden" NAME="action" VALUE="make_coupons">
+                 Number of Coupons:
+    <INPUT TYPE="text" MAXLENGTH=10 SIZE=4 NAME="num_coupons" VALUE="0"><br>
+                 Coupon Tag:
+    <INPUT TYPE="text" MAXLENGTH=40 SIZE=10 NAME="coupon_tag"><br>
+                 Expire in:
+    <INPUT TYPE="text" MAXLENGTH=10 SIZE=4 NAME="expire_days" VALUE="-1">Days (-1 = never)<br>
+             Initial deposit:  
+    $<INPUT TYPE="text" MAXLENGTH=10 SIZE=10 NAME="dollar_amount" VALUE="0.00"><br>
+             Confirm:
+    <INPUT TYPE="checkbox" NAME="confirm" VALUE=1><br>
+    <INPUT TYPE="Submit" VALUE="Create Coupons">
+    </FORM>
+        </td>     
              
 <?php
 
