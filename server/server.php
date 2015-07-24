@@ -10237,7 +10237,7 @@ function cm_redeemCoupon() {
         }
     else {
         // already exists
-        $query = "SELECT user_id FROM $tableNamePrefix"."users ".
+        $query = "SELECT user_id, account_key FROM $tableNamePrefix"."users ".
             "WHERE email='$email' FOR UPDATE;";
         $result = cm_queryDatabase( $query );
 
@@ -10247,6 +10247,7 @@ function cm_redeemCoupon() {
             return;
             }
         $user_id = mysql_result( $result, 0, "user_id" );
+        $account_key = mysql_result( $result, 0, "account_key" );
 
         $query = "UPDATE $tableNamePrefix". "users SET ".
             "dollar_balance = dollar_balance + '$dollar_amount', ".
@@ -10279,6 +10280,12 @@ function cm_redeemCoupon() {
 
     $netString = cm_formatBalanceForDisplay( $dollar_amount );
 
+
+    $account_key_chunks = str_split( $account_key, 5 );
+
+    $account_key = implode( "-", $account_key_chunks );
+    
+    
     global $upgradeURL;
     
 
