@@ -10237,7 +10237,8 @@ function cm_redeemCoupon() {
         }
     else {
         // already exists
-        $query = "SELECT user_id, account_key FROM $tableNamePrefix"."users ".
+        $query = "SELECT user_id, account_key, random_name ".
+            "FROM $tableNamePrefix"."users ".
             "WHERE email='$email' FOR UPDATE;";
         $result = cm_queryDatabase( $query );
 
@@ -10248,6 +10249,7 @@ function cm_redeemCoupon() {
             }
         $user_id = mysql_result( $result, 0, "user_id" );
         $account_key = mysql_result( $result, 0, "account_key" );
+        $random_name = mysql_result( $result, 0, "random_name" );
 
         $query = "UPDATE $tableNamePrefix". "users SET ".
             "dollar_balance = dollar_balance + '$dollar_amount', ".
