@@ -4006,6 +4006,14 @@ function cm_sendCheck() {
                                $paymentType .
                                $amount .
                                $currency );
+
+    $originCountry = "US";
+
+    if( $currency != "USD" ) {
+        // check being sent out from customer's country
+        $originCountry = $country;
+        }
+    
     
     
     $curlCallString =
@@ -4021,8 +4029,8 @@ function cm_sendCheck() {
         $amountLines .
         "-d \"Beneficiary=$name\" ".
         "-d 'Currency=$currency' ".
-        // country of the source account (our account)
-        "-d 'Country=US' ".
+        // country of the source account (our account, or local bank)
+        "-d 'Country=$originCountry' ".
         "-d \"Description=$description\" ".
         "-d 'Reference=user_id_$user_id' ".
         "-d \"AddressLine1=$address1\" ".
