@@ -43,6 +43,7 @@ DepositDisplayPage::DepositDisplayPage()
                        translate( "OK" ) ),
           mOldBalance( 0 ),
           mDeltaAmount( 0 ),
+          mVsOneCoins( 0 ),
           mAmuletIconSprite( loadSprite( "amuletIcon.tga", true ) ) {
 
     addComponent( &mOkayButton );

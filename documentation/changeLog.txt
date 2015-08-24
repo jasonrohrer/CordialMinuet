@@ -1,6 +1,16 @@
+Version 28     ???
+
+--Fixed wayward contest-coin display on withdraw page (thanks Benjamin Y).
+
+
+
+
+
 Version 27     Live Server Fixes
 
 --Added support for cash coupon redemption, in preparation for Humble Bundle.
+
+--Fixed country of origin for non-USD checks.
 
 
 
