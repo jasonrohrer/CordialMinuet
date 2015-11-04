@@ -1,0 +1,8 @@
+[Desktop Entry]
+Version=1.0
+Name=Minuet Remote Backup
+Exec=lxterminal -e "bash -c '/home/jasonrohrer/cpp/CordialMinuet/server/utilityScripts/remoteBackup'"
+Terminal=false
+Type=Application
+Icon=lxterminal
+Categories=GNOME;GTK;Utility;
