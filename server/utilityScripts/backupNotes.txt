@@ -1,0 +1,8 @@
+To add to menu of lxde, put .desktop file in:
+
+/usr/share/applications
+
+
+Then, put a soft link to it here to have it run every startup:
+
+~/.config/autostart
