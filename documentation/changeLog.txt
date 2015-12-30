@@ -2,6 +2,8 @@ Version 28     ???
 
 --Fixed wayward contest-coin display on withdraw page (thanks Benjamin Y).
 
+--Fixed server setup code typo (thanks Anthony).
+
 
 
 

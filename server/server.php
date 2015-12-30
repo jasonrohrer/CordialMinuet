@@ -1064,7 +1064,7 @@ function cm_setupDatabase() {
             "elo_rating INT NOT NULL,".
             "last_buy_in DECIMAL(13, 2) NOT NULL,".
             "last_pay_out DECIMAL(13, 4) NOT NULL,".
-            "last_vs_one_points INT NOT NULL,".
+            "last_vs_one_coins INT NOT NULL,".
             "sequence_number INT UNSIGNED NOT NULL," .
             "request_sequence_number INT UNSIGNED NOT NULL," .
             "last_action_time DATETIME NOT NULL," .
