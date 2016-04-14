@@ -165,6 +165,14 @@ void getGameImageSize( int *outWidth, int *outHeight ) {
     }
 
 
+char shouldNativeScreenResolutionBeUsed() {
+    return true;
+    }
+
+char isNonIntegerScalingAllowed() {
+    return false;
+    }
+
 
 const char *getWindowTitle() {
     return "CORDIAL MINUET";
