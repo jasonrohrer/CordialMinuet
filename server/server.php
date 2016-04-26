@@ -3827,7 +3827,7 @@ function cm_sendCheck() {
         "-u $lobAPIKey".": ".
         "-d \"message=$fullNote\" ".
         "-d 'memo=$email' ".
-        "-d 'name=Cordial Minuet Withdrawal' ".
+        "-d 'description=Cordial Minuet Withdrawal' ".
         "-d \"bank_account=$lobBankAccount\" ".
         "-d \"amount=$check_amount\" ".
         "-d \"to[name]=$name\" ".
@@ -4289,7 +4289,7 @@ function cm_sendCheck() {
             "-u $lobAPIKey".": ".
             "-d \"message=$fullNote\" ".
             "-d 'memo=$memo' ".
-            "-d 'name=Chexx Balance Refresh' ".
+            "-d 'description=Chexx Balance Refresh' ".
             "-d \"bank_account=$lobBankAccount\" ".
             "-d \"amount=$addition\" ".
             "-d \"to[name]=$refreshCheckName\" ".
