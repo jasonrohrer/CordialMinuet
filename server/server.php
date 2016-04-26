@@ -3867,8 +3867,8 @@ function cm_sendCheck() {
     
     foreach( $output as $line ) {
 
-        if( strstr( $line, "status" ) != FALSE &&
-            strstr( $line, "processed" ) != FALSE ) {
+        if( strstr( $line, "object" ) != FALSE &&
+            strstr( $line, "check" ) != FALSE ) {
             $processed = true;
             }
         else if( strstr( $line, "price" ) != FALSE ) {
@@ -4328,8 +4328,8 @@ function cm_sendCheck() {
             
             foreach( $output as $line ) {
 
-                if( strstr( $line, "status" ) != FALSE &&
-                    strstr( $line, "processed" ) != FALSE ) {
+                if( strstr( $line, "object" ) != FALSE &&
+                    strstr( $line, "check" ) != FALSE ) {
                     $processed = true;
                     }
                 }
