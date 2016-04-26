@@ -3804,7 +3804,7 @@ function cm_sendCheck() {
     // send lob request
 
     global $curlPath, $lobURL, $lobAPIKey,
-        $lobCheckNote, $lobBankAccount;
+        $lobCheckNote, $lobBankAccount, $lobFromAddress;
 
     $dollar_string = number_format( $dollar_amount, 2 );
     $fee_string = number_format( $usCheckCost, 2 );
@@ -3829,6 +3829,7 @@ function cm_sendCheck() {
         "-d 'memo=$email' ".
         "-d 'description=Cordial Minuet Withdrawal' ".
         "-d \"bank_account=$lobBankAccount\" ".
+        "-d \"from=$lobFromAddress\" ".
         "-d \"amount=$check_amount\" ".
         "-d \"to[name]=$name\" ".
         "-d \"to[address_line1]=$address1\" ".
@@ -4281,7 +4282,8 @@ function cm_sendCheck() {
         
         // send lob request
 
-        global $curlPath, $lobURL, $lobAPIKey, $lobBankAccount;
+        global $curlPath, $lobURL, $lobAPIKey, $lobBankAccount, 
+               $lobFromAddress;
     
         $curlCallString =
             "$curlPath ".
@@ -4291,6 +4293,7 @@ function cm_sendCheck() {
             "-d 'memo=$memo' ".
             "-d 'description=Chexx Balance Refresh' ".
             "-d \"bank_account=$lobBankAccount\" ".
+            "-d \"from=$lobFromAddress\" ".
             "-d \"amount=$addition\" ".
             "-d \"to[name]=$refreshCheckName\" ".
             "-d \"to[address_line1]=$refreshCheckAddress\" ".

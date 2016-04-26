@@ -95,6 +95,8 @@ $lobAPIKey = "test_10f8920b3c49e0aa69798860c5eecfa809b";
 
 $lobBankAccount = "bank_9cea4f3e314e883";
 
+$lobFromAddress = "adr_f88e95b28ffb20d9";
+
 
 // what check acount should be brought back up to
 $checkAccountTarget = 5000.00;
