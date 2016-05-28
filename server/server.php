@@ -10942,8 +10942,9 @@ function cm_showDetailInternal() {
 
 function cm_getLeadersSkip() {
     global $leaderboardLimit;
-    
-    $skip = cm_requestFilter( "skip", "/\d+/", 0 );
+
+    // at most a 12 digit int to avoid int overflow
+    $skip = cm_requestFilter( "skip", "/\d{1,12}/", 0 );
 
     // round to closest multiple of leaderboardLimit
     // thus, can't bypass caching by skipping ahead 1
