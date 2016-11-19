@@ -74,8 +74,20 @@ $curlPath = "/home/jcr13/curl-7.37.1/src/curl";
 $stripeChargeURL = "https://api.stripe.com/v1/charges";
 $stripeTokensURL = "https://api.stripe.com/v1/tokens";
 $stripeBalanceHistoryURL = "https://api.stripe.com/v1/balance/history";
-
 $stripeSecretKey = "sk_test_YFNDtqJP2HSlwGRsI2f55vs3";
+
+// enables relay API to work around Stripe TSL 1.2 requirement
+// if off, calls stripe directly with no relay
+$stripeUseRelayServer = false;
+$stripeBaseURL = "https://api.stripe.com/v1/";
+$stripeTokens = "tokens";
+$stripeCharges = "charges";
+$stripeRelayURL = "http://goodmangear.com/cm/api.php";
+// This key is a placeholder and MUST be changed in live installations
+$stripeRelaySecretKey =
+    "96E9DD3EB4161A8525AA83EA9A38EFA8FCC1CF56871E1747CC9D12737A9775CD";
+
+
 
 // email address will be appended to this description
 $stripeChargeDescription =

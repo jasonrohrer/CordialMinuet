@@ -2844,7 +2844,7 @@ function cm_makeDeposit() {
 
     $cents_amount = round( $dollar_amount * 100 );
     
-    global $curlPath, $stripeChargeURL, $stripeTokensURL, $stripeSecretKey,
+    global $stripeTokens, $stripeCharges,
         $stripeChargeDescription;
 
 
@@ -2852,20 +2852,12 @@ function cm_makeDeposit() {
     // before charging card, get card token so that we can obtain card
     // fingerprint
 
-    $curlCallString =
-        "$curlPath ".
-        "'$stripeTokensURL' ".
-        "-u $stripeSecretKey".": ".
-        "-d 'card[number]=$cardNumber'  ".
-        "-d 'card[exp_month]=$month'  ".
-        "-d 'card[exp_year]=$year'  ".
-        "-d 'card[cvc]=$cvc' ";
-
+    $stripeArguments = array (
+        "card[number]=$cardNumber", "card[exp_month]=$month", 
+        "card[exp_year]=$year", "card[cvc]=$cvc");
     //cm_log( "Calling Stripe with CURL:  $curlCallString" );
-    
     $output = array();
-    exec( $curlCallString, $output );
-
+    $output = cm_stripeCall( $stripeTokens, $stripeArguments );
 
     // process result
     $outputString = implode( "\n", $output );
@@ -3016,24 +3008,20 @@ function cm_makeDeposit() {
     
     $fullDescription = $stripeChargeDescription . $email;
     
-    $curlCallString =
-        "$curlPath ".
-        "'$stripeChargeURL' ".
-        "-u $stripeSecretKey".": ".
-        "-d 'receipt_email=$email'  ".
-        "-d 'amount=$cents_amount'  ".
-        "-d 'currency=usd'  ".
-        "-d 'expand[]=balance_transaction'  ".
-        "-d \"description=$fullDescription\" ".
-        "-d 'card[number]=$cardNumber'  ".
-        "-d 'card[exp_month]=$month'  ".
-        "-d 'card[exp_year]=$year'  ".
-        "-d 'card[cvc]=$cvc' ";
+    $stripeArguments = array("receipt_email=$email", 
+        "amount=$cents_amount",
+        "currency=usd",
+        "expand[]=balance_transaction",
+        "\"description=$fullDescription\"",
+        "card[number]=$cardNumber",
+        "card[exp_month]=$month",
+        "card[exp_year]=$year",
+        "card[cvc]=$cvc");
 
     //cm_log( "Calling Stripe with CURL:  $curlCallString" );
     
     $output = array();
-    exec( $curlCallString, $output );
+    $output = cm_stripeCall($stripeCharges, $stripeArguments);
     
     // process result
     $outputString = implode( "\n", $output );
@@ -3344,6 +3332,85 @@ function cm_makeDeposit() {
     
     }
 
+// cm_stripeCall($stripeCall string, $arguments array)
+// this function can be configured to call stripe locally or through a relay
+// function expects a string with the stripe call and an array with stripe arguments
+// (example for array
+// $stripe_argument_array = array("card[number]=4242424242424242",
+//      "card[exp_month]=12",
+//      "card[exp_year]=2017",
+//      "card[cvc]=123");
+// function also includes a shared hardcoded key that must be deployed on client and server
+// this shared secret must be manually updated both places if compromised.
+function cm_stripeCall($stripecall, $arguments)
+{
+    global $curlPath, $stripeBaseURL, $stripeSecretKey,
+        $stripeChargeDescription, $stripeUseRelayServer, $stripeRelayURL,
+        $stripeRelaySecretKey;
+
+    // for testing override some values
+    //$curlPath = "curl";
+    //$stripeSecretKey = "sk_test_BQokikJOvBiI2HlWgH4olfQ2";
+    
+    $results = array();
+    if($stripeUseRelayServer){
+        //echo "calling stripe via relay<br>";
+        // add call and key to array
+        array_unshift($arguments, $stripecall, $stripeSecretKey);
+
+        //http://randomkeygen.com/
+        //96E9DD3EB4161A8525AA83EA9A38EFA8FCC1CF56871E1747CC9D12737A9775CD
+        //137FDD84976BC7D2E75E77BE874C488FECC564778D1BC6DBBF4C
+        //original sample key:
+        // bcb04b7e103a0cd8b54763051cef08bc55abe029fdebae5e1d417e2ffb2a00a3
+        $relaycurlcall = $curlPath." ".$stripeRelayURL;
+        // shared secret across both systems in hex
+        // if this key is changed, it must be changed on the relay
+        // server as well
+        $key = pack('H*', $stripeRelaySecretKey );
+        $key_size =  strlen($key);
+        //echo "Key size: " . $key_size . "<br>";
+        //echo "input: " . $input . "<br>";
+    
+        // create a random IV to use with CBC encoding
+        $iv_size = mcrypt_get_iv_size(MCRYPT_RIJNDAEL_128, MCRYPT_MODE_CBC);
+        $iv = mcrypt_create_iv($iv_size, MCRYPT_RAND);
+    
+        // creates a cipher text compatible with AES (Rijndael block size = 128)
+        // to keep the text confidential 
+        // only suitable for encoded input that never ends with value 00h
+        // (because of default zero padding)
+        $argument_string = implode("&", $arguments);
+        //echo "pre-send".$argument_string;
+        $stripecall_encrypted = mcrypt_encrypt(MCRYPT_RIJNDAEL_128, $key,
+                                     $argument_string, MCRYPT_MODE_CBC, $iv);
+
+        // prepend the IV for it to be available for decryption
+        $ciphertext = $iv . $stripecall_encrypted;
+        // base 64 encode the encrypted block so it can be sent safely
+        $ciphertext_base64 = base64_encode($ciphertext);
+        // escape any characters that the curl command would mangle or
+        // interpret wrong
+        $urlencoded = urlencode($ciphertext_base64);
+
+    
+        $relay_call = $relaycurlcall." -d call=".$urlencoded;
+        //echo "relay call: ".$relay_call;
+        exec($relay_call, $results);
+    } else {
+        //echo "calling stripe locally<br>";
+        $curlCallString = $curlPath.
+            " '$stripeBaseURL"."$stripecall' ".
+            "-u $stripeSecretKey".": ";
+            foreach($arguments as &$arg){
+                $curlCallString = $curlCallString." -d '$arg' ";
+            }
+            //echo "curl call string: ".$curlCallString."<br>";
+            //cm_log( "Calling Stripe with CURL:  $curlCallString" );
+            exec( $curlCallString, $results );
+    }
+    return $results;
+}
 
 
 // no hyphens
