@@ -3012,7 +3012,7 @@ function cm_makeDeposit() {
         "amount=$cents_amount",
         "currency=usd",
         "expand[]=balance_transaction",
-        "\"description=$fullDescription\"",
+        "description=$fullDescription",
         "card[number]=$cardNumber",
         "card[exp_month]=$month",
         "card[exp_year]=$year",
@@ -3332,7 +3332,7 @@ function cm_makeDeposit() {
     
     }
 
-// cm_stripeCall($stripeCall string, $arguments array)
+// cm_stripeCall($stripecall string, $arguments array)
 // this function can be configured to call stripe locally or through a relay
 // function expects a string with the stripe call and an array with stripe arguments
 // (example for array
@@ -3351,10 +3351,11 @@ function cm_stripeCall($stripecall, $arguments)
     // for testing override some values
     //$curlPath = "curl";
     //$stripeSecretKey = "sk_test_BQokikJOvBiI2HlWgH4olfQ2";
-    
+        
     $results = array();
     if($stripeUseRelayServer){
         //echo "calling stripe via relay<br>";
+        cm_log( "Calling stripe via relay" );
         // add call and key to array
         array_unshift($arguments, $stripecall, $stripeSecretKey);
 
@@ -3399,14 +3400,14 @@ function cm_stripeCall($stripecall, $arguments)
         exec($relay_call, $results);
     } else {
         //echo "calling stripe locally<br>";
+        cm_log( "Calling stripe via local curl directly" );
         $curlCallString = $curlPath.
             " '$stripeBaseURL"."$stripecall' ".
             "-u $stripeSecretKey".": ";
             foreach($arguments as &$arg){
-                $curlCallString = $curlCallString." -d '$arg' ";
+                $curlCallString = $curlCallString." -d \"$arg\" ";
             }
             //echo "curl call string: ".$curlCallString."<br>";
-            //cm_log( "Calling Stripe with CURL:  $curlCallString" );
             exec( $curlCallString, $results );
     }
     return $results;
