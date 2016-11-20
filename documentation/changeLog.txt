@@ -4,6 +4,8 @@ Version 28     ???
 
 --Fixed server setup code typo (thanks Anthony).
 
+--Added Stripe relay support to work around new Stripe TLS 1.2 requirement
+  (thanks Kevin Goodman).
 
 
 
