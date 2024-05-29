@@ -22,7 +22,7 @@ $sharedSecretKey =
         $key = pack('H*', $sharedSecretKey);
         $key_size =  strlen($key);
         // pull text from request
-        $ciphertext_base64 = $_POST[call];
+        $ciphertext_base64 = $_POST['call'];
         if($ciphertext_base64 != null){
             // continue if we found text to decrypt
             // first decode the text back to binary
