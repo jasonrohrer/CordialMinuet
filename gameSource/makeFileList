@@ -51,8 +51,7 @@ ExtendedMessagePage.cpp \
 AutoUpdatePage.cpp \
 InPersonPage.cpp \
 amuletCache.cpp \
-GetAmuletPage.cpp \
-
+GetAmuletPage.cpp
 
 
 
@@ -90,7 +89,7 @@ graphics/greenWatercolorHeader.tga \
 graphics/redWatercolorHeader.tga \
 graphics/guessMarkerRow.tga \
 graphics/guessMarkerColumn.tga \
-graphics/amuletIcon.tga \
+graphics/amuletIcon.tga
 
 
 
@@ -136,4 +135,5 @@ NEEDED_MINOR_GEMS_OBJECTS = \
  ${COEFFICIENT_FILTERS_O} \
  ${CURVE_25519_O} \
  ${CRYPTO_RANDOM_O} \
- ${DIFF_BUNDLE_CLIENT_O} \
+ ${DIFF_BUNDLE_CLIENT_O}
+
