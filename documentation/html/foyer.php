@@ -15,13 +15,9 @@ A two-player ONLINE STRATEGY GAME played for REAL MONEY by <a href="http://hcsof
 
 DOWNLOAD the game:<br>
 <br>
-[<a href="http://cordialminuet.com/coastcaravan/CordialMinuet_v12_Windows.exe">WINDOWS</a>]
+[<a href="http://cordialminuet.com/coastcaravan/CordialMinuet_v27_Windows.exe">WINDOWS</a>]
 - -- -
-[<a href="http://cordialminuet.com/coastcaravan/CordialMinuet_v12_IntelMacOSX.dmg">MAC</a>]
-- -- -
-[<a href="http://cordialminuet.com/coastcaravan/CordialMinuet_v12_Linux.tar.gz">LINUX</a>]
-- -- -
-[<a href="http://cordialminuet.com/coastcaravan/CordialMinuet_v12_UnixSource.tar.gz">SOURCE</a>]
+[<a href="http://cordialminuet.com/coastcaravan/CordialMinuet_v27_UnixSource.tar.gz">SOURCE</a>]
 
 
 <br>
