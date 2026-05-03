@@ -2,11 +2,20 @@ SOURCEDIR=`pwd`
 echo "running export from $SOURCEDIR"
 
 cd ../../../../minorGems
-hg archive $SOURCEDIR/minorGems
+git clone . $SOURCEDIR/minorGems
+
+cd $SOURCEDIR/minorGems
+git checkout CordialMinuet_v27
+
+rm -rf $SOURCEDIR/minorGems/.git
+
 
 cd $SOURCEDIR
 
 cd ../../../../CordialMinuet
-hg archive $SOURCEDIR/CordialMinuet
+git clone . $SOURCEDIR/CordialMinuet
+
+rm -rf $SOURCEDIR/CordialMinuet/.git
 
 cd $SOURCEDIR
+
