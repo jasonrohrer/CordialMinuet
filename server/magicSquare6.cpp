@@ -92,7 +92,7 @@ static char swapRandom( int *inArray, int inNumCells ) {
 
 
 
-static char fillMagicRandom( int *inArray, int inD ) {
+static void fillMagicRandom( int *inArray, int inD ) {
     int maxNumber = inD * inD;
         
     for( int i=0; i<maxNumber; i++ ) {
