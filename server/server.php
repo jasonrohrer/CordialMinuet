@@ -8454,7 +8454,7 @@ function cm_makeRoundLoser( $inGameID, $inLoserID, $inTie = false ) {
         "player_2_bet_made = '$player_2_bet_made', ".
         "player_1_pot_coins = '$player_1_pot_coins', ".
         "player_2_pot_coins = '$player_2_pot_coins', ".
-        "settled_pot_coins = 'settled_pot_coins', ".
+        "settled_pot_coins = '$settled_pot_coins', ".
         "move_deadline = ADDTIME( CURRENT_TIMESTAMP, '$moveTimeLimit' ) ".
         "WHERE player_1_id = '$inLoserID' OR player_2_id = '$inLoserID';";
     
