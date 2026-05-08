@@ -8,7 +8,7 @@ mysqldump -u jcr13_dbU --password=$pw jcr13_cmGame > /home/jcr13/backups/cm_game
 gzip -f /home/jcr13/backups/cm_game_$date.mysql
 
 
-mysqldump -u jcr13_dbU --password=$pw jcr13_cdForums > /home/jcr13/backups/cm_forums_$date.mysql
+mysqldump -u jcr13_dbU --password=$pw jcr13_cmForums > /home/jcr13/backups/cm_forums_$date.mysql
 gzip -f /home/jcr13/backups/cm_forums_$date.mysql
 
 
